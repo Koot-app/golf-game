@@ -282,7 +282,7 @@
       <div class="sec">Player (RPG test)</div>
       <label class="row"><span>Power</span><input type="range" id="inPower" min="1" max="10" step="1" value="5"><b id="outPower"></b></label>
       <label class="row"><span>Dexterity</span><input type="range" id="inDex" min="1" max="10" step="1" value="5"><b id="outDex"></b></label>
-      <label class="row" title="Drops into Tilt (≤ 35) after bad shots in the rough/sand or mishits, adding a +40–60% difficulty penalty; climbs into the Zone (> 70) after great shots."><span>Composure</span><input type="range" id="inComp" min="0" max="100" step="1" value="50"><b id="outComp"></b></label>
+      <label class="row" title="Stat points assigned to Composure (1–10). Consecutive bad shots stack a Tilt difficulty penalty behind the scenes; higher Composure offsets that penalty."><span>Composure</span><input type="range" id="inComp" min="1" max="10" step="1" value="5"><b id="outComp"></b></label>
       <label class="row" title="How accurately you read club distances from rough/sand lies and pace/slope on the green."><span>Perception</span><input type="range" id="inPer" min="1" max="10" step="1" value="5"><b id="outPer"></b></label>
 
       <div class="sec">Mouse swing calibration</div>
@@ -435,7 +435,8 @@ const TUNE = {
   //     that is a misfit, 0..1, reaching 1 when it is LIES.span degrees short. A misfit cannot be swung out of:
   lieVarMin: 0.5,                 // Dexterity can narrow a bad lie's random spread to half, no further
   cxClub: 2.5,                    // dispersion factor at a total misfit (compounds; Dexterity does NOT excuse it)
-  cxTilt: 0.40,                   // base difficulty penalty when Tilted (≤ 35 composure), ramping up to +60% at 0 composure
+  cxTiltStep: 0.45,               // raw difficulty penalty added per consecutive bad shot (stacks as streak grows)
+  compOffsetMax: 0.85,            // fraction of Tilt difficulty offset at Composure 10 (0% at Composure 1)
   fitPower: 0.45,                 // share of ball speed lost at a total misfit (the club cannot get to the ball cleanly)
   fitLaunch: 0.35,                // share of launch angle lost at a total misfit (it comes out low and thin)
   fitMishit: 0.85,                // chance of an outright topped / fat shot at a total misfit (grows with misfit squared)
@@ -516,7 +517,18 @@ const SLOPES = {
 };
 
 const powerMult = (p) => p <= 5 ? 0.90 + (p - 1) * 0.025 : 1.0 + (p - 5) * 0.02;   // 1 -> 0.90, 5 -> 1.00, 10 -> 1.10
-const composureState = (c) => c <= 35 ? 'tilted' : c <= 70 ? 'neutral' : 'zone';
+// Composure (1..10 stat points) offsets the behind-the-scenes Tilt penalty stacked by consecutive bad shots.
+const compOffset = (c) => {
+  const pts = c > 10 ? c / 10 : (c || 5);
+  return lerp(0, TUNE.compOffsetMax, clamp((pts - 1) / 9, 0, 1));
+};
+function tiltPenalty(composure, badStreak = 0) {
+  const n = Math.max(0, badStreak || 0);
+  if (n <= 0) return 0;
+  const raw = TUNE.cxTiltStep * n * (1 + 0.15 * (n - 1));
+  return raw * (1 - compOffset(composure));
+}
+const composureState = (c, badStreak = 0) => (badStreak || 0) > 0 && tiltPenalty(c, badStreak) > 0.005 ? 'tilted' : 'neutral';
 // How well a club suits a lie. s = misfit 0..1; mishit = chance of a topped / fat shot; power = share of ball speed kept.
 function clubFit(club, lieKey, teed) {
   const lie = LIES[lieKey];
@@ -599,7 +611,8 @@ function analyzeSwing(S, iTop, iImp, cal) {
 // Swing numbers + setup + club + conditions -> launch conditions.
 function computeImpact(sw, setup, club, env, rnd = Math.random) {
   const lie = LIES[env.lie], slope = SLOPES[env.slope];
-  const comp = composureState(env.composure);
+  const tilt = tiltPenalty(env.composure, env.badStreak);
+  const comp = tilt > 0.005 ? 'tilted' : 'neutral';
   const dexF = (env.dex - 1) / 9;
   const bell = () => rnd() + rnd() - 1;              // random in [-1, 1], weighted toward 0
   const dexSpread = env.stock ? 0 : lerp(1.0, 0.08, dexF);
@@ -607,8 +620,7 @@ function computeImpact(sw, setup, club, env, rnd = Math.random) {
 
   // 1. World swing path
   let thM = sw.thetaMouse;
-  if (comp === 'tilted') thM *= 1.4;
-  else if (comp === 'zone') thM = Math.sign(thM) * Math.max(0, Math.abs(thM) - 1.5);   // AUDIT 13
+  if (comp === 'tilted') thM *= 1 + Math.min(0.6, tilt * 0.8);
   thM = clamp(thM, -15, 15);
   const path = setup.stance + thM * club.work + (!env.stock ? TUNE.basePathDeg * dexSpread * bell() : 0);
 
@@ -663,7 +675,7 @@ function computeImpact(sw, setup, club, env, rnd = Math.random) {
   // The wrong club for the lie and getting tilted multiply on top, like a missed contact: skill does not excuse them.
   const fit = clubFit(club, env.lie, env.teed);
   cx.club = TUNE.cxClub * fit.s;
-  cx.tilt = comp === 'tilted' ? TUNE.cxTilt + 0.20 * clamp((35 - env.composure) / 35, 0, 1) : 0;
+  cx.tilt = tilt;
   const complexity = (1 + asked * dexRisk) * (1 + cx.contact) * (1 + cx.club) * (1 + cx.tilt) - 1;
   // which side of the face: the side the stroke passed the ball on, else the late drift. Passing above the ball on
   // screen is passing inside it (nearer the golfer), which catches the toe; below is outside, the heel.
@@ -674,7 +686,7 @@ function computeImpact(sw, setup, club, env, rnd = Math.random) {
   const sig = sw.sigma * steady * (1 + TUNE.cxWobble * complexity);
   let strike = (sig * TUNE.strikeMmPerPx + lie.strike * dexRisk + slope.strike + TUNE.decelStrikeMm * decelCost) * side;
   if (!env.stock) strike += (TUNE.baseStrikeMm * dexSpread * clubSpread + TUNE.cxStrikeMm * complexity) * bell();
-  strike *= comp === 'tilted' ? 1.4 : comp === 'zone' ? 0.65 : 1;
+  strike *= comp === 'tilted' ? 1 + Math.min(0.6, tilt * 0.8) : 1;
   strike = clamp(strike, -TUNE.strikeMaxMm, TUNE.strikeMaxMm);          // - heel / + toe
   const mm = Math.abs(strike);
 
@@ -852,8 +864,11 @@ const PUTTERS = {
   mallet: { name: 'High-MOI Mallet', gate: 0.048, pathGain: 0.28, sweet: 9, tempoZone: 0.04 },
 };
 const rollDecel = (stimp) => PUTT.stimpRelease ** 2 / (2 * stimp * FT);
-// Pressure visibly narrows the gate; being in the zone widens it.
-const puttGate = (putter, composure) => { const c = composureState(composure); return putter.gate * (c === 'tilted' ? 0.7 : c === 'zone' ? 1.3 : 1); };
+// Pressure visibly narrows the gate as Tilt builds; Composure offsets it.
+const puttGate = (putter, composure, badStreak = 0) => {
+  const tilt = tiltPenalty(composure, badStreak);
+  return putter.gate * (tilt > 0.005 ? Math.max(0.55, 1 - 0.35 * Math.min(1.5, tilt)) : 1);
+};
 
 function rng32(a) {
   return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
@@ -1023,14 +1038,14 @@ function analyzePutt(S, iTop, iImp, cal) {
   return { ...a, len: Math.min(1.10, Math.abs(S[iTop].x) / cal.swingPx), tempo: tBack / tFwd, excursion: exc / cal.swingPx };
 }
 
-// cfg = { scaleFt, stimp, composure, dex }
+// cfg = { scaleFt, stimp, composure, badStreak, dex }
 function computePutt(sw, putter, cfg, rnd = Math.random) {
-  const comp = composureState(cfg.composure), dexF = (cfg.dex - 1) / 9, flags = [];
-  const gate = puttGate(putter, cfg.composure);
+  const tilt = tiltPenalty(cfg.composure, cfg.badStreak);
+  const comp = tilt > 0.005 ? 'tilted' : 'neutral', dexF = (cfg.dex - 1) / 9, flags = [];
+  const gate = puttGate(putter, cfg.composure, cfg.badStreak);
 
   // start line: stroke direction, plus a twist if the stroke strayed outside the gate
   let path = sw.thetaMouse;
-  if (comp === 'zone') path = Math.sign(path) * Math.max(0, Math.abs(path) - 1);
   let start = path * putter.pathGain;
   const over = Math.max(0, sw.excursion / gate - 1);
   if (over > 0) { flags.push('HIT THE RAIL'); start += Math.min(PUTT.railTwistMax, PUTT.railTwistDeg * over) * (rnd() * 2 - 1); }
@@ -1044,7 +1059,7 @@ function computePutt(sw, putter, cfg, rnd = Math.random) {
 
   // strike: wobble plus how far off the ball's centre line the putter came through
   let mm = sw.sigma * 1.2 * (1 - 0.4 * dexF) + Math.abs(sw.miss || 0) / gate * 3;
-  mm = Math.min(15, mm * (comp === 'tilted' ? 1.3 : comp === 'zone' ? 0.7 : 1));
+  mm = Math.min(15, mm * (comp === 'tilted' ? 1 + Math.min(0.5, tilt * 0.6) : 1));
   const strike = mm * (Math.abs(sw.miss || 0) > 0.004 ? (sw.miss < 0 ? 1 : -1) : sw.lateSign);
   const loss = mm > putter.sweet ? lerp(PUTT.strikeLossMin, PUTT.strikeLossMax, clamp((mm - putter.sweet) / 8, 0, 1)) : 0;
 
@@ -1110,7 +1125,7 @@ const state = {
   face: 0, ballPos: 0, stance: 0,
   spin: 0,                       // spin level set at address: -2 / -1 forward spin (W), +1 / +2 backspin (S)
   lie: 'fairway', lieSeed: 7, slope: 'flat', windMph: 0, windDir: 0,
-  power: 5, dex: 5, composure: 50,
+  power: 5, dex: 5, composure: 5, badStreak: 0,
   practice: false, calibrating: false,
   flightCam: 'chase',            // chase | tee  (V toggles)
   cal: { swingPx: 800, vTarget: 800 / 139 },     // AUDIT 11 (spec tempo: 250 px / 1.8 px/ms = 139 ms)
@@ -1150,7 +1165,7 @@ const fmtFtIn = (m) => { const inches = Math.round(Math.abs(m) / INCH), ft = Mat
 const isPeeking = () => state.view === 'address' && !swing.active && (state.peekKey || state.peekMouse);
 // A club is teed up only if it is a tee club on a fairway lie — and, on the hole, only on the tee box.
 const isTeed = (club) => !!club.tee && state.lie === 'fairway' && (!hp.on || hp.onTee);
-const env = () => ({ lie: state.lie, slope: state.slope, power: state.power, dex: state.dex, composure: state.composure, teed: isTeed(CLUBS[state.club]) });
+const env = () => ({ lie: state.lie, slope: state.slope, power: state.power, dex: state.dex, composure: state.composure, badStreak: state.badStreak, teed: isTeed(CLUBS[state.club]) });
 const spinName = (s) => s === 0 ? '' : `${s < 0 ? 'Forward spin' : 'Backspin'} ${Math.abs(s)}`;
 const setup = () => ({ face: state.face, ballPos: state.ballPos, stance: state.stance, traj: state.spin });
 const ballLift = () => {
@@ -1954,8 +1969,9 @@ function endSwing(reason) {
 function swingSample(dx, dy, t) {
   const s = swing, S = s.S, px = state.cal.swingPx;
   if (S.length && t <= S[S.length - 1].t) t = S[S.length - 1].t + 0.01;
-  if (isPutt() && s.phase !== 'through' && composureState(state.composure) === 'tilted') {      // knee-knocker: the hands shake
-    const j = px * 0.006 * (0.45 + 0.55 * (35 - state.composure) / 35) * Math.sin(t * 0.021);
+  const puttTilt = isPutt() && s.phase !== 'through' ? tiltPenalty(state.composure, state.badStreak) : 0;
+  if (puttTilt > 0.005) {      // knee-knocker: the hands shake when tilted
+    const j = px * 0.006 * clamp(puttTilt, 0.25, 1.4) * Math.sin(t * 0.021);
     dy += j - (s.jit || 0); s.jit = j;
   }
 
@@ -1994,13 +2010,19 @@ function swingSample(dx, dy, t) {
 
 function applyTiltToRes(res) {
   if (!res) return;
-  res.comp = composureState(state.composure);
-  res.cx.tilt = res.comp === 'tilted' ? TUNE.cxTilt + 0.20 * clamp((35 - state.composure) / 35, 0, 1) : 0;
+  const tilt = tiltPenalty(state.composure, state.badStreak);
+  res.comp = tilt > 0.005 ? 'tilted' : 'neutral';
+  res.cx.tilt = tilt;
   res.complexity = (1 + res.asked * res.dexRisk) * (1 + res.cx.contact) * (1 + res.cx.club) * (1 + res.cx.tilt) - 1;
 }
 function setComposure(c) {
-  state.composure = clamp(Math.round(c), 0, 100);
+  state.composure = clamp(Math.round(c), 1, 10);
   $('inComp').value = state.composure;
+  if (telemetry && telemetry.res) applyTiltToRes(telemetry.res);
+  syncPanel();
+}
+function setBadStreak(n) {
+  state.badStreak = Math.max(0, Math.round(n));
   if (telemetry && telemetry.res) applyTiltToRes(telemetry.res);
   syncPanel();
 }
@@ -2022,26 +2044,23 @@ function onImpact() {
   clubPhiTarget = 3.3;
   if (state.practice) { clubReturnAt = performance.now() + 900; return; }
   const mishit = res.flags.some((f) => ['TOPPED', 'FAT', 'BLADED', 'CHUNKED'].includes(f));
-  const inTrouble = state.lie !== 'fairway';
   const clubSweet = CLUBS[state.club].sweet;
   const badContact = res.cx.contact >= 0.20 || Math.abs(res.strike) > clubSweet;
   const badSwing = mishit || res.decel || res.overswing || res.fit.s >= 0.3 || badContact || sw.bs < 0.45 || sw.ds < TUNE.tempoFloor || Math.abs(res.hla - state.face * 0.75) > 6 || Math.abs(res.axis) > 18;
-  if (inTrouble && badSwing) {
-    setComposure(Math.min(mishit || res.fit.s >= 0.3 || res.decel ? 28 : 32, state.composure - (mishit ? 22 : 18)));
-  } else if (mishit) {
-    setComposure(Math.min(32, state.composure - 18));
-  } else if (res.decel || res.cx.contact >= 0.5) {
-    setComposure(state.composure - 10);
-  } else if (!hp.on && !badSwing && Math.abs(res.strike) <= clubSweet * 0.8 && res.cx.contact === 0) {
-    setComposure(state.composure + 8);
+  let badAtImpact = false;
+  if (badSwing) {
+    badAtImpact = true;
+    setBadStreak(state.badStreak + 1);
+  } else if (!hp.on && Math.abs(res.strike) <= clubSweet * 0.85 && res.cx.contact === 0) {
+    setBadStreak(0);
   }
-  launch(res);
+  launch(res, badAtImpact);
 }
 
 // ---- putting: stroke -> roll
 function onPuttImpact() {
   const sw = analyzePutt(swing.S, swing.iTop, swing.iImp, state.cal);
-  const res = computePutt(sw, PUTTERS[state.putter], { scaleFt: PUTT.scales[state.puttScale].ft, stimp: green.stimp, composure: state.composure, dex: state.dex });
+  const res = computePutt(sw, PUTTERS[state.putter], { scaleFt: PUTT.scales[state.puttScale].ft, stimp: green.stimp, composure: state.composure, badStreak: state.badStreak, dex: state.dex });
   puttTel = { sw, res, practice: state.practice };
   clubPhiTarget = 0.45;
   if (state.practice) { clubReturnAt = performance.now() + 900; return; }
@@ -2067,6 +2086,8 @@ function updatePutt(dt) {
   // where it finished relative to the hole: along and across the ball-to-hole line
   const long = -(q.p.z - green.hole.z), side = q.p.x - green.hole.x, left = Math.hypot(long, side);
   puttRun.summary = { holed: q.holed, lip: q.lip, long, side, left, holeSpeed: q.holeSpeed };
+  if (q.holed) setBadStreak(0);
+  else if (puttRun.res.flags.length || left > 8 * FT) setBadStreak(state.badStreak + 1);
   const fl = puttRun.res.flags.length ? puttRun.res.flags.join(' · ') + '\n' : '';
   const where = `${Math.abs(long) < 0.03 ? 'pin high' : `${fmtFtIn(long)} ${long > 0 ? 'long' : 'short'}`}, ${Math.abs(side) < 0.03 ? 'on line' : `${fmtFtIn(side)} ${side > 0 ? 'right' : 'left'}`}`;
   toast(q.holed ? `${fl}HOLED IT\nfrom ${green.distFt < 10 ? green.distFt.toFixed(1) : green.distFt.toFixed(0)} ft` : `${fl}${q.lip ? 'LIPPED OUT · ' : ''}${fmtFtIn(left)} left\n${where}`, 4500);
@@ -2258,13 +2279,13 @@ window.addEventListener('blur', () => { held.clear(); markerDragging = false; st
 // =====================================================================================================
 //  SHOT
 // =====================================================================================================
-function launch(res) {
+function launch(res, badAtImpact = false) {
   const dir = state.aim + res.hla;
   const hb = hp.on ? { x: hp.ball.x, z: hp.ball.z } : null;      // on the hole, the ground under the ball depends on where it comes down
   const flight = createFlight({ ballSpeed: res.ballSpeed, vla: res.vla, dir, spin: res.spin, axis: res.axis, release: res.release,
     ground: hb ? (x, z) => SURF[surfaceAt(hb.x + x, hb.z + z)] : null }, windVector(state.windMph, state.windDir), Math.max(0, ballLift()));
   const tracer = newTracer();
-  shot = { flight, tracer, res, age: 0, acc: 0, done: false, dir, aim: state.aim, pin: state.pin, summary: null, marked: false,
+  shot = { flight, tracer, res, badAtImpact, age: 0, acc: 0, done: false, dir, aim: state.aim, pin: state.pin, summary: null, marked: false,
     pinRel: hb ? { x: hole.pin.x - hb.x, z: hole.pin.z - hb.z } : null, holed: false };
   if (hb) hp.strokes++;
   state.view = 'flight';
@@ -2300,20 +2321,18 @@ function updateShot(dt) {
     const n = shot.summary;
     if (hp.on) {
       const surfKey = surfaceAt(hp.ball.x + f.p.x, hp.ball.z + f.p.z), surf = SURF[surfKey];
-      if (shot.holed) setComposure(state.composure + 30);
-      else if (surfKey === 'bunker' || surfKey === 'fbunker' || surfKey === 'heavy') setComposure(Math.min(32, state.composure - 18));
-      else if (surfKey === 'light' || surfKey === 'hardpan') setComposure(Math.abs(n.offline) > 18 || shot.res.flags.length ? Math.min(34, state.composure - 16) : state.composure - 12);
-      else if (surfKey === 'green') setComposure(state.composure + (state.lie !== 'fairway' ? 20 : 14));
-      else if (surfKey === 'fairway' && !shot.res.flags.some((fl) => ['TOPPED', 'FAT', 'BLADED', 'CHUNKED', 'DECEL'].includes(fl))) {
-        setComposure(state.composure + (state.lie !== 'fairway' ? 14 : 8));
+      if (shot.holed || surfKey === 'green') setBadStreak(0);
+      else if (surfKey === 'fairway' && !shot.badAtImpact) setBadStreak(0);
+      else if ((surfKey === 'bunker' || surfKey === 'fbunker' || surfKey === 'heavy' || surfKey === 'light' || surfKey === 'hardpan') && !shot.badAtImpact) {
+        setBadStreak(state.badStreak + 1);
       }
       const flagsTxt = shot.res.flags.length ? shot.res.flags.join(' · ') + '\n' : '';
-      const tiltTag = composureState(state.composure) === 'tilted' ? ' · TILTED' : '';
+      const tiltTag = state.badStreak > 0 ? ` · TILTED${state.badStreak > 1 ? ' ×' + state.badStreak : ''}` : '';
       toast(shot.holed ? 'HOLED OUT!' : `${flagsTxt}${shapeName(shot.res)} · ${n.carry.toFixed(0)} carry · ${n.total.toFixed(0)} total\n${surf.name}${tiltTag} · ${fmtToPin(n.toPin * YD)} to the pin`, 4200);
     } else {
-      if (state.lie !== 'fairway' && Math.abs(n.offline) > 20) setComposure(Math.min(32, state.composure - 16));
+      if (!shot.badAtImpact && Math.abs(n.offline) > 20) setBadStreak(state.badStreak + 1);
       const flagsTxt = shot.res.flags.length ? shot.res.flags.join(' · ') + '\n' : '';
-      const tiltTag = composureState(state.composure) === 'tilted' ? ' · TILTED' : '';
+      const tiltTag = state.badStreak > 0 ? ` · TILTED${state.badStreak > 1 ? ' ×' + state.badStreak : ''}` : '';
       toast(`${flagsTxt}${shapeName(shot.res)} · ${n.carry.toFixed(0)} carry · ${n.total.toFixed(0)} total\n${n.toPin.toFixed(1)} yds from the ${PINS[shot.pin].yd} pin${tiltTag}`, 4200);
     }
   }
@@ -2379,6 +2398,7 @@ function enterHole() {
   if (swing.active) return;
   hp.on = true; document.body.classList.add('hole');
   Object.assign(hp, { ball: { x: 0, z: 0 }, strokes: 0, putts: 0, onTee: true, done: false, history: [], frame: null, aimPin: false, mapZoom: 0 });
+  state.badStreak = 0;
   for (const t of trails.splice(0)) { t.group.removeFromParent(); t.dispose(); }
   shot = null; puttRun = null; telemetry = null; puttTel = null; lastNumbers = null; lastTrace = ghostTrace = null;
   $('toast').classList.remove('on'); $('btnHole').textContent = 'Leave the hole (H)';
@@ -2394,6 +2414,7 @@ function selectHole(idx) {
 function leaveHole() {
   if (swing.active) return;
   hp.on = false; document.body.classList.remove('hole');
+  state.badStreak = 0;
   for (const t of trails.splice(0)) { t.group.removeFromParent(); t.dispose(); }
   shot = null; puttRun = null; telemetry = null; puttTel = null; lastNumbers = null;
   $('toast').classList.remove('on'); $('btnHole').textContent = `Play ${HOLE.name} — par ${HOLE.par} (H)`;
@@ -2587,7 +2608,7 @@ function stockShot(ci, bs = 1) {
   const club = CLUBS[ci], teed = isTeed(club), key = `${ci}|${state.power}|${bs}|${state.lie}|${teed}`;
   if (!stockCache.has(key)) {
     const r = computeImpact({ bs, ds: 1, thetaMouse: 0, sigma: 0, lateSign: 1, vImpact: 1, vPeak: 1, miss: 0 },
-      { face: 0, ballPos: 0, stance: 0, traj: 0 }, club, { lie: state.lie, slope: 'flat', power: state.power, dex: 5, composure: 50, teed, stock: true }, () => 0.5);
+      { face: 0, ballPos: 0, stance: 0, traj: 0 }, club, { lie: state.lie, slope: 'flat', power: state.power, dex: 5, composure: 5, badStreak: 0, teed, stock: true }, () => 0.5);
     const f = runFlight({ ballSpeed: r.ballSpeed, vla: r.vla, dir: 0, spin: r.spin, axis: 0, release: 0 }, { x: 0, z: 0 }, teed ? 0.04 : 0);
     stockCache.set(key, { carry: f.carry / YD, total: Math.hypot(f.p.x, f.p.z) / YD });
   }
@@ -2696,9 +2717,12 @@ function syncPanel() {
   const dexRisk = lerp(TUNE.dexRiskMin, TUNE.dexRiskMax, (state.dex - 1) / 9);
   $('outDex').textContent = `${state.dex} · ${dexRisk > 1 ? '+' : '−'}${Math.abs(Math.round((dexRisk - 1) * 100))}%`;
   $('outDex').title = `Risk from a difficult shot is multiplied by ${dexRisk.toFixed(2)}. Shot-shaping range ${shapeRange(state.dex).toFixed(2)}×.`;
-  const cs = composureState(state.composure);
-  $('outComp').textContent = `${state.composure} · ${cs === 'tilted' ? 'Tilt' : cs === 'zone' ? 'Zone' : 'Neut'}`;
-  $('outComp').style.color = cs === 'tilted' ? 'var(--red)' : cs === 'zone' ? 'var(--green)' : '';
+  $('inComp').value = state.composure;
+  const offPct = Math.round(compOffset(state.composure) * 100);
+  const tiltNow = tiltPenalty(state.composure, state.badStreak);
+  $('outComp').textContent = `${state.composure} · −${offPct}%`;
+  $('outComp').style.color = state.badStreak > 0 ? 'var(--red)' : '';
+  $('outComp').title = `Composure ${state.composure} offsets ${offPct}% of Tilt difficulty from consecutive bad shots${state.badStreak > 0 ? ` (current streak: ${state.badStreak} bad shot${state.badStreak > 1 ? 's' : ''}, Tilt +${Math.round(tiltNow * 100)}%)` : ' (no active bad-shot streak)'}.`;
   $('outSwingPx').textContent = `${Math.round(state.cal.swingPx)} ct`;
   $('outVTarget').textContent = `${state.cal.vTarget.toFixed(1)}/ms`;
   // putting
@@ -2915,8 +2939,9 @@ function updateCamera(dt, now) {
   camera.position.copy(camPos); camera.quaternion.copy(camQuat);
   if (Math.abs(camera.fov - fovGoal) > 0.01) { camera.fov = lerp(camera.fov, fovGoal, 1 - Math.exp(-4 * dt)); camera.updateProjectionMatrix(); }
 
-  if (state.view === 'address' && composureState(state.composure) === 'tilted') {     // nervous breathing
-    const k = 0.45 + 0.55 * (35 - state.composure) / 35, t = now / 1000;
+  const camTilt = state.view === 'address' ? tiltPenalty(state.composure, state.badStreak) : 0;
+  if (camTilt > 0.005) {     // nervous breathing when tilted
+    const k = clamp(camTilt, 0.3, 1.3), t = now / 1000;
     camera.position.y += Math.sin(t * 1.9) * 0.014 * k;
     camera.position.x += Math.sin(t * 1.3 + 1) * 0.008 * k;
     camera.rotateZ((Math.sin(t * 1.1) * 0.006 + Math.sin(t * 11) * 0.0012) * k);
@@ -3075,7 +3100,8 @@ function updateHUD() {
         dexParts.push(`Asked <b>${(1 + cxRes.asked).toFixed(2)}×</b> · Dexterity ${state.dex} ${cxRes.dexRisk <= 1 ? 'absorbs' : 'adds'} <b>${pct}%</b>`);
       }
       if (cxRes.cx.tilt > 0.005) {
-        dexParts.push(`Tilted (Composure ${state.composure}) adds <b>+${Math.round(cxRes.cx.tilt * 100)}%</b> difficulty`);
+        const offPct = Math.round(compOffset(state.composure) * 100);
+        dexParts.push(`Tilt (${state.badStreak} bad shot${state.badStreak > 1 ? 's' : ''}): Composure ${state.composure} offsets <b>${offPct}%</b> → <b>+${Math.round(cxRes.cx.tilt * 100)}%</b>`);
       }
       dexTxt = dexParts.join(' · ');
     }
@@ -3087,8 +3113,7 @@ function updateHUD() {
   if (cxRes) {
     const isShotType = (f) => f.startsWith('FWD SPIN') || f.startsWith('BACKSPIN');
     for (const f of cxRes.flags) badges += `<span class="badge ${['DECEL', 'BLADED', 'CHUNKED', 'TOPPED', 'FAT'].includes(f) ? 'red' : isShotType(f) ? '' : 'amber'}">${f === 'DECEL' ? 'DECEL DETECTED' : f}</span>`;
-    if (cxRes.comp === 'tilted') badges += '<span class="badge red">TILTED</span>';
-    if (cxRes.comp === 'zone') badges += '<span class="badge green">IN THE ZONE</span>';
+    if (cxRes.comp === 'tilted') badges += `<span class="badge red">TILTED${state.badStreak > 1 ? ' ×' + state.badStreak : ''}</span>`;
     if (showRes && !showRes.flags.some((f) => !isShotType(f)) && showRes.comp === 'neutral') badges += '<span class="badge green">CLEAN TEMPO</span>';
     if (showRes && telemetry.practice) badges += '<span class="badge">PRACTICE SWING</span>';
   }
@@ -3201,8 +3226,7 @@ function updatePuttHUD() {
     for (const f of res.flags) badges += `<span class="badge red">${f}</span>`;
     if (res.roll === 'PURE') badges += '<span class="badge green">PURE ROLL</span>';
     else if (res.roll === 'TOE' || res.roll === 'HEEL') badges += `<span class="badge amber">${res.roll} STRIKE</span>`;
-    if (res.comp === 'tilted') badges += '<span class="badge red">TILTED</span>';
-    if (res.comp === 'zone') badges += '<span class="badge green">IN THE ZONE</span>';
+    if (res.comp === 'tilted') badges += `<span class="badge red">TILTED${state.badStreak > 1 ? ' ×' + state.badStreak : ''}</span>`;
     if (tel.practice) badges += '<span class="badge">PRACTICE STROKE</span>';
   }
   if (txtCache.get('badges') !== badges) { txtCache.set('badges', badges); $('badges').innerHTML = badges; }
@@ -3311,7 +3335,7 @@ function drawSwingFx() {
   fxAnchor.set(0, BALL_R + ballLift(), 0).project(camera);                 // where the ball sits on screen
   const bx = (fxAnchor.x * 0.5 + 0.5) * W, by = (-fxAnchor.y * 0.5 + 0.5) * H;
   const px = state.cal.swingPx, k = TUNE.fxWidth * W / px;                 // screen px per mouse count
-  const putt = isPutt(), tol = putt ? puttGate(PUTTERS[state.putter], state.composure) : TUNE.contactFree;
+  const putt = isPutt(), tol = putt ? puttGate(PUTTERS[state.putter], state.composure, state.badStreak) : TUNE.contactFree;
   const ringR = tol * px * k;                                              // ball inside the ring = clean contact (putting: the gate)
   const X = (x) => bx + x * k, Y = (y) => by + y * k;
   g.save();
@@ -3475,7 +3499,7 @@ function debugSwing({ back = 1, tempo = 1, angle = 0, wobble = 0, traj, miss = 0
   }
   return telemetry;
 }
-window.__golf = { state, swing, TUNE, CLUBS, PUTT, PUTTERS, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure,
+window.__golf = { state, swing, TUNE, CLUBS, PUTT, PUTTERS, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty,
   get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; } };
 
 // The flat turf decals (lie patch, greens, arcs) are depth-offset toward the camera so they never z-fight with the
