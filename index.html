@@ -875,6 +875,291 @@
       padding-bottom: 8px;
     }
 
+    /* ---- test round + scorecard ---- */
+    body:not(.round) .only-round {
+      display: none !important;
+    }
+
+    body.round #inHole,
+    body.round label:has(#inHole) {
+      display: none !important;
+    }
+
+    #tbRoundCell b {
+      color: var(--green);
+    }
+
+    #tbRoundCell.over b {
+      color: var(--amber);
+    }
+
+    #btnRound {
+      margin: 0 0 6px;
+      background: rgba(94, 224, 138, .16);
+      border-color: rgba(94, 224, 138, .5);
+      font-weight: 600;
+    }
+
+    #scorecard {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(640px, calc(100vw - 32px));
+      display: none;
+      z-index: 5;
+      background: rgba(9, 13, 19, .94);
+      padding-bottom: 12px;
+    }
+
+    #scorecard.on {
+      display: block;
+    }
+
+    #scorecard .card-h {
+      font-size: 12px;
+      padding: 12px 16px 6px;
+    }
+
+    #scMsg {
+      padding: 2px 16px 10px;
+      font-size: 17px;
+      font-weight: 700;
+      white-space: pre-line;
+    }
+
+    #scMsg:empty {
+      display: none;
+    }
+
+    #scTable {
+      width: calc(100% - 32px);
+      margin: 0 16px;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+      font-size: 13px;
+    }
+
+    #scTable th,
+    #scTable td {
+      border: 1px solid var(--line);
+      padding: 6px 4px;
+      text-align: center;
+      min-width: 34px;
+    }
+
+    #scTable th {
+      color: var(--dim);
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    #scTable td:first-child,
+    #scTable th:first-child {
+      text-align: left;
+      padding-left: 10px;
+      color: var(--dim);
+      font-weight: 600;
+      min-width: 70px;
+    }
+
+    #scTable .cur {
+      background: rgba(53, 224, 255, .12);
+    }
+
+    #scTable .tot {
+      font-weight: 700;
+      background: rgba(255, 255, 255, .05);
+    }
+
+    #scTable .sc {
+      display: inline-block;
+      min-width: 24px;
+      line-height: 22px;
+      font-weight: 700;
+      border: 2px solid transparent;
+    }
+
+    #scTable .sc.eagle {
+      color: var(--amber);
+      border-color: var(--amber);
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px rgba(9, 13, 19, .94), 0 0 0 4px var(--amber);
+    }
+
+    #scTable .sc.birdie {
+      color: var(--green);
+      border-color: var(--green);
+      border-radius: 50%;
+    }
+
+    #scTable .sc.bogey {
+      color: var(--amber);
+      border-color: rgba(255, 194, 74, .7);
+    }
+
+    #scTable .sc.double {
+      color: var(--red);
+      border-color: var(--red);
+      box-shadow: 0 0 0 2px rgba(9, 13, 19, .94), 0 0 0 4px var(--red);
+    }
+
+    #scTable .under {
+      color: var(--green);
+    }
+
+    #scTable .over {
+      color: var(--amber);
+    }
+
+    #scBtns {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px 0;
+    }
+
+    #scBtns button {
+      margin: 0;
+      padding: 7px 10px;
+      font-weight: 600;
+    }
+
+    #scNext {
+      background: rgba(53, 224, 255, .16);
+      border-color: rgba(53, 224, 255, .5);
+    }
+
+    /* ---- arcade leaderboard ---- */
+    #scorecard {
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+    }
+
+    #lbEntry,
+    #lbBoard {
+      display: none;
+      margin: 12px 16px 0;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: #05070b;
+      border: 1px solid rgba(255, 194, 74, .35);
+      font-family: "Consolas", "Courier New", monospace;
+      text-align: center;
+    }
+
+    #scorecard.entry #lbEntry,
+    #scorecard.board #lbBoard {
+      display: block;
+    }
+
+    #scorecard.lbonly #scMsg,
+    #scorecard.lbonly #scTable,
+    #scorecard.entry #scBtns {
+      display: none;
+    }
+
+    .lb-new {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: .2em;
+      color: #ffe066;
+      text-shadow: 0 0 10px rgba(255, 194, 74, .8);
+      animation: lbBlink 0.9s steps(2, start) infinite;
+    }
+
+    .lb-sub,
+    .lb-h {
+      margin-top: 4px;
+      font-size: 13px;
+      letter-spacing: .3em;
+      color: #35e0ff;
+      text-shadow: 0 0 8px rgba(53, 224, 255, .7);
+    }
+
+    #lbSlots {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin: 12px 0 8px;
+    }
+
+    #lbSlots span {
+      width: 48px;
+      padding: 4px 0 6px;
+      font-size: 40px;
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 0 0 10px rgba(255, 255, 255, .55);
+      border-bottom: 4px solid rgba(255, 255, 255, .25);
+      cursor: pointer;
+    }
+
+    #lbSlots span.on {
+      color: #ffe066;
+      text-shadow: 0 0 12px rgba(255, 194, 74, .9);
+      border-bottom-color: #ffe066;
+      animation: lbBlink 0.7s steps(2, start) infinite;
+    }
+
+    .lb-help {
+      font-size: 11px;
+      color: var(--dim);
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+
+    #lbTable {
+      width: 100%;
+      margin-top: 8px;
+      border-collapse: collapse;
+      font-size: 15px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #lbTable th {
+      font-size: 11px;
+      letter-spacing: .15em;
+      color: var(--dim);
+      padding: 2px 6px 6px;
+      font-weight: 700;
+    }
+
+    #lbTable td {
+      padding: 3px 6px;
+      color: #e8eef5;
+    }
+
+    #lbTable tr.r1 td {
+      color: #ffe066;
+      text-shadow: 0 0 8px rgba(255, 194, 74, .6);
+    }
+
+    #lbTable tr.r2 td {
+      color: #d9e2ec;
+    }
+
+    #lbTable tr.r3 td {
+      color: #f0a868;
+    }
+
+    #lbTable tr.mine td {
+      color: #35e0ff;
+      text-shadow: 0 0 10px rgba(53, 224, 255, .8);
+      animation: lbBlink 0.9s steps(2, start) infinite;
+    }
+
+    #lbTable td.empty {
+      color: rgba(255, 255, 255, .25);
+    }
+
+    @keyframes lbBlink {
+      50% {
+        opacity: .35;
+      }
+    }
+
     /* On a hole the map card joins the right column, so the telemetry card tightens up to leave the bag room. The bag
        keeps a minimum height; on a very short window the telemetry scrolls instead of squeezing the bag out. */
     body.hole #bag {
@@ -1227,6 +1512,7 @@
 
   <div id="topbar" class="card">
     <div class="tb only-hole" id="tbHoleCell"><i id="tbHoleL">Hole 1 · Par 5</i><b id="tbHole">Shot 1</b></div>
+    <div class="tb only-round" id="tbRoundCell" title="Test round score (K shows the scorecard)"><i>Test round</i><b id="tbRound">E</b></div>
     <div class="tb" id="tbView"><i>Camera</i><b id="tbViewV">1 · Scout</b></div>
     <div class="tb"><i id="tbClubL">Club</i><b id="tbClub">—</b></div>
     <div class="tb"><i id="tbPinL">Target pin</i><b id="tbPin">—</b></div>
@@ -1249,6 +1535,10 @@
       </div>
       <div id="panelBody">
         <label class="row wide" style="margin-bottom:4px"><span>Course</span><select id="inHole"></select></label>
+        <div class="btn2" style="grid-template-columns: 1fr auto; margin-bottom: 6px">
+          <button id="btnRound" style="margin: 0">Play a test round — holes 1–6</button>
+          <button id="btnBoard" style="margin: 0" title="Top 10 test-round scores (L)">🏆 Top 10</button>
+        </div>
         <button id="btnHole">Play Hole 1 — par 5 (H)</button>
         <button id="btnChip">Go to the chipping green (C)</button>
         <button id="btnMode">Go to the putting green (G)</button>
@@ -1462,6 +1752,22 @@
       </div>
     </div>
 
+    <div id="scorecard" class="card">
+      <div class="card-h"><span id="scTitle">Scorecard</span><span class="tag" id="scTag"></span></div>
+      <div id="scMsg"></div>
+      <table id="scTable"></table>
+      <div id="lbEntry">
+        <div class="lb-new">NEW HIGH SCORE!</div>
+        <div class="lb-sub">ENTER YOUR INITIALS</div>
+        <div id="lbSlots"><span data-i="0">A</span><span data-i="1">A</span><span data-i="2">A</span></div>
+        <div class="lb-help">Type letters · ↑ ↓ change · ← → move · Enter to save · Esc to skip</div>
+      </div>
+      <div id="lbBoard">
+        <div class="lb-h">— TOP 10 —</div>
+        <table id="lbTable"></table>
+      </div>
+      <div id="scBtns"><button id="scNext">Next hole (N)</button><button id="scClose">Close (K)</button></div>
+    </div>
     <div id="hint" class="card"></div>
     <div id="toast"></div>
     <div id="boot">Loading Three.js…</div>
@@ -2897,6 +3203,59 @@
           ],
           hardpan: [{ x: 42, z: -265, rx: 20, rz: 30, rot: -0.5 }],
         },
+        {
+          name: 'Hole 4', par: 4, desc: 'Straightaway',
+          path: [[0, 0], [3, -140], [10, -280], [18, -418]],
+          fairwayFrom: 40, halfWidth: 15, firstCut: 8,
+          green: { x: 18, z: -418, rx: 13, rz: 15, rot: 0.15 }, pin: [15, -423],
+          greenSurface: {
+            tilt: { x: 0.005, z: -0.010 },                                         // back to front, a touch right to left
+            bumps: [{ x: -4, z: 3, amp: 4, sigma: 4 }, { x: 5, z: -5, amp: -3, sigma: 4 }]
+          },
+          bunkers: [
+            { x: -14, z: -255, rx: 8, rz: 14, rot: 0.1, type: 'fbunker' },        // left side of the landing zone
+            { x: 30, z: -285, rx: 9, rz: 13, rot: -0.15, type: 'fbunker' },       // right side, a little further on
+            { x: -2, z: -405, rx: 7, rz: 9, rot: 0.3, type: 'bunker' },           // greenside, front left
+            { x: 37, z: -422, rx: 7, rz: 11, rot: -0.2, type: 'bunker' },         // greenside, right
+          ],
+          hardpan: [{ x: 40, z: -200, rx: 14, rz: 24, rot: 0.1 }],
+        },
+        {
+          name: 'Hole 5', par: 3, desc: 'Long par 3',
+          path: [[0, 0], [-3, -100], [-6, -205]],
+          fairwayFrom: 120, halfWidth: 12, firstCut: 7,
+          green: { x: -6, z: -205, rx: 18, rz: 11, rot: -0.1 }, pin: [-12, -203],   // wide and shallow
+          greenSurface: {
+            tilt: { x: 0, z: -0.006 },
+            tiers: [{ x: 0, z: 0, ang: 0, rise: 4, width: 4 }],                    // a ridge: the right half sits higher
+            bumps: [{ x: -8, z: 2, amp: -2, sigma: 3.5 }]
+          },
+          bunkers: [
+            { x: -6, z: -188, rx: 12, rz: 5, rot: 0, type: 'bunker' },             // across the front
+            { x: -29, z: -207, rx: 5, rz: 9, rot: 0.2, type: 'bunker' },           // left
+            { x: 19, z: -212, rx: 6, rz: 8, rot: -0.1, type: 'bunker' },           // right
+          ],
+          hardpan: [],
+        },
+        {
+          name: 'Hole 6', par: 5, desc: 'Double dogleg',
+          path: [[0, 0], [5, -150], [45, -280], [55, -400], [15, -540]],          // bends right, then back left to the green
+          fairwayFrom: 45, halfWidth: 16, firstCut: 8,
+          green: { x: 15, z: -540, rx: 14, rz: 14, rot: 0 }, pin: [19, -545],
+          greenSurface: {
+            tilt: { x: -0.006, z: -0.008 },
+            tiers: [{ x: 0, z: -2, ang: -Math.PI / 2, rise: 4, width: 5 }],        // two tiers: the back is higher
+            bumps: [{ x: 6, z: 4, amp: -3, sigma: 4 }]
+          },
+          bunkers: [
+            { x: 62, z: -250, rx: 9, rz: 13, rot: -0.3, type: 'fbunker' },        // inside of the first bend
+            { x: 28, z: -300, rx: 8, rz: 12, rot: 0.2, type: 'fbunker' },         // through the first bend
+            { x: 66, z: -420, rx: 8, rz: 12, rot: 0.1, type: 'fbunker' },         // right of the lay-up
+            { x: -5, z: -532, rx: 7, rz: 10, rot: 0.3, type: 'bunker' },          // greenside, left
+            { x: 36, z: -548, rx: 6, rz: 10, rot: -0.2, type: 'bunker' },         // greenside, right
+          ],
+          hardpan: [{ x: 18, z: -380, rx: 12, rz: 22, rot: 0.3 }],                 // bare ground inside the second bend
+        },
       ];
       let HOLE = HOLES[0];
       // How each surface plays when the ball lands and rolls on it (multipliers on the range-turf bounce model), and the lie it gives.
@@ -3963,6 +4322,7 @@
       }
       function leaveHole() {
         if (swing.active) return;
+        if (round.on) endRound();          // leaving the course ends a test round
         hp.on = false; document.body.classList.remove('hole');
         state.badStreak = 0;
         for (const t of trails.splice(0)) { t.group.removeFromParent(); t.dispose(); }
@@ -4014,7 +4374,7 @@
       }
       // R: finish whatever is still moving, move the ball to where it ended up, and set up the next stroke.
       function advanceHole() {
-        if (hp.done) return enterHole();
+        if (hp.done) return round.on ? scorecardNext() : enterHole();        // in a round there are no replays: R moves on
         if (isPutt()) {
           if (!puttRun) return;
           const q = puttRun.sim;
@@ -4047,11 +4407,210 @@
         if (shot.holed) return finishHole();
         setupNextShot();
       }
+      const scoreName = (strokes, par) => {
+        const d = strokes - par;
+        return strokes === 1 ? 'HOLE IN ONE' : d <= -3 ? 'ALBATROSS' : d === -2 ? 'EAGLE' : d === -1 ? 'BIRDIE' : d === 0 ? 'PAR' : d === 1 ? 'BOGEY' : d === 2 ? 'DOUBLE BOGEY' : `${d} OVER`;
+      };
       function finishHole() {
         hp.done = true; shot = null;
-        const d = hp.strokes - HOLE.par;
-        const name = hp.strokes === 1 ? 'HOLE IN ONE' : d <= -3 ? 'ALBATROSS' : d === -2 ? 'EAGLE' : d === -1 ? 'BIRDIE' : d === 0 ? 'PAR' : d === 1 ? 'BOGEY' : d === 2 ? 'DOUBLE BOGEY' : `${d} OVER`;
+        const name = scoreName(hp.strokes, HOLE.par);
+        if (round.on) {          // a test round: record it and show the card
+          round.scores[hp.holeIdx] = { strokes: hp.strokes, putts: hp.putts, par: HOLE.par };
+          $('toast').classList.remove('on');
+          showScorecard(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}`);
+          return;
+        }
         toast(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}\nPress R to replay · N for next hole`, 12000);
+      }
+
+      // =====================================================================================================
+      //  TEST ROUND: holes 1-6 in order, scored. Each hole is recorded when it is holed (strokes and putts); the card shows
+      //  after every hole (and on K), and the final card after the last. Tilt carries from hole to hole, as it would.
+      // =====================================================================================================
+      const round = { on: false, scores: [], over: false };
+      const roundTotals = () => {
+        let strokes = 0, par = 0, putts = 0, played = 0;
+        round.scores.forEach((s) => { if (s) { strokes += s.strokes; par += s.par; putts += s.putts; played++; } });
+        return { strokes, par, putts, played, toPar: strokes - par };
+      };
+      const fmtToPar = (d) => d === 0 ? 'E' : d > 0 ? `+${d}` : `${d}`;
+      function startRound() {
+        if (swing.active) return;
+        round.on = true; round.over = false; round.scores = []; round.lbDone = false; round.lbMissed = false;
+        lbEntry.active = false; lbEntry.mineT = null;
+        document.body.classList.add('round'); hideScorecard();
+        hp.holeIdx = 0; buildHole(0); enterHole();
+        $('btnRound').textContent = 'Quit the test round';
+        toast(`TEST ROUND\nHoles 1–${HOLES.length} · ${HOLES.reduce((s, h) => s + h.par, 0)} par`, 2600);
+      }
+      function endRound() {
+        round.on = false; round.over = false; lbEntry.active = false;
+        document.body.classList.remove('round'); hideScorecard();
+        $('btnRound').textContent = `Play a test round — holes 1–${HOLES.length}`;
+      }
+      function nextRoundHole() {
+        if (!round.on || swing.active) return;
+        if (hp.holeIdx >= HOLES.length - 1) { showScorecard(); return; }          // the round is over: the final card stays
+        const streak = state.badStreak;
+        hideScorecard();
+        hp.holeIdx++; buildHole(hp.holeIdx); enterHole();
+        setBadStreak(streak);                                                       // tilt follows you to the next tee
+      }
+      function quitRound() {
+        if (swing.active) return;
+        endRound();
+        if (hp.on) leaveHole();
+        toast('Test round ended', 1600);
+      }
+      const doneHint = () => lbEntry.active ? 'Type your initials (or <kbd>↑</kbd><kbd>↓</kbd>) · <kbd>←</kbd><kbd>→</kbd> move · <kbd>Enter</kbd> save · <kbd>Esc</kbd> skip'
+        : round.on
+        ? (round.over ? '<kbd>N</kbd> play the round again · <kbd>K</kbd> scorecard · <kbd>H</kbd> back to the range' : '<kbd>N</kbd> or <kbd>R</kbd> next hole · <kbd>K</kbd> scorecard · <kbd>H</kbd> quit the round')
+        : '<kbd>R</kbd> play the hole again · <kbd>N</kbd> next hole · <kbd>H</kbd> back to the range';
+      function hideScorecard() { $('scorecard').classList.remove('on'); }
+      function showScorecard(msg = '') {
+        const n = HOLES.length, t = roundTotals(), final = t.played === n;
+        round.over = final;
+        const cur = hp.on && !hp.done ? hp.holeIdx : -1;
+        let head = '<tr><th>Hole</th>', parRow = '<tr><td>Par</td>', scRow = '<tr><td>Score</td>', ptRow = '<tr><td>Putts</td>', tpRow = '<tr><td>To par</td>';
+        let run = 0;
+        for (let i = 0; i < n; i++) {
+          const s = round.scores[i], c = i === cur ? ' class="cur"' : '';
+          head += `<th${c}>${i + 1}</th>`;
+          parRow += `<td${c}>${HOLES[i].par}</td>`;
+          if (s) {
+            const d = s.strokes - s.par, cls = d <= -2 ? 'eagle' : d === -1 ? 'birdie' : d === 1 ? 'bogey' : d >= 2 ? 'double' : '';
+            run += d;
+            scRow += `<td${c}><span class="sc ${cls}">${s.strokes}</span></td>`;
+            ptRow += `<td${c}>${s.putts}</td>`;
+            tpRow += `<td${c}><span class="${run < 0 ? 'under' : run > 0 ? 'over' : ''}">${fmtToPar(run)}</span></td>`;
+          } else {
+            scRow += `<td${c}>${i === cur ? '…' : ''}</td>`; ptRow += `<td${c}></td>`; tpRow += `<td${c}></td>`;
+          }
+        }
+        const totPar = HOLES.reduce((s, h) => s + h.par, 0);
+        head += '<th class="tot">Total</th></tr>';
+        parRow += `<td class="tot">${totPar}</td></tr>`;
+        scRow += `<td class="tot">${t.played ? t.strokes : ''}</td></tr>`;
+        ptRow += `<td class="tot">${t.played ? t.putts : ''}</td></tr>`;
+        tpRow += `<td class="tot"><span class="${t.toPar < 0 ? 'under' : t.toPar > 0 ? 'over' : ''}">${t.played ? fmtToPar(t.toPar) : ''}</span></td></tr>`;
+        $('scTable').innerHTML = head + parRow + scRow + ptRow + tpRow;
+        $('scTitle').textContent = final ? 'Final scorecard' : 'Scorecard';
+        $('scTag').textContent = final ? `${t.strokes} strokes · ${fmtToPar(t.toPar)}` : t.played ? `${fmtToPar(t.toPar)} thru ${t.played}` : 'Test round';
+        $('scMsg').textContent = final
+          ? `${msg ? msg + '\n\n' : ''}Round complete: ${t.strokes} strokes on a par ${totPar} (${fmtToPar(t.toPar)}) · ${t.putts} putts`
+          : msg;
+        $('scNext').textContent = final ? 'Play again' : hp.done ? `Next: Hole ${hp.holeIdx + 2} (N)` : 'Back to the hole (K)';
+        $('scClose').textContent = final ? 'Back to the range' : 'Close (K)';
+        // the end of the round: a top-10 score gets the initials screen, then the board
+        const sc = $('scorecard');
+        scMode = 'round';
+        sc.classList.remove('entry', 'board', 'lbonly');
+        if (final) {
+          if (!round.lbDone && !lbEntry.active) {
+            if (lbQualifies(t)) startEntry();
+            else { round.lbDone = true; round.lbMissed = true; }
+          }
+          if (lbEntry.active) sc.classList.add('entry');
+          else { renderBoard(); sc.classList.add('board'); }
+          if (round.lbMissed) $('scMsg').textContent += '\nNot in the top 10 this time.';
+        }
+        sc.classList.add('on');
+      }
+      function scorecardNext() {
+        if (scMode === 'board') { if (round.on) return hideScorecard(); return startRound(); }
+        if (round.over) return startRound();
+        if (hp.done) return nextRoundHole();
+        hideScorecard();
+      }
+      function scorecardClose() {
+        if (scMode === 'board') return hideScorecard();
+        if (round.over) return quitRound();
+        hideScorecard();
+      }
+
+      // =====================================================================================================
+      //  ARCADE LEADERBOARD: the top 10 test rounds (fewest strokes; fewer putts break a tie, then the earlier round),
+      //  three initials each, kept in this browser's local storage.
+      // =====================================================================================================
+      const LB_KEY = 'golfLeaderboard', LB_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let lbMem = null, scMode = 'round';
+      const lbEntry = { active: false, chars: ['A', 'A', 'A'], pos: 0, mineT: null };
+      function lbLoad() {
+        if (lbMem) return lbMem;
+        try { lbMem = JSON.parse(localStorage.getItem(LB_KEY) || '[]'); } catch { lbMem = []; }
+        if (!Array.isArray(lbMem)) lbMem = [];
+        return lbMem;
+      }
+      function lbSave(list) { lbMem = list; try { localStorage.setItem(LB_KEY, JSON.stringify(list)); } catch { /* storage unavailable: kept for this session */ } }
+      const lbCmp = (a, b) => a.strokes - b.strokes || a.putts - b.putts || a.t - b.t;
+      function lbQualifies(t) {
+        const L = lbLoad();
+        return L.length < 10 || lbCmp({ strokes: t.strokes, putts: t.putts, t: Infinity }, L[L.length - 1]) < 0;
+      }
+      function startEntry() {
+        let last = 'AAA';
+        try { last = (localStorage.getItem('golfInitials') || 'AAA').toUpperCase(); } catch { /* default */ }
+        lbEntry.chars = last.padEnd(3, 'A').slice(0, 3).split('').map((ch) => (LB_CHARS.includes(ch) ? ch : 'A'));
+        lbEntry.pos = 0; lbEntry.active = true;
+        renderEntry();
+      }
+      function renderEntry() {
+        [...$('lbSlots').children].forEach((s, i) => { s.textContent = lbEntry.chars[i]; s.classList.toggle('on', i === lbEntry.pos); });
+      }
+      function finishEntry(save) {
+        if (!lbEntry.active) return;
+        lbEntry.active = false; round.lbDone = true;
+        if (save) {
+          const t = roundTotals(), name = lbEntry.chars.join('');
+          const entry = { name, strokes: t.strokes, toPar: t.toPar, putts: t.putts, par: t.par, t: Date.now() };
+          lbSave([...lbLoad(), entry].sort(lbCmp).slice(0, 10));
+          lbEntry.mineT = entry.t;
+          try { localStorage.setItem('golfInitials', name); } catch { /* fine */ }
+        }
+        showScorecard();
+      }
+      // while the initials screen is up it takes every key
+      function entryKey(e) {
+        const c = e.code, n = LB_CHARS.length;
+        e.preventDefault();
+        if (e.repeat && !['ArrowUp', 'ArrowDown'].includes(c)) return;
+        let ch = null;
+        if (/^Key[A-Z]$/.test(c)) ch = c[3];
+        else if (/^(Digit|Numpad)[0-9]$/.test(c)) ch = c[c.length - 1];
+        if (ch) { lbEntry.chars[lbEntry.pos] = ch; lbEntry.pos = Math.min(2, lbEntry.pos + 1); }
+        else if (c === 'Backspace' || c === 'ArrowLeft') lbEntry.pos = Math.max(0, lbEntry.pos - 1);
+        else if (c === 'ArrowRight') lbEntry.pos = Math.min(2, lbEntry.pos + 1);
+        else if (c === 'ArrowUp' || c === 'ArrowDown') {
+          const i = LB_CHARS.indexOf(lbEntry.chars[lbEntry.pos]);
+          lbEntry.chars[lbEntry.pos] = LB_CHARS[(i + (c === 'ArrowUp' ? 1 : n - 1)) % n];
+        } else if (c === 'Enter' || c === 'NumpadEnter') return finishEntry(true);
+        else if (c === 'Escape') return finishEntry(false);
+        renderEntry();
+      }
+      const ordinal = (n) => `${n}${n % 10 === 1 && n !== 11 ? 'ST' : n % 10 === 2 && n !== 12 ? 'ND' : n % 10 === 3 && n !== 13 ? 'RD' : 'TH'}`;
+      function renderBoard() {
+        const L = lbLoad();
+        let h = '<tr><th>RANK</th><th>NAME</th><th>SCORE</th><th>TO PAR</th><th>PUTTS</th><th>DATE</th></tr>';
+        for (let i = 0; i < 10; i++) {
+          const r = L[i];
+          if (!r) { h += `<tr><td class="empty">${ordinal(i + 1)}</td><td class="empty">---</td><td class="empty">--</td><td class="empty">--</td><td class="empty">--</td><td class="empty">--/--</td></tr>`; continue; }
+          const d = new Date(r.t), cls = [i < 3 ? `r${i + 1}` : '', r.t === lbEntry.mineT ? 'mine' : ''].join(' ').trim();
+          h += `<tr${cls ? ` class="${cls}"` : ''}><td>${ordinal(i + 1)}</td><td>${r.name}</td><td>${r.strokes}</td><td>${fmtToPar(r.toPar)}</td><td>${r.putts}</td><td>${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}</td></tr>`;
+        }
+        $('lbTable').innerHTML = h;
+      }
+      // the board on its own (button or L), any time
+      function showLeaderboard() {
+        if (lbEntry.active) return;
+        renderBoard();
+        const sc = $('scorecard');
+        scMode = 'board';
+        sc.classList.remove('entry');
+        sc.classList.add('board', 'lbonly', 'on');
+        $('scTitle').textContent = 'Top 10 · test round';
+        $('scTag').textContent = `holes 1–${HOLES.length} · par ${HOLES.reduce((s, h) => s + h.par, 0)}`;
+        $('scNext').textContent = round.on ? 'Back to the round' : 'Play a test round';
+        $('scClose').textContent = 'Close (L)';
       }
 
       function shotMapTransform() {
@@ -4174,6 +4733,11 @@
         setText('mapTag', hp.done ? `${hp.strokes} strokes` : isPutt() && markRead && !puttRun ? `${fmtBandFt(markRead.cupLo, markRead.cupHi)} ft to the pin`
           : isChip() && chipRead ? `${fmtBandYd(chipRead.pinLo, chipRead.pinHi)} yds to the pin` : `${fmtToPin(pinDist())} to the pin`);
         setText('tbHole', hp.done ? `Holed in ${hp.strokes}` : `Shot ${hp.strokes + 1}${hp.putts ? ` · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}` : ''}`);
+        if (round.on) {          // test round: score so far (holes finished) and where you are
+          const t = roundTotals();
+          setText('tbRound', t.played ? `${fmtToPar(t.toPar)} thru ${t.played} · Hole ${hp.holeIdx + 1}/${HOLES.length}` : `Hole ${hp.holeIdx + 1}/${HOLES.length}`);
+          $('tbRoundCell').classList.toggle('over', t.toPar > 0);
+        }
       }
 
       // =====================================================================================================
@@ -4380,11 +4944,21 @@
 
       window.addEventListener('keydown', (e) => {
         if (e.target instanceof HTMLSelectElement) return;
+        if (lbEntry.active) return entryKey(e);          // the initials screen takes every key
         const c = e.code;
         if (['Space', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(c)) e.preventDefault();
         if (c === 'ShiftLeft' || c === 'ShiftRight') { state.peekKey = true; return; }
+        if (c === 'KeyL' && !e.repeat && !swing.active) {      // the top-10 board, any time
+          if ($('scorecard').classList.contains('on') && scMode === 'board') hideScorecard(); else showLeaderboard();
+          return;
+        }
         held.add(c);
         if (c === 'KeyH' && !e.repeat) return hp.on ? leaveHole() : enterHole();
+        if (c === 'KeyK' && !e.repeat && round.on) { if ($('scorecard').classList.contains('on')) hideScorecard(); else showScorecard(); return; }   // K only shows / hides
+        if (c === 'KeyN' && !e.repeat && round.on && !swing.active) {      // a test round goes in order: N only once the hole is finished
+          if (hp.done) scorecardNext(); else toast('Finish the hole first\nThe test round plays 1 to 6 in order', 1800);
+          return;
+        }
         if (c === 'KeyN' && !e.repeat && hp.on && !swing.active) return selectHole((hp.holeIdx + 1) % HOLES.length);
         if (c === 'KeyM' && !e.repeat && hp.on) { hp.mapZoom = (hp.mapZoom + 1) % 3; return; }
         if (c === 'KeyG' && !e.repeat) { if (!hp.on) setMode(isPutt() ? 'range' : 'putt'); return; }      // on the hole the game decides when you putt
@@ -4520,6 +5094,11 @@
         $('btnChip').addEventListener('click', () => setMode(isChip() ? 'range' : 'chip'));
         $('btnMode').addEventListener('click', () => setMode(isPutt() ? 'range' : 'putt'));
         $('btnHole').addEventListener('click', () => (hp.on ? leaveHole() : enterHole()));
+        $('btnRound').addEventListener('click', () => (round.on ? quitRound() : startRound()));
+        $('btnBoard').addEventListener('click', (e) => { showLeaderboard(); e.currentTarget.blur(); });
+        $('lbSlots').addEventListener('click', (e) => { const s = e.target.closest('span'); if (s && lbEntry.active) { lbEntry.pos = +s.dataset.i; renderEntry(); } });
+        $('scNext').addEventListener('click', (e) => { scorecardNext(); e.currentTarget.blur(); });
+        $('scClose').addEventListener('click', (e) => { scorecardClose(); e.currentTarget.blur(); });
         $('inHole').addEventListener('change', (e) => { selectHole(+e.target.value); });
         $('btnMapOut').addEventListener('click', (e) => { hp.mapZoom = Math.max(0, hp.mapZoom - 1); e.currentTarget.blur(); });
         $('btnMapZoom').addEventListener('click', (e) => { hp.mapZoom = Math.min(2, hp.mapZoom + 1); e.currentTarget.blur(); });
@@ -4792,7 +5371,7 @@
 
         // hint line
         let hint;
-        if (hp.on && hp.done) hint = '<kbd>R</kbd> play the hole again · <kbd>N</kbd> next hole · <kbd>H</kbd> back to the range';
+        if (hp.on && hp.done) hint = doneHint();
         else if (chip && state.view === 'overhead') hint = `<kbd>Click</kbd> / drag or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> place the landing spot · <kbd>F</kbd> reset it · <kbd>1</kbd>–<kbd>4</kbd> shot type · <kbd>Wheel</kbd> zoom (${state.puttZoom === 'green' ? 'full green' : 'chip'}) · <kbd>V</kbd> green read · <kbd>Space</kbd> step in`;
         else if (chip && state.view === 'scout') hint = `<kbd>V</kbd> overhead · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move the landing spot · <kbd>F</kbd> reset it · <kbd>1</kbd>–<kbd>4</kbd> shot type · <kbd>[</kbd><kbd>]</kbd> or wheel: club · <kbd>Space</kbd> step in${hp.on ? '' : ' · <kbd>N</kbd> new chip · <kbd>Shift+N</kbd> new green · <kbd>C</kbd> range'}`;
         else if (chip && state.view === 'flight') hint = hp.on ? '<kbd>R</kbd> walk to the ball' : '<kbd>R</kbd> chip it again · <kbd>N</kbd> new chip · <kbd>T</kbd> clear trails';
@@ -4807,6 +5386,7 @@
         }
         else if (peek) hint = 'Looking down the line — swing is locked · <kbd>A</kbd><kbd>D</kbd> adjust aim · Orange = feet, white = target line';
         else hint = 'Hold <kbd>Left-Click</kbd>: pull the ring left, swing it back <b>through the ball</b> · <kbd>F</kbd> shape · <kbd>B</kbd> spin · <kbd>W</kbd> lower / <kbd>S</kbd> higher · <kbd>Q</kbd><kbd>E</kbd> face · <kbd>A</kbd><kbd>D</kbd> ball · <kbd>Z</kbd><kbd>C</kbd> stance · <kbd>X</kbd> back to the shot type · <kbd>Shift</kbd> peek · <kbd>P</kbd> practice · <kbd>Space</kbd> back';
+        if (round.on && hint && !hp.done) hint += ' · <kbd>K</kbd> scorecard';
         if (txtCache.get('hint') !== hint) { txtCache.set('hint', hint); $('hint').innerHTML = hint; }
 
         // ---- telemetry card
@@ -4958,7 +5538,7 @@
         $('tbSetup').style.color = '';
 
         let hint;
-        if (hp.on && hp.done) hint = '<kbd>R</kbd> play the hole again · <kbd>N</kbd> next hole · <kbd>H</kbd> back to the range';
+        if (hp.on && hp.done) hint = doneHint();
         else if (state.view === 'overhead') hint = `<kbd>Click</kbd> / drag or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> place target marker · <kbd>C</kbd> reset to cup · <kbd>Wheel</kbd> zoom (${state.puttZoom === 'green' ? 'full green' : 'putt'}) · <kbd>V</kbd> green read · <kbd>Space</kbd> step in`;
         else if (state.view === 'scout' && hp.on) hint = '<kbd>V</kbd> overhead view · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move marker · <kbd>C</kbd> cup · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> scale · <kbd>[</kbd><kbd>]</kbd> putter · <kbd>Space</kbd> step in';
         else if (state.view === 'scout') hint = '<kbd>V</kbd> overhead view · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move marker · <kbd>C</kbd> cup · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> scale · <kbd>[</kbd><kbd>]</kbd> putter · <kbd>N</kbd> new putt · <kbd>Shift+N</kbd> new green · <kbd>Space</kbd> step in · <kbd>G</kbd> range';
@@ -4966,6 +5546,7 @@
         else if (swing.active) hint = swing.phase === 'ready' || swing.phase === 'back' ? 'Draw the putter <b>back</b> into the marker band…' : 'Stroke it <b>through the gate</b> at the same rhythm you took it back';
         else if (peek) hint = 'Looking down your start line — the stroke is locked · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> adjust marker · <kbd>C</kbd> cup';
         else hint = 'Hold <kbd>Left-Click</kbd>: pull back to set the pace, then stroke through the ball at the same rhythm · <kbd>Shift</kbd> peek · <kbd>V</kbd> overhead · <kbd>P</kbd> practice · <kbd>Space</kbd> back';
+        if (round.on && hint && !hp.done) hint += ' · <kbd>K</kbd> scorecard';
         if (txtCache.get('hint') !== hint) { txtCache.set('hint', hint); $('hint').innerHTML = hint; }
 
         // ---- telemetry card
@@ -5334,7 +5915,7 @@
         return telemetry;
       }
       window.__golf = {
-        state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot,
+        state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty,
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }
       };
