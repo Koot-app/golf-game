@@ -881,7 +881,12 @@
     }
 
     body.round #inHole,
-    body.round label:has(#inHole) {
+    body.round label:has(#inHole),
+    body.round label:has(#inPower),
+    body.round label:has(#inDex),
+    body.round label:has(#inComp),
+    body.round label:has(#inPer),
+    body.round .round-hide {
       display: none !important;
     }
 
@@ -1249,21 +1254,20 @@
       font-size: 13.5px;
     }
 
+    /* the minimap sits at the top of the left column; clicking it cycles the zoom (box-sizing: border-box, so the
+       drawing area is 234 x 158 = MAP_W x MAP_H) */
     #holeMap {
       display: block;
-      width: calc(100% - 28px);
-      height: 210px;
-      margin: 0 14px;
+      width: 236px;
+      height: 160px;
+      margin: 0 12px;
       border-radius: 6px;
       border: 1px solid var(--line);
+      cursor: zoom-in;
     }
 
-    #btnMapOut,
-    #btnMapZoom {
-      padding: 2px 7px;
-      font-size: 10px;
-      text-transform: none;
-      letter-spacing: normal;
+    #mapCard .card-h {
+      padding: 7px 12px 5px;
     }
 
     .setup-rst:disabled {
@@ -1530,13 +1534,20 @@
   </div>
 
   <div id="leftcol">
+    <div id="mapCard" class="card only-hole">
+      <div class="card-h">
+        <span id="mapTitle">Hole 1 · Par 5</span>
+        <span class="tag" id="mapTag"></span>
+      </div>
+      <canvas id="holeMap" width="234" height="160" title="Click to zoom: whole hole → your shot → landing area (M)"></canvas>
+    </div>
     <div id="panel" class="card">
       <div class="card-h" id="panelToggle"><span id="panelTitle">Range Sandbox</span><span id="panelChevron">▾</span>
       </div>
       <div id="panelBody">
         <label class="row wide" style="margin-bottom:4px"><span>Course</span><select id="inHole"></select></label>
         <div class="btn2" style="grid-template-columns: 1fr auto; margin-bottom: 6px">
-          <button id="btnRound" style="margin: 0">Play a test round — holes 1–6</button>
+          <button id="btnRound" style="margin: 0">Test round · holes 1–6</button>
           <button id="btnBoard" style="margin: 0" title="Top 10 test-round scores (L)">🏆 Top 10</button>
         </div>
         <button id="btnHole">Play Hole 1 — par 5 (H)</button>
@@ -1547,10 +1558,10 @@
           <label class="row wide sandbox-only"><span>Surface</span><select id="inLie"></select></label>
           <label class="row wide sandbox-only"><span>Slope</span><select id="inSlope"></select></label>
 
-          <div class="sec">Wind</div>
-          <label class="row"><span>Speed</span><input type="range" id="inWind" min="0" max="30" step="1" value="0"><b
+          <div class="sec round-hide">Wind</div>
+          <label class="row round-hide"><span>Speed</span><input type="range" id="inWind" min="0" max="30" step="1" value="0"><b
               id="outWind"></b></label>
-          <label class="row"><span>From</span><input type="range" id="inWindDir" min="0" max="359" step="1" value="0"><b
+          <label class="row round-hide"><span>From</span><input type="range" id="inWindDir" min="0" max="359" step="1" value="0"><b
               id="outWindDir"></b></label>
         </div>
         <div class="only-green">
@@ -1567,7 +1578,7 @@
             <label class="row" title="Extra humps and hollows on top of the overall tilt."><span>Contours</span><input
                 type="range" id="inPUnd" min="0" max="1" step="0.1" value="0.4"><b id="outPUnd"></b></label>
           </div>
-          <label class="row"><span>Stimp</span><input type="range" id="inPStimp" min="8" max="14" step="0.5"
+          <label class="row round-hide"><span>Stimp</span><input type="range" id="inPStimp" min="8" max="14" step="0.5"
               value="11.5"><b id="outPStimp"></b></label>
           <label class="row wide only-putt"><span>Putter</span><select id="inPutter"></select></label>
           <label class="row wide only-putt"><span>Scale</span><select id="inPScale"></select></label>
@@ -1577,6 +1588,7 @@
 
         <div>
           <div class="sec">Player (RPG test)</div>
+          <div class="note only-round" style="margin: 0 0 4px">Test round: everyone plays standard stats — Power, Dexterity, Composure and Perception all 5. Yours come back after the round.</div>
           <label class="row"><span>Power</span><input type="range" id="inPower" min="1" max="10" step="1" value="5"><b
               id="outPower"></b></label>
           <label class="row"><span>Dexterity</span><input type="range" id="inDex" min="1" max="10" step="1" value="5"><b
@@ -1638,18 +1650,6 @@
             swing, yds</span></div>
         <div class="bag-head"><span></span><span>Club</span><span>Carry</span><span>Total</span></div>
         <div id="bagList"></div>
-      </div>
-      <div id="mapCard" class="card only-hole">
-        <div class="card-h">
-          <span id="mapTitle">Hole 1 · Par 5</span>
-          <span style="display:flex;align-items:center;gap:5px">
-            <span class="tag" id="mapTag"></span>
-            <button type="button" id="btnMapOut" class="setup-rst" title="Zoom out on minimap">Zoom out</button>
-            <button type="button" id="btnMapZoom" class="setup-rst" title="Zoom in to shot or landing area (M)">Zoom
-              in</button>
-          </span>
-        </div>
-        <canvas id="holeMap" width="340" height="210"></canvas>
       </div>
       <div id="telemetry" class="card">
         <div class="card-h"><span id="tmTitle">Swing Telemetry</span><span id="tmMode" class="tag"></span></div>
@@ -3147,13 +3147,15 @@
       }
 
       // =====================================================================================================
-      //  HOLES — Par 5 dogleg left, Par 3 guarded green, Par 4 dogleg right.
+      //  HOLES — Par 5 dogleg left, Par 3 guarded green, Par 4 dogleg right, Par 4 straightaway, long Par 3, Par 5 double dogleg.
+      //  wind / stimp: the fixed conditions in a TEST ROUND (the same for everyone). wind.from is the bearing the wind blows FROM,
+      //  measured from the tee line: 0 = straight into you, 90 = from the right, 180 = from behind.
       //  Layout is in YARDS in the hole's own frame: +x = right of the tee line, -z = down the hole.
       //  The ball always sits at the world origin; the whole hole slides underneath it from shot to shot.
       // =====================================================================================================
       const HOLES = [
         {
-          name: 'Hole 1', par: 5, desc: 'Dogleg left',
+          name: 'Hole 1', par: 5, desc: 'Dogleg left', wind: { mph: 6, from: 160 }, stimp: 11,
           path: [[0, 0], [6, -130], [2, -265], [-75, -385], [-140, -505]],        // centre line: turns left at ~265 yds
           fairwayFrom: 45, halfWidth: 17, firstCut: 9,                             // fairway starts 45 yds out; first cut = light rough
           green: { x: -140, z: -505, rx: 15, rz: 13, rot: 0.5 }, pin: [-143, -507],
@@ -3171,7 +3173,7 @@
           hardpan: [{ x: -60, z: -297, rx: 22, rz: 36, rot: 0.6 }],                // bare ground under the trees inside the dogleg
         },
         {
-          name: 'Hole 2', par: 3, desc: 'Guarded green',
+          name: 'Hole 2', par: 3, desc: 'Guarded green', wind: { mph: 10, from: 20 }, stimp: 12,
           path: [[0, 0], [4, -65], [10, -130], [8, -176]],
           fairwayFrom: 80, halfWidth: 13, firstCut: 8,
           green: { x: 8, z: -176, rx: 16, rz: 13, rot: -0.38 }, pin: [13, -179],
@@ -3187,7 +3189,7 @@
           hardpan: [{ x: -16, z: -120, rx: 15, rz: 22, rot: -0.2 }],
         },
         {
-          name: 'Hole 3', par: 4, desc: 'Dogleg right',
+          name: 'Hole 3', par: 4, desc: 'Dogleg right', wind: { mph: 9, from: 270 }, stimp: 11.5,
           path: [[0, 0], [-6, -125], [-4, -245], [52, -335], [98, -395]],
           fairwayFrom: 40, halfWidth: 16, firstCut: 8,
           green: { x: 98, z: -395, rx: 14, rz: 15, rot: -0.45 }, pin: [102, -398],
@@ -3204,7 +3206,7 @@
           hardpan: [{ x: 42, z: -265, rx: 20, rz: 30, rot: -0.5 }],
         },
         {
-          name: 'Hole 4', par: 4, desc: 'Straightaway',
+          name: 'Hole 4', par: 4, desc: 'Straightaway', wind: { mph: 14, from: 345 }, stimp: 11,
           path: [[0, 0], [3, -140], [10, -280], [18, -418]],
           fairwayFrom: 40, halfWidth: 15, firstCut: 8,
           green: { x: 18, z: -418, rx: 13, rz: 15, rot: 0.15 }, pin: [15, -423],
@@ -3221,7 +3223,7 @@
           hardpan: [{ x: 40, z: -200, rx: 14, rz: 24, rot: 0.1 }],
         },
         {
-          name: 'Hole 5', par: 3, desc: 'Long par 3',
+          name: 'Hole 5', par: 3, desc: 'Long par 3', wind: { mph: 7, from: 100 }, stimp: 12.5,
           path: [[0, 0], [-3, -100], [-6, -205]],
           fairwayFrom: 120, halfWidth: 12, firstCut: 7,
           green: { x: -6, z: -205, rx: 18, rz: 11, rot: -0.1 }, pin: [-12, -203],   // wide and shallow
@@ -3238,7 +3240,7 @@
           hardpan: [],
         },
         {
-          name: 'Hole 6', par: 5, desc: 'Double dogleg',
+          name: 'Hole 6', par: 5, desc: 'Double dogleg', wind: { mph: 11, from: 210 }, stimp: 10.5,
           path: [[0, 0], [5, -150], [45, -280], [55, -400], [15, -540]],          // bends right, then back left to the green
           fairwayFrom: 45, halfWidth: 16, firstCut: 8,
           green: { x: 15, z: -540, rx: 14, rz: 14, rot: 0 }, pin: [19, -545],
@@ -3315,7 +3317,7 @@
       });
       holeRoughTex.wrapS = holeRoughTex.wrapT = THREE.RepeatWrapping; holeRoughTex.repeat.set(500, 500); holeRoughTex.anisotropy = 8;
 
-      const mapCv = $('holeMap'), mapCtx = mapCv.getContext('2d'), MAP_W = 340, MAP_H = 210;
+      const mapCv = $('holeMap'), mapCtx = mapCv.getContext('2d'), MAP_W = 234, MAP_H = 158;
       {
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         mapCv.width = MAP_W * dpr; mapCv.height = MAP_H * dpr;
@@ -4307,6 +4309,7 @@
         if (swing.active) return;
         hp.on = true; document.body.classList.add('hole');
         Object.assign(hp, { ball: { x: 0, z: 0 }, strokes: 0, putts: 0, onTee: true, done: false, history: [], frame: null, aimPin: false, mapZoom: 0 });
+        if (round.on) applyRoundConditions();
         state.badStreak = 0;
         for (const t of trails.splice(0)) { t.group.removeFromParent(); t.dispose(); }
         shot = null; puttRun = null; telemetry = null; puttTel = null; lastNumbers = null; lastTrace = ghostTrace = null;
@@ -4350,8 +4353,8 @@
       // On the green: build the putt from the ball to the cup. The green's tilt is fixed, so break and uphill/downhill
       // follow from which side of the hole the ball is on.
       function enterHolePutt() {
-        hole.surface.stimp = state.greenCfg.stimp;
-        hole.surface.decel = rollDecel(state.greenCfg.stimp);
+        hole.surface.stimp = holeStimp();
+        hole.surface.decel = rollDecel(holeStimp());
         green = greenView(hole.surface, hp.ball);
         hp.frame = { beta: green.beta, u: green.u, r: green.r };
         state.puttScaleAuto = true;
@@ -4360,8 +4363,8 @@
       }
       // Off the green but close: chip on the hole's own contoured green, from where the ball lies.
       function enterHoleChip() {
-        hole.surface.stimp = state.greenCfg.stimp;
-        hole.surface.decel = rollDecel(state.greenCfg.stimp);
+        hole.surface.stimp = holeStimp();
+        hole.surface.decel = rollDecel(holeStimp());
         green = chipView(hole.surface, hp.ball, holeChipSurf);
         hp.frame = { beta: green.beta, u: green.u, r: green.r };
         if (isChip()) startChip(); else setMode('chip');
@@ -4436,17 +4439,20 @@
       const fmtToPar = (d) => d === 0 ? 'E' : d > 0 ? `+${d}` : `${d}`;
       function startRound() {
         if (swing.active) return;
+        // your own wind and stats come back after the round; in it everyone plays standard stats (all 5)
+        if (!round.on) round.saved = { mph: state.windMph, dir: state.windDir, power: state.power, dex: state.dex, composure: state.composure, perception: state.perception };
+        setStats(ROUND_STATS);
         round.on = true; round.over = false; round.scores = []; round.lbDone = false; round.lbMissed = false;
         lbEntry.active = false; lbEntry.mineT = null;
         document.body.classList.add('round'); hideScorecard();
         hp.holeIdx = 0; buildHole(0); enterHole();
         $('btnRound').textContent = 'Quit the test round';
-        toast(`TEST ROUND\nHoles 1–${HOLES.length} · ${HOLES.reduce((s, h) => s + h.par, 0)} par`, 2600);
       }
       function endRound() {
         round.on = false; round.over = false; lbEntry.active = false;
+        if (round.saved) { setStats(round.saved); state.windMph = round.saved.mph; state.windDir = round.saved.dir; round.saved = null; $('inWind').value = state.windMph; $('inWindDir').value = state.windDir; orientFlags(); syncPanel(); }
         document.body.classList.remove('round'); hideScorecard();
-        $('btnRound').textContent = `Play a test round — holes 1–${HOLES.length}`;
+        $('btnRound').textContent = `Test round · holes 1–${HOLES.length}`;
       }
       function nextRoundHole() {
         if (!round.on || swing.active) return;
@@ -4466,17 +4472,36 @@
         : round.on
         ? (round.over ? '<kbd>N</kbd> play the round again · <kbd>K</kbd> scorecard · <kbd>H</kbd> back to the range' : '<kbd>N</kbd> or <kbd>R</kbd> next hole · <kbd>K</kbd> scorecard · <kbd>H</kbd> quit the round')
         : '<kbd>R</kbd> play the hole again · <kbd>N</kbd> next hole · <kbd>H</kbd> back to the range';
+      // TEST ROUND stats: the same for every player
+      const ROUND_STATS = { power: 5, dex: 5, composure: 5, perception: 5 };
+      function setStats(s) {
+        state.power = s.power; state.dex = s.dex; state.composure = s.composure; state.perception = s.perception;
+        $('inPower').value = s.power; $('inDex').value = s.dex; $('inComp').value = s.composure; $('inPer').value = s.perception;
+        telemetry = null; syncPanel(); renderBag();
+      }
+      // TEST ROUND conditions: the hole's own wind and green speed, the same for every player (the sliders are hidden)
+      const holeStimp = () => (round.on && HOLE.stimp) || state.greenCfg.stimp;
+      const windText = (mph, from) => mph ? `${mph} mph ${['into you', 'into, off the right', 'from the right', 'helping, off the right', 'helping', 'helping, off the left', 'from the left', 'into, off the left'][Math.round((((from % 360) + 360) % 360) / 45) % 8]}` : 'calm';
+      function applyRoundConditions() {
+        const w = HOLE.wind || { mph: 0, from: 0 };
+        state.windMph = w.mph; state.windDir = w.from;
+        $('inWind').value = w.mph; $('inWindDir').value = w.from;
+        orientFlags(); syncPanel();
+        toast(`${HOLE.name} · Par ${HOLE.par} · ${(hole.length / YD).toFixed(0)} yds\nWind ${windText(w.mph, w.from)} · greens Stimp ${holeStimp()}`, 3200);
+      }
       function hideScorecard() { $('scorecard').classList.remove('on'); }
       function showScorecard(msg = '') {
         const n = HOLES.length, t = roundTotals(), final = t.played === n;
         round.over = final;
         const cur = hp.on && !hp.done ? hp.holeIdx : -1;
-        let head = '<tr><th>Hole</th>', parRow = '<tr><td>Par</td>', scRow = '<tr><td>Score</td>', ptRow = '<tr><td>Putts</td>', tpRow = '<tr><td>To par</td>';
+        let head = '<tr><th>Hole</th>', parRow = '<tr><td>Par</td>', windRow = '<tr><td>Wind</td>', scRow = '<tr><td>Score</td>', ptRow = '<tr><td>Putts</td>', tpRow = '<tr><td>To par</td>';
         let run = 0;
         for (let i = 0; i < n; i++) {
           const s = round.scores[i], c = i === cur ? ' class="cur"' : '';
           head += `<th${c}>${i + 1}</th>`;
           parRow += `<td${c}>${HOLES[i].par}</td>`;
+          const hw = HOLES[i].wind || { mph: 0, from: 0 };           // arrow = where the wind blows, up = toward the green
+          windRow += `<td${c} title="${windText(hw.mph, hw.from)}">${hw.mph ? `<span style="display:inline-block;transform:rotate(${hw.from + 180}deg)">↑</span> ${hw.mph}` : '–'}</td>`;
           if (s) {
             const d = s.strokes - s.par, cls = d <= -2 ? 'eagle' : d === -1 ? 'birdie' : d === 1 ? 'bogey' : d >= 2 ? 'double' : '';
             run += d;
@@ -4490,10 +4515,11 @@
         const totPar = HOLES.reduce((s, h) => s + h.par, 0);
         head += '<th class="tot">Total</th></tr>';
         parRow += `<td class="tot">${totPar}</td></tr>`;
+        windRow += '<td class="tot">mph</td></tr>';
         scRow += `<td class="tot">${t.played ? t.strokes : ''}</td></tr>`;
         ptRow += `<td class="tot">${t.played ? t.putts : ''}</td></tr>`;
         tpRow += `<td class="tot"><span class="${t.toPar < 0 ? 'under' : t.toPar > 0 ? 'over' : ''}">${t.played ? fmtToPar(t.toPar) : ''}</span></td></tr>`;
-        $('scTable').innerHTML = head + parRow + scRow + ptRow + tpRow;
+        $('scTable').innerHTML = head + parRow + windRow + scRow + ptRow + tpRow;
         $('scTitle').textContent = final ? 'Final scorecard' : 'Scorecard';
         $('scTag').textContent = final ? `${t.strokes} strokes · ${fmtToPar(t.toPar)}` : t.played ? `${fmtToPar(t.toPar)} thru ${t.played}` : 'Test round';
         $('scMsg').textContent = final
@@ -4725,10 +4751,15 @@
         g.fillStyle = '#ffffff'; g.strokeStyle = '#0b1016'; g.lineWidth = 1.5; g.beginPath(); g.arc(bx, by, 3.5, 0, 7); g.fill(); g.stroke();
         drawMapWind(g);
         const level = hp.done ? 0 : hp.mapZoom;
-        $('btnMapOut').disabled = level === 0;
-        $('btnMapZoom').disabled = level === 2;
-        setText('btnMapZoom', level === 0 ? 'Zoom in' : 'Landing');
-        $('btnMapZoom').classList.toggle('on', level > 0);
+        // which zoom this is, bottom right (click the map, or M, to cycle)
+        {
+          const lbl = ['Whole hole', 'Your shot', 'Landing'][level] + ' · click to zoom';
+          g.save(); g.font = '600 9.5px "Segoe UI", system-ui, sans-serif';
+          const tw = g.measureText(lbl).width + 12;
+          g.fillStyle = 'rgba(9, 13, 19, .78)'; g.beginPath(); g.roundRect(W - tw - 6, H - 22, tw, 16, 5); g.fill();
+          g.fillStyle = '#c9d4e0'; g.textBaseline = 'middle'; g.fillText(lbl, W - tw, H - 13.5);
+          g.restore();
+        }
         setText('tbPinL', isPutt() ? 'Hole' : 'To the pin'); setText('panelTitle', `${HOLE.name} · Par ${HOLE.par}`);
         setText('mapTag', hp.done ? `${hp.strokes} strokes` : isPutt() && markRead && !puttRun ? `${fmtBandFt(markRead.cupLo, markRead.cupHi)} ft to the pin`
           : isChip() && chipRead ? `${fmtBandYd(chipRead.pinLo, chipRead.pinHi)} yds to the pin` : `${fmtToPin(pinDist())} to the pin`);
@@ -5100,8 +5131,7 @@
         $('scNext').addEventListener('click', (e) => { scorecardNext(); e.currentTarget.blur(); });
         $('scClose').addEventListener('click', (e) => { scorecardClose(); e.currentTarget.blur(); });
         $('inHole').addEventListener('change', (e) => { selectHole(+e.target.value); });
-        $('btnMapOut').addEventListener('click', (e) => { hp.mapZoom = Math.max(0, hp.mapZoom - 1); e.currentTarget.blur(); });
-        $('btnMapZoom').addEventListener('click', (e) => { hp.mapZoom = Math.min(2, hp.mapZoom + 1); e.currentTarget.blur(); });
+        $('holeMap').addEventListener('click', () => { if (hp.on && !hp.done) hp.mapZoom = (hp.mapZoom + 1) % 3; });      // whole hole -> shot -> landing -> ...
         bind('inComp', (v) => { setComposure(+v); });
         bind('inSwingPx', (v) => { state.cal.swingPx = +v; saveCal(); });
         bind('inVTarget', (v) => { state.cal.vTarget = +v; saveCal(); });
