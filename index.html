@@ -1255,11 +1255,15 @@
     }
 
     /* the minimap sits at the top of the left column; clicking it cycles the zoom (box-sizing: border-box, so the
-       drawing area is 234 x 158 = MAP_W x MAP_H) */
+       drawing area is 294 x 208 = MAP_W x MAP_H). On a hole the left column widens to fit it. */
+    body.hole #leftcol {
+      width: 320px;
+    }
+
     #holeMap {
       display: block;
-      width: 236px;
-      height: 160px;
+      width: 296px;
+      height: 210px;
       margin: 0 12px;
       border-radius: 6px;
       border: 1px solid var(--line);
@@ -1539,7 +1543,7 @@
         <span id="mapTitle">Hole 1 · Par 5</span>
         <span class="tag" id="mapTag"></span>
       </div>
-      <canvas id="holeMap" width="234" height="160" title="Click to zoom: whole hole → your shot → landing area (M)"></canvas>
+      <canvas id="holeMap" width="294" height="208" title="Click to zoom: whole hole → your shot → landing area (M)"></canvas>
     </div>
     <div id="panel" class="card">
       <div class="card-h" id="panelToggle"><span id="panelTitle">Range Sandbox</span><span id="panelChevron">▾</span>
@@ -1547,7 +1551,7 @@
       <div id="panelBody">
         <label class="row wide" style="margin-bottom:4px"><span>Course</span><select id="inHole"></select></label>
         <div class="btn2" style="grid-template-columns: 1fr auto; margin-bottom: 6px">
-          <button id="btnRound" style="margin: 0">Test round · holes 1–6</button>
+          <button id="btnRound" style="margin: 0">Test round · holes 1–9</button>
           <button id="btnBoard" style="margin: 0" title="Top 10 test-round scores (L)">🏆 Top 10</button>
         </div>
         <button id="btnHole">Play Hole 1 — par 5 (H)</button>
@@ -3258,6 +3262,58 @@
           ],
           hardpan: [{ x: 18, z: -380, rx: 12, rz: 22, rot: 0.3 }],                 // bare ground inside the second bend
         },
+        {
+          name: 'Hole 7', par: 4, desc: 'Short par 4', wind: { mph: 8, from: 300 }, stimp: 12,
+          path: [[0, 0], [2, -120], [-8, -230], [-30, -340]],                      // a gentle bend left to a small green
+          fairwayFrom: 40, halfWidth: 12, firstCut: 7,                             // a narrow fairway: position over power
+          green: { x: -30, z: -340, rx: 12, rz: 13, rot: -0.4 }, pin: [-27, -344],
+          greenSurface: {
+            tilt: { x: 0.007, z: -0.009 },
+            bumps: [{ x: 3, z: -3, amp: 3, sigma: 3.5 }, { x: -5, z: 4, amp: -3, sigma: 4 }]
+          },
+          bunkers: [
+            { x: -22, z: -262, rx: 8, rz: 6, rot: 0.1, type: 'fbunker' },          // pot bunkers across the fairway: lay up short or carry them
+            { x: -4, z: -268, rx: 7, rz: 6, rot: -0.1, type: 'fbunker' },
+            { x: -47, z: -336, rx: 6, rz: 10, rot: -0.3, type: 'bunker' },         // greenside, left
+            { x: -15, z: -325, rx: 6, rz: 7, rot: 0.3, type: 'bunker' },           // greenside, front right
+          ],
+          hardpan: [{ x: 20, z: -180, rx: 12, rz: 20, rot: 0.2 }],
+        },
+        {
+          name: 'Hole 8', par: 3, desc: 'Short par 3', wind: { mph: 13, from: 60 }, stimp: 12.5,
+          path: [[0, 0], [4, -80], [6, -155]],
+          fairwayFrom: 95, halfWidth: 10, firstCut: 6,
+          green: { x: 6, z: -155, rx: 11, rz: 10, rot: 0.2 }, pin: [9, -158],     // small, and ringed with sand
+          greenSurface: {
+            tilt: { x: -0.004, z: -0.006 },
+            tiers: [{ x: 0, z: -1, ang: Math.PI, rise: 4, width: 3 }],              // two tiers: the left half sits higher
+          },
+          bunkers: [
+            { x: 6, z: -141, rx: 10, rz: 4, rot: 0, type: 'bunker' },              // front
+            { x: -9, z: -157, rx: 4, rz: 8, rot: 0, type: 'bunker' },              // left
+            { x: 21, z: -153, rx: 4, rz: 8, rot: 0, type: 'bunker' },              // right
+            { x: 6, z: -169, rx: 9, rz: 3.5, rot: 0, type: 'bunker' },             // back
+          ],
+          hardpan: [],
+        },
+        {
+          name: 'Hole 9', par: 4, desc: 'Long finishing par 4', wind: { mph: 12, from: 230 }, stimp: 11.5,
+          path: [[0, 0], [-4, -150], [0, -270], [45, -360], [90, -430]],          // dogleg right at about 270 yds
+          fairwayFrom: 45, halfWidth: 16, firstCut: 8,
+          green: { x: 90, z: -430, rx: 15, rz: 14, rot: -0.6 }, pin: [94, -434],
+          greenSurface: {
+            tilt: { x: 0.006, z: -0.010 },
+            tiers: [{ x: 0, z: -3, ang: -1.0, rise: 3, width: 5 }],
+            bumps: [{ x: -5, z: 3, amp: 3, sigma: 4 }]
+          },
+          bunkers: [
+            { x: -18, z: -285, rx: 10, rz: 15, rot: 0.15, type: 'fbunker' },     // outside of the corner: catches the drive that runs through
+            { x: 28, z: -262, rx: 8, rz: 12, rot: -0.3, type: 'fbunker' },        // inside of the corner: guards the cut
+            { x: 69, z: -422, rx: 6, rz: 10, rot: -0.5, type: 'bunker' },         // greenside, front left
+            { x: 110, z: -440, rx: 6, rz: 9, rot: -0.4, type: 'bunker' },         // greenside, right
+          ],
+          hardpan: [{ x: 40, z: -300, rx: 16, rz: 24, rot: -0.5 }],                // bare ground inside the dogleg
+        },
       ];
       let HOLE = HOLES[0];
       // How each surface plays when the ball lands and rolls on it (multipliers on the range-turf bounce model), and the lie it gives.
@@ -3317,7 +3373,7 @@
       });
       holeRoughTex.wrapS = holeRoughTex.wrapT = THREE.RepeatWrapping; holeRoughTex.repeat.set(500, 500); holeRoughTex.anisotropy = 8;
 
-      const mapCv = $('holeMap'), mapCtx = mapCv.getContext('2d'), MAP_W = 234, MAP_H = 158;
+      const mapCv = $('holeMap'), mapCtx = mapCv.getContext('2d'), MAP_W = 294, MAP_H = 208;
       {
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         mapCv.width = MAP_W * dpr; mapCv.height = MAP_H * dpr;
@@ -4558,7 +4614,8 @@
       //  ARCADE LEADERBOARD: the top 10 test rounds (fewest strokes; fewer putts break a tie, then the earlier round),
       //  three initials each, kept in this browser's local storage.
       // =====================================================================================================
-      const LB_KEY = 'golfLeaderboard', LB_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      // one board per round length: a 6-hole score is not a 9-hole score (the old 6-hole board stays under 'golfLeaderboard')
+      const LB_KEY = `golfLeaderboard_${HOLES.length}holes`, LB_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let lbMem = null, scMode = 'round';
       const lbEntry = { active: false, chars: ['A', 'A', 'A'], pos: 0, mineT: null };
       function lbLoad() {
