@@ -5997,6 +5997,12 @@
         $('scClose').textContent = 'Close (L)';
       }
 
+      // the landing area's four axis ends, so the zoomed map frames all of it (not while a shot is in the air)
+      function landAreaPts() {
+        if (hp.done || state.view === 'flight') return [];
+        const la = landArea();
+        return [1, -1].flatMap((s) => [{ x: la.c.x + s * la.u.x, z: la.c.z + s * la.u.z }, { x: la.c.x + s * la.v.x, z: la.c.z + s * la.v.z }]);
+      }
       function shotMapTransform() {
         if (!hp.mapZoom || hp.done) {
           return makeMapTransform(mapFullBounds.u0, mapFullBounds.u1, mapFullBounds.v0, mapFullBounds.v1);
@@ -6011,7 +6017,7 @@
             const r = lieRead(state.club), a = heading(state.aim);
             const cLo = r.carryLo * YD, totHi = Math.max(r.totalMid, r.totalHi) * YD;
             const ex = hp.ball.x + a.x * totHi, ez = hp.ball.z + a.z * totHi;
-            pts = [{ x: hp.ball.x + a.x * cLo, z: hp.ball.z + a.z * cLo }, { x: ex, z: ez }];
+            pts = [{ x: hp.ball.x + a.x * cLo, z: hp.ball.z + a.z * cLo }, { x: ex, z: ez }, ...landAreaPts()];
             if (hp.aimPin || Math.hypot(hole.pin.x - ex, hole.pin.z - ez) <= 35 * YD) pts.push(hole.pin);
             if (shot && !shot.done && Math.hypot(shot.flight.p.x, shot.flight.p.z) >= cLo * 0.5) pts.push({ x: hp.ball.x + shot.flight.p.x, z: hp.ball.z + shot.flight.p.z });
             padU0 = 14; padU1 = 16; padV = 14; minU = 48;
@@ -6022,7 +6028,7 @@
             pts.push(hole.pin, { x: hole.green.x, z: hole.green.z });
           } else {
             const r = lieRead(state.club), a = heading(state.aim), dist = Math.max(r.totalMid, r.carryHi) * YD;
-            pts.push({ x: hp.ball.x + a.x * dist, z: hp.ball.z + a.z * dist });
+            pts.push({ x: hp.ball.x + a.x * dist, z: hp.ball.z + a.z * dist }, ...landAreaPts());
             if (hp.aimPin || pinDist() <= dist + 15 * YD) pts.push(hole.pin);
             const ballS = pathNear(hp.ball.x, hp.ball.z).s, endS = Math.min(hole.length, ballS + dist);
             for (const p of hole.cl) if (p.s >= ballS && p.s <= endS) pts.push(p);
@@ -6082,17 +6088,26 @@
         if (!onGreenView() && !hp.done && state.view !== 'flight') {                              // aim line: tick at carry, end at total + landing area
           const r = lieRead(state.club), a = heading(state.aim), tot = r.totalMid * YD, car = r.carryMid * YD;
           const ex = hp.ball.x + a.x * tot, ez = hp.ball.z + a.z * tot, cx = hp.ball.x + a.x * car, cz = hp.ball.z + a.z * car;
-          const cLo = r.carryLo * YD, tHi = Math.max(r.totalMid, r.totalHi) * YD;
-          const x1 = X(hp.ball.x + a.x * cLo, hp.ball.z + a.z * cLo), y1 = Y(hp.ball.x + a.x * cLo, hp.ball.z + a.z * cLo);
-          const x2 = X(hp.ball.x + a.x * tHi, hp.ball.z + a.z * tHi), y2 = Y(hp.ball.x + a.x * tHi, hp.ball.z + a.z * tHi);
-          g.save();
-          g.fillStyle = r.exact ? 'rgba(53, 224, 255, .16)' : 'rgba(255, 194, 74, .18)';
-          g.strokeStyle = r.exact ? 'rgba(53, 224, 255, .55)' : 'rgba(255, 194, 74, .65)';
-          g.lineWidth = 1; g.setLineDash([3, 2]);
-          g.beginPath(); g.ellipse((x1 + x2) / 2, (y1 + y2) / 2, Math.max(6, Math.hypot(x2 - x1, y2 - y1) / 2 + 4), clamp(6 * k, 5, 18), Math.atan2(y2 - y1, x2 - x1), 0, 7); g.fill(); g.stroke();
-          g.restore();
+          const x1 = X(hp.ball.x + a.x * r.carryLo * YD, hp.ball.z + a.z * r.carryLo * YD), y1 = Y(hp.ball.x + a.x * r.carryLo * YD, hp.ball.z + a.z * r.carryLo * YD);
           // the shot's path (curved for a draw / fade), scaled to the read so a rough lie's fuzz is not given away
           const st = stockShot(state.club), k2 = st.total > 0 ? r.totalMid / st.total : 1, tv = new THREE.Vector3();
+          // the landing area: where this shot is likely to finish (see landSpread), scaled to the read like the path; from
+          // a rough lie the read's own uncertainty stretches it down the line
+          {
+            const la = landArea(), M = (x, z) => ({ x: X(x, z), y: Y(x, z) });
+            const c = M(la.c.x, la.c.z), p1 = M(la.c.x + la.u.x, la.c.z + la.u.z), p2 = M(la.c.x + la.v.x, la.c.z + la.v.z);
+            const u = { x: p1.x - c.x, y: p1.y - c.y }, v = { x: p2.x - c.x, y: p2.y - c.y };
+            const grow = (w) => { const L = Math.hypot(w.x, w.y); return L < 4 ? (L > 0.01 ? { x: w.x / L * 4, y: w.y / L * 4 } : { x: 4, y: 0 }) : w; };    // never smaller than a dot
+            const U = grow(u), V = grow(v);
+            g.save();
+            g.fillStyle = r.exact ? 'rgba(53, 224, 255, .16)' : 'rgba(255, 194, 74, .18)';
+            g.strokeStyle = r.exact ? 'rgba(53, 224, 255, .6)' : 'rgba(255, 194, 74, .7)';
+            g.lineWidth = 1; g.setLineDash([3, 2]);
+            g.beginPath();
+            for (let i = 0; i <= 48; i++) { const t = i / 48 * Math.PI * 2, px = c.x + U.x * Math.cos(t) + V.x * Math.sin(t), py = c.y + U.y * Math.cos(t) + V.y * Math.sin(t); if (i) g.lineTo(px, py); else g.moveTo(px, py); }
+            g.closePath(); g.fill(); g.stroke();
+            g.restore();
+          }
           g.strokeStyle = '#ffffff'; g.lineWidth = 1.5; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(bx, by);
           if (st.track) for (const p of st.track) { toWorld(tv.set(p.x * k2, 0, p.z * k2)); g.lineTo(X(hp.ball.x + tv.x, hp.ball.z + tv.z), Y(hp.ball.x + tv.x, hp.ball.z + tv.z)); }
           else g.lineTo(X(ex, ez), Y(ex, ez));
@@ -6163,6 +6178,50 @@
         for (let n = 1; f.phase !== 'stopped'; n++) { stepFlight(f, 1 / 120); if (track && n % 10 === 0) pts.push({ x: f.p.x, z: f.p.z }); }
         if (track) pts.push({ x: f.p.x, z: f.p.z });
         return { r, f, pts };
+      }
+      // Where the selected club's shot is likely to finish, for the minimap: the same full swing hit SPREAD.n times with
+      // the game's own scatter (Dexterity, the difficulty of the setup, the lie, tilt) plus an ordinary player's small
+      // swing-line and strike errors, no wind. Returns the mean finish and the 2-sigma ellipse (about 85% of shots) in the
+      // shot's own frame (x right, -z down the aim line), in metres. Seeded, so it holds still while nothing changes.
+      const SPREAD = { n: 36, mouseDeg: 1.2, wobble: 2.5, backswing: 0.05, sigmas: 2 };
+      const spreadCache = new Map();
+      function landSpread(ci) {
+        const club = CLUBS[ci], teed = isTeed(club), su = setup();
+        const env0 = { lie: state.lie, slope: state.slope, power: state.power, dex: state.dex, composure: state.composure, badStreak: state.badStreak, teed };
+        const key = [ci, JSON.stringify(su), JSON.stringify(env0)].join('|');
+        if (spreadCache.has(key)) return spreadCache.get(key);
+        const rnd = rng32(90210), bell = () => rnd() + rnd() - 1, P = [];
+        for (let i = 0; i < SPREAD.n; i++) {
+          const sw = { bs: 1 + SPREAD.backswing * bell(), ds: 1, thetaMouse: SPREAD.mouseDeg * 2 * bell(), sigma: SPREAD.wobble * rnd(), lateSign: rnd() < 0.5 ? 1 : -1, vImpact: 1, vPeak: 1, miss: 0 };
+          const r = computeImpact(sw, su, club, env0, rnd);
+          const f = createFlight({ ballSpeed: r.ballSpeed, vla: r.vla, dir: r.hla, spin: r.spin, axis: r.axis, release: r.release }, { x: 0, z: 0 }, teed ? 0.04 : 0);
+          for (let n = 0; f.phase !== 'stopped' && n < 20000; n++) stepFlight(f, 1 / 120);
+          P.push({ x: f.p.x, z: f.p.z });
+        }
+        const mx = P.reduce((s, p) => s + p.x, 0) / P.length, mz = P.reduce((s, p) => s + p.z, 0) / P.length;
+        let sxx = 0, szz = 0, sxz = 0;
+        for (const p of P) { sxx += (p.x - mx) ** 2; szz += (p.z - mz) ** 2; sxz += (p.x - mx) * (p.z - mz); }
+        sxx /= P.length; szz /= P.length; sxz /= P.length;
+        const out = { mx, mz, sxx, szz, sxz, pts: P };
+        if (spreadCache.size > 200) spreadCache.clear();
+        spreadCache.set(key, out);
+        return out;
+      }
+      // The minimap's landing area in WORLD coordinates: centre and the two axis vectors, scaled to the read like the path
+      // (k2), and stretched down the line by a rough lie's read uncertainty.
+      function landArea() {
+        const r = lieRead(state.club), st = stockShot(state.club), k2 = st.total > 0 ? r.totalMid / st.total : 1;
+        const sp = landSpread(state.club), tot = r.totalMid * YD;
+        const [a1, a2] = spreadAxes(sp.sxx, sp.szz + (r.exact ? 0 : (r.half * tot / 2) ** 2), sp.sxz);
+        const tv = new THREE.Vector3(), w = (x, z) => { toWorld(tv.set(x * k2, 0, z * k2)); return { x: tv.x, z: tv.z }; };
+        const c = w(sp.mx, sp.mz);
+        return { c: { x: hp.ball.x + c.x, z: hp.ball.z + c.z }, u: w(a1.x, a1.z), v: w(a2.x, a2.z), exact: r.exact };
+      }
+      // the 2-sigma axes of a covariance, as two vectors
+      function spreadAxes(sxx, szz, sxz) {
+        const m = (sxx + szz) / 2, d = Math.sqrt(((sxx - szz) / 2) ** 2 + sxz ** 2), th = 0.5 * Math.atan2(2 * sxz, sxx - szz);
+        const a = SPREAD.sigmas * Math.sqrt(Math.max(0, m + d)), b = SPREAD.sigmas * Math.sqrt(Math.max(0, m - d));
+        return [{ x: Math.cos(th) * a, z: Math.sin(th) * a }, { x: -Math.sin(th) * b, z: Math.cos(th) * b }];
       }
       function stockShot(ci, bs = 1) {
         const club = CLUBS[ci], teed = isTeed(club), chip = isChip();
@@ -7381,7 +7440,7 @@
       }
       window.__golf = {
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
-        get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty,
+        get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }
       };
 
