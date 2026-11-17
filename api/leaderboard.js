@@ -5,8 +5,8 @@
 //                                           -> { entry, rank, total, top }
 //
 // Credentials come from the Vercel project's environment variables. Connecting Upstash through Vercel's Storage tab
-// sets KV_REST_API_URL / KV_REST_API_TOKEN; adding them by hand from the Upstash console uses UPSTASH_REDIS_REST_URL /
-// UPSTASH_REDIS_REST_TOKEN. Either pair works.
+// sets KV_REST_API_URL / KV_REST_API_TOKEN (possibly with a custom prefix); adding them by hand from the Upstash console
+// uses UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN. Any of these work (see findCreds).
 //
 // Storage: one sorted set per round length, golf:lb:<holes>h. Score = strokes * 1000 + putts, so fewer strokes win and
 // fewer putts break a tie; members are JSON strings that start with the 13-digit timestamp, so Redis's own tie order
@@ -19,8 +19,30 @@ const MAX_KEEP = 1000;
 const TOP_N = 10;
 const RATE_MAX = 5, RATE_WINDOW_S = 60;
 
-const URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+// Vercel may put a custom prefix on the names (e.g. GOLF_KV_REST_API_URL), so look for the pairs by their ending too.
+// A URL and token are only used together when they share the same prefix.
+const PAIRS = [['KV_REST_API_URL', 'KV_REST_API_TOKEN'], ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'], ['REDIS_REST_URL', 'REDIS_REST_TOKEN']];
+function findCreds(env = process.env) {
+  for (const [u, t] of PAIRS) if (env[u] && env[t]) return { url: env[u], token: env[t] };
+  for (const k of Object.keys(env).sort()) {
+    for (const [u, t] of PAIRS) {
+      if (!k.endsWith(`_${u}`) || !env[k]) continue;
+      const prefix = k.slice(0, -u.length);
+      if (env[prefix + t]) return { url: env[k], token: env[prefix + t] };
+    }
+  }
+  // last resort: only a connection string (rediss://default:<password>@<host>.upstash.io:6379). On Upstash the REST API
+  // is served from the same host and takes the database password as its token.
+  for (const k of Object.keys(env).sort()) {
+    if (!/(^|_)(REDIS_URL|KV_URL)$/.test(k)) continue;
+    try {
+      const u = new globalThis.URL(env[k]);
+      if (/^rediss?:$/.test(u.protocol) && u.hostname.endsWith('.upstash.io') && u.password) return { url: `https://${u.hostname}`, token: decodeURIComponent(u.password) };
+    } catch { /* not a URL */ }
+  }
+  return null;
+}
+let URL = '', TOKEN = '';
 
 async function redis(commands) {
   const r = await fetch(`${URL}/pipeline`, {
@@ -59,7 +81,13 @@ function readBody(req) {
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const send = (code, obj) => res.status(code).json(obj);
-  if (!URL || !TOKEN) return send(503, { error: 'Leaderboard storage is not configured' });
+  const creds = findCreds();
+  if (!creds) {
+    // names only (never values) of anything that looks like storage settings, to show what the server can see
+    const seen = Object.keys(process.env).filter((k) => /KV|REDIS|UPSTASH/i.test(k)).sort();
+    return send(503, { error: 'Leaderboard storage is not configured', storageVarsSeen: seen });
+  }
+  URL = creds.url.replace(/\/+$/, ''); TOKEN = creds.token;
 
   try {
     if (req.method === 'GET') {
