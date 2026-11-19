@@ -214,7 +214,17 @@ the profile (the client then sends a fresh career). `login` / `load` return `adm
 the server (never trust the client's flag). Before any admin right can change other players' data, switch to a
 longer password (the hash of a 3-letter password can be guessed if the repo is public).
 
-### M2 — Handicaps (S)
+### M2 — Handicaps (S) — ✅ built 2026-11-18
+
+As built: `si` on every hole in `HOLES` (1 = hardest), ranked from length per par, wind, green speed, OB width,
+fairway width and bunkers: holes 1–9 have stroke indexes **5, 9, 4, 2, 7, 3, 6, 8, 1** (hole 9 hardest, hole 2
+easiest; par 3s are the easiest, as for handicap golfers). `HCP` and `handicapOf()` in both
+`index.html` and `api/profile.js` (keep alike); `fmtHcp()` (a plus handicap shows "+"); `recordCareerRound(m)` (from
+`finishHole()`: once per match, when all 9 holes were played in that round — practice holes after a decided match
+count; an abandoned match doesn't); `career.rounds` (`upgradeCareer()` / `newCareer()`; merged by date in
+`mergeServer()`). The clubhouse header shows the handicap ("3 / 3 rounds" until there is one; the recent rounds on
+hover); the scorecard after hole 9 says "Round recorded… Handicap 9.4 → 9.1"; `players` returns `handicap` and
+`rounds`. Friend rounds (M3) must call the same recording.
 
 - `si` on every hole (ranking above), `career.rounds`, recording a round in `finishHole()` when hole 9 is holed and
   all 9 were played in this round.

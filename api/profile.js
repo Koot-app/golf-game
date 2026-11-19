@@ -7,7 +7,7 @@
 //     logout                              -> { ok }
 //     load                                -> { career, ver }
 //     save    { career, ver }             -> { ver }   or 409 { career, ver } when the server has a newer copy
-//     players                             -> { players: [{ name, tierMax, cash, rep }] }
+//     players                             -> { players: [{ name, tierMax, cash, rep, handicap, rounds }] }
 //
 // Admin profiles (api/_admins.js) have a reserved name and a baked-in password hash; their first sign-in creates them.
 // login / load also return { admin: true | false } for the admin rights to come.
@@ -35,6 +35,14 @@ end
 return -1`;
 
 const idOf = (name) => String(name).trim().toLowerCase();
+// a career's handicap (M2) — the same as handicapOf() in index.html: keep both alike
+const HCP = { rating: { 1: 0, 2: 1.5, 3: 3 }, recent: 10, best: 4, factor: 0.96, min: 3 };
+function handicapOf(c) {
+  const r = ((c && c.rounds) || []).slice(-HCP.recent);
+  if (r.length < HCP.min) return null;
+  const d = r.map((x) => x.gross - x.par - (HCP.rating[x.tier] || 0)).sort((a, b) => a - b).slice(0, HCP.best);
+  return Math.round((d.reduce((a, b) => a + b, 0) / d.length) * HCP.factor * 10) / 10;
+}
 const hashPw = (pw, salt) => new Promise((resolve, reject) => crypto.scrypt(String(pw), salt, 32, (e, k) => (e ? reject(e) : resolve(k.toString('hex')))));
 const parse = (s) => { try { return JSON.parse(s); } catch { return null; } };
 
@@ -135,7 +143,7 @@ module.exports = async (req, res) => {
       const [ids] = await redis([['SMEMBERS', 'golf:players']]);
       const list = (ids || []).slice(0, 200);
       const rows = list.length ? await redis(list.map((p) => ['HGET', `golf:career:${p}`, 'data'])) : [];
-      const players = rows.map(parse).filter(Boolean).map((c) => ({ name: c.name, tierMax: c.tierMax || 1, cash: c.cash, rep: c.rep }));
+      const players = rows.map(parse).filter(Boolean).map((c) => ({ name: c.name, tierMax: c.tierMax || 1, cash: c.cash, rep: c.rep, handicap: handicapOf(c), rounds: (c.rounds || []).length }));
       return send(200, { players });
     }
     return send(400, { error: 'Unknown action' });

@@ -3383,6 +3383,7 @@
             <div><i>Cash</i><b id="chCash"></b></div>
             <div><i>Reputation</i><b id="chRep"></b></div>
             <div><i>Circuit</i><b id="chTier"></b></div>
+            <div id="chHcpBox"><i>Handicap</i><b id="chHcp"></b></div>
           </div>
         </div>
         <div class="ch-stats" id="chStats"></div>
@@ -4858,7 +4859,7 @@
       // =====================================================================================================
       const HOLES = [
         {
-          name: 'Hole 1', par: 5, desc: 'Dogleg left', ob: 50, wind: { mph: 6, from: 160 }, stimp: 11,
+          name: 'Hole 1', par: 5, si: 5, desc: 'Dogleg left', ob: 50, wind: { mph: 6, from: 160 }, stimp: 11,
           path: [[0, 0], [6, -130], [2, -265], [-75, -385], [-140, -505]],        // centre line: turns left at ~265 yds
           fairwayFrom: 45, halfWidth: 17, firstCut: 9,                             // fairway starts 45 yds out; first cut = light rough
           green: { x: -140, z: -505, rx: 15, rz: 13, rot: 0.5 }, pin: [-143, -507],
@@ -4876,7 +4877,7 @@
           hardpan: [{ x: -60, z: -297, rx: 22, rz: 36, rot: 0.6 }],                // bare ground under the trees inside the dogleg
         },
         {
-          name: 'Hole 2', par: 3, desc: 'Guarded green', ob: 40, wind: { mph: 10, from: 20 }, stimp: 12,
+          name: 'Hole 2', par: 3, si: 9, desc: 'Guarded green', ob: 40, wind: { mph: 10, from: 20 }, stimp: 12,
           path: [[0, 0], [4, -65], [10, -130], [8, -176]],
           fairwayFrom: 80, halfWidth: 13, firstCut: 8,
           green: { x: 8, z: -176, rx: 16, rz: 13, rot: -0.38 }, pin: [13, -179],
@@ -4892,7 +4893,7 @@
           hardpan: [{ x: -16, z: -120, rx: 15, rz: 22, rot: -0.2 }],
         },
         {
-          name: 'Hole 3', par: 4, desc: 'Dogleg right', ob: 48, wind: { mph: 9, from: 270 }, stimp: 11.5,
+          name: 'Hole 3', par: 4, si: 4, desc: 'Dogleg right', ob: 48, wind: { mph: 9, from: 270 }, stimp: 11.5,
           path: [[0, 0], [-6, -125], [-4, -245], [52, -335], [98, -395]],
           fairwayFrom: 40, halfWidth: 16, firstCut: 8,
           green: { x: 98, z: -395, rx: 14, rz: 15, rot: -0.45 }, pin: [102, -398],
@@ -4909,7 +4910,7 @@
           hardpan: [{ x: 42, z: -265, rx: 20, rz: 30, rot: -0.5 }],
         },
         {
-          name: 'Hole 4', par: 4, desc: 'Straightaway', ob: 45, wind: { mph: 14, from: 345 }, stimp: 11,
+          name: 'Hole 4', par: 4, si: 2, desc: 'Straightaway', ob: 45, wind: { mph: 14, from: 345 }, stimp: 11,
           path: [[0, 0], [3, -140], [10, -280], [18, -418]],
           fairwayFrom: 40, halfWidth: 15, firstCut: 8,
           green: { x: 18, z: -418, rx: 13, rz: 15, rot: 0.15 }, pin: [15, -423],
@@ -4926,7 +4927,7 @@
           hardpan: [{ x: 40, z: -200, rx: 14, rz: 24, rot: 0.1 }],
         },
         {
-          name: 'Hole 5', par: 3, desc: 'Long par 3', ob: 40, wind: { mph: 7, from: 100 }, stimp: 12.5,
+          name: 'Hole 5', par: 3, si: 7, desc: 'Long par 3', ob: 40, wind: { mph: 7, from: 100 }, stimp: 12.5,
           path: [[0, 0], [-3, -100], [-6, -205]],
           fairwayFrom: 120, halfWidth: 12, firstCut: 7,
           green: { x: -6, z: -205, rx: 18, rz: 11, rot: -0.1 }, pin: [-12, -203],   // wide and shallow
@@ -4943,7 +4944,7 @@
           hardpan: [],
         },
         {
-          name: 'Hole 6', par: 5, desc: 'Double dogleg', ob: 50, wind: { mph: 11, from: 210 }, stimp: 10.5,
+          name: 'Hole 6', par: 5, si: 3, desc: 'Double dogleg', ob: 50, wind: { mph: 11, from: 210 }, stimp: 10.5,
           path: [[0, 0], [5, -150], [45, -280], [55, -400], [15, -540]],          // bends right, then back left to the green
           fairwayFrom: 45, halfWidth: 16, firstCut: 8,
           green: { x: 15, z: -540, rx: 14, rz: 14, rot: 0 }, pin: [19, -545],
@@ -4962,7 +4963,7 @@
           hardpan: [{ x: 18, z: -380, rx: 12, rz: 22, rot: 0.3 }],                 // bare ground inside the second bend
         },
         {
-          name: 'Hole 7', par: 4, desc: 'Short par 4', ob: 42, wind: { mph: 8, from: 300 }, stimp: 12,
+          name: 'Hole 7', par: 4, si: 6, desc: 'Short par 4', ob: 42, wind: { mph: 8, from: 300 }, stimp: 12,
           path: [[0, 0], [2, -120], [-8, -230], [-30, -340]],                      // a gentle bend left to a small green
           fairwayFrom: 40, halfWidth: 12, firstCut: 7,                             // a narrow fairway: position over power
           green: { x: -30, z: -340, rx: 12, rz: 13, rot: -0.4 }, pin: [-27, -344],
@@ -4979,7 +4980,7 @@
           hardpan: [{ x: 20, z: -180, rx: 12, rz: 20, rot: 0.2 }],
         },
         {
-          name: 'Hole 8', par: 3, desc: 'Short par 3', ob: 36, wind: { mph: 13, from: 60 }, stimp: 12.5,
+          name: 'Hole 8', par: 3, si: 8, desc: 'Short par 3', ob: 36, wind: { mph: 13, from: 60 }, stimp: 12.5,
           path: [[0, 0], [4, -80], [6, -155]],
           fairwayFrom: 95, halfWidth: 10, firstCut: 6,
           green: { x: 6, z: -155, rx: 11, rz: 10, rot: 0.2 }, pin: [9, -158],     // small, and ringed with sand
@@ -4996,7 +4997,7 @@
           hardpan: [],
         },
         {
-          name: 'Hole 9', par: 4, desc: 'Long finishing par 4', ob: 48, wind: { mph: 12, from: 230 }, stimp: 11.5,
+          name: 'Hole 9', par: 4, si: 1, desc: 'Long finishing par 4', ob: 48, wind: { mph: 12, from: 230 }, stimp: 11.5,
           path: [[0, 0], [-4, -150], [0, -270], [45, -360], [90, -430]],          // dogleg right at about 270 yds
           fairwayFrom: 45, halfWidth: 16, firstCut: 8,
           green: { x: 90, z: -430, rx: 15, rz: 14, rot: -0.6 }, pin: [94, -434],
@@ -6816,7 +6817,8 @@
           round.scores[hp.holeIdx] = { strokes: hp.strokes, putts: hp.putts, par: HOLE.par, pen: hp.pen };
           $('toast').classList.remove('on');
           const vs = round.match ? `\n${matchAfterHole(hp.holeIdx)}` : '';          // a career match: the hustler's score, the match
-          showScorecard(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}${vs}`);
+          const hc = round.match && careerOn ? recordCareerRound(round.match) : '';   // all 9 played: it counts for your handicap (M2)
+          showScorecard(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}${vs}${hc}`);
           return;
         }
         toast(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}\nPress R to replay · N for next hole`, 12000);
@@ -6969,7 +6971,7 @@
       function upgradeCareer(c) {
         if (!(c && c.v === 1 && typeof c.name === 'string' && c.stats)) return null;
         c.out = c.out || []; c.putters = c.putters || [c.putter || CAREER.putter]; c.tierMax = c.tierMax || c.tier || 1;      // (older saves)
-        c.history = c.history || [];
+        c.history = c.history || []; c.rounds = c.rounds || [];
         return c;
       }
       function readCareer(key) { try { return upgradeCareer(JSON.parse(lsGet(key) || 'null')); } catch { return null; } }
@@ -7037,6 +7039,9 @@
         const seen = new Set(), hist = [];
         for (const h of [...(srv.history || []), ...(career.history || [])]) { const k = `${h.date}|${h.npc || h.friend}|${h.net}`; if (!seen.has(k)) { seen.add(k); hist.push(h); } }
         career.history = hist.sort((a, b) => a.date - b.date);
+        const rs = new Map();                                // handicap rounds from both copies, by date (M2)
+        for (const x of [...(srv.rounds || []), ...(career.rounds || [])]) rs.set(x.date, x);
+        career.rounds = [...rs.values()].sort((a, b) => a.date - b.date).slice(-HCP.keep);
         sync.ver = ver; sync.base = srv; sync.dirty = true;
         saveSyncMeta();
       }
@@ -7062,6 +7067,30 @@
           if (sync.dirty) queueSync(100); else setSync('ok');
         } catch { setSync('offline'); }
       }
+      // ---- HANDICAPS (MULTIPLAYER_PLAN.md, M2). Every completed 9-hole career round goes in career.rounds (the last 20); a
+      // round's differential is gross − par − the circuit's rating (harder courses count for more), and the handicap is the
+      // average of the best 4 of the last 10 × 0.96, from 3 rounds on. The same function is in api/profile.js: keep both alike.
+      const HCP = { rating: { 1: 0, 2: 1.5, 3: 3 }, keep: 20, recent: 10, best: 4, factor: 0.96, min: 3 };
+      function handicapOf(c) {
+        const r = ((c && c.rounds) || []).slice(-HCP.recent);
+        if (r.length < HCP.min) return null;
+        const d = r.map((x) => x.gross - x.par - (HCP.rating[x.tier] || 0)).sort((a, b) => a - b).slice(0, HCP.best);
+        return Math.round((d.reduce((a, b) => a + b, 0) / d.length) * HCP.factor * 10) / 10;
+      }
+      const fmtHcp = (h) => (h === null ? '—' : h < 0 ? `+${(-h).toFixed(1)}` : h.toFixed(1));     // better than scratch shows as "+"
+      // after a hole of a career match: if that was the 9th hole of a full round, it counts (once)
+      function recordCareerRound(m) {
+        const s = round.scores;
+        if (m.roundRecorded || s.filter(Boolean).length < HOLES.length || !s[HOLES.length - 1]) return '';
+        const gross = s.reduce((a, x) => a + x.strokes, 0), par = s.reduce((a, x) => a + x.par, 0);
+        const before = handicapOf(career);
+        career.rounds = [...(career.rounds || []), { date: Date.now(), gross, par, tier: m.tier, vs: m.npc }].slice(-HCP.keep);
+        m.roundRecorded = true;
+        careerSave();
+        const h = handicapOf(career), n = career.rounds.length;
+        return `\n\nRound recorded for your handicap: ${gross} (${fmtToPar(gross - par)}) at ${TIERS[m.tier].course}. `
+          + (h === null ? `${n} of ${HCP.min} rounds needed for a handicap.` : before === null ? `Your first handicap: ${fmtHcp(h)}.` : `Handicap ${fmtHcp(before)} → ${fmtHcp(h)}.`);
+      }
       // the career changed under us (a sync): re-apply it to the game and the clubhouse
       function refreshCareerView() {
         if (careerOn) {
@@ -7080,7 +7109,7 @@
           cash: CAREER.cash, rep: CAREER.rep, tier: CAREER.tier, stats: { ...CAREER.stats },
           bag: { ...CAREER.bag }, snapped: [], putter: CAREER.putter, out: [], putters: [CAREER.putter],
           unlocks: { draw: false, fade: false, stinger: false, high: false, flop: false, spin: false },
-          match: null, history: [], created: Date.now(), stamp: 0, tierMax: 1,
+          match: null, history: [], rounds: [], created: Date.now(), stamp: 0, tierMax: 1,
         };
       }
       // switch the game over to the career (its stats), and back to the player's own
@@ -7121,6 +7150,12 @@
         setText('chCash', money(career.cash));
         setText('chRep', String(career.rep));
         setText('chTier', `${career.tier} · ${CAREER.tiers[career.tier]}`);
+        {   // the handicap (M2): or how many rounds until there is one; the recent rounds on hover
+          const h = handicapOf(career), rs = career.rounds || [];
+          setText('chHcp', h === null ? `${rs.length} / ${HCP.min} rounds` : fmtHcp(h));
+          $('chHcpBox').title = h === null ? `Play ${HCP.min - rs.length} more full 9-hole rounds (career matches played through hole 9) for a handicap`
+            : `From your best 4 of the last ${Math.min(HCP.recent, rs.length)} rounds:\n${rs.slice(-HCP.recent).reverse().map((x) => `${new Date(x.date).toLocaleDateString()} · ${x.gross} (${fmtToPar(x.gross - x.par)}) · ${TIERS[x.tier].course}`).join('\n')}`;
+        }
         setText('chTag', `Tier ${career.tier} · ${CAREER.tiers[career.tier]}`);
         renderTiers();
         // a match left part-way (a reload): resume it from the hole you were on
