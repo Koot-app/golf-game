@@ -1690,8 +1690,14 @@
 
     /* ---- career: the clubhouse (CAMPAIGN_PLAN.md, chunk 1) ---- */
     body:not(.career) .only-career,
-    body.match .note.only-round {
+    body.match .note.only-round,
+    body.match #btnBoard {
       display: none !important;
+    }
+
+    /* (a career round: no Top 10 button, which is for test rounds; Forfeit / Withdraw takes the whole row) */
+    body.match .btn2.only-round {
+      grid-template-columns: 1fr !important;
     }
 
     body.career label:has(#inPower),
@@ -6888,7 +6894,10 @@
         //     that is a misfit, 0..1, reaching 1 when it is LIES.span degrees short. A misfit cannot be swung out of:
         lieVarMin: 0.5,                 // Dexterity can narrow a bad lie's random spread to half, no further
         cxClub: 2.5,                    // dispersion factor at a total misfit (compounds; Dexterity does NOT excuse it)
-        cxTiltStep: 0.45,               // raw difficulty penalty added per consecutive bad shot (stacks as streak grows)
+        // raw difficulty penalty by bad shots in a row (user request, 2026-11-19: the first one forgiving, then compounding).
+        // Was 0.45 × n × (1 + 0.15(n − 1)): 0.45, 1.04, 1.76, 2.61. Past the ladder each extra bad shot adds tiltLadderMore.
+        tiltLadder: [0.10, 0.55, 1.35, 2.30],
+        tiltLadderMore: 1.0,
         compOffsetMax: 0.85,            // fraction of Tilt difficulty offset at Composure 10 (0% at Composure 1)
         fitPower: 0.45,                 // share of ball speed lost at a total misfit (the club cannot get to the ball cleanly)
         fitLaunch: 0.35,                // share of launch angle lost at a total misfit (it comes out low and thin)
@@ -7020,7 +7029,7 @@
       function tiltPenalty(composure, badStreak = 0) {
         const n = Math.max(0, badStreak || 0);
         if (n <= 0) return 0;
-        const raw = TUNE.cxTiltStep * n * (1 + 0.15 * (n - 1));
+        const L = TUNE.tiltLadder, raw = n <= L.length ? L[n - 1] : L[L.length - 1] + TUNE.tiltLadderMore * (n - L.length);
         return raw * (1 - compOffset(composure));
       }
       const composureState = (c, badStreak = 0) => (badStreak || 0) > 0 && tiltPenalty(c, badStreak) > 0.005 ? 'tilted' : 'neutral';
@@ -10150,7 +10159,7 @@
         liePage();
         sec('Tilt', state.badStreak > 0 ? `you're tilted${state.badStreak > 1 ? ' ×' + state.badStreak : ''}` : 'calm', [
           'Tilt is <b>nerves after bad shots</b>: finishing in rough, sand or out of bounds adds a level',
-          'Bad shots in a row <b>stack</b> — each level costs more than the last',
+          'One bad shot only <b>rattles you a little</b>; bad shots in a row <b>stack</b>, and each level costs a lot more than the last',
           'It adds to the difficulty <b>and exaggerates your swing</b>: a crooked line curves more, an off-centre strike drifts further',
           '<span class="pro">Reach the fairway or green</span> and it clears completely · hardpan leaves it as it is',
           round.on && 'In a round it follows you to the next tee',
