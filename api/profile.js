@@ -9,6 +9,8 @@
 //     save    { career, ver }             -> { ver }   or 409 { career, ver } when the server has a newer copy
 //     players                             -> { players: [{ name, tierMax, cash, rep, handicap, rounds }] }
 //     roster  (no session)                -> { players: [{ name, tierMax, cash, handicap, rounds, last, admin }] }  for the sign-in screen
+//     showcase { name }                   -> { player: { name, trophies, titles, tierMax, rounds, history, showcase, cards } }  their trophy room
+//     buyshow { owner, key }              -> { ok, price, cash }  buy (and destroy) a trophy or framed scorecard off their wall
 //
 // Admin profiles (api/_admins.js) have a reserved name and a credential in the server's environment (GOLF_ADMIN_<ID>);
 // their first sign-in creates them. Nobody else can sign up with an admin's name or become an admin.
@@ -21,8 +23,23 @@
 // people reuse passwords. Saves are compare-and-set on `ver`, so a copy that's out of date never overwrites a newer one.
 
 const crypto = require('crypto');
-const { redis, readBody, clientIp, rateLimit, sessionId, sessionValue, CAS } = require('./_redis');
+const { redis, readBody, clientIp, rateLimit, sessionId, sessionValue, CAS, updateCareer } = require('./_redis');
 const { isAdmin, adminCred } = require('./_admins');
+
+// ---- the rivalry wall (index.html: rivalItems): a victory trophy per challenge won ("w-<challenge>") and, if its owner
+// frames it, the scorecard ("s-<challenge>"). Anyone may buy one off the wall: the buyer pays the owner, and it's
+// destroyed for good (career.showcase.destroyed). Price: twice what the win paid, at least $50 — the same in index.html.
+const wallPrice = (h) => Math.max(50, Math.round(Math.abs(h.net || 0) * 2));
+const winsOf = (c) => (c.history || []).filter((h) => h && h.friend && /^won/.test(h.result || ''));
+function wallItem(c, key) {                       // the history line behind a wall item, if it's on the wall right now
+  const sc = c.showcase || {}, destroyed = new Set(sc.destroyed || []), hide = new Set(sc.hide || []), cards = new Set(sc.cards || []);
+  if (destroyed.has(key)) return null;
+  for (const h of winsOf(c)) {
+    if (key === `w-${h.ch || h.date}` && !hide.has(key)) return { h, label: `“Beat ${h.friendName || h.friend}” trophy` };
+    if (h.ch && key === `s-${h.ch}` && cards.has(h.ch)) return { h, label: `framed scorecard vs ${h.friendName || h.friend}` };
+  }
+  return null;
+}
 
 const NAME_RE = /^[A-Za-z0-9 _-]{3,12}$/;
 const SESSION_S = 30 * 24 * 3600;
@@ -145,6 +162,60 @@ module.exports = async (req, res) => {
         return send(409, { error: 'There is a newer copy', career: parse(cur), ver: +cv || 0 });
       }
       return send(200, { ver });
+    }
+    // another player's trophy room, to visit from Friends: what's on show and what it takes to work out their earned
+    // trophies (circuit, titles, recent rounds for the handicap, and the history lines the trophies look at). Their
+    // rivalry trophies come with their own show / hide choices (career.showcase.hide). Nothing private (no cash, no bag).
+    if (action === 'showcase') {
+      const who = idOf(b.name || '');
+      const [[data]] = await redis([['HMGET', `golf:career:${who}`, 'data']]);
+      const c = parse(data);
+      if (!c) return send(404, { error: 'No player with that name' });
+      const hist = (c.history || []).filter((h) => h && ((h.npc && h.net > 0) || h.friend || h.net >= 1000))
+        .slice(-200).map((h) => ({ npc: h.npc ? 1 : 0, friend: h.friend || null, friendName: h.friendName || null, ch: h.ch || null, format: h.format, stake: h.stake, result: h.result, net: h.net, date: h.date }));
+      // the framed scorecards: the settled challenges themselves (both cards), for whoever looks at the wall
+      const sc = c.showcase || {}, strs = (a, n) => (Array.isArray(a) ? a.filter((x) => typeof x === 'string').slice(0, n) : []);
+      const cids = strs(sc.cards, 20).filter((x) => /^[a-f0-9]{16}$/.test(x));
+      const chs = cids.length ? await redis(cids.map((x) => ['GET', `golf:ch:${x}`])) : [];
+      const cards = {};
+      chs.map(parse).forEach((ch) => {
+        if (!ch || ch.status !== 'done' || (ch.from !== who && ch.to !== who) || !ch.result) return;
+        cards[ch.id] = { id: ch.id, from: ch.from, to: ch.to, names: ch.names, format: ch.format, stake: ch.stake, tier: ch.tier, strokes: ch.strokes, cards: ch.cards, finished: ch.finished,
+          result: { kind: ch.result.kind, winner: ch.result.winner, loser: ch.result.loser, line: ch.result.line, net: ch.result.net } };
+      });
+      return send(200, { player: {
+        name: c.name, trophies: tro(c), titles: (c.titles || []).slice(-40), tierMax: c.tierMax || 1,
+        rounds: (c.rounds || []).slice(-10).map((r) => ({ gross: r.gross, par: r.par, tier: r.tier, date: r.date })),
+        history: hist, showcase: { hide: strs(sc.hide, 300), cards: cids, destroyed: strs(sc.destroyed, 300) }, cards,
+      } });
+    }
+    // buy something off another player's rivalry wall: the buyer pays the owner, and the piece is destroyed for good
+    if (action === 'buyshow') {
+      const owner = idOf(b.owner || ''), key = String(b.key || '');
+      if (!owner || owner === id) return send(400, { error: 'You can\'t buy your own' });
+      const [[od]] = await redis([['HMGET', `golf:career:${owner}`, 'data']]);
+      const oc = parse(od), it = oc && wallItem(oc, key);
+      if (!it) return send(404, { error: 'That isn\'t on their wall any more' });
+      const price = wallPrice(it.h), ownerName = oc.name, when = Date.now();
+      const buyer = await updateCareer(id, (c) => {
+        if ((c.cash || 0) < price) throw Object.assign(new Error(`You need ${'$' + price} to buy it`), { status: 400 });
+        c.cash -= price;
+        c.history = [...(c.history || []), { sale: 'bought', key, other: owner, otherName: ownerName, net: -price, result: `bought and destroyed ${ownerName}'s ${it.label}`, date: when }];
+      });
+      try {
+        await updateCareer(owner, (c) => {
+          const again = wallItem(c, key);                    // (someone else may just have bought it)
+          if (!again) throw Object.assign(new Error('Someone just bought it'), { status: 409 });
+          const s = c.showcase || {};
+          c.showcase = { ...s, destroyed: [...(s.destroyed || []), key], cards: (s.cards || []).filter((x) => `s-${x}` !== key) };
+          c.cash = (c.cash || 0) + price;
+          c.history = [...(c.history || []), { sale: 'sold', key, other: id, otherName: buyer.name, net: price, result: `${buyer.name} bought and destroyed your ${it.label}`, date: when }];
+        });
+      } catch (e) {                                          // give the buyer their money back
+        await updateCareer(id, (c) => { c.cash = (c.cash || 0) + price; c.history = (c.history || []).filter((h) => !(h.sale === 'bought' && h.key === key && h.date === when)); });
+        throw e;
+      }
+      return send(200, { ok: true, price, cash: buyer.cash });
     }
     if (action === 'players') {
       const [ids] = await redis([['SMEMBERS', 'golf:players']]);

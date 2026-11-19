@@ -628,3 +628,25 @@ the last three holes, then the last hole; you take a dead heat. The leaderboard 
 and the position in the top bar. Leaving part-way (H / Withdraw) forfeits the entry; a reload resumes it
 (`career.tour`). One round at a time with matches and friend rounds. Code: `TOURS`, `openTours()` / `renderTours()` /
 `toursClick()`, `startTour()`, `tourAfterHole()`, `settleTour()`, `confirmWithdraw()`, `tourToClubhouse()`.
+
+### Rivalry trophies and visiting (user request, 2026-11-19) — ✅ built
+
+Made from challenges against friends (`career.history` entries with `friend`): a **plaque per friend** with your record
+(won–lost–halved, money) and a **victory trophy for every challenge won** ("Beat Ben · 3 & 2 · Match play · $50").
+All are on the trophy room's new **rivalry wall** (under the cases) unless hidden: the trophy room lists them, each with
+a show / hide switch (`career.showcase.hide` = keys `r-<friend>` / `w-<challenge>`). Friends has a **🏆 Trophy room**
+button on every player: it opens their room read-only (`api/profile.js` `showcase` returns their pieces, titles,
+circuit, recent rounds and the history lines the earned trophies need, plus their show / hide choices; no cash, no bag).
+Code: `rivalItems()`, `shownRivals()`, `plaqueArt()`, `trophyView` (the visited player), `visitTrophies()`.
+
+### Framed scorecards and buying pieces off a wall (user request, 2026-11-19) — ✅ built
+
+Every challenge you won can also hang as a **framed scorecard** (the shared final card; off until you frame it:
+`career.showcase.cards` = challenge ids). Anyone visiting your trophy room can view it full size, and can **buy and
+destroy** any victory trophy or framed scorecard on your wall: they pay **you** twice what that win paid (at least $50),
+and it's gone for good (`career.showcase.destroyed`). Rivalry plaques (your record) can't be bought. The server does the
+transfer (`api/profile.js` `buyshow`: the buyer's career pays, then the owner's career is paid and the piece destroyed,
+both compare-and-set; refunded if someone else got there first) and writes a history line on both sides
+(`{ sale: 'bought' | 'sold', key, other, net }`, which don't count as challenges). `showcase` returns the framed cards.
+`mergeServer()` keeps a piece destroyed even if this PC hadn't heard yet. Direction note: the user said "from the
+winners to the losers"; built as the buyer paying the owner (the natural "buy it from them") — flip if asked.

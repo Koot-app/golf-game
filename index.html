@@ -5168,6 +5168,62 @@
       font-weight: 700;
     }
 
+    /* rivalry trophies: the list (with show / hide) and a visitor's view of the wall */
+    .tr-row.rv {
+      grid-template-columns: 64px 1fr auto;
+    }
+
+    .tr-row.rv .tr-art svg {
+      width: 56px;
+      height: 68px;
+      background: none;
+    }
+
+    .tr-row.rv button {
+      width: auto;
+      margin: 0;
+      padding: 6px 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .tr-row.hid {
+      opacity: .55;
+    }
+
+    .tr-acts {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-items: stretch;
+    }
+
+    .tr-acts button {
+      width: auto;
+      margin: 0;
+      padding: 6px 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    #clubhouse .tr-acts button.no {
+      color: #ffb3bb;
+      border-color: rgba(255, 93, 108, .5);
+    }
+
+    .tr-wall {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .tr-plq svg {
+      width: 92px;
+      height: 112px;
+      display: block;
+    }
+
     .tr-sum {
       display: flex;
       gap: 18px;
@@ -5625,7 +5681,7 @@
         <div class="ch-btns"><button id="brBack">Back to the clubhouse (Esc)</button><span class="cm-help">Numbers: a full, centred swing from the fairway, no wind, with your stats and caddie</span></div>
       </div>
       <div id="chTrophy">
-        <div class="sh-top"><div class="ch-lead">The trophy room</div><span class="sh-cash" id="trCash"></span></div>
+        <div class="sh-top"><div class="ch-lead" id="trLead">The trophy room</div><span class="sh-cash" id="trCash"></span></div>
         <p class="ch-p" id="trIntro"></p>
         <div class="sh-list" id="trList"></div>
         <div class="ch-msg" id="trMsg"></div>
@@ -9365,6 +9421,12 @@
         const seen = new Set(), hist = [];
         for (const h of [...(srv.history || []), ...(career.history || [])]) { const k = `${h.date}|${h.npc || h.friend}|${h.net}`; if (!seen.has(k)) { seen.add(k); hist.push(h); } }
         career.history = hist.sort((a, b) => a.date - b.date);
+        // what was bought off your wall (on the server, by a visitor) stays destroyed, whatever this PC had
+        const gone = [...new Set([...((srv.showcase && srv.showcase.destroyed) || []), ...((career.showcase && career.showcase.destroyed) || [])])];
+        if (gone.length) {
+          const s = career.showcase || {};
+          career.showcase = { ...s, destroyed: gone, cards: (s.cards || []).filter((x) => !gone.includes(`s-${x}`)) };
+        }
         const rs = new Map();                                // handicap rounds from both copies, by date (M2)
         for (const x of [...(srv.rounds || []), ...(career.rounds || [])]) rs.set(x.date, x);
         career.rounds = [...rs.values()].sort((a, b) => a.date - b.date).slice(-HCP.keep);
@@ -9720,6 +9782,7 @@
           else if ((e.code === 'Enter' || e.code === 'NumpadEnter') && !e.repeat) { e.preventDefault(); sendChallenge(); }
           return;
         }
+        if (trophyView && $('clubhouse').classList.contains('trophy')) { if (e.code === 'Escape') { e.preventDefault(); openFriends(); } return; }   // visiting: back to Friends
         if (['coach', 'caddie', 'trophy', 'tour', 'bagroom'].some((v) => $('clubhouse').classList.contains(v))) { if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); } return; }
         if ($('clubhouse').classList.contains('shop')) {       // the pro shop: 1–6 tabs, Esc back
           const tabs = ['iron', 'driver', 'wood', 'wedge', 'putter', 'bag'], dg = /^Digit([1-6])$/.exec(e.code);
@@ -9762,7 +9825,7 @@
         if (room === chRoomNow) return;
         chRoomNow = room;
         $('chScene').innerHTML = chScene(room);
-        setText('chRoomName', CH_ROOMS[room].name);
+        setText('chRoomName', room === 'trophy' && trophyView ? `${trophyView.name}'s Trophy Room` : CH_ROOMS[room].name);     // (visiting a friend's)
         setText('chPanelName', CH_ROOMS[room].panel);
       }
       new MutationObserver(chSetRoom).observe($('clubhouse'), { attributes: true, attributeFilter: ['class'] });
@@ -9914,24 +9977,29 @@
             ${lamp(220, 40)}${lamp(520, 40)}${lamp(820, 40)}
             <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
         }
-        if (room === 'trophy') {         // the trophy room: earned cups on the top shelf, two lit glass cases for what you've bought
-          const own = (career && career.trophies) || [];
+        if (room === 'trophy') {         // the trophy room: earned cups on the top shelf, two lit glass cases for what you've bought,
+          // and below them the rivalry wall (plaques and victory cups from challenges against friends). Yours, or a friend's you're visiting.
+          const C = trophyView || career, own = (C && C.trophies) || [];
           const shelf = earnedList(), gap = Math.min(122, 800 / shelf.length), sz = Math.min(96, gap * 0.9);
-          const cups = shelf.map((t, i) => { const x = 90 + gap / 2 + i * gap, got = career && t.got(career); return got ? trophyArt(t.art, x, 205 - sz / 2, sz) : `<g opacity=".18">${trophyArt(t.art, x, 205 - sz / 2, sz)}</g>`; }).join('');
-          const cabinet = (x0, items) => `<rect x="${x0 - 14}" y="226" width="428" height="590" rx="6" fill="#2a190d"/><rect x="${x0}" y="240" width="400" height="560" fill="#16100b"/>`
-            + `<circle cx="${x0 + 200}" cy="300" r="260" fill="url(#glow)"/>`
-            + [0, 1, 2].map((r) => `<rect x="${x0}" y="${396 + r * 180}" width="400" height="8" fill="#6b4422"/>`).join('')
+          const cups = shelf.map((t, i) => { const x = 90 + gap / 2 + i * gap, got = C && t.got(C); return got ? trophyArt(t.art, x, 205 - sz / 2, sz) : `<g opacity=".18">${trophyArt(t.art, x, 205 - sz / 2, sz)}</g>`; }).join('');
+          const cabinet = (x0, items) => `<rect x="${x0 - 14}" y="226" width="428" height="420" rx="6" fill="#2a190d"/><rect x="${x0}" y="236" width="400" height="400" fill="#16100b"/>`
+            + `<circle cx="${x0 + 200}" cy="290" r="230" fill="url(#glow)"/>`
+            + [0, 1, 2].map((r) => `<rect x="${x0}" y="${364 + r * 132}" width="400" height="7" fill="#6b4422"/>`).join('')
             + items.map((t, k) => {
-              const cx = x0 + 100 + (k % 2) * 200, cy = 320 + Math.floor(k / 2) * 180, mine = own.includes(t.id);
-              return (mine ? trophyArt(t.art, cx, cy, 130) : '') + `<rect x="${cx - 46}" y="${cy + 56}" width="92" height="16" rx="2" fill="${mine ? '#c9a253' : '#3a2a1a'}"/>`
-                + (mine ? `<text x="${cx}" y="${cy + 68}" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#2a190d">${t.tag}</text>` : '');
+              const cx = x0 + 100 + (k % 2) * 200, cy = 304 + Math.floor(k / 2) * 132, mine = own.includes(t.id);
+              return (mine ? trophyArt(t.art, cx, cy, 96) : '') + `<rect x="${cx - 42}" y="${cy + 42}" width="84" height="14" rx="2" fill="${mine ? '#c9a253' : '#3a2a1a'}"/>`
+                + (mine ? `<text x="${cx}" y="${cy + 53}" text-anchor="middle" font-family="Georgia, serif" font-size="9.5" fill="#2a190d">${t.tag}</text>` : '');
             }).join('')
-            + `<rect x="${x0}" y="240" width="400" height="560" fill="#cfe9f7" opacity=".05"/><path d="M${x0 + 30} 250 L${x0 + 90} 790" stroke="#fff" stroke-width="10" opacity=".05"/><rect x="${x0 + 196}" y="240" width="8" height="560" fill="#2a190d"/>`;
+            + `<rect x="${x0}" y="236" width="400" height="400" fill="#cfe9f7" opacity=".05"/><path d="M${x0 + 30} 246 L${x0 + 80} 626" stroke="#fff" stroke-width="10" opacity=".05"/><rect x="${x0 + 196}" y="236" width="8" height="400" fill="#2a190d"/>`;
+          const rv = C ? shownRivals(C).slice(0, 7) : [];
+          const wall = `<rect x="40" y="660" width="900" height="150" rx="4" fill="#3a2516" stroke="#2a190d" stroke-width="4"/><rect x="40" y="660" width="900" height="6" fill="#b08a45"/>`
+            + (rv.length ? rv.map((it, i) => plaqueArt(it, 40 + (900 / rv.length) * (i + 0.5), 738, Math.min(1, 0.95))).join('')
+              : `<text x="490" y="745" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="20" fill="#8a6a40">the rivalry wall — beat a friend to hang something here</text>`);
           return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}
             <rect width="${W}" height="${H}" fill="#1f3a2a"/>${Array.from({ length: 30 }, (_, i) => `<rect x="${i * 56}" width="2" height="${H}" fill="#2a4a36"/>`).join('')}
             <rect width="${W}" height="40" fill="#24160c"/><rect y="40" width="${W}" height="8" fill="#b08a45"/>
             <rect x="40" y="198" width="900" height="16" fill="#5a3820"/><rect x="40" y="210" width="900" height="6" fill="#2a190d"/>${cups}
-            ${cabinet(70, TROPHIES.slice(0, 6))}${cabinet(510, TROPHIES.slice(6))}
+            ${cabinet(70, TROPHIES.slice(0, 6))}${cabinet(510, TROPHIES.slice(6))}${wall}
             <rect y="816" width="${W}" height="84" fill="url(#floor)"/>${floorLines(816)}
             ${lamp(270, 30)}${lamp(710, 30)}
             <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
@@ -10070,7 +10138,8 @@
         if (!career) return;
         const ch = $('clubhouse');
         if (!session) { setText('chMsg', 'Friends need a profile: Switch player → New profile (you can bring this career into it).'); return; }
-        ch.classList.remove('hub', 'new', 'match', 'shop', 'coach', 'chal'); ch.classList.add('friends');
+        trophyView = null;
+        ch.classList.remove('hub', 'new', 'match', 'shop', 'coach', 'chal', 'trophy'); ch.classList.add('friends');
         renderFriends();
         setText('frMsg', msg);
         loadFriends(!!msg);
@@ -10111,7 +10180,7 @@
         const recText = (r) => `${r.w}–${r.l}–${r.h}`;
         const players = pl.map((p) => `<div class="fr-pl"><div><b>${p.name}</b><i>Handicap ${p.handicap === null || p.handicap === undefined ? `— (${p.rounds || 0} / ${HCP.min} rounds)` : fmtHcp(p.handicap)} · ${CAREER.tiers[p.tierMax || 1]} · ${money(p.cash)}${collectionOf(p.trophies).value ? ` · 🏆 ${money(collectionOf(p.trophies).value)} collection` : ''}</i>`
           + `${p.rec.n ? `<i>You vs ${p.name}: ${recText(p.rec)} (won–lost–halved) · <span class="${p.rec.money > 0 ? 'won' : p.rec.money < 0 ? 'lost' : ''}">${p.rec.money > 0 ? '+' : p.rec.money < 0 ? '−' : '±'}${money(Math.abs(p.rec.money))}</span></i>` : ''}</div>`
-          + `<div class="fr-btns"><button data-act="challenge" data-to="${p.name.toLowerCase()}" class="go">Challenge</button></div></div>`).join('');
+          + `<div class="fr-btns"><button data-act="visit" data-to="${p.name.toLowerCase()}" title="See ${p.name}'s collection and rivalry wall">🏆 Trophy room</button><button data-act="challenge" data-to="${p.name.toLowerCase()}" class="go">Challenge</button></div></div>`).join('');
         const all = h2h(null);
         $('frList').innerHTML = groups.filter(([, items]) => items.length).map(([t, items]) => `<div class="sh-cat">${t}</div>${items.join('')}`).join('')
           + `<div class="sh-cat">Players${all.n ? ` · your record vs friends ${recText(all)}, ${all.money >= 0 ? '+' : '−'}${money(Math.abs(all.money))}` : ''}</div>${players ||`<div class="fr-empty">${fr.loaded ? 'Nobody else has a profile yet. Get a friend to make one (Switch player → New profile on their PC).' : fr.err || 'Loading players…'}</div>`}`;
@@ -10122,6 +10191,7 @@
         b.blur();
         const act = b.dataset.act, id = b.dataset.id, c = fr.list.find((x) => x.id === id);
         if (act === 'challenge') return openChalForm(b.dataset.to);
+        if (act === 'visit') return visitTrophies(b.dataset.to);
         if (act === 'play') return playFriend(id);
         if (act === 'send') return submitPvp();
         if (act === 'view') return showSharedCard(c);
@@ -10302,9 +10372,11 @@
           : (ch.submitted && ch.submitted[o] > (ch.submitted[me] || 0)) ? `${ch.names[o]}'s card is in` : 'Both cards are in';
         return `${how}: ${net > 0 ? `you won ${money(net)}` : net < 0 ? `you lost ${money(-net)}` : 'nobody pays'}`;
       }
-      function showSharedCard(ch, headline = '') {
+      // opts.as: whose side to show it from (a framed card on someone's wall: theirs), instead of yours
+      function showSharedCard(ch, headline = '', opts = {}) {
         if (!ch || !ch.result) return;
-        const me = session.id, o = chOther(ch), n = HOLES.length, rcv = ch.strokes && ch.strokes.player;
+        const me = opts.as || session.id, o = ch.from === me ? ch.to : ch.from, n = HOLES.length, rcv = ch.strokes && ch.strokes.player;
+        const framed = !!opts.as;
         const give = holeStrokes(rcv ? ch.strokes.n : 0), cards = ch.cards || {};
         const card = (p) => (Array.isArray(cards[p]) ? cards[p] : null);
         const net = (p, i) => card(p)[i].strokes - (p === rcv ? give[i] : 0);
@@ -10313,7 +10385,7 @@
         let html = `<tr><th>Hole</th>${HOLES.map((_, i) => `<th>${i + 1}</th>`).join('')}<th class="tot">Total</th></tr>`
           + `<tr><td>Par</td>${HOLES.map((h) => `<td>${h.par}</td>`).join('')}<td class="tot">${sum((i) => HOLES[i].par)}</td></tr>`;
         for (const p of [me, o]) {                           // each player's card (• = a stroke received there), then their net
-          const c = card(p), lab = p === me ? `${ch.names[p]} (you)` : ch.names[p];
+          const c = card(p), lab = p === me && !framed ? `${ch.names[p]} (you)` : ch.names[p];
           if (!c) { html += `<tr${p === o ? ' class="npc"' : ''}><td>${lab}</td><td colspan="${n}" class="nocard">no card</td><td class="tot"></td></tr>`; continue; }
           html += `<tr${p === o ? ' class="npc"' : ''}><td>${lab}</td>${c.map((h, i) => `<td><span class="sc ${cls(h.strokes - HOLES[i].par)}">${h.strokes}</span>${p === rcv && give[i] ? `<i class="rcv">${'•'.repeat(give[i])}</i>` : ''}</td>`).join('')}`
             + `<td class="tot">${sum((i) => c[i].strokes)}</td></tr>`;
@@ -10343,9 +10415,10 @@
         $('scTable').innerHTML = html;
         $('scTitle').textContent = `Final · ${ch.names[me]} vs ${ch.names[o]} · ${FR_FMT[ch.format]}, ${money(ch.stake)}${ch.format === 'skins' ? ' a skin' : ''}`;
         $('scTag').textContent = `${TIERS[ch.tier].course}${rcv && ch.strokes.n ? ` · ${ch.names[rcv]} got ${ch.strokes.n} stroke${ch.strokes.n === 1 ? '' : 's'}` : ' · no strokes'}`;
-        const nm = ch.result.net[me];
+        const nm = (ch.result.net || {})[me] || 0;
         $('scMsg').textContent = `${headline ? headline + '\n' : ''}${ch.result.line}\n`
-          + (nm > 0 ? `+${money(nm)}: your ${money(escrowOf(ch.format, ch.stake))} back and ${money(nm)} of ${ch.names[o]}'s` : nm < 0 ? `−${money(-nm)}: ${ch.names[o]} takes it from your held stake` : 'Nobody pays: your stake is back');
+          + (framed ? (nm > 0 ? `${ch.names[me]} took ${money(nm)} off ${ch.names[o]}` : nm < 0 ? `${ch.names[o]} took ${money(-nm)} off ${ch.names[me]}` : 'Nobody paid')
+            : nm > 0 ? `+${money(nm)}: your ${money(escrowOf(ch.format, ch.stake))} back and ${money(nm)} of ${ch.names[o]}'s` : nm < 0 ? `−${money(-nm)}: ${ch.names[o]} takes it from your held stake` : 'Nobody pays: your stake is back');
         const inRound = !!round.pvp;
         $('scNext').textContent = inRound ? 'Back to the clubhouse (N)' : 'OK (Enter)';
         $('scClose').textContent = inRound ? 'Back to the clubhouse' : 'Close (Esc)';
@@ -10354,6 +10427,7 @@
         scMode = 'pvp';
         sc.classList.remove('entry', 'board', 'lbonly');
         sc.classList.add('on', 'pvp');
+        if (framed) return;                                  // (just looking at a framed card)
         markSeen(ch.id);
         if (!round.on) syncLoad();                           // the server paid out: pick up the new cash
       }
@@ -10867,7 +10941,7 @@
         { id: 'resort', name: 'Resort card', art: 'cup-silver', how: 'Open the resort circuit', got: (c) => (c.tierMax || 1) >= 2 },
         { id: 'member', name: 'Country-club member', art: 'cup-gold', how: 'Join the country club', got: (c) => (c.tierMax || 1) >= 3 },
         { id: 'friendly', name: 'Friendly fire', art: 'cup-silver', how: 'Beat a friend in a challenge', got: (c) => (c.history || []).some((h) => h.friend && /^won/.test(h.result || '')) },
-        { id: 'bigscore', name: 'The big score', art: 'cup-gold', how: 'Win $1,000 or more in one match or event', got: (c) => (c.history || []).some((h) => h.net >= 1000) },
+        { id: 'bigscore', name: 'The big score', art: 'cup-gold', how: 'Win $1,000 or more in one match or event', got: (c) => (c.history || []).some((h) => h.net >= 1000 && !h.sale) },
         { id: 'single', name: 'Single figures', art: 'cup-silver', how: 'Get your handicap under 10', got: (c) => { const h = handicapOf(c); return h !== null && h < 10; } },
         { id: 'scratch', name: 'Scratch golfer', art: 'cup-gold', how: 'Get your handicap to 0 or better', got: (c) => { const h = handicapOf(c); return h !== null && h <= 0; } },
       ];
@@ -10909,18 +10983,126 @@
         }
       }
       const artSvg = (kind) => `<svg viewBox="-50 -50 100 100">${trophyArt(kind, 0, 0, 100)}</svg>`;
+      // ---- RIVALRY TROPHIES (user request, 2026-11-19): made from your challenges against friends. A plaque per friend with
+      // your record (won–lost–halved, money) and a victory trophy for every challenge you won. All on show until you hide
+      // them (career.showcase.hide = keys), on the trophy room's rivalry wall — the bit your friends see when they visit.
+      function winLine(h) {                                  // "3 & 2", "by 4", "8 skins to 1", "by forfeit"
+        const r = (h.result || '').replace(/^won · /, '');
+        const m = /wins (\d+ & \d+|\d+ up|by \d+)/.exec(r) || /Skins \S+ (\d+), \S+ (\d+)/.exec(r);
+        return /forfeit|ran out of time/.test(r) ? 'by forfeit' : m ? (m[2] !== undefined && /Skins/.test(m[0]) ? `${Math.max(+m[1], +m[2])}–${Math.min(+m[1], +m[2])} skins` : m[1]) : 'won';
+      }
+      // (each win also has a framed scorecard, "s-<challenge>", up only if you frame it: showcase.cards. Anything bought off
+      // your wall is destroyed for good: showcase.destroyed. Price to buy one off a wall: wallPrice, the same as the server's.)
+      const wallPrice = (h) => Math.max(50, Math.round(Math.abs(h.net || 0) * 2));
+      function rivalItems(c) {
+        const by = new Map(), sc = (c && c.showcase) || {}, gone = new Set(sc.destroyed || []), hide = new Set(sc.hide || []), framed = new Set(sc.cards || []);
+        for (const h of (c && c.history) || []) {
+          if (!h.friend || /^refunded/.test(h.result || '')) continue;
+          const r = by.get(h.friend) || { id: h.friend, name: h.friendName || h.friend, w: 0, l: 0, hv: 0, money: 0, wins: [] };
+          r.name = h.friendName || r.name; r.money += h.net || 0;
+          if (/^won/.test(h.result || '')) { r.w++; r.wins.push(h); } else if (/^lost/.test(h.result || '')) r.l++; else r.hv++;
+          by.set(h.friend, r);
+        }
+        const items = [];
+        for (const r of by.values()) {
+          items.push({ key: `r-${r.id}`, kind: 'rival', name: r.name, top: `vs ${r.name}`, big: `${r.w}–${r.l}–${r.hv}`, sub: `${r.money >= 0 ? '+' : '−'}${money(Math.abs(r.money))}`, lead: r.w > r.l });
+          for (const h of r.wins) {
+            const sub = `${FR_FMT[h.format] || h.format} · ${money(h.stake)}`;
+            items.push({ key: `w-${h.ch || h.date}`, kind: 'win', name: r.name, top: `Beat ${r.name}`, big: winLine(h), sub, date: h.date, price: wallPrice(h), ch: h.ch });
+            if (h.ch) items.push({ key: `s-${h.ch}`, kind: 'card', name: r.name, top: `vs ${r.name}`, big: winLine(h), sub, date: h.date, price: wallPrice(h), ch: h.ch });
+          }
+        }
+        return items.filter((it) => !gone.has(it.key)).map((it) => ({ ...it, on: it.kind === 'card' ? framed.has(it.ch) : !hide.has(it.key) }));
+      }
+      const shownRivals = (c) => rivalItems(c).filter((it) => it.on);
+      // a rivalry plaque (a wooden shield and a brass plate) or a victory trophy (a gold cup on a plate), drawn at (x, y)
+      function plaqueArt(it, x, y, s = 1) {
+        const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const g = (body) => `<g transform="translate(${x} ${y}) scale(${s})">${body}</g>`;
+        if (it.kind === 'rival') {
+          return g(`<path d="M-48 -58 H48 V30 Q48 52 0 64 Q-48 52 -48 30 Z" fill="#5a3820" stroke="#2a190d" stroke-width="3"/><path d="M-40 -50 H40 V28 Q40 46 0 55 Q-40 46 -40 28 Z" fill="none" stroke="#c9a253" stroke-width="2"/>`
+            + `<rect x="-36" y="-44" width="72" height="20" rx="2" fill="#c9a253"/><text y="-29" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-weight="700" fill="#2a190d">${esc(it.top.toUpperCase().slice(0, 14))}</text>`
+            + `<text y="8" text-anchor="middle" font-family="Georgia, serif" font-size="21" font-weight="700" fill="${it.lead ? '#f6dc95' : '#e8dcc4'}">${esc(it.big)}</text>`
+            + `<text y="30" text-anchor="middle" font-family="Georgia, serif" font-size="12" fill="#e8dcc4">${esc(it.sub)}</text>`);
+        }
+        if (it.kind === 'card') {                            // a framed scorecard: a gilt frame, the card's lines, the result
+          return g(`<rect x="-50" y="-60" width="100" height="122" rx="3" fill="#c9a253" stroke="#7a5a2c" stroke-width="3"/><rect x="-42" y="-52" width="84" height="106" fill="#f4f1e8"/>`
+            + `<text y="-38" text-anchor="middle" font-family="Georgia, serif" font-size="9" font-weight="700" fill="#1f4a2c">${esc(it.top.toUpperCase().slice(0, 16))}</text>`
+            + Array.from({ length: 4 }, (_, k) => `<line x1="-36" y1="${-28 + k * 9}" x2="36" y2="${-28 + k * 9}" stroke="#9aa59a" stroke-width="1"/>`).join('')
+            + Array.from({ length: 7 }, (_, k) => `<line x1="${-30 + k * 10}" y1="-30" x2="${-30 + k * 10}" y2="0" stroke="#c4cbc4" stroke-width="1"/>`).join('')
+            + `<text y="22" text-anchor="middle" font-family="Georgia, serif" font-size="16" font-weight="700" fill="#8a1c22">${esc(it.big)}</text>`
+            + `<text y="40" text-anchor="middle" font-family="Georgia, serif" font-size="8.5" fill="#4a4a4a">${esc(it.sub)}</text>`);
+        }
+        return g(`<path d="M-20 -52 h40 q0 30 -20 36 q-20 -6 -20 -36 Z" fill="#f2c94c" stroke="#a87b1c" stroke-width="2"/><path d="M-20 -46 q-12 2 -10 12 q2 6 10 5 M20 -46 q12 2 10 12 q-2 6 -10 5" fill="none" stroke="#a87b1c" stroke-width="2.5"/>`
+          + `<rect x="-4" y="-16" width="8" height="10" fill="#f2c94c"/><rect x="-44" y="-6" width="88" height="62" rx="4" fill="#2a190d" stroke="#c9a253" stroke-width="2"/>`
+          + `<text y="12" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-weight="700" fill="#f6dc95">${esc(it.top.toUpperCase().slice(0, 15))}</text>`
+          + `<text y="31" text-anchor="middle" font-family="Georgia, serif" font-size="15" font-weight="700" fill="#fff">${esc(it.big)}</text>`
+          + `<text y="47" text-anchor="middle" font-family="Georgia, serif" font-size="9.5" fill="#dcc9a4">${esc(it.sub)}</text>`);
+      }
+      const plaqueSvg = (it) => `<svg viewBox="-55 -66 110 132">${plaqueArt(it, 0, 0, 1)}</svg>`;
+      // the trophy room shows yours, or (from Friends) another player's, read-only
+      let trophyView = null;
       function openTrophies() {
         clearDemo();
+        trophyView = null;
         const ch = $('clubhouse');
-        ch.classList.remove('hub', 'new', 'match'); ch.classList.add('trophy');
+        ch.classList.remove('hub', 'new', 'match', 'friends'); ch.classList.add('trophy');
         setText('trMsg', '');
         renderTrophies();
+        $('chScene').innerHTML = chScene('trophy'); setText('chRoomName', 'The Trophy Room');
+        if (session) {                                       // your settled challenges, to view the scorecards (Friends' list; your framed ones from your wall)
+          if (!fr.loaded) loadFriends(true).then(() => { if (!trophyView && $('clubhouse').classList.contains('trophy')) renderTrophies(); });
+          profileApi('showcase', { name: session.id }).then((r) => {
+            if (r.status === 200 && r.data.player) { ownWallCards = r.data.player.cards || {}; if (!trophyView && $('clubhouse').classList.contains('trophy')) renderTrophies(); }
+          }).catch(() => { /* fine: no view buttons */ });
+        }
       }
+      async function visitTrophies(id) {
+        setText('frMsg', 'Opening their trophy room…');
+        let r;
+        try { r = await profileApi('showcase', { name: id }); } catch { r = { status: 0, data: {} }; }
+        if (r.status === 401) { signInExpired(); return setText('frMsg', 'Your sign-in has expired. Sign in again to visit.'); }
+        if (r.status !== 200 || !r.data.player) return setText('frMsg', (r.data && r.data.error) || 'Can\'t reach the server');
+        trophyView = upgradeShowcase(r.data.player);
+        const ch = $('clubhouse');
+        ch.classList.remove('hub', 'new', 'match', 'friends'); ch.classList.add('trophy');
+        setText('trMsg', '');
+        renderTrophies();
+        $('chScene').innerHTML = chScene('trophy'); setText('chRoomName', `${trophyView.name}'s Trophy Room`);
+      }
+      const upgradeShowcase = (p) => ({ ...p, trophies: p.trophies || [], titles: p.titles || [], rounds: p.rounds || [], history: p.history || [], showcase: p.showcase || { hide: [] } });
       function renderTrophies() {
-        const own = career.trophies || [], col = collectionOf(own), earned = earnedList().filter((t) => t.got(career)).length;
-        setText('trCash', money(career.cash));
-        setText('trIntro', 'Rare clubs, old balls and silverware for the cases. They don\'t help your game one bit: they\'re for showing off. Your collection\'s worth shows on your profile for everyone to see.');
-        let h = `<div class="tr-sum"><div><b>${col.n} / ${TROPHIES.length}</b>pieces</div><div><b>${money(col.value)}</b>collection</div><div><b>${earned} / ${earnedList().length}</b>trophies earned</div></div>`;
+        const C = trophyView || career, visiting = !!trophyView;
+        const own = C.trophies || [], col = collectionOf(own), earned = earnedList().filter((t) => t.got(C)).length;
+        setText('trCash', visiting ? '' : money(career.cash));
+        setText('trLead', visiting ? `${C.name}'s trophy room` : 'The trophy room');
+        $('trBack').textContent = visiting ? 'Back to Friends (Esc)' : 'Back to the clubhouse (Esc)';
+        setText('trIntro', visiting ? `${C.name}'s collection, the trophies they've earned, and their record against their friends, as they choose to show it.`
+          : 'Rare clubs, old balls and silverware for the cases. They don\'t help your game one bit: they\'re for showing off. Your collection\'s worth shows on your profile for everyone to see.');
+        let h = `<div class="tr-sum"><div><b>${col.n} / ${TROPHIES.length}</b>pieces</div><div><b>${money(col.value)}</b>collection</div><div><b>${earned} / ${earnedList().length}</b>trophies earned</div><div><b>${shownRivals(C).length}</b>rivalry trophies</div></div>`;
+        if (visiting) {                                     // read-only: what they have, and the rivalry wall as they show it
+          const rv = shownRivals(C), cards = C.cards || {};
+          h += `<div class="sh-cat">The rivalry wall · buy a piece off it and it's destroyed for good (the money goes to ${C.name})</div>`;
+          h += rv.length ? rv.map((it) => `<div class="tr-row rv"><div class="tr-art">${plaqueSvg(it)}</div><div><b>${it.kind === 'rival' ? `${C.name}'s record vs ${it.name}` : it.kind === 'card' ? `Framed scorecard: ${C.name} vs ${it.name}` : `${C.name} beat ${it.name}`}</b>`
+            + `<i>${it.kind === 'rival' ? `${it.big} (won–lost–halved) · ${it.sub}` : `${it.big} · ${it.sub}${it.date ? ` · ${frDate(it.date)}` : ''}`}</i></div><div class="tr-acts">`
+            + `${it.kind === 'card' && cards[it.ch] ? `<button data-viewcard="${it.ch}">View card</button>` : ''}`
+            + `${it.price ? `<button data-buyshow="${it.key}" class="no">Buy & destroy · ${money(it.price)}</button>` : ''}</div></div>`).join('')
+            : '<div class="fr-empty">Nothing on the wall yet.</div>';
+          h += '<div class="sh-cat">In the cases</div>' + (TROPHIES.filter((t) => own.includes(t.id)).map((t) => `<div class="tr-row own"><div class="tr-art">${artSvg(t.art)}</div><div><b>${t.name}<small>${t.era}</small></b><i>${t.note}</i></div><div class="tr-buy"><div class="cd-price">${money(t.price)}</div></div></div>`).join('') || '<div class="fr-empty">The cases are empty.</div>');
+          h += '<div class="sh-cat">Earned</div>' + (earnedList().filter((t) => t.got(C)).map((t) => `<div class="tr-row earned"><div class="tr-art">${artSvg(t.art)}</div><div><b>${t.name}</b><i>${t.how}</i></div><span class="tr-own">✓</span></div>`).join('') || '<div class="fr-empty">None yet.</div>');
+          $('trList').innerHTML = h;
+          return;
+        }
+        // your rivalry trophies, each with a show / hide switch; the scorecard of every win can be framed and hung too
+        const items = rivalItems(career);
+        h += `<div class="sh-cat">Rivalries · your record against friends, every challenge you won, and its scorecard if you frame it · visitors can buy (and destroy) a trophy or a card off your wall: you get the money</div>`;
+        h += items.length ? items.map((it) => `<div class="tr-row rv${it.on ? '' : ' hid'}"><div class="tr-art">${plaqueSvg(it)}</div><div><b>${it.kind === 'rival' ? `Record vs ${it.name}` : it.kind === 'card' ? `Scorecard vs ${it.name}` : `Beat ${it.name}`}</b>`
+          + `<i>${it.kind === 'rival' ? `${it.big} (won–lost–halved) · ${it.sub}` : `${it.big} · ${it.sub}${it.date ? ` · ${frDate(it.date)}` : ''}${it.price ? ` · buy-off price ${money(it.price)}` : ''}`}</i></div><div class="tr-acts">`
+          + `${it.kind === 'card' && myCard(it.ch) ? `<button data-viewcard="${it.ch}">View</button>` : ''}`
+          + `<button data-show="${it.key}" class="${it.on ? 'go' : ''}">${it.kind === 'card' ? (it.on ? '✓ Framed · take down' : 'Frame it') : it.on ? '✓ On the wall · hide' : 'Hidden · show it'}</button></div></div>`).join('')
+          : '<div class="fr-empty">Play a challenge against a friend (🤝 Friends) and your record shows up here.</div>';
+        const sold = (career.history || []).filter((x) => x.sale === 'sold').slice(-8).reverse();
+        if (sold.length) h += '<div class="sh-cat">Bought off your wall (and destroyed)</div>' + sold.map((x) => `<div class="tr-row earned"><div class="tr-art"></div><div><b>${x.result}</b><i>${frDate(x.date)}</i></div><span class="tr-own">+${money(x.net)}</span></div>`).join('');
         h += '<div class="sh-cat">For sale</div>' + TROPHIES.map((t) => {
           const mine = own.includes(t.id);
           return `<div class="tr-row${mine ? ' own' : ''}"><div class="tr-art">${artSvg(t.art)}</div><div><b>${t.name}<small>${t.era}</small></b><i>${t.note}</i></div>`
@@ -10932,9 +11114,51 @@
         }).join('');
         $('trList').innerHTML = h;
       }
-      function trophyClick(e) {
+      // a challenge's settled card, to look at: yours from the Friends list (or your own wall's data), a visited player's from theirs
+      const myCard = (cid) => fr.list.find((x) => x.id === cid && x.status === 'done') || (ownWallCards && ownWallCards[cid]) || null;
+      let ownWallCards = null;
+      async function trophyClick(e) {
+        const vc = e.target.closest('button[data-viewcard]');
+        if (vc) {                                            // a framed scorecard, full size (the shared card)
+          vc.blur();
+          const ch = trophyView ? (trophyView.cards || {})[vc.dataset.viewcard] : myCard(vc.dataset.viewcard);
+          if (ch) showSharedCard(ch, trophyView ? `Framed on ${trophyView.name}'s wall` : 'Framed on your wall', trophyView ? { as: trophyView.name.toLowerCase() } : { as: session.id });
+          return;
+        }
+        const by = e.target.closest('button[data-buyshow]');
+        if (by && trophyView) {                              // buy a piece off their wall: they get the money, it's destroyed
+          by.blur();
+          const it = shownRivals(trophyView).find((x) => x.key === by.dataset.buyshow);
+          if (!it || !confirm(`Pay ${trophyView.name} ${money(it.price)} to take down and destroy their ${it.kind === 'card' ? `framed scorecard vs ${it.name}` : `“Beat ${it.name}” trophy`}? It's gone for good.`)) return;
+          by.disabled = true; setText('trMsg', 'Buying…');
+          let r;
+          try { r = await profileApi('buyshow', { owner: trophyView.name.toLowerCase(), key: it.key }); } catch { r = { status: 0, data: {} }; }
+          if (r.status !== 200) { by.disabled = false; return setText('trMsg', (r.data && r.data.error) || 'Can\'t reach the server'); }
+          await syncLoad();                                  // (the server took the money from your career)
+          const name = trophyView.name;
+          await visitTrophies(name.toLowerCase());          // their wall, without it
+          setText('trMsg', `Done: you paid ${name} ${money(r.data.price)} and the ${it.kind === 'card' ? 'scorecard' : 'trophy'} is in the bin.`);
+          return;
+        }
+        const sw = e.target.closest('button[data-show]');
+        if (sw && !trophyView) {                             // show / hide a rivalry trophy on your wall; frame / unframe a scorecard
+          sw.blur();
+          const k = sw.dataset.show, s = career.showcase || {};
+          if (k.startsWith('s-')) {
+            const cid = k.slice(2), cards = new Set(s.cards || []);
+            if (cards.has(cid)) cards.delete(cid); else cards.add(cid);
+            career.showcase = { ...s, cards: [...cards] };
+          } else {
+            const hide = new Set(s.hide || []);
+            if (hide.has(k)) hide.delete(k); else hide.add(k);
+            career.showcase = { ...s, hide: [...hide] };
+          }
+          careerSave(); renderTrophies();
+          $('chScene').innerHTML = chScene('trophy');
+          return;
+        }
         const b = e.target.closest('button[data-buytr]');
-        if (!b || b.disabled) return;
+        if (!b || b.disabled || trophyView) return;
         b.blur();
         const t = TROPHIES.find((x) => x.id === b.dataset.buytr);
         if (!t || (career.trophies || []).includes(t.id) || career.cash < t.price) return;
@@ -13068,7 +13292,7 @@
         $('toBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('toHustle').addEventListener('click', (e) => { e.currentTarget.blur(); openMatchPicker(); });
         $('cmTours').addEventListener('click', (e) => { e.currentTarget.blur(); openTours(); });
-        $('trBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
+        $('trBack').addEventListener('click', (e) => { e.currentTarget.blur(); if (trophyView) openFriends(); else openClubhouse(); });     // (visiting: back to Friends)
         $('cdBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('coBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('shBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
