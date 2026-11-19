@@ -7825,6 +7825,15 @@
         const demoShot = careerOn && demo && demo.model && demo.on && demo.idx === state.club;      // a pro-shop demo flies gold, like its badge
         const t = new Tracer(demoShot ? 0xffd23a : 0xff3ea5, isChip() ? 0.35 : 1); t.group.visible = !isPutt(); scene.add(t.group); trails.push(t); return t;
       }
+      // on a hole, your earlier shots' tracers step aside while you're at address (user request), and come back after
+      function hideOldTracersAtAddress() {
+        const hide = hp.on && state.view === 'address';           // (through the swing too)
+        for (const t of trails) {
+          if (shot && t === shot.tracer) continue;                 // (never the shot in the air)
+          if (hide && !t.addrHidden) { t.addrHidden = true; t.wasVisible = t.group.visible; t.group.visible = false; }
+          else if (!hide && t.addrHidden) { t.addrHidden = false; t.group.visible = t.wasVisible; }
+        }
+      }
       function clearTrails() {
         for (let i = trails.length - 1; i >= 0; i--) {
           if (shot && !shot.done && trails[i] === shot.tracer) continue;
@@ -13116,7 +13125,11 @@
       const windDialLast = { key: '' };
       function updateWindDial(rel) {
         const mph = state.windMph || 0, lv = WIND_LEVELS.filter(([m]) => mph >= m).pop();
-        const key = `${mph}|${Math.round(rel)}`;
+        // the arrow is drawn as you see the scene (the camera's heading: at address the camera turns), while the words stay
+        // relative to your aim ("into you", "helping")
+        const camHeading = Math.atan2(-camera.matrixWorld.elements[8], camera.matrixWorld.elements[10]) * R2D;
+        const scr = state.windDir - frameBeta() - camHeading;
+        const key = `${mph}|${Math.round(rel)}|${Math.round(scr)}`;
         if (key === windDialLast.key) return;
         windDialLast.key = key;
         const el = $('windDial');
@@ -13125,7 +13138,7 @@
         const words = ['Into you', 'Into, off the right', 'From the right', 'Helping, off the right', 'Helping', 'Helping, off the left', 'From the left', 'Into, off the left'];
         setText('wdWords', mph ? words[Math.round((((rel % 360) + 360) % 360) / 45) % 8] : 'No wind');
         setText('wdLevel', lv[2]);
-        let a = rel + 180;                                   // (always turn the short way round)
+        let a = scr + 180;                                   // (always turn the short way round)
         while (a - (windDialLast.a ?? a) > 180) a -= 360;
         while (a - (windDialLast.a ?? a) < -180) a += 360;
         windDialLast.a = a;
@@ -14152,6 +14165,7 @@
         updateNpc(dt);                                         // a career match: the hustler's ball
         updateCamera(dt, now);
         if (isPutt()) updatePuttHUD(); else updateHUD();
+        hideOldTracersAtAddress();
         if (hp.on) drawHoleMap();
         else if (state.mode === 'range' && !document.body.classList.contains('home-on')) drawRangeMap();     // the range's own map
         if (tipsAvail()) { updateTips(now); updateTipsButton(); }
