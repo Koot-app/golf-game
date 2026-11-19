@@ -212,10 +212,11 @@ sign-in creates the profile (the client then sends a fresh career). `login` / `l
 tools are the only admin right so far.
 
 **Audit (user request, 2026-11-19): only Keeto can be an admin.** Changes:
-- The credential is **not in the repo** any more (the repo is public, and the old 3-letter password's hash in it
-  could be cracked; that password must be treated as known). It's the Vercel environment variable
-  `GOLF_ADMIN_KEETO = <salt>:<hash>`, made on your own PC with `node tools/admin-hash.js` (12+ characters, typed
-  hidden). `adminCred(id)` reads it; until it's set, signing in as Keeto answers 503 and nobody can.
+- The credential: **the user chose (2026-11-19) to keep it baked into `api/_admins.js`** as a salt + hash, as
+  originally built (the env-var-only version was reverted). Known trade-off, told to the user: the repo is public and
+  a short password's hash can be cracked; `node tools/admin-hash.js` makes a new salt + hash for a longer password.
+  The Vercel environment variable `GOLF_ADMIN_KEETO = <salt>:<hash>` is an optional override. `adminCred(id)` reads
+  the override, else the baked-in one.
 - Admin sessions are stored as `keeto#<credential fingerprint>` (`sessionValue()`), and `sessionId()` refuses an admin
   session whose fingerprint isn't the current credential's, so changing the password signs out every old admin
   session (including any made with the old password).
