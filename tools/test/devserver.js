@@ -14,6 +14,8 @@ function run([cmd, ...a]) {
   switch (cmd.toUpperCase()) {
     case 'SET': { const k = a[0]; if (a.includes('NX') && alive(k)) return null; kv.set(k, String(a[1])); const ei = a.indexOf('EX'); if (ei > 0) exp.set(k, Date.now() + a[ei + 1] * 1000); return 'OK'; }
     case 'GET': return alive(a[0]) ? kv.get(a[0]) : null;
+    case 'EXPIRE': if (!alive(a[0])) return 0; exp.set(a[0], Date.now() + a[1] * 1000); return 1;
+    case 'TTL': return !alive(a[0]) ? -2 : exp.has(a[0]) ? Math.ceil((exp.get(a[0]) - Date.now()) / 1000) : -1;
     case 'DEL': return kv.delete(a[0]) || hashes.delete(a[0]) ? 1 : 0;
     case 'INCR': { const v = (alive(a[0]) ? +kv.get(a[0]) : 0) + 1; kv.set(a[0], String(v)); return v; }
     case 'HSETNX': { const h = H(a[0]); if (h.has(a[1])) return 0; h.set(a[1], String(a[2])); return 1; }

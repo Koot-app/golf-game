@@ -60,10 +60,14 @@ async function rateLimit(key, max, windowS) {
 // the profile id of a request's session (Authorization: Bearer <token>), or null. An admin's session is stored as
 // "<id>#<credential fingerprint>" and only counts while that credential is the current one, so changing the admin
 // password signs out every session made with the old one (and an admin session without a fingerprint never counts).
+// A session lasts SESSION_S from its last use, not from the sign-in (audit 2.1: a fixed 30 days signed every regular
+// player out in the middle of playing): each request that uses it pushes the expiry out again. (EXPIRE on a key that
+// has gone is a no-op, so a dead session stays dead.)
+const SESSION_S = 30 * 24 * 3600;
 async function sessionId(req) {
   const m = /^Bearer ([a-f0-9]{64})$/.exec((req.headers && req.headers.authorization) || '');
   if (!m) return null;
-  const [v] = await redis([['GET', `golf:sess:${m[1]}`]]);
+  const [v] = await redis([['GET', `golf:sess:${m[1]}`], ['EXPIRE', `golf:sess:${m[1]}`, SESSION_S]]);
   if (!v) return null;
   const [id, fp] = String(v).split('#');
   if (isAdmin(id)) { const c = adminCred(id); if (!c || fp !== c.fp) return null; }
@@ -97,4 +101,4 @@ async function updateCareer(id, fn) {
 
 const { isAdmin, adminCred } = require('./_admins');
 
-module.exports = { findCreds, redis, readBody, clientIp, rateLimit, sessionId, sessionValue, CAS, updateCareer };
+module.exports = { findCreds, redis, readBody, clientIp, rateLimit, sessionId, sessionValue, SESSION_S, CAS, updateCareer };

@@ -155,6 +155,7 @@ looks like, so they double as regression tests once the fixes are in.
   merge: `cashHere 700 · driverHere d-xr16 · serverCash 700 · serverDriver d-xr16`.
 - **Fix (M–L):** this is Section 2's subject (the merge rule for every field); decide it there. The minimum is to
   take the server's copy of any field this PC hasn't changed since its last sync.
+- **Now covered by 2.2**, which has the field-by-field table and the fix design. Fixing 2.2 fixes this.
 
 ### 1.6 [Medium] Server payouts and escrow are two steps; a failure between them pays twice or loses the stake
 - **Where:** `api/challenge.js`: `payOut` (about lines 124–140), `accept` (about lines 259–271); `api/profile.js`
@@ -222,3 +223,252 @@ looks like, so they double as regression tests once the fixes are in.
 - **Section 7:** the hustler's presses can raise what you stand to lose to four times a stake that was capped at your
   cash plus credit, with no say from you. A debt wiped by the loan shark costs one club repair and 10 reputation,
   however big the debt was.
+
+## Section 2 — Saves and sync (2026-11-19, Fable 5.2)
+
+**Summary.** Everyday saving works: one device, one tab, a working connection. The server's version check does its
+job, and money the server moves (stakes, payouts, wall sales) reaches this PC correctly. The problems appear when
+something is out of step: an expired sign-in, a second tab or device, a dropped connection, or a very large career.
+Nine findings: 1 high, 5 medium, 3 low.
+
+| # | Severity | Finding | Fix size |
+|---|---|---|---|
+| 2.1 | High | Signing in again after your sign-in expires throws away everything not yet saved | ✅ Fixed |
+| 2.2 | Medium | A second tab or device with unsent changes overwrites newer purchases and progress (replaces 1.5) | M |
+| 2.3 | Medium | The fix for 1.1 has a gap: after six failed saves in a row, cash can still be counted twice | ✅ Fixed |
+| 2.4 | Medium | A slow reply from the server can swap the career under an invitational or friend round | ✅ Fixed |
+| 2.5 | Medium | Past about 100 matches, the save sent when the tab hides or closes always fails, silently | S |
+| 2.6 | Medium | A career grows without limit; at about 1,160 matches every save is refused, shown as "offline" | S–M |
+| 2.7 | Low | Careers from the game's earliest versions crash the clubhouse | S |
+| 2.8 | Low | Guest careers: two tabs overwrite each other, and storage failures are silent | S |
+| 2.9 | Low | Small robustness gaps (retry loop, no retry when offline, half-made profile, starting over) | S |
+
+The probe scripts are `tools/test/sync-*.js`. Each one's header says how to run it and what a correct result is.
+
+### 2.1 [High] Signing in again after your sign-in expires throws away everything not yet saved
+- **Where:** `profileSignIn` (about line 10815); `switchPlayer` (about line 10836); the "Sign in again" button
+  (about line 14851); `api/profile.js` `newSession` (`SESSION_S`, 30 days).
+- **Scenario:** a sign-in lasts exactly 30 days from the moment you signed in. Playing doesn't extend it, so every
+  regular player's sign-in will expire, quite possibly in the middle of a session.
+  1. The sign-in expires. Saves are refused (401). The game keeps playing from this PC's copy and shows "your sign-in
+     has expired — sign in again (home screen)".
+  2. You keep playing: win matches, buy clubs. All of it is only on this PC, marked unsent.
+  3. You do what the game asks and sign in again. `profileSignIn` takes the server's copy, marks it as synced, and
+     writes it over this PC's copy. Everything since step 1 is gone.
+
+  The same happens if you switch player while offline and sign back in later: the unsent copy is on the PC, and the
+  sign-in overwrites it.
+- **Evidence:** `sync-reauth.js`:
+  ```
+  afterTheWin:         cash 1500 · rep 5 · syncState "signedout" · unsent true
+  homeSays:            "⚠ Your sign-in has expired" · Sign in again shown
+  afterSigningInAgain: cash 1000 · rep 0
+  ```
+- **Fix (M):**
+  - In `profileSignIn` (sign in, not sign up): look at this PC's copy for that profile first. If it has unsent
+    changes, keep it and merge the server's copy into it with `mergeServer`, as a normal conflict does.
+  - On the server, make sign-ins slide: push the session's expiry out another 30 days whenever it's used, so an active
+    player is never signed out.
+- **✅ Fixed 2026-11-19.**
+  - **Client:** `profileSignIn` (signing in, not a new profile) now loads this PC's copy of that profile first. If the
+    copy has unsent changes, the game keeps it, merges the server's copy into it (when the server's is newer), and
+    sends the result.
+  - **Server:** `sessionId` in `api/_redis.js` pushes the session's expiry back to 30 days on every use
+    (`EXPIRE`, sent with the `GET`). A session that has already gone stays gone. `SESSION_S` now lives there.
+  - The dev server's fake Redis learned `EXPIRE` and `TTL`.
+  - Verified with `sync-reauth.js`: `afterSigningInAgain: cash 1500 · rep 5 · onTheServer: cash 1500 · rep 5` (it was
+    $1,000 and 0).
+  - Verified with `session-slide.js`: a session with 2 days left has 30 again after use, and a gone session stays gone.
+
+### 2.2 [Medium] A second tab or device with unsent changes overwrites newer purchases and progress (replaces 1.5)
+- **Where:** `mergeServer` (about line 10497); `syncLoad` (about line 10526).
+- **Scenario:** when this PC has unsent changes and the server has a newer copy, `mergeServer` combines only some
+  fields and keeps this PC's copy of the rest:
+
+  | Field | What the merge does | Right? |
+  |---|---|---|
+  | cash | server's cash + what this PC added since its last sync | Yes |
+  | history | both copies, de-duplicated, by date | Yes |
+  | scorecards (`cards`) | both, by id, the fuller card wins | Yes |
+  | handicap rounds | both, by date, last 20 | Yes |
+  | wall pieces destroyed | both | Yes |
+  | bag, locker, snapped clubs, putters | this PC's | No |
+  | stats, shots learned, caddie | this PC's | No |
+  | reputation, circuit, trophies, titles | this PC's | No |
+  | match, invitational, friend card in progress | this PC's | No |
+
+  For a player with one tab this is fine, because the server itself only ever changes the first five rows. With a
+  second tab or a second device it loses things:
+  - Tab A buys a driver and saves. Tab B, opened earlier, then saves any change. Tab B takes the lower cash but keeps
+    its own bag, and saves that. The money is spent and the driver is gone.
+  - A match finished in one tab is still "in progress" in the other, where it can be resumed and settled again.
+
+  "Unsent changes" is easy to have: opening the clubhouse can mark the career changed before the server's copy has
+  arrived (clearing a finished match, marking a friend's result as seen).
+- **Evidence:** `money-merge.js`, part 1 (from section 1): the other copy pays $300 for a driver; after this copy's
+  merge: `cashHere 700 · driverHere d-xr16 · serverCash 700 · serverDriver d-xr16`.
+- **Fix (M):**
+  - Make the merge three-way. For every field, compare this PC's value with the copy from its last sync (`sync.base`,
+    already kept). If this PC hasn't changed the field, take the server's. Only fields changed on both sides need a
+    rule, and the five that have one keep it. That fixes every "No" row above when the two copies changed different
+    things.
+  - For two tabs in one browser, also listen for the other tab's save (the `storage` event). The older tab should
+    reload the career when it isn't in a round, or say "the game is open in another tab".
+
+### 2.3 [Medium] The fix for 1.1 has a gap: after six failed saves in a row, cash can still be counted twice
+- **Where:** `syncNow` (about line 10480): `sync.pend = [...].slice(-6)`.
+- **Scenario:** the 1.1 fix remembers the saves whose reply never came back, so a later merge can tell that one of
+  them reached the server. It remembers only the last six.
+  1. The connection drops just as a save goes out. The save reaches the server; the reply is lost.
+  2. The connection stays down while you play a few holes. Each hole tries to save and fails. After six failures the
+     save from step 1 has dropped off the list.
+  3. The connection returns. The merge no longer knows the step 1 save landed, and adds its cash change again.
+
+  A connection that drops mid-save and stays down for a few minutes is how connections usually drop.
+- **Evidence:** `sync-pend-gap.js`:
+  ```
+  3 failed tries while offline -> cash 1500 (want 1500)
+  6 failed tries while offline -> cash 2000 (want 1500)
+  ```
+- **Fix (S):** don't cap the list at six. The entries are tiny, so keep a few hundred, and clear them only when a
+  save is confirmed or a merge has used them (both already happen).
+- **✅ Fixed 2026-11-19.**
+  - `sync.pend` now keeps the last 300 unanswered saves.
+  - `career.saveIds` keeps the last 60 (`SAVE_IDS`, about 1 KB), so a save that landed is still recognised after
+    another device has saved over it several times.
+  - Verified with `sync-pend-gap.js`: 3, 6 and 40 failed tries all give $1,500.
+
+### 2.4 [Medium] A slow reply from the server can swap the career under an invitational or friend round
+- **Where:** `syncLoad` (about line 10526). It checks "not in a round" before it asks the server, and not again when
+  the answer arrives. Its "take the server's copy" branch then empties the career object and refills it.
+- **Scenario:**
+  1. The server has a newer copy (a friend's payout landed overnight, say).
+  2. You open the game. `syncLoad` asks for the server's copy; the reply is slow (a cold start can take seconds).
+  3. Before it arrives, you resume your invitational or friend round.
+  4. The reply arrives and replaces the career's contents. The round is still holding the old entry object, which is
+     no longer part of the career.
+  5. Every hole from then on is recorded on the detached object and never saved.
+
+  For an invitational, the prize is still paid at the end, but the career still shows the entry as "in progress, thru
+  1": it can be resumed, finished and paid again. For a friend round, the finished card can't be sent, and the holes
+  have to be played again. A hustler match escapes this only because resuming one happens to save straight away.
+- **Evidence:** `sync-load-midround.js`:
+  ```
+  before:                 roundOn true · sameEntry true · holes 1
+  whenTheAnswerArrives:   sameEntry false
+  afterPlayingHole2:      holesInTheRound 2 · holesInTheCareer 1 · holesOnTheServer 1
+  ```
+- **Fix (S):** in `syncLoad`, check `round.on` again after the reply arrives. If a round has started, merge instead
+  of replacing (the merge changes fields in place and is safe), or leave it for the next save's conflict to handle.
+- **✅ Fixed 2026-11-19.**
+  - If a round is on by the time the reply arrives, `syncLoad` merges the server's copy in place (when it's newer) and
+    queues a save, so the career object is never swapped out.
+  - Verified with `sync-load-midround.js`:
+    - `whenTheAnswerArrives: sameEntry true · cash 950` ($1,000 − the $250 entry + the server's $200);
+    - `afterPlayingHole2: 2 · 2 · 2` (in the round, the career and the server).
+
+### 2.5 [Medium] Past about 100 matches, the save sent when the tab hides or closes always fails, silently
+- **Where:** the `visibilitychange` handler (about line 10613): `clearTimeout(sync.timer); syncNow(true)`.
+- **Scenario:** when the tab is hidden or closed with unsent changes, the game cancels its normal queued save and
+  sends one marked "keepalive", so it survives the page closing. Browsers refuse keepalive requests over 64 KB. A
+  career passes 64 KB at about 100 matches, because every save sends the whole career, including 100 scorecards.
+  From then on:
+  - the keepalive save fails at once and nothing is sent;
+  - the normal save it replaced has been cancelled;
+  - nothing retries until the next change or the next visit to the clubhouse.
+
+  So for an established player, switching tabs or closing the game right after a change leaves that change only on
+  this PC. Nothing is lost on this PC, but another device won't have it, which feeds 2.2.
+- **Evidence:** `sync-size.js`: a career of 71,761 characters:
+  `tabHidingSaveOver64KB: syncState "offline" · serverVersionMoved false · retryQueued false`; the same career with a
+  normal save: `syncState "ok" · serverVersionMoved true`.
+- **Fix (S):** when the tab hides, send a normal save if the career is over about 60 KB (a hidden tab still finishes
+  its requests), and keep keepalive for small ones. When the tab becomes visible again with unsent changes, queue a
+  save. Trimming what is sent (see 2.6) pushes the limit much further out.
+
+### 2.6 [Medium] A career grows without limit; at about 1,160 matches every save is refused, shown as "offline"
+- **Where:** `career.history` (never trimmed); `api/profile.js` `MAX_CAREER` (250,000 characters); `syncNow`'s
+  handling of any reply that isn't 200, 409 or 401.
+- **Scenario:** each match adds a history line of about 170 characters, for ever. Measured sizes:
+
+  | Career | Characters |
+  |---|---|
+  | brand new | 498 |
+  | 100 matches (100 scorecards) | 68,284 |
+  | 500 matches | 137,484 |
+  | about 1,160 matches | over 250,000 |
+
+  Past the limit the server answers "Bad save" (400). The game shows that as "⚠ not synced (offline) — will retry",
+  and retries for ever with the same result. The career carries on from this PC only, and the player is never told
+  why. That is a long way off (a few hundred hours of play), but it is permanent when it arrives.
+- **Evidence:** `sync-size.js`: `over250000: chars 255192 · syncState "offline" · whatThePlayerSees "… ⚠ not synced
+  (offline) — will retry" · serverVersionMoved false · stillUnsent true`.
+- **Fix (S–M):** keep the last few hundred history lines, and fold older ones into running totals (the records and
+  trophies that read history need those totals). Show a refused save as its own message, not as "offline".
+
+### 2.7 [Low] Careers from the game's earliest versions crash the clubhouse
+- **Where:** `upgradeCareer` (about line 10420). It fills in `out`, `putters`, `tierMax`, `history`, `rounds`,
+  `pvpSeen`, `trophies` and `titles`, but not `unlocks`, `snapped`, `bag` or `putter`.
+- **Scenario:** a career saved before the coach, the loan shark or the bag existed throws errors as soon as the
+  clubhouse opens, and the shop, coach and match picker don't draw. Only a save from the first day of development
+  could be in this state, so in practice this is your own PC if anywhere.
+- **Evidence:** `sync-old-saves.js`:
+  ```
+  ok     · today's shape
+  ok     · before the scorecard archive, luxury clubs, caddies, trophies
+  ok     · before friends and handicaps
+  ok     · before the pro shop
+  ERRORS · before the coach (no unlocks)
+  ERRORS · before the loan shark (no snapped)
+  ERRORS · the first career save (no bag, putter)
+  ok     · no reputation or seed
+  ```
+- **Fix (S):** have `upgradeCareer` fill every field `newCareer` creates, from the same defaults.
+
+### 2.8 [Low] Guest careers: two tabs overwrite each other, and storage failures are silent
+- **Where:** `careerSave` (about line 10439); `lsSet` (about line 10407); `readCareer`.
+- **Scenario:**
+  - **Two tabs.** Each tab holds its own copy and writes the whole career on every save. Whichever saves last wins,
+    so a purchase made in one tab disappears when the other saves. Nothing listens for the other tab.
+  - **Storage blocked or full.** `lsSet` swallows the error. A guest in a private window, or with storage full, plays
+    a whole session and nothing is kept, with no warning.
+  - **A damaged save.** If the stored career can't be read, the game treats it as "no career" and offers to start
+    one. Starting one writes over the damaged save, which might have been recoverable.
+- **Evidence:** code path traced.
+- **Fix (S):** listen for the `storage` event (same as 2.2). Show a warning when a write fails. Before starting a new
+  career over an unreadable save, copy the old text to a backup key.
+
+### 2.9 [Low] Small robustness gaps
+- **A copy this version can't read.** If the server's copy fails `upgradeCareer` (for example a future save format
+  seen by an old tab), `mergeServer` returns without doing anything and `syncNow` tries again 50 ms later, for ever:
+  about 20 requests a second. Fix: stop and tell the player to reload.
+- **No retry when offline.** After a failed save the status says "will retry", but nothing does until the next
+  change or the next clubhouse visit. Fix: retry on a timer, and on the browser's `online` event.
+- **A half-made profile.** `signup` in `api/profile.js` writes the name first and the password in a second step. If
+  the second step fails, the name is taken for good and nobody can sign in to it. Fix: write both in one step.
+- **Starting over.** "Start your career over" on a profile makes a new career, but if another tab or device has
+  unsent changes, the merge brings the old history, scorecards and handicap rounds back into it. Fix: mark a restart
+  so a merge doesn't cross it.
+
+### Checked and fine
+- **The version check.** The server only accepts a save made from its current version; an older copy gets a 409 with
+  the newer one and merges. No path lets a stale copy write over the server without merging first.
+- **Money the server moves.** Stakes held, payouts and wall sales reach this PC correctly whether it has unsent
+  changes or not (`money-merge.js` parts 2 and 3, and the cash, history and wall rows of the table in 2.2).
+- **A lost reply, then up to five failed saves:** cash is counted once (`sync-pend-gap.js`, the "3 failed tries" line,
+  and `money-lost-save-a.js` / `-b.js`).
+- **A load while a save is in flight** is skipped, so the two can't cross.
+- **A slow load when resuming a hustler match** is safe (`sync-load-midround.js` was first run on a match: the round
+  and the career stayed the same object, and the hole was saved).
+- **Old saves** from the last four shapes of the career load and open every room (`sync-old-saves.js`).
+- **Two profiles in one browser** are kept under separate keys; switching player clears the career, the sync state and
+  the friends list from memory, and signs the old session out on the server.
+- **A guest career and a profile.** Signing in to an existing profile leaves the guest career alone. "Bring this
+  career" only applies to a new profile, and moves it (the guest copy is removed).
+- **Scorecard archive:** capped at 100; handicap rounds at 20; friend results seen at 40.
+
+### Noticed for later
+- **Section 3:** the server stores whatever career object the browser sends (`cleanCareer` checks only that it's an
+  object under the size limit).
+- **Section 8:** every `careerSave` writes the whole career to this PC's storage twice (the career and the copy from
+  its last sync). At 500 matches that is about 275,000 characters, several times a hole.

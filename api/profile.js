@@ -16,14 +16,14 @@
 // their first sign-in creates them. Nobody else can sign up with an admin's name or become an admin.
 // login / load also return { admin: true | false } for the admin rights to come.
 //
-// Keys: golf:user:<id> (hash: name, salt, hash, created), golf:players (set of ids), golf:sess:<token> (-> id, 30 days),
+// Keys: golf:user:<id> (hash: name, salt, hash, created), golf:players (set of ids), golf:sess:<token> (-> id, 30 days from its last use),
 // golf:career:<id> (hash: data = career JSON, ver). <id> = the name lower-cased.
 //
 // Nothing here is sensitive (a game among friends), but passwords are still hashed (scrypt, per-user salt) because
 // people reuse passwords. Saves are compare-and-set on `ver`, so a copy that's out of date never overwrites a newer one.
 
 const crypto = require('crypto');
-const { redis, readBody, clientIp, rateLimit, sessionId, sessionValue, CAS, updateCareer } = require('./_redis');
+const { redis, readBody, clientIp, rateLimit, sessionId, sessionValue, SESSION_S, CAS, updateCareer } = require('./_redis');
 const { isAdmin, adminCred } = require('./_admins');
 
 // ---- the rivalry wall (index.html: rivalItems): a victory trophy per challenge won ("w-<challenge>") and, if its owner
@@ -42,7 +42,7 @@ function wallItem(c, key) {                       // the history line behind a w
 }
 
 const NAME_RE = /^[A-Za-z0-9 _-]{3,12}$/;
-const SESSION_S = 30 * 24 * 3600;
+// (SESSION_S, 30 days from a session's last use, lives in _redis.js with sessionId)
 const MAX_CAREER = 250000;                 // bytes of career JSON
 // (the compare-and-set script CAS lives in _redis.js)
 

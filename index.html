@@ -10417,6 +10417,7 @@
       // career.saveIds, so a merge can tell whether one of them reached the server after all (audit 1.1: the page was
       // closed or the connection dropped while a save was in flight) and not count its cash change a second time.
       const sync = { ver: 0, base: null, timer: 0, busy: false, again: false, state: '', dirty: false, pend: [] };
+      const SAVE_IDS = 60;                                   // save ids kept in the career (about 1 KB)
       function upgradeCareer(c) {
         if (!(c && c.v === 1 && typeof c.name === 'string' && c.stats)) return null;
         c.out = c.out || []; c.putters = c.putters || [c.putter || CAREER.putter]; c.tierMax = c.tierMax || c.tier || 1;      // (older saves)
@@ -10476,8 +10477,10 @@
         sync.busy = true; setSync('saving');
         // this save's id, in the career it sends and in pend (kept on disk before it goes, in case the page dies)
         const sid = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-        career.saveIds = [...(career.saveIds || []), sid].slice(-12);
-        sync.pend = [...(sync.pend || []), { id: sid, cash: career.cash }].slice(-6);
+        // (long lists, audit 2.3: a save that landed must still be remembered after many failed tries while offline, and
+        // still be in the server's list after another device has saved over it a few times)
+        career.saveIds = [...(career.saveIds || []), sid].slice(-SAVE_IDS);
+        sync.pend = [...(sync.pend || []), { id: sid, cash: career.cash }].slice(-300);
         saveSyncMeta();
         const sent = JSON.stringify(career);
         try {
@@ -10502,7 +10505,7 @@
         const landed = [...(sync.pend || [])].reverse().find((p) => (srv.saveIds || []).includes(p.id));
         const base = sync.base || srv, baseCash = landed ? landed.cash : (base.cash ?? career.cash);
         career.cash = srv.cash + (career.cash - baseCash);
-        career.saveIds = [...new Set([...(srv.saveIds || []), ...(career.saveIds || [])])].slice(-12);
+        career.saveIds = [...new Set([...(srv.saveIds || []), ...(career.saveIds || [])])].slice(-SAVE_IDS);
         const seen = new Set(), hist = [];
         for (const h of [...(srv.history || []), ...(career.history || [])]) { const k = `${h.date}|${h.npc || h.friend}|${h.net}`; if (!seen.has(k)) { seen.add(k); hist.push(h); } }
         career.history = hist.sort((a, b) => a.date - b.date);
@@ -10534,6 +10537,12 @@
           }
           if (r.status !== 200 || !r.data.career) return setSync(r.status === 200 ? '' : 'offline');
           if (career && sync.busy) return;                   // a save is in flight: its reply (or its 409 and merge) decides
+          // a round started while we waited for the reply (audit 2.4): never swap the career's contents under it (the
+          // round holds its match / entry / friend card); merge the server's changes in place instead
+          if (career && round.on) {
+            if (r.data.ver > sync.ver) { mergeServer(r.data.career, r.data.ver); updateCareerUI(); queueSync(100); }
+            return;
+          }
           if (!career || r.data.ver > sync.ver) {
             if (career && sync.dirty) mergeServer(r.data.career, r.data.ver);
             else {
@@ -10822,10 +10831,21 @@
         adminOk = !!r.data.admin;
         lsSet('golfSession', JSON.stringify(session)); playMode = 'profile'; lsSet('golfMode', 'profile');
         lsSet('golfLastProfile', session.id);                // listed first on this PC's home screen
-        career = upgradeCareer(r.data.career) || newCareer(r.data.name);
-        sync.ver = r.data.ver; sync.base = JSON.parse(JSON.stringify(career)); sync.dirty = !r.data.career; sync.pend = [];     // (a brand-new admin profile: send its fresh career)
-        saveSyncMeta();
-        if (sync.dirty) queueSync(100);
+        // this PC's own copy of the profile, if it has changes the server never got (the sign-in expired, or the
+        // player switched out while offline): keep it and merge the server's into it, as a save conflict would. Taking
+        // the server's copy here threw that progress away (audit 2.1).
+        const kept = mode === 'in' ? careerLoad() : null;    // (also loads its sync state: ver, base, pend)
+        if (kept && sync.dirty) {
+          career = kept;
+          if (r.data.career && r.data.ver > sync.ver) mergeServer(r.data.career, r.data.ver);
+          else saveSyncMeta();
+          queueSync(100);
+        } else {
+          career = upgradeCareer(r.data.career) || newCareer(r.data.name);
+          sync.ver = r.data.ver; sync.base = JSON.parse(JSON.stringify(career)); sync.dirty = !r.data.career; sync.pend = [];     // (a brand-new admin profile: send its fresh career)
+          saveSyncMeta();
+          if (sync.dirty) queueSync(100);
+        }
         if (bring && local) lsSet(CAREER.key, null);          // moved into the profile, not copied
         fr.list = []; fr.players = []; fr.loaded = 0;
         applyDevTools();

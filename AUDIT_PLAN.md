@@ -339,7 +339,7 @@ For each item, give the evidence that it's unused (a search with zero hits outsi
 | # | Section | Done | Findings | Fixed |
 |---|---|---|---|---|
 | 1 | Money and settlement | ✅ 2026-11-19 | 8 (1 critical, 2 high, 3 medium, 2 low) | 1.1, 1.2, 1.3 |
-| 2 | Saves and sync | | | |
+| 2 | Saves and sync | ✅ 2026-11-19 | 9 (1 high, 5 medium, 3 low) | 2.1, 2.3, 2.4 |
 | 3 | Server security | | | |
 | 4 | Match and hustler logic | | | |
 | 5 | Screens, overlays and keys | | | |
