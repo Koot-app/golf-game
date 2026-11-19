@@ -2391,15 +2391,141 @@
       max-width: 230px;
     }
 
-    #scPress {
+    /* the press offer on a match's scorecard (user request: easy to miss, so loud and explained) */
+    #scPressBox {
       display: none;
-      background: rgba(255, 93, 108, .18);
-      border-color: rgba(255, 93, 108, .6);
-      color: #ffe1e4;
+      margin: 12px 16px 0;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 2px solid #ffc24a;
+      background: linear-gradient(180deg, rgba(255, 194, 74, .16), rgba(255, 194, 74, .05));
+      animation: prPulse 1.6s ease-in-out infinite;
     }
 
-    #scPress.on {
+    #scPressBox.on {
       display: block;
+    }
+
+    #scPressBox.his {
+      border-color: rgba(255, 93, 108, .7);
+      background: rgba(255, 93, 108, .08);
+      animation: none;
+    }
+
+    #scPressBox.his .pr-btns {
+      display: none;
+    }
+
+    @keyframes prPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 194, 74, .0); }
+      50% { box-shadow: 0 0 22px 2px rgba(255, 194, 74, .45); }
+    }
+
+    .pr-h {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      color: #ffe082;
+    }
+
+    #scPressBox.his .pr-h {
+      color: #ffb3ba;
+    }
+
+    .pr-h span {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, .1);
+      color: #e8dcc0;
+    }
+
+    .pr-why {
+      margin: 6px 0 10px;
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: #f1e8d6;
+    }
+
+    .pr-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .pr-grid div {
+      padding: 7px 10px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, .25);
+      border: 1px solid rgba(255, 255, 255, .1);
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .pr-grid b {
+      display: block;
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    .pr-grid i {
+      display: block;
+      font-style: normal;
+      font-size: 11.5px;
+      font-weight: 400;
+      line-height: 1.35;
+      color: #d8ccb4;
+      margin-top: 2px;
+    }
+
+    .pr-grid .w { color: #5ee08a; }
+    .pr-grid .l { color: #ff8a95; }
+
+    .pr-foot {
+      margin-top: 9px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #cdbf9f;
+    }
+
+    .pr-foot .warn {
+      color: #ffb3ba;
+      font-weight: 700;
+    }
+
+    .pr-btns {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    #scPress {
+      width: auto;
+      margin: 0;
+      padding: 9px 18px;
+      font-size: 14.5px;
+      font-weight: 800;
+      background: linear-gradient(#ffd36b, #e9a92a);
+      border-color: #ffe7a0;
+      color: #2a1a04;
+    }
+
+    #scPress:hover {
+      filter: brightness(1.08);
+    }
+
+    .pr-btns span {
+      font-size: 12px;
+      color: var(--dim);
     }
 
     #cmStakeV {
@@ -2440,6 +2566,257 @@
 
     #beating.on {
       display: flex;
+    }
+
+    /* ---- the payoff screen (a match / an invitational just settled) ---- */
+    #outcome {
+      position: fixed;
+      inset: 0;
+      z-index: 8;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at center, rgba(10, 30, 18, .78) 0%, rgba(3, 8, 5, .94) 75%);
+      overflow: hidden;
+    }
+
+    #outcome.on {
+      display: flex;
+      animation: ocIn .35s ease-out;
+    }
+
+    #outcome.win,
+    #outcome.place {
+      background: radial-gradient(ellipse at center, rgba(90, 70, 10, .62) 0%, rgba(8, 10, 4, .94) 75%);
+    }
+
+    #outcome.loss,
+    #outcome.broke {
+      background: radial-gradient(ellipse at center, rgba(70, 12, 16, .62) 0%, rgba(8, 3, 4, .95) 75%);
+    }
+
+    @keyframes ocIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    #ocFx {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #ocFx i {
+      position: absolute;
+      top: -40px;
+      font-style: normal;
+      font-size: 26px;
+      animation: ocRain linear infinite;
+    }
+
+    @keyframes ocRain {
+      from { transform: translateY(0) rotate(0deg); opacity: 1; }
+      to { transform: translateY(110vh) rotate(540deg); opacity: .8; }
+    }
+
+    .oc-card {
+      position: relative;
+      width: min(620px, calc(100vw - 32px));
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      padding: 22px 26px 20px;
+      border-radius: 14px;
+      text-align: center;
+      background: linear-gradient(180deg, #fbf6e8, #efe4c8);
+      color: #2a2a22;
+      border: 3px solid #c9a253;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, .6), 0 0 0 6px rgba(201, 162, 83, .18);
+      animation: ocPop .5s cubic-bezier(.2, 1.4, .4, 1);
+    }
+
+    .oc-card.loss,
+    .oc-card.broke {
+      border-color: #8a2a30;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, .6), 0 0 0 6px rgba(179, 32, 42, .18);
+    }
+
+    @keyframes ocPop {
+      from { transform: scale(.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .oc-kick {
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: 12px;
+      letter-spacing: .3em;
+      text-transform: uppercase;
+      color: #8a6a30;
+    }
+
+    .oc-big {
+      margin: 4px 0 2px;
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1.1;
+      color: #1f4a2c;
+    }
+
+    .oc-card.win .oc-big,
+    .oc-card.place .oc-big {
+      color: #8a6210;
+      text-shadow: 0 1px 0 #fff3c2;
+    }
+
+    .oc-card.loss .oc-big,
+    .oc-card.broke .oc-big {
+      color: #8a1c22;
+    }
+
+    .oc-sub {
+      font-size: 13px;
+      color: #6a5a38;
+    }
+
+    .oc-who {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 14px auto 6px;
+      max-width: 470px;
+      text-align: left;
+    }
+
+    .oc-who svg {
+      flex: none;
+      width: 70px;
+      height: 104px;
+    }
+
+    .oc-who.tour svg {
+      width: 90px;
+      height: 90px;
+    }
+
+    .oc-say {
+      position: relative;
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: #fff;
+      border: 1px solid rgba(106, 74, 16, .25);
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 15px;
+      color: #2a2a22;
+    }
+
+    .oc-say i {
+      display: block;
+      margin-top: 4px;
+      font-size: 11.5px;
+      color: #7a6a48;
+    }
+
+    .oc-money {
+      margin: 8px 0 6px;
+    }
+
+    .oc-money span {
+      display: block;
+      font-size: 58px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -.01em;
+      font-variant-numeric: tabular-nums;
+      color: #4a4a40;
+    }
+
+    .oc-money i {
+      font-style: normal;
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: #7a6a48;
+    }
+
+    .oc-card .mw { color: #1e7a3c; }
+    .oc-card .ml { color: #b3202a; }
+
+    .oc-rows {
+      width: 100%;
+      margin: 10px 0 4px;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+
+    .oc-rows td {
+      padding: 6px 8px;
+      border-top: 1px dashed rgba(106, 74, 16, .3);
+    }
+
+    .oc-rows td:last-child {
+      text-align: right;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .oc-rows small {
+      color: #7a6a48;
+      margin-left: 4px;
+    }
+
+    .oc-rows tr.bad td {
+      background: rgba(179, 32, 42, .07);
+    }
+
+    .oc-foot {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .oc-foot div {
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid rgba(106, 74, 16, .2);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .oc-foot b {
+      display: block;
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #7a6a48;
+    }
+
+    .oc-btns {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .oc-btns button {
+      width: auto;
+      margin: 0;
+      padding: 9px 16px;
+      font-weight: 700;
+      background: #fffaf0;
+      border: 1.5px solid #1f4a2c;
+      color: #1f4a2c;
+    }
+
+    .oc-btns button.go {
+      background: #1f4a2c;
+      color: #f3dca0;
     }
 
     #beating.shake .bt-card {
@@ -2963,8 +3340,352 @@
 
     #scorecard.lbonly #scMsg,
     #scorecard.lbonly #scTable,
+    #scorecard.lbonly #scCourse,
     #scorecard.entry #scBtns {
       display: none;
+    }
+
+    /* =====================================================================================================
+       THE PAPER SCORECARD (user request: "look more like a real scorecard"): cream card stock, a green printed
+       header, ruled green grid, scores pencilled in, birdies circled and bogeys boxed in ink
+       ===================================================================================================== */
+    #scorecard.card {
+      width: min(780px, calc(100vw - 32px));
+      background:
+        repeating-linear-gradient(0deg, rgba(120, 100, 60, .025) 0 2px, transparent 2px 4px),
+        radial-gradient(ellipse at 30% 20%, #fbf7ec, #f1e9d4 70%, #e8dcc0);
+      color: #2a2a22;
+      border: 1px solid #c9b98f;
+      border-radius: 6px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, .55), 0 2px 0 #fff inset;
+      padding: 0 0 14px;
+    }
+
+    #scorecard .card-h {
+      margin: 0;
+      padding: 12px 18px 10px;
+      background: linear-gradient(#1f4a2c, #173a22);
+      border-bottom: 3px double #c9a253;
+      border-radius: 5px 5px 0 0;
+    }
+
+    #scorecard .card-h>span:first-child {
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: 14px;
+      letter-spacing: .14em;
+      color: #f3dca0;
+    }
+
+    #scorecard .card-h .tag {
+      background: #f3dca0;
+      color: #1f4a2c;
+      font-weight: 700;
+      font-size: 11px;
+      padding: 2px 9px;
+    }
+
+    #scCourse {
+      padding: 7px 18px 0;
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-style: italic;
+      font-size: 12.5px;
+      color: #6a5a38;
+    }
+
+    #scCourse:empty {
+      display: none;
+    }
+
+    #scorecard #scMsg {
+      margin: 8px 18px 4px;
+      padding: 8px 12px;
+      font-size: 15px;
+      line-height: 1.4;
+      color: #1d2a1f;
+      background: rgba(255, 255, 255, .55);
+      border-left: 4px solid #1f4a2c;
+      border-radius: 0 6px 6px 0;
+    }
+
+    #scorecard #scTable {
+      width: calc(100% - 36px);
+      margin: 10px 18px 0;
+      border: 2px solid #1f4a2c;
+      background: rgba(255, 255, 255, .35);
+    }
+
+    #scorecard #scTable th,
+    #scorecard #scTable td {
+      border: 1px solid rgba(31, 74, 44, .35);
+      padding: 5px 3px;
+      color: #2a2a22;
+    }
+
+    #scorecard #scTable tr:first-child th {
+      background: #1f4a2c;
+      color: #f3dca0;
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: 13px;
+      letter-spacing: .04em;
+      border-color: #2d6440;
+    }
+
+    #scorecard #scTable td:first-child,
+    #scorecard #scTable th:first-child {
+      color: #1f4a2c;
+      font-weight: 700;
+      font-size: 12px;
+      min-width: 92px;
+      background: rgba(31, 74, 44, .07);
+    }
+
+    #scorecard #scTable tr:first-child th:first-child {
+      background: #1f4a2c;
+      color: #f3dca0;
+    }
+
+    /* the printed rows (par, wind) a little smaller and greener; the players' rows pencilled */
+    #scorecard #scTable tr:nth-child(2) td,
+    #scorecard #scTable tr:nth-child(3) td {
+      color: #3c5a44;
+      font-size: 12px;
+      background: rgba(31, 74, 44, .05);
+    }
+
+    #scorecard #scTable tr.me td,
+    #scorecard #scTable tr.npc td {
+      font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+      font-size: 15px;
+      color: #33302a;
+      padding-top: 6px;
+      padding-bottom: 6px;
+    }
+
+    #scorecard #scTable tr.me td:first-child,
+    #scorecard #scTable tr.npc td:first-child {
+      font-family: "Segoe Print", "Bradley Hand", cursive;
+      font-size: 14px;
+      color: #1d2a4a;
+    }
+
+    #scorecard #scTable tr.npc td:first-child {
+      color: #7a1c22;
+    }
+
+    #scorecard #scTable .sc-nick {
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 10px;
+      color: #7a6a48;
+    }
+
+    #scorecard #scTable .tot {
+      background: rgba(201, 162, 83, .18);
+      font-weight: 800;
+    }
+
+    #scorecard #scTable .cur {
+      background: rgba(255, 224, 102, .35);
+    }
+
+    /* ink: birdies circled, eagles double-circled (red), bogeys boxed, doubles double-boxed (blue-black) */
+    #scorecard #scTable .sc {
+      line-height: 24px;
+      min-width: 26px;
+      font-weight: 700;
+    }
+
+    #scorecard #scTable .sc.birdie {
+      color: #b3202a;
+      border-color: #b3202a;
+    }
+
+    #scorecard #scTable .sc.eagle {
+      color: #b3202a;
+      border-color: #b3202a;
+      box-shadow: 0 0 0 2px #f6f0e0, 0 0 0 4px #b3202a;
+    }
+
+    #scorecard #scTable .sc.bogey {
+      color: #1d2a4a;
+      border-color: rgba(29, 42, 74, .75);
+    }
+
+    #scorecard #scTable .sc.double {
+      color: #1d2a4a;
+      border-color: #1d2a4a;
+      box-shadow: 0 0 0 2px #f6f0e0, 0 0 0 4px #1d2a4a;
+    }
+
+    #scorecard #scTable .under { color: #b3202a; }
+    #scorecard #scTable .over { color: #1d2a4a; }
+    #scorecard #scTable .rcv { color: #a8801f; }
+    #scorecard #scTable .nocard { color: #8a7a58; }
+
+    /* the bets: the running status pencilled in green (up) or red (down) */
+    #scorecard #scTable tr.mrow td {
+      font-size: 12px;
+      background: rgba(201, 162, 83, .07);
+    }
+
+    #scorecard #scTable tr.mrow td:first-child {
+      color: #6a4a10;
+    }
+
+    #scorecard #scTable .mw { color: #1e7a3c; }
+    #scorecard #scTable .ml { color: #b3202a; }
+    #scorecard #scTable .mh { color: #6a6a5a; }
+
+    #scorecard #scTable .sc-run {
+      font-family: "Segoe Print", "Bradley Hand", cursive;
+      font-weight: 700;
+      font-size: 12.5px;
+    }
+
+    #scorecard #scTable .sc-na {
+      font-style: normal;
+      color: #b8a880;
+    }
+
+    #scorecard #scTable .sc-money {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    /* the bets strip under the card */
+    #scBets {
+      margin: 12px 18px 0;
+      padding: 10px 12px 12px;
+      border: 1.5px dashed rgba(106, 74, 16, .45);
+      border-radius: 8px;
+      background: rgba(255, 248, 225, .6);
+    }
+
+    #scBets:empty {
+      display: none;
+    }
+
+    .sb-h {
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: 12px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: #6a4a10;
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+
+    .sb-bets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 9px;
+    }
+
+    .sb-bet {
+      padding: 4px 10px;
+      border-radius: 99px;
+      background: #fff;
+      border: 1px solid rgba(106, 74, 16, .3);
+      font-size: 12px;
+      color: #2a2a22;
+    }
+
+    .sb-bet em {
+      font-style: normal;
+      font-weight: 800;
+      color: #6a4a10;
+    }
+
+    .sb-bet i {
+      font-style: normal;
+      color: #6a5a38;
+    }
+
+    .sb-bet.done {
+      opacity: .6;
+    }
+
+    .sb-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .sb-grid div {
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: #fff;
+      border: 1px solid rgba(106, 74, 16, .2);
+    }
+
+    .sb-grid b {
+      display: block;
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #7a6a48;
+    }
+
+    .sb-grid span {
+      display: block;
+      font-size: 20px;
+      font-weight: 800;
+      color: #2a2a22;
+    }
+
+    .sb-grid span.gold { color: #8a6210; }
+    .sb-grid span.mw { color: #1e7a3c; }
+    .sb-grid span.ml { color: #b3202a; }
+
+    .sb-grid i {
+      display: block;
+      font-style: normal;
+      font-size: 11px;
+      line-height: 1.3;
+      color: #6a5a38;
+    }
+
+    /* the press offer and the buttons, on paper */
+    #scorecard #scPressBox {
+      margin: 12px 18px 0;
+      background: linear-gradient(180deg, #1f2a1f, #16201a);
+    }
+
+    #scorecard #scPressBox.his {
+      background: #2a1418;
+    }
+
+    #scorecard #scBtns {
+      padding: 14px 18px 0;
+    }
+
+    #scorecard #scBtns button {
+      background: #fffaf0;
+      border: 1.5px solid #1f4a2c;
+      color: #1f4a2c;
+      font-weight: 700;
+    }
+
+    #scorecard #scBtns button:hover {
+      background: #fff;
+    }
+
+    #scorecard #scBtns #scNext {
+      background: #1f4a2c;
+      border-color: #1f4a2c;
+      color: #f3dca0;
+    }
+
+    #scorecard #scBtns #scNext:hover {
+      background: #2a5e39;
+    }
+
+    #scorecard #lbEntry,
+    #scorecard #lbBoard {
+      margin: 12px 18px 0;
     }
 
     .lb-new {
@@ -5214,6 +5935,56 @@
       opacity: .5;
     }
 
+    /* the Scorecards tab: a date stub, the round, the money and View */
+    .tr-row.sc-hist {
+      grid-template-columns: 52px 1fr auto;
+      padding: 8px 12px;
+    }
+
+    .sch-date {
+      text-align: center;
+      padding: 4px 0;
+      border-radius: 8px;
+      background: #f1e9d4;
+      color: #6a5a38;
+      font-size: 10.5px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+
+    .tr-row .sch-date b {
+      display: block;
+      font-size: 20px;
+      color: #1f4a2c;
+      letter-spacing: 0;
+    }
+
+    .sch-net {
+      display: block;
+      text-align: right;
+      font-weight: 800;
+      font-size: 15px;
+      margin-bottom: 4px;
+      color: #dcc9a4;
+    }
+
+    .sch-net.up,
+    .tr-sum b.up { color: #5ee08a; }
+
+    .sch-net.dn,
+    .tr-sum b.dn { color: #ff8a95; }
+
+    .tr-row.sc-hist .tr-acts {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    #scorecard.arch {
+      z-index: 8;
+    }
+
     .tr-art svg {
       width: 64px;
       height: 64px;
@@ -5768,8 +6539,12 @@
 
     <div id="scorecard" class="card">
       <div class="card-h"><span id="scTitle">Scorecard</span><span class="tag" id="scTag"></span></div>
+      <div id="scCourse"></div>
       <div id="scMsg"></div>
       <table id="scTable"></table>
+      <div id="scBets"></div>
+      <!-- a career match: the press offer when you're 2 down (or the news that he pressed), explained -->
+      <div id="scPressBox"><div id="scPressTxt"></div><div class="pr-btns"><button id="scPress">Press (P)</button><span id="scPressAlt"></span></div></div>
       <div id="lbEntry">
         <div class="lb-new" id="lbHead">NEW HIGH SCORE!</div>
         <div class="lb-sub">ENTER YOUR INITIALS</div>
@@ -5781,7 +6556,7 @@
         <table id="lbTable"></table>
         <div id="lbNote"></div>
       </div>
-      <div id="scBtns"><button id="scPress">Press (P)</button><button id="scNext">Next hole (N)</button><button id="scClose">Close (K)</button></div>
+      <div id="scBtns"><button id="scNext">Next hole (N)</button><button id="scClose">Close (K)</button></div>
     </div>
     <div id="tipsCard" class="card">
       <div class="card-h"><span>💡 Caddie tips</span><span style="display:flex;align-items:center;gap:8px"><span class="tag" id="tipsPage"></span><button id="tipsClose" title="Close (Esc)">✕</button></span></div>
@@ -5881,6 +6656,7 @@
       </div>
       <div id="chTrophy">
         <div class="sh-top"><div class="ch-lead" id="trLead">The trophy room</div><span class="sh-cash" id="trCash"></span></div>
+        <div class="sh-tabs" id="trTabs"></div>
         <p class="ch-p" id="trIntro"></p>
         <div class="sh-list" id="trList"></div>
         <div class="ch-msg" id="trMsg"></div>
@@ -5957,6 +6733,8 @@
       </div>
       </div>
     </div>
+    <!-- the payoff: a match or an invitational has just settled (user request) -->
+    <div id="outcome"><div id="ocFx"></div><div class="oc-card" id="ocCard"></div></div>
     <div id="beating">
       <div class="bt-card">
         <div id="btPow" class="bt-pow">WHACK!</div>
@@ -9385,7 +10163,9 @@
           const vs = round.match ? `\n${matchAfterHole(hp.holeIdx)}` : pv ? `\n${pv}` : round.tour ? `\n\n${tourAfterHole(hp.holeIdx)}` : '';   // a career match: the hustler's score, the match; an invitational: the board
           const cr = round.match || round.pvp || round.tour;
           const hc = cr && careerOn ? recordCareerRound(cr) : '';                     // all 9 played: it counts for your handicap (M2)
+          archiveRound();                                                              // the card goes in the trophy room's history
           showScorecard(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}${vs}${hc}`);
+          maybeShowOutcome();                                                          // a match or an invitational just settled: the payoff screen
           if (round.pvp && round.over) submitPvp();                                  // the last hole of a friend round: send the card
           return;
         }
@@ -9658,6 +10438,9 @@
           const s = career.showcase || {};
           career.showcase = { ...s, destroyed: gone, cards: (s.cards || []).filter((x) => !gone.includes(`s-${x}`)) };
         }
+        const cs = new Map();                                // archived scorecards from both copies, by id (the fuller one wins)
+        for (const x of [...(srv.cards || []), ...(career.cards || [])]) { const y = cs.get(x.id); if (!y || x.sc.filter(Boolean).length + (x.settled ? 1 : 0) >= y.sc.filter(Boolean).length + (y.settled ? 1 : 0)) cs.set(x.id, x); }
+        if (cs.size) career.cards = [...cs.values()].sort((a, b) => a.date - b.date).slice(-CARD_KEEP);
         const rs = new Map();                                // handicap rounds from both copies, by date (M2)
         for (const x of [...(srv.rounds || []), ...(career.rounds || [])]) rs.set(x.date, x);
         career.rounds = [...rs.values()].sort((a, b) => a.date - b.date).slice(-HCP.keep);
@@ -9713,6 +10496,32 @@
         return `\n\nRound recorded for your handicap: ${gross} (${fmtToPar(gross - par)}) at ${TIERS[m.tier].course}. `
           + (h === null ? `${n} of ${HCP.min} rounds needed for a handicap.` : before === null ? `Your first handicap: ${fmtHcp(h)}.` : `Handicap ${fmtHcp(before)} → ${fmtHcp(h)}.`);
       }
+      // ---- THE SCORECARD ARCHIVE (user request, 2026-11-19): every career round's card (hustler matches, invitationals,
+      // friend challenges) is kept in career.cards (the last CARD_KEEP, oldest first), written after every hole so a match
+      // decided early or forfeited still has its card. The trophy room's Scorecards tab lists them and redraws any of them.
+      // { id, date, kind: match | tour | pvp, tier, pars, winds: [[mph, from]], sc: [[strokes, putts, pen] | 0], o: [his] (a
+      //   match), npc, format, stake, presses, settled, result, net, unpaid, tour, place, prize, vs, vsName }
+      const CARD_KEEP = 100;
+      function archiveRound() {
+        if (!careerOn || !career || !round.on) return;
+        const m = round.match, t = round.tour, pv = round.pvp;
+        if (!m && !t && !pv) return;
+        const id = m ? `m${m.no}-${m.salt}` : t ? `t${t.no}-${t.salt}` : `p${pv.id}`;
+        const cards = career.cards || [], old = cards.find((c) => c.id === id);
+        const card = {
+          id, date: old ? old.date : Date.now(), kind: m ? 'match' : t ? 'tour' : 'pvp', tier: (m || t || pv).tier,
+          pars: HOLES.map((h) => h.par), winds: HOLES.map((h) => { const w = variantDef(h).wind || { mph: 0, from: 0 }; return [w.mph, w.from]; }),
+          sc: HOLES.map((_, i) => { const s = round.scores[i]; return s ? [s.strokes, s.putts, s.pen || 0] : 0; }),
+        };
+        if (m) Object.assign(card, { o: HOLES.map((_, i) => (m.holes[i] ? m.holes[i].npc : 0)), npc: m.npc, format: m.format, stake: m.stake, presses: (m.presses || []).map((p) => ({ from: p.from, by: p.by, stake: p.stake })), settled: !!m.settled, result: m.result || '', net: m.net || 0, unpaid: m.unpaid || 0 });
+        if (t) Object.assign(card, { tour: t.id, settled: !!t.settled, place: t.place || 0, prize: t.prize || 0, wd: !!t.wd, net: t.settled ? (t.prize || 0) - tourById(t.id).entry : 0 });
+        if (pv) Object.assign(card, { format: pv.format, stake: pv.stake, vs: pv.vs, vsName: pv.vsName, ch: pv.id });
+        career.cards = [...cards.filter((c) => c.id !== id), card].sort((a, b) => a.date - b.date).slice(-CARD_KEEP);
+        careerSave();
+      }
+      // an archived card as a match the scorecard's functions understand (his scores, the bets, how it settled)
+      const cardAsMatch = (c) => ({ npc: c.npc, format: c.format, stake: c.stake, presses: c.presses || [], settled: !!c.settled, result: c.result, net: c.net, unpaid: c.unpaid,
+        holes: c.pars.map((par, i) => (c.sc[i] && c.o && c.o[i] ? { me: c.sc[i][0], npc: c.o[i], par } : null)) });
       // the career changed under us (a sync): re-apply it to the game and the clubhouse
       function refreshCareerView() {
         if (careerOn) {
@@ -10004,6 +10813,10 @@
       }
       // while the clubhouse is open it takes the keys (typing a name goes to the box)
       function clubKey(e) {
+        if ($('scorecard').classList.contains('arch') && $('scorecard').classList.contains('on')) {     // an archived card over the trophy room
+          if (['Escape', 'Enter', 'NumpadEnter', 'Space', 'KeyN', 'KeyK'].includes(e.code)) { e.preventDefault(); if (!e.repeat) closeArchivedCard(); }
+          return;
+        }
         if ($('scorecard').classList.contains('pvp') && $('scorecard').classList.contains('on')) {      // a friend result over the clubhouse
           if (['Escape', 'Enter', 'NumpadEnter', 'Space', 'KeyN', 'KeyK'].includes(e.code)) { e.preventDefault(); if (!e.repeat) closeSharedCard(); }
           return;
@@ -10670,7 +11483,7 @@
         const inRound = !!round.pvp;
         $('scNext').textContent = inRound ? 'Back to the clubhouse (N)' : 'OK (Enter)';
         $('scClose').textContent = inRound ? 'Back to the clubhouse' : 'Close (Esc)';
-        $('scPress').classList.remove('on');
+        $('scPressBox').classList.remove('on'); $('scBets').innerHTML = '';
         const sc = $('scorecard');
         scMode = 'pvp';
         sc.classList.remove('entry', 'board', 'lbonly');
@@ -11340,6 +12153,10 @@
         setText('trBagTag', visiting ? `🎒 ${C.name}'s bag` : '🎒 Your bag');     // the golf bag in the room
         $('trBagSpot').style.visibility = !visiting || (C.gear && C.gear.bag) ? '' : 'hidden';
         $('trBack').textContent = visiting ? 'Back to Friends (Esc)' : 'Back to the clubhouse (Esc)';
+        // your own room has two tabs: the trophies, and the scorecards of every round you've played (user request)
+        const nCards = visiting ? 0 : (career.cards || []).length;
+        $('trTabs').innerHTML = visiting ? '' : [['trophies', '🏆 Trophies'], ['cards', `📋 Scorecards (${nCards})`]].map(([k, l]) => `<button data-trtab="${k}" class="${trTab === k ? 'on' : ''}">${l}</button>`).join('');
+        if (!visiting && trTab === 'cards') return renderCardHistory();
         setText('trIntro', visiting ? `${C.name}'s collection, the trophies they've earned, and their record against their friends, as they choose to show it.`
           : 'Rare clubs, old balls and silverware for the cases. They don\'t help your game one bit: they\'re for showing off. Your collection\'s worth shows on your profile for everyone to see.');
         let h = `<div class="tr-sum"><div><b>${col.n} / ${TROPHIES.length}</b>pieces</div><div><b>${money(col.value)}</b>collection</div><div><b>${earned} / ${earnedList().length}</b>trophies earned</div><div><b>${shownRivals(C).length}</b>rivalry trophies</div></div>`;
@@ -11377,10 +12194,79 @@
         }).join('');
         $('trList').innerHTML = h;
       }
+      // ---- the Scorecards tab: every archived card, newest first, with the result and the money; View redraws the card
+      let trTab = 'trophies';
+      function renderCardHistory() {
+        const cards = [...(career.cards || [])].reverse();
+        setText('trIntro', 'Every round you\'ve played in your career since scorecards were kept: hustler matches, invitationals and friend challenges. View any of them full size.');
+        const sgn = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${money(Math.abs(v))}`;
+        let h = '';
+        if (cards.length) {
+          const won = cards.filter((c) => c.settled && c.net > 0).length, lost = cards.filter((c) => c.settled && c.net < 0).length;
+          const net = cards.reduce((t, c) => t + (c.settled ? c.net || 0 : 0), 0), done = cards.filter((c) => c.sc.every(Boolean));
+          const best = done.length ? done.reduce((a, c) => (cardTotals(c).toPar < cardTotals(a).toPar ? c : a)) : null;
+          h += `<div class="tr-sum"><div><b>${cards.length}</b>scorecards</div><div><b>${won}–${lost}</b>won–lost (for money)</div>`
+            + `<div><b class="${net > 0 ? 'up' : net < 0 ? 'dn' : ''}">${sgn(net)}</b>net, all of them</div><div><b>${best ? `${cardTotals(best).strokes} (${fmtToPar(cardTotals(best).toPar)})` : '—'}</b>best 9 holes</div></div>`;
+        }
+        let month = '';
+        h += cards.length ? cards.map((c) => {
+          const d = new Date(c.date), mo = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+          const head = mo !== month ? `<div class="sh-cat">${(month = mo)}</div>` : '';
+          const tt = cardTotals(c), played = c.sc.filter(Boolean).length;
+          const title = c.kind === 'match' ? (() => { const n = npcById(c.npc); return n ? `vs ${n.first} “${n.nick}” ${n.last}` : 'vs a hustler'; })()
+            : c.kind === 'tour' ? (tourById(c.tour) ? tourById(c.tour).name : 'An invitational') : `vs ${c.vsName || 'a friend'}`;
+          const what = c.kind === 'match' ? `${c.format === 'skins' ? 'Skins' : 'Match play'} · ${money(c.stake)}${c.format === 'skins' ? ' a hole' : ''}${(c.presses || []).length ? ` · ${c.presses.length} press${c.presses.length > 1 ? 'es' : ''}` : ''}`
+            : c.kind === 'tour' ? 'Invitational · stroke play' : `Friend challenge · ${FR_FMT[c.format] || c.format} · ${money(c.stake)}`;
+          const res = c.kind === 'match' ? (c.settled ? c.result || '' : 'not finished')
+            : c.kind === 'tour' ? (c.wd ? 'withdrew' : c.settled ? (c.place === 1 ? 'won it' : `finished ${c.place === 2 ? '2nd' : c.place === 3 ? '3rd' : `${c.place}th`}`) : 'not finished')
+              : (() => { const ch = myCard(c.ch); return ch && ch.result ? ch.result.line : 'result on the Friends page'; })();
+          const mv = c.kind === 'pvp' ? (() => { const ch = myCard(c.ch); return ch && ch.result && ch.result.net ? ch.result.net[session && session.id] || 0 : null; })() : c.settled ? c.net || 0 : null;
+          const money_ = mv === null ? '' : sgn(mv);
+          return `${head}<div class="tr-row sc-hist ${c.kind}"><div class="sch-date"><b>${d.getDate()}</b>${d.toLocaleDateString(undefined, { month: 'short' })}</div>`
+            + `<div><b>${c.kind === 'match' ? '🤝' : c.kind === 'tour' ? '🏆' : '👥'} ${title}</b><i>${what} · ${TIERS[c.tier] ? TIERS[c.tier].course : ''}</i>`
+            + `<i>${played === c.pars.length ? `${tt.strokes} (${fmtToPar(tt.toPar)})` : `${played} of ${c.pars.length} holes · ${fmtToPar(tt.toPar)}`} · ${res}</i></div>`
+            + `<div class="tr-acts"><span class="sch-net ${mv > 0 ? 'up' : mv < 0 ? 'dn' : ''}">${money_}</span><button data-histcard="${c.id}">View card</button></div></div>`;
+        }).join('') : '<div class="fr-empty">No scorecards yet. Play a hustler match, an invitational or a friend challenge and its card is kept here.</div>';
+        // older results, from before cards were kept: just the line
+        const first = (career.cards || [])[0], old = (career.history || []).filter((x) => !x.sale && (!first || x.date < first.date - 60000)).slice(-30).reverse();
+        if (old.length) h += '<div class="sh-cat">Earlier (before scorecards were kept): results only</div>' + old.map((x) => `<div class="tr-row earned"><div class="sch-date"><b>${new Date(x.date).getDate()}</b>${new Date(x.date).toLocaleDateString(undefined, { month: 'short' })}</div><div><b>${x.npc ? (npcById(x.npc) ? `vs ${npcById(x.npc).first} “${npcById(x.npc).nick}”` : 'a hustler') : x.tour ? (tourById(x.tour) || {}).name || 'an invitational' : x.friend ? `vs ${x.friend}` : 'a round'}</b><i>${x.result || ''}</i></div><span class="sch-net ${x.net > 0 ? 'up' : x.net < 0 ? 'dn' : ''}">${sgn(x.net || 0)}</span></div>`).join('');
+        $('trList').innerHTML = h;
+      }
+      const cardTotals = (c) => scoreTotals(c.sc.map((s, i) => (s ? { strokes: s[0], putts: s[1], pen: s[2], par: c.pars[i] } : null)));
+      // an archived card, full size: the paper scorecard, read-only, over the clubhouse
+      function showArchivedCard(id) {
+        const c = (career.cards || []).find((x) => x.id === id);
+        if (!c) return;
+        const scores = c.sc.map((s, i) => (s ? { strokes: s[0], putts: s[1], pen: s[2], par: c.pars[i] } : null));
+        const r = cardRows(c.pars, c.winds.map(([mph, from]) => ({ mph, from })), scores, career.name);
+        const m = c.kind === 'match' ? cardAsMatch(c) : null;
+        $('scTable').innerHTML = r.head + r.parRow + r.windRow + r.scRow + (m ? matchRowsHTML(m) : '') + r.ptRow + r.pnRow + r.tpRow;
+        const tt = cardTotals(c), n = m && npcById(c.npc), T = c.kind === 'tour' && tourById(c.tour);
+        $('scTitle').textContent = c.kind === 'match' ? `${c.format === 'skins' ? `Skins at ${money(c.stake)} a hole` : 'Match'} vs ${n ? `${n.first} “${n.nick}” ${n.last}` : 'a hustler'}`
+          : T ? T.name : `Challenge vs ${c.vsName || 'a friend'}`;
+        $('scTag').textContent = tt.played < c.pars.length ? `${tt.played} holes played · ${fmtToPar(tt.toPar)}` : `${tt.strokes} strokes · ${fmtToPar(tt.toPar)}`;
+        setText('scCourse', `${TIERS[c.tier] ? TIERS[c.tier].course : ''} · ${new Date(c.date).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`);
+        $('scMsg').textContent = c.kind === 'match' ? (c.settled ? `You ${c.result}${c.net ? ` · ${c.net > 0 ? '+' : '−'}${money(Math.abs(c.net))}` : ''}${c.unpaid ? ` · ${money(c.unpaid)} you couldn't pay` : ''}` : 'Not finished')
+          : c.kind === 'tour' ? (c.wd ? 'Withdrew' : c.settled ? `Finished ${c.place === 1 ? '1st: champion' : c.place === 2 ? '2nd' : c.place === 3 ? '3rd' : `${c.place}th`}${c.prize ? ` · +${money(c.prize)} prize` : ' · out of the money'}` : 'Not finished')
+            : 'Your card from a friend challenge (the shared final card is on the Friends page)';
+        $('scBets').innerHTML = m ? betsStrip(m) : '';
+        $('scPressBox').classList.remove('on');
+        $('scNext').textContent = 'Back to the trophy room (Esc)';
+        $('scClose').textContent = 'Close';
+        scMode = 'arch';
+        const sc = $('scorecard');
+        sc.classList.remove('entry', 'board', 'lbonly');
+        sc.classList.add('on', 'arch');
+      }
+      function closeArchivedCard() { $('scorecard').classList.remove('on', 'arch'); scMode = 'round'; }
       // a challenge's settled card, to look at: yours from the Friends list (or your own wall's data), a visited player's from theirs
       const myCard = (cid) => fr.list.find((x) => x.id === cid && x.status === 'done') || (ownWallCards && ownWallCards[cid]) || null;
       let ownWallCards = null;
       async function trophyClick(e) {
+        const tb = e.target.closest('button[data-trtab]');
+        if (tb) { tb.blur(); trTab = tb.dataset.trtab; setText('trMsg', ''); renderTrophies(); $('trList').scrollTop = 0; return; }
+        const hc = e.target.closest('button[data-histcard]');
+        if (hc) { hc.blur(); return showArchivedCard(hc.dataset.histcard); }
         const vb = e.target.closest('button[data-viewbag]');
         if (vb && trophyView) { vb.blur(); return openBagRoom(trophyView); }     // a friend's bag, read-only
         const vc = e.target.closest('button[data-viewcard]');
@@ -11954,6 +12840,70 @@
         const b = lastLiveBet(m), next = hp.holeIdx + 1;
         return !!b && next < HOLES.length && matchStatus(m, b.from).diff <= -2;
       }
+      // THE PRESS OFFER (user request: it was a small button that was easy to miss): a loud box on the scorecard between
+      // holes, when you may press, that says what a press is, what it can win or cost, what's riding on the match now, and
+      // that it's optional. When the hustler has just pressed, the same box (red, no button) says what that means for you.
+      // THE BETS strip under a match's scorecard (user request: show what's riding): every bet with its stake and where it
+      // stands, then the money: what's on the line, where you'd be if it ended now, and the best and worst case from here
+      function betsStrip(m) {
+        const n = npcById(m.npc), sgn = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${money(Math.abs(v))}`, cls = (v) => (v > 0 ? 'mw' : v < 0 ? 'ml' : '');
+        const cell = (k, v, sub = '', c = '') => `<div><b>${k}</b><span class="${c}">${v}</span>${sub ? `<i>${sub}</i>` : ''}</div>`;
+        if (m.settled) return `<div class="sb-h">The bets</div><div class="sb-grid">${cell('Settled', sgn(m.net || 0), m.result || '', cls(m.net || 0))}${m.unpaid ? cell('Couldn\'t pay', money(m.unpaid), 'he took it out of your bag', 'ml') : ''}</div>`;
+        const left = HOLES.length - m.holes.filter(Boolean).length;
+        if (m.format === 'skins') {
+          const s = skinsState(m), net = s.me - s.npc;
+          return `<div class="sb-h">The skins · ${money(m.stake)} a hole</div><div class="sb-grid">`
+            + cell('Next hole is worth', money(s.carry * m.stake), s.carry > 1 ? `${s.carry} skins: ${s.carry - 1} carried over` : 'one skin', 'gold')
+            + cell('You\'ve won', money(s.me), '', 'mw') + cell(`${n.first} has won`, money(s.npc), '', 'ml')
+            + cell('Right now', sgn(net), `${left} hole${left === 1 ? '' : 's'} to play, up to ${money((s.carry - 1 + left) * m.stake)} still out there`, cls(net)) + '</div>';
+        }
+        const bets = matchBets(m).map((b) => ({ b, f: betFinal(m, b) }));
+        const settledNet = bets.filter((x) => x.f.decided).reduce((t, x) => t + Math.sign(x.f.diff) * x.b.stake, 0);
+        const live = bets.filter((x) => !x.f.decided), liveStake = live.reduce((t, x) => t + x.b.stake, 0);
+        const now = bets.reduce((t, x) => t + Math.sign(x.f.diff) * x.b.stake, 0);
+        const chips = bets.map(({ b, f }) => {
+          const who = b.by === 'npc' ? `${n.first}'s press` : b.by === 'me' ? 'your press' : 'the match';
+          const st = f.decided ? betResult(f) : f.diff ? `${statusText(f.diff)} with ${left} to play` : `all square, ${left} to play`;
+          return `<div class="sb-bet${f.decided ? ' done' : ''}"><b>${b.label.replace(/ \(his\)/, '')}</b> <em>${money(b.stake)}</em> <i>${who} · ${st}</i></div>`;
+        }).join('');
+        return `<div class="sb-h">The bets</div><div class="sb-bets">${chips}</div><div class="sb-grid">`
+          + cell('On the line', money(liveStake), `${live.length} bet${live.length === 1 ? '' : 's'} still live`, 'gold')
+          + cell('If it ended now', sgn(now), now > 0 ? `${n.first} pays you` : now < 0 ? `you pay ${n.first}` : 'nobody pays', cls(now))
+          + cell('Best case', sgn(settledNet + liveStake), 'win every live bet', 'mw')
+          + cell('Worst case', sgn(settledNet - liveStake), 'lose every live bet', 'ml') + '</div>';
+      }
+      function pressBox(m) {
+        const box = $('scPressBox'), n = npcById(m.npc), next = hp.holeIdx + 1, left = HOLES.length - next;
+        const hisNow = m.format === 'match' && hp.done && (m.presses || []).find((p) => p.by === 'npc' && p.from === next);
+        const mine = canPress(m);
+        box.classList.toggle('on', !!(mine || (hisNow && !m.settled)));
+        box.classList.toggle('his', !mine);
+        if (!mine && !hisNow) return;
+        const st = money(m.stake), holes = left > 1 ? `holes ${next + 1}–${HOLES.length}` : `hole ${HOLES.length}`;
+        const live = matchBets(m).filter((b) => !matchStatus(m, b.from).decided);
+        const riding = live.reduce((s, b) => s + b.stake, 0);
+        if (!mine) {
+          $('scPressTxt').innerHTML = `<div class="pr-h">⚠ ${n.first} pressed <span>a new bet against you</span></div>`
+            + `<div class="pr-why">${n.first} was 2 down, so ${n.first === 'Ana' || n.first === 'Rita' ? 'she' : 'he'} added a <b>new ${st} bet on just the last ${left} hole${left > 1 ? 's' : ''}</b> (${holes}), starting all square. `
+            + `Your other bet${live.length > 2 ? 's carry' : ' carries'} on as before. Nothing to do: win more of ${holes} than ${n.first} to take it too, lose more and it goes ${n.first === 'Ana' || n.first === 'Rita' ? 'her' : 'his'} way.</div>`
+            + `<div class="pr-foot">Riding on the match now: ${live.length} bets, up to ${money(riding)} either way.</div>`;
+          return;
+        }
+        const b = lastLiveBet(m), s = matchStatus(m, b.from), what = b.label === 'Match' ? 'the match' : `your ${b.label.replace(/ \(his\)/, '').toLowerCase()}`;
+        const used = (m.presses || []).length, short = career.cash < riding + m.stake;
+        $('scPressTxt').innerHTML = `<div class="pr-h">🎲 You can press <span>optional · your call</span></div>`
+          + `<div class="pr-why">You're <b>${Math.abs(s.diff)} down</b> in ${what} with ${left} to play. A <b>press</b> is a second bet you're allowed when you're 2 down: `
+          + `a <b>new ${st} bet on just the last ${left} hole${left > 1 ? 's' : ''}</b> (${holes}), starting all square. ${what[0].toUpperCase() + what.slice(1)} carries on exactly as it is.</div>`
+          + `<div class="pr-grid"><div class="w"><b>Win the press</b>+${st}<i>Win more of ${holes} than ${n.first}. Lose ${what} but win the press and the two cancel out</i></div>`
+          + `<div><b>Halve it</b>$0<i>The same number of those holes each: nobody pays</i></div>`
+          + `<div class="l"><b>Lose the press</b>−${st}<i>On top of whatever ${what} costs you</i></div></div>`
+          + `<div class="pr-foot">Riding on the match now: ${live.length} bet${live.length > 1 ? 's' : ''}, up to ${money(riding)} either way; with a press, up to ${money(riding + m.stake)}. `
+          + `Up to 3 presses a match (${3 - used} left), and the offer comes back whenever you're 2 down in your newest bet. Decide before you tee off on hole ${next + 1}.`
+          + `${short ? ` <span class="warn">You have ${money(career.cash)}: lose it all and you can't pay, and ${n.first} takes it out of your bag (a snapped club).</span>` : ''}</div>`;
+        $('scPress').textContent = `Press: add a ${st} bet (P)`;
+        $('scMsg').textContent += `${$('scMsg').textContent ? '\n' : ''}🎲 You're 2 down: you may press (P). How it works is below the card.`;
+        setText('scPressAlt', `or don't: Next hole (N) plays on with the bets as they are`);
+      }
       function playerPress() {
         const m = round.match;
         if (!canPress(m)) return;
@@ -12099,7 +13049,7 @@
       function settleMatch(kind) {
         const m = round.match || (career && career.match);
         if (!m || m.settled) return '';
-        const n = npcById(m.npc);
+        const n = npcById(m.npc), cashBefore = career.cash, repBefore = career.rep || 0;
         let net = matchNet(m, kind === 'forfeit'), result, line;
         if (kind === 'forfeit') result = 'forfeited';
         else if (m.format === 'skins') { const s = skinsState(m); result = `won ${money(s.me)} in skins, he won ${money(s.npc)}`; }
@@ -12118,6 +13068,8 @@
         }
         career.cash += net;
         Object.assign(m, { settled: true, result, net, unpaid });
+        // for the payoff screen at the end (not a forfeit: you chose to walk off)
+        if (kind !== 'forfeit') m.outcome = { cashBefore, cashAfter: career.cash, rep: (career.rep || 0) - repBefore, line, snapped: snapped >= 0 ? CLUBS[snapped].name : null, shown: false };
         career.history.push({ npc: n.id, format: m.format, stake: m.stake, result, net, unpaid, snapped: snapped >= 0 ? CLUBS[snapped].name : null, date: Date.now() });
         careerSave(); updateCareerUI();
         if (unpaid) setTimeout(() => showBeating(n, unpaid, snapped), 250);
@@ -12155,6 +13107,89 @@
       function closeBeating() {
         if (!beatOpen || !beatReady) return;
         beatOpen = false; $('beating').classList.remove('on', 'shake'); $('btGo').blur();
+        if (outPending) { const o = outPending; outPending = null; setTimeout(() => showOutcome(o), 150); }     // then the payoff screen
+      }
+      // =====================================================================================================
+      //  THE PAYOFF (user request, 2026-11-19): when a hustler match or an invitational is settled, a screen between the
+      //  last hole and the clubhouse with the outcome: who won, the money counting up (or down), every bet, your cash before
+      //  and after, reputation, and the hustler's parting line. Then: see the scorecard, play on (a match decided early), or
+      //  back to the clubhouse. Shown once (outcome.shown is saved); after the loan shark's beating if there was one.
+      // =====================================================================================================
+      let outOpen = false, outPending = null, outCtx = null;
+      function maybeShowOutcome() {
+        const src = round.match || round.tour, o = src && src.outcome;
+        if (!o || o.shown) return;
+        o.shown = true; careerSave();
+        const ctx = { kind: round.match ? 'match' : 'tour', src };
+        if (round.match && round.match.unpaid) { outPending = ctx; return; }      // the beating first (it opens in a moment)
+        setTimeout(() => showOutcome(ctx), 450);
+      }
+      function showOutcome(ctx) {
+        if (!round.on) return;
+        outCtx = ctx;
+        const { src } = ctx, o = src.outcome, sgn = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${money(Math.abs(v))}`;
+        let mood, big, sub, who = '', rows = '', net;
+        if (ctx.kind === 'match') {
+          const m = src, n = npcById(m.npc);
+          net = m.net || 0;
+          mood = m.unpaid ? 'broke' : net > 0 ? 'win' : net < 0 ? 'loss' : 'push';
+          big = mood === 'win' ? 'You took his money' : mood === 'loss' ? 'He took your money' : mood === 'broke' ? 'Cleaned out' : 'All square';
+          if (n.first === 'Ana' || n.first === 'Rita') big =big.replace('his', 'her').replace('He', 'She');
+          sub = `${m.format === 'skins' ? `Skins at ${money(m.stake)} a hole` : `Match play for ${money(m.stake)}`} vs ${n.first} “${n.nick}” ${n.last} · ${TIERS[m.tier].course}`;
+          who = `<div class="oc-who"><svg viewBox="-50 -232 100 150">${hustlerFig(n, 0, 0, 1, false, true)}</svg><div class="oc-say">“${o.line}”<i>— ${n.first} “${n.nick}”</i></div></div>`;
+          if (m.format === 'skins') {
+            const s = skinsState(m);
+            rows = `<tr><td>Skins you won</td><td class="mw">+${money(s.me)}</td></tr><tr><td>Skins ${n.first} won</td><td class="ml">−${money(s.npc)}</td></tr>`;
+          } else {
+            rows = matchBets(m).map((b) => { const f = betFinal(m, b), v = Math.sign(f.diff) * b.stake;
+              return `<tr><td>${b.label.replace(/ \(his\)/, ` (${n.first}'s)`)} <small>${money(b.stake)}</small></td><td>${betResult(f)}</td><td class="${v > 0 ? 'mw' : v < 0 ? 'ml' : ''}">${sgn(v)}</td></tr>`; }).join('');
+          }
+          if (m.unpaid) rows += `<tr class="bad"><td>You couldn't pay</td><td>${o.snapped ? `he snapped your ${o.snapped}` : ''}</td><td class="ml">${money(m.unpaid)}</td></tr>`;
+        } else {
+          const t = src, T = tourById(t.id), ord = t.place === 1 ? '1st' : t.place === 2 ? '2nd' : t.place === 3 ? '3rd' : `${t.place}th`;
+          net = (t.prize || 0) - T.entry;
+          mood = t.place === 1 ? 'win' : t.prize ? 'place' : 'loss';
+          big = t.place === 1 ? 'Champion!' : t.prize ? `${ord} place` : 'Out of the money';
+          sub = `${T.name} · ${o.total} (${fmtToPar(o.toPar)}) · ${ord} of ${o.field}`;
+          who = `<div class="oc-who tour"><svg viewBox="0 0 120 120">${trophyArt(T.art, 60, 60, 110)}</svg><div class="oc-say">${t.place === 1 ? 'Your name goes on the trophy, and the trophy goes in your trophy room.' : t.prize ? 'A cheque from the committee, and your name on the board.' : 'The field was too good today. The entry fee stays with the committee.'}</div></div>`;
+          rows = `<tr><td>Prize money</td><td>${ord} place</td><td class="${t.prize ? 'mw' : ''}">+${money(t.prize || 0)}</td></tr><tr><td>Entry fee</td><td>paid at the first tee</td><td class="ml">−${money(T.entry)}</td></tr>`;
+        }
+        const left = HOLES.length - round.scores.filter(Boolean).length;
+        const playOn = ctx.kind === 'match' && left > 0;
+        $('ocCard').className = `oc-card ${mood}`;
+        $('ocCard').innerHTML = `<div class="oc-kick">${ctx.kind === 'match' ? 'Match over' : 'Final round'}</div><div class="oc-big">${big}</div><div class="oc-sub">${sub}</div>${who}`
+          + `<div class="oc-money"><span id="ocNet" class="${net > 0 ? 'mw' : net < 0 ? 'ml' : ''}">${sgn(0)}</span><i>${net > 0 ? 'in your pocket' : net < 0 ? 'out of your pocket' : 'nobody pays'}</i></div>`
+          + `<table class="oc-rows">${rows}</table>`
+          + `<div class="oc-foot"><div><b>Cash</b>${money(o.cashBefore)} → <span class="${o.cashAfter > o.cashBefore ? 'mw' : o.cashAfter < o.cashBefore ? 'ml' : ''}">${money(o.cashAfter)}</span></div>`
+          + `<div><b>Reputation</b><span class="${o.rep > 0 ? 'mw' : o.rep < 0 ? 'ml' : ''}">${o.rep > 0 ? '+' : o.rep < 0 ? '−' : '±'}${Math.abs(o.rep)}</span></div>`
+          + `${left > 0 ? `<div><b>Holes left</b>${left} (decided early)</div>` : ''}</div>`
+          + `<div class="oc-btns"><button id="ocCard_card">See the scorecard (K)</button>${playOn ? '<button id="ocCard_on">Play on for practice (N)</button>' : ''}<button id="ocCard_home" class="go">Back to the clubhouse (Enter)</button></div>`;
+        $('ocCard_card').onclick = () => closeOutcome('card');
+        if (playOn) $('ocCard_on').onclick = () => closeOutcome('on');
+        $('ocCard_home').onclick = () => closeOutcome('home');
+        // coins for a win, nothing for a loss
+        $('ocFx').innerHTML = mood === 'win' || mood === 'place' ? Array.from({ length: mood === 'win' ? 26 : 12 }, (_, i) => `<i style="left:${(i * 37) % 100}%;animation-delay:${(i % 9) * 0.22}s;animation-duration:${2.4 + (i % 5) * 0.35}s">${i % 3 ? '🪙' : '💵'}</i>`).join('') : '';
+        $('outcome').className = `on ${mood}`;
+        outOpen = true;
+        // the money counts up
+        const t0 = performance.now(), dur = 1100, el = $('ocNet');
+        const tick = (now) => { if (!outOpen) return; const k = Math.min(1, (now - t0) / dur), e = 1 - (1 - k) ** 3; el.textContent = sgn(Math.round(net * e)); if (k < 1) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
+        $('ocCard_home').focus();
+      }
+      function closeOutcome(go) {
+        if (!outOpen) return;
+        outOpen = false; $('outcome').className = ''; $('ocFx').innerHTML = '';
+        const k = outCtx && outCtx.kind; outCtx = null;
+        if (go === 'home') return k === 'tour' ? tourToClubhouse() : matchToClubhouse();
+        if (go === 'on') return scorecardNext();          // the scorecard's Next: on to the next hole for practice
+        // 'card': the scorecard is under it already
+      }
+      function outcomeKey(e) {
+        if (e.repeat) return;
+        if (['Enter', 'NumpadEnter'].includes(e.code)) { e.preventDefault(); closeOutcome('home'); }
+        else if (['KeyK', 'Escape', 'Space'].includes(e.code)) { e.preventDefault(); closeOutcome('card'); }
+        else if (e.code === 'KeyN' && $('ocCard_on')) { e.preventDefault(); closeOutcome('on'); }
       }
       function beatKey(e) {
         e.preventDefault();
@@ -12167,6 +13202,7 @@
         const owe = -matchNet(m, true), short = Math.max(0, owe - Math.max(0, career.cash));
         if (!confirm(`Leaving now forfeits the ${m.format === 'skins' ? 'skins game' : 'match'}: ${owe > 0 ? `you pay ${npcById(m.npc).nick} ${money(owe)}` : 'every bet still in play goes to him'}.${short ? ` You can't cover ${money(short)} of it — he'll take that out of your hide and snap a club.` : ''} Leave?`)) return false;
         toast(settleMatch('forfeit'), 3200);
+        archiveRound();                                      // (its card, marked forfeited)
         return true;
       }
       function matchToClubhouse() {
@@ -12304,7 +13340,9 @@
       function settleTour(t) {
         const T = tourById(t.id), st = tourStandings(t, HOLES.length), me = st.find((r) => r.me);
         const place = st.indexOf(me) + 1, prize = T.purse[place - 1] || 0, rep = T.repWin[place - 1] || 0;
+        const cashBefore = career.cash;
         career.cash += prize; career.rep = (career.rep || 0) + rep;
+        t.outcome = { cashBefore, cashAfter: career.cash, rep, total: me.total, toPar: me.toPar, field: st.length, shown: false };
         if (place === 1) career.titles = [...(career.titles || []), { id: T.id, date: Date.now(), score: me.total }];
         const ord = place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : `${place}th`;
         career.history.push({ tour: T.id, format: 'stroke', stake: T.entry, place, result: `${ord} in the ${T.short} (${me.total}, ${fmtToPar(me.toPar)})`, net: prize - T.entry, date: Date.now() });
@@ -12321,7 +13359,7 @@
         const T = tourById(t.id);
         career.history.push({ tour: T.id, format: 'stroke', stake: T.entry, place: 99, result: `withdrew from the ${T.short}`, net: -T.entry, date: Date.now() });
         Object.assign(t, { settled: true, place: 0, prize: 0, wd: true });
-        careerSave();
+        careerSave(); archiveRound();
         return true;
       }
       function tourToClubhouse() {
@@ -12550,22 +13588,17 @@
         el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
         clearTimeout(holeTitleTimer); holeTitleTimer = setTimeout(() => el.classList.remove('on'), 2700);
       }
-      function hideScorecard() { $('scorecard').classList.remove('on', 'pvp'); if (scMode === 'pvp') scMode = 'round'; }
-      function showScorecard(msg = '') {
-        $('scPress').classList.remove('on');               // (only a career match shows it, below)
-        $('scorecard').classList.remove('pvp');            // (the shared friend card is its own mode)
-        const n = HOLES.length, t = roundTotals(), final = t.played === n;
-        round.over = final;
-        const cur = hp.on && !hp.done ? hp.holeIdx : -1;
-        // your row carries your name (a career's, else your profile's; the test round's standard player is just "Score")
-        const myName = careerOn && career ? career.name : session ? session.name : 'Score';
+      // the printed and pencilled rows of a scorecard (hole, par, wind, your score, putts, penalties, to par): the live card
+      // and an archived one (the trophy room's history) both draw with it
+      function cardRows(pars, winds, scores, myName, cur = -1) {
+        const n = pars.length;
         let head = '<tr><th>Hole</th>', parRow = '<tr><td>Par</td>', windRow = '<tr><td>Wind</td>', scRow = `<tr class="me"><td>${myName}</td>`, ptRow = '<tr><td>Putts</td>', pnRow = '<tr><td>Penalties</td>', tpRow = '<tr><td>To par</td>';
         let run = 0;
         for (let i = 0; i < n; i++) {
-          const s = round.scores[i], c = i === cur ? ' class="cur"' : '';
+          const s = scores[i], c = i === cur ? ' class="cur"' : '';
           head += `<th${c}>${i + 1}</th>`;
-          parRow += `<td${c}>${HOLES[i].par}</td>`;
-          const hw = variantDef(HOLES[i]).wind || { mph: 0, from: 0 };           // arrow = where the wind blows, up = toward the green
+          parRow += `<td${c}>${pars[i]}</td>`;
+          const hw = winds[i] || { mph: 0, from: 0 };           // arrow = where the wind blows, up = toward the green
           windRow += `<td${c} title="${windText(hw.mph, hw.from)}">${hw.mph ? `<span style="display:inline-block;transform:rotate(${hw.from + 180}deg)">↑</span> ${hw.mph}` : '–'}</td>`;
           if (s) {
             const d = s.strokes - s.par, cls = d <= -2 ? 'eagle' : d === -1 ? 'birdie' : d === 1 ? 'bogey' : d >= 2 ? 'double' : '';
@@ -12578,7 +13611,7 @@
             scRow += `<td${c}>${i === cur ? '…' : ''}</td>`; ptRow += `<td${c}></td>`; pnRow += `<td${c}></td>`; tpRow += `<td${c}></td>`;
           }
         }
-        const totPar = HOLES.reduce((s, h) => s + h.par, 0);
+        const totPar = pars.reduce((s, x) => s + x, 0), t = scoreTotals(scores);
         head += '<th class="tot">Total</th></tr>';
         parRow += `<td class="tot">${totPar}</td></tr>`;
         windRow += '<td class="tot">mph</td></tr>';
@@ -12586,10 +13619,13 @@
         ptRow += `<td class="tot">${t.played ? t.putts : ''}</td></tr>`;
         pnRow += `<td class="tot">${t.played ? t.pen : ''}</td></tr>`;
         tpRow += `<td class="tot"><span class="${t.toPar < 0 ? 'under' : t.toPar > 0 ? 'over' : ''}">${t.played ? fmtToPar(t.toPar) : ''}</span></td></tr>`;
-        // a career match: the hustler's scores and the match, hole by hole (▲ won, ▼ lost, — halved, then the status)
+        return { head, parRow, windRow, scRow, ptRow, pnRow, tpRow, totPar };
+      }
+      const scoreTotals = (scores) => { let strokes = 0, par = 0, putts = 0, pen = 0, played = 0; scores.forEach((s) => { if (s) { strokes += s.strokes; par += s.par; putts += s.putts; pen += s.pen || 0; played++; } }); return { strokes, par, putts, pen, played, toPar: strokes - par }; };
+      // a hustler match's rows: his scores, then the skins or a row per bet (live card and archived card alike)
+      function matchRowsHTML(m, cur = -1) {
+        const n = HOLES.length;
         let mRows = '';
-        const m = round.match;
-        if (m) {
           const nn = npcById(m.npc);
           let npcRow = `<tr class="npc"><td title="${npcName(nn)}">${nn.first}<small class="sc-nick">“${nn.nick}”</small></td>`, npcTot = 0;
           for (let i = 0; i < n; i++) {
@@ -12609,18 +13645,41 @@
             const dn = ss.me - ss.npc;
             mRows += `${row}<td class="tot"><span class="${dn > 0 ? 'mw' : dn < 0 ? 'ml' : ''}">${dn >= 0 ? '+' : '−'}${money(Math.abs(dn))}</span></td></tr>`;
           } else {                                           // match play: a row for the match and one for each press
+            // (user request: a real card) each bet's row: its stake and holes, the running status after every hole as you'd
+            // pencil it (+1, AS, −2; the hole you won/lost marked by colour), and in the total, the status and its money now
             for (const b of matchBets(m)) {
-              let row = `<tr class="mrow"><td>${b.label}</td>`, d = 0;
+              const fin = betFinal(m, b), span = b.from ? (b.from + 1 < n ? `holes ${b.from + 1}–${n}` : `hole ${n}`) : `all ${n}`;
+              let row = `<tr class="mrow"><td>${b.label}<small class="sc-nick">${money(b.stake)} · ${span}</small></td>`, d = 0, done = false;
               for (let i = 0; i < n; i++) {
                 const h = m.holes[i], c = i === cur ? ' class="cur"' : '';
-                if (!h || i < b.from) { row += `<td${c}></td>`; continue; }
+                if (!h || i < b.from) { row += `<td${c}>${i < b.from ? '<i class="sc-na">·</i>' : ''}</td>`; continue; }
+                if (done) { row += `<td${c}><i class="sc-na">–</i></td>`; continue; }
                 const w = h.me < h.npc ? 1 : h.me > h.npc ? -1 : 0; d += w;
-                row += `<td${c} title="${statusText(d)}"><span class="${w > 0 ? 'mw' : w < 0 ? 'ml' : ''}">${w > 0 ? '▲' : w < 0 ? '▼' : '—'}</span></td>`;
+                const lt = HOLES.length - i - 1; done = Math.abs(d) > lt;
+                row += `<td${c} title="${w > 0 ? 'won the hole' : w < 0 ? 'lost the hole' : 'halved'} · ${statusText(d)}"><span class="sc-run ${w > 0 ? 'mw' : w < 0 ? 'ml' : 'mh'}">${d === 0 ? 'AS' : `${d > 0 ? '+' : '−'}${Math.abs(d)}`}</span></td>`;
               }
-              mRows += `${row}<td class="tot"><span class="${d > 0 ? 'mw' : d < 0 ? 'ml' : ''}">${statusText(d)}</span></td></tr>`;
+              const now = Math.sign(fin.diff) * b.stake;
+              mRows += `${row}<td class="tot"><span class="${fin.diff > 0 ? 'mw' : fin.diff < 0 ? 'ml' : ''}">${fin.decided ? betResult(fin).replace(/^(won|lost) /, '') : statusText(fin.diff)}</span>`
+                + `<small class="sc-money ${now > 0 ? 'mw' : now < 0 ? 'ml' : ''}">${now > 0 ? '+' : now < 0 ? '−' : ''}${money(Math.abs(now))}${fin.decided ? '' : ' now'}</small></td></tr>`;
             }
           }
-        }
+        return mRows;
+      }
+      function hideScorecard() { $('scorecard').classList.remove('on', 'pvp', 'arch'); if (scMode === 'pvp' || scMode === 'arch') scMode = 'round'; }
+      function showScorecard(msg = '') {
+        $('scPressBox').classList.remove('on'); $('scBets').innerHTML = '';               // (only a career match shows it, below)
+        $('scorecard').classList.remove('pvp');            // (the shared friend card is its own mode)
+        const n = HOLES.length, t = roundTotals(), final = t.played === n;
+        round.over = final;
+        const cur = hp.on && !hp.done ? hp.holeIdx : -1;
+        // your row carries your name (a career's, else your profile's; the test round's standard player is just "Score")
+        const myName = careerOn && career ? career.name : session ? session.name : 'Score';
+        const { head, parRow, windRow, scRow, ptRow, pnRow, tpRow, totPar } = cardRows(HOLES.map((h) => h.par), HOLES.map((h) => variantDef(h).wind), round.scores, myName, cur);
+
+        // a career match: the hustler's scores and the match, hole by hole
+        let mRows = '';
+        const m = round.match;
+        if (m) mRows = matchRowsHTML(m, cur);
         const pv = round.pvp;
         if (pv) {                                            // a friend round: only your own card, with the strokes (dots) and your net
           const give = holeStrokes(pv.n);
@@ -12634,6 +13693,9 @@
           mRows = `${row}<td class="tot">${pv.n || ''}</td></tr>${pv.mine && pv.n ? `${netRow}<td class="tot">${t.played ? nt : ''}</td></tr>` : ''}`;
         }
         $('scTable').innerHTML = head + parRow + windRow + scRow + (m || pv ? mRows : '') + ptRow + pnRow + tpRow;
+        // the course and the date across the top, as on a printed card
+        const crsTier = m ? m.tier : round.tour ? round.tour.tier : careerOn && career ? career.tier : 0;
+        setText('scCourse', `${crsTier && TIERS[crsTier] ? TIERS[crsTier].course : pv ? 'Friends\' challenge' : 'The test course'} · ${new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`);
         $('scTitle').textContent = final ? 'Final scorecard' : 'Scorecard';
         $('scTag').textContent = final ? `${t.strokes} strokes · ${fmtToPar(t.toPar)}` : t.played ? `${fmtToPar(t.toPar)} thru ${t.played}` : 'Test round';
         $('scMsg').textContent = final
@@ -12646,7 +13708,8 @@
           const s = matchStatus(m), nn = npcById(m.npc);
           $('scTitle').textContent = `${final ? 'Final · ' : ''}${m.format === 'skins' ? `Skins at ${money(m.stake)} a hole` : 'Match'} vs ${nn.first} “${nn.nick}” ${nn.last}`;
           $('scTag').textContent = m.settled ? (m.net ? `${m.net > 0 ? 'won' : 'lost'} ${money(Math.abs(m.net))}` : 'all square') : `${matchLine(m)} thru ${s.played}${m.format === 'skins' ? '' : ` · ${money(m.stake)} a bet`}`;
-          $('scPress').classList.toggle('on', canPress(m));       // you're 2 down in the latest bet: press
+          $('scBets').innerHTML = betsStrip(m);                    // what's riding, and where you'd be now
+          pressBox(m);                                             // you're 2 down in the latest bet: the offer, explained
           if (final) $('scMsg').textContent = `${msg ? msg + '\n\n' : ''}Round complete: ${t.strokes} strokes (${fmtToPar(t.toPar)}) · you ${m.result}`;
           $('scNext').textContent = final ? 'Back to the clubhouse (N)' : hp.done ? (m.settled ? `Play on for practice: Hole ${hp.holeIdx + 2} (N)` : `Next: Hole ${hp.holeIdx + 2} (N)`) : 'Back to the hole (K)';
           $('scClose').textContent = final || m.settled ? 'Back to the clubhouse' : 'Close (K)';
@@ -12697,6 +13760,7 @@
         sc.classList.add('on');
       }
       function scorecardNext() {
+        if (scMode === 'arch') return closeArchivedCard();
         if (scMode === 'pvp') return closeSharedCard();
         if (scMode === 'board') { if (round.on) return hideScorecard(); hideScorecard(); return openRoundIntro(); }
         if (round.match) { if (round.over) return matchToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
@@ -12707,6 +13771,7 @@
         hideScorecard();
       }
       function scorecardClose() {
+        if (scMode === 'arch') return closeArchivedCard();
         if (scMode === 'pvp') return closeSharedCard();
         if (scMode === 'board') return hideScorecard();
         if (round.match && (round.over || round.match.settled)) return matchToClubhouse();
@@ -12849,7 +13914,7 @@
       // the board on its own (button or L), any time
       function showLeaderboard() {
         if (lbEntry.active) return;
-        $('scPress').classList.remove('on');
+        $('scPressBox').classList.remove('on'); $('scBets').innerHTML = '';
         renderBoard();
         if (!lbBusy) lbFetch();                              // freshen it from the world board
         const sc = $('scorecard');
@@ -13431,6 +14496,7 @@
         if (e.target instanceof HTMLSelectElement) return;
         if (homeOpen) return homeKey(e);                 // the home screen (typing a password, Esc back to the game)
         if (beatOpen) return beatKey(e);                 // the loan shark's beating (Enter to get up)
+        if (outOpen) return outcomeKey(e);               // the payoff screen at the end of a match / invitational
         if (lbEntry.active) return entryKey(e);          // the initials screen takes every key
         if (introOpen) return introKey(e);               // so does the course preview (Enter starts, Esc cancels)
         if (clubOpen) return clubKey(e);                 // and the clubhouse (Esc / J to the range, typing a name)
@@ -13701,6 +14767,7 @@
         $('chCoach').addEventListener('click', coachClick);
         $('cdList').addEventListener('click', caddieClick);
         $('trList').addEventListener('click', trophyClick);
+        $('trTabs').addEventListener('click', trophyClick);
         $('brBack').addEventListener('click', (e) => { e.currentTarget.blur(); bagRoomBack(); });     // (a friend's bag: back to their trophy room)
         $('trBagSpot').addEventListener('click', (e) => { e.currentTarget.blur(); if (trophyView) openBagRoom(trophyView); else openBagRoom(null, true); });   // the golf bag in the trophy room
         $('toList').addEventListener('click', toursClick);
@@ -14340,7 +15407,9 @@
           }
         }
         const a = heading(state.aim), mx = a.x * state.markDist, mz = a.z * state.markDist, my = green.h(mx, mz);
-        const mp = state.view === 'overhead' ? { x: W / 2, y: H - 92 } : project(mx, my + 0.52, mz);     // overhead: fixed readout spot
+        // overhead, and a chip's green read before you step in (user request: it sat on the green): the fixed readout spot
+        const fixedSpot = state.view === 'overhead' || (chip && state.view === 'scout');
+        const mp = fixedSpot ? { x: W / 2, y: H - 92 } : project(mx, my + 0.52, mz);
         if (mp) {
           const scale = PUTT.scales[state.puttScale], cr = chipRead;
           const txt = chip
@@ -14351,7 +15420,7 @@
           // overhead: not on the green at all (it covered what the player is reading) — a fixed readout at the bottom of the
           // screen, above the key hints
           let lx = mp.x, py = mp.y - 14;
-          if (state.view === 'overhead') { lx = W / 2; py = H - 92; }
+          if (fixedSpot) { lx = W / 2; py = H - 92; }
           g.fillStyle = 'rgba(10, 14, 20, 0.88)';
           g.strokeStyle = '#ffc24a';
           g.lineWidth = 1.5;

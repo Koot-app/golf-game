@@ -679,3 +679,21 @@ Showing off: ✦ and gold names in the range bag list and the bag room (a "✦ n
 model); the golf bag in the trophy room and locker room turns cream and gold with one luxury piece and all gold with
 three, with gold heads and sparkles (friends see it when they visit); and at the first tee the hustler eyes your bag
 (a line per tier). Code: `isLux`, `luxCount`, `bagLook`, `sparkles`, `luxBuyConfirm`, `LUX_CAT`.
+
+## The payoff screen and the scorecard history — ✅ built 2026-11-19 (user request)
+
+**The payoff screen.** When a hustler match or an invitational is settled (not a forfeit or a withdrawal), a screen
+comes up over the final scorecard: "You took his money" / "He took your money" / "Cleaned out" / "All square", or
+"Champion!" / "2nd place" / "Out of the money"; the hustler (or the trophy) with his parting line; the money counting up;
+a line per bet (or the skins, or prize and entry fee); cash before → after; reputation; coins raining on a win. Buttons:
+see the scorecard (K), play on for practice (N, a match decided early), back to the clubhouse (Enter). Shown once
+(`outcome.shown`, saved on the match / entry); after the loan shark's beating when there is one.
+Code: `settleMatch` / `settleTour` record `outcome`; `maybeShowOutcome`, `showOutcome`, `closeOutcome`, `outcomeKey`.
+
+**The scorecard history.** Every career round's card (matches, invitationals, friend challenges) is archived in
+`career.cards` (the last 100), rewritten after every hole so an early finish or a forfeit keeps its card; synced with
+the career (merged by id, the fuller copy wins). The trophy room has two tabs: Trophies and **Scorecards (n)**: a
+summary (cards, won–lost for money, net, best 9), then every card newest first, by month, with the result and the money;
+**View card** redraws it on the paper scorecard, read-only. Results from before cards were kept are listed as lines.
+Visitors don't see your history. Code: `archiveRound`, `cardAsMatch`, `renderCardHistory`, `showArchivedCard`; the
+scorecard's rows are built by `cardRows` and `matchRowsHTML`, shared by the live card and the archive.
