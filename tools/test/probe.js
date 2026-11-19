@@ -40,5 +40,14 @@ const PORT = 9355, sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     fs.writeFileSync(path.join(out, shotName + '.png'), Buffer.from((await send('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
   }
   if (problems.length) console.log('PROBLEMS:\n' + problems.join('\n'));
-  ws.close(); chrome.kill(); process.exit(0);
+  ws.close();
+  // close Chrome properly (not a kill), so localStorage written in the last moments reaches the disk for the next run
+  try {
+    const bw = new WebSocket((await (await fetch(`http://127.0.0.1:${PORT}/json/version`)).json()).webSocketDebuggerUrl);
+    await new Promise((r) => bw.addEventListener('open', r));
+    const gone = new Promise((r) => chrome.on('exit', r));
+    bw.send(JSON.stringify({ id: 1, method: 'Browser.close' }));
+    await Promise.race([gone, sleep(8000)]);
+  } catch { /* fall through */ }
+  chrome.kill(); process.exit(0);
 })();

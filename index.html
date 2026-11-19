@@ -6724,9 +6724,9 @@
         <div class="fr-held" id="frHeld"></div>
         <details class="fr-how" id="frHow"><summary>❓ How challenges work</summary>
           <ol>
-            <li><b>Challenge a player</b> below: pick match play, stroke play or skins, the stake and the course. Nothing is
-              taken until they accept.</li>
-            <li><b>Once accepted</b>, the stake is held from both of you.</li>
+            <li><b>Challenge a player</b> below: pick match play, stroke play or skins, the stake and the course. Your stake
+              is held from when you send it; you get it back if they decline, you call it off, or nobody answers in 7 days.</li>
+            <li><b>Once accepted</b>, their stake is held too.</li>
             <li><b>You each play the 9 holes on your own PC, whenever you like</b> (within 7 days). You don't play at the same
               time and you don't see each other's shots: the course, wind and greens are the same for both.</li>
             <li><b>When both cards are in</b>, it settles by itself, handicap strokes included: the winner gets the pot and you
@@ -6743,8 +6743,8 @@
         <div class="ch-lead" id="ccTitle">Challenge</div>
         <div class="cc-how"><b>How it works</b> — you don't play at the same time, and you won't see each other's shots:
           <ol>
-            <li><b>Send it.</b> Nothing is taken until your friend accepts.</li>
-            <li><b>They accept:</b> the stake is held from both of you until it's settled.</li>
+            <li><b>Send it.</b> Your stake is held from now (back to you if they decline or you call it off).</li>
+            <li><b>They accept:</b> their stake is held too, until it's settled.</li>
             <li><b>Each of you plays the 9 holes on your own PC</b>, whenever you like, within 7 days. Same course, same wind,
               same greens for both. Your friend's card stays hidden until yours is in.</li>
             <li><b>When both cards are in</b> the bet settles by itself (handicap strokes come off the scores first): the
@@ -10413,7 +10413,10 @@
       let playMode = lsGet('golfMode') || (lsGet(CAREER.key) ? 'local' : '');           // (a career from before profiles: on this PC)
       const careerKey = () => (session ? `golfCareer_p_${session.id}` : CAREER.key);
       // server sync: the version the server had at the last sync, and that copy (to merge against on a conflict)
-      const sync = { ver: 0, base: null, timer: 0, busy: false, again: false, state: '', dirty: false };
+      // pend: the saves sent whose reply never came back ({ id, cash }, the newest last). Each save stamps its id into
+      // career.saveIds, so a merge can tell whether one of them reached the server after all (audit 1.1: the page was
+      // closed or the connection dropped while a save was in flight) and not count its cash change a second time.
+      const sync = { ver: 0, base: null, timer: 0, busy: false, again: false, state: '', dirty: false, pend: [] };
       function upgradeCareer(c) {
         if (!(c && c.v === 1 && typeof c.name === 'string' && c.stats)) return null;
         c.out = c.out || []; c.putters = c.putters || [c.putter || CAREER.putter]; c.tierMax = c.tierMax || c.tier || 1;      // (older saves)
@@ -10429,7 +10432,7 @@
         try {
           const p = JSON.parse(lsGet(careerKey()) || 'null');
           if (!p || !p.c) return null;
-          sync.ver = p.s.ver || 0; sync.base = p.s.base || null; sync.dirty = !!p.s.dirty;
+          sync.ver = p.s.ver || 0; sync.base = p.s.base || null; sync.dirty = !!p.s.dirty; sync.pend = Array.isArray(p.s.pend) ? p.s.pend : [];
           return upgradeCareer(p.c);
         } catch { return null; }
       }
@@ -10439,7 +10442,7 @@
         if (session) { sync.dirty = true; saveSyncMeta(); queueSync(); }
         else lsSet(careerKey(), JSON.stringify(career));
       }
-      const saveSyncMeta = () => session && career && lsSet(careerKey(), JSON.stringify({ c: career, s: { ver: sync.ver, base: sync.base, dirty: sync.dirty } }));
+      const saveSyncMeta = () => session && career && lsSet(careerKey(), JSON.stringify({ c: career, s: { ver: sync.ver, base: sync.base, dirty: sync.dirty, pend: sync.pend } }));
       const profileApi = (action, body = {}, keepalive = false) => apiPost(PROFILE_API, action, body, keepalive);
       async function apiPost(url, action, body = {}, keepalive = false) {
         const r = await fetch(url, {
@@ -10471,11 +10474,16 @@
         if (!session || !career) return;
         if (sync.busy) { sync.again = true; return; }
         sync.busy = true; setSync('saving');
+        // this save's id, in the career it sends and in pend (kept on disk before it goes, in case the page dies)
+        const sid = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+        career.saveIds = [...(career.saveIds || []), sid].slice(-12);
+        sync.pend = [...(sync.pend || []), { id: sid, cash: career.cash }].slice(-6);
+        saveSyncMeta();
         const sent = JSON.stringify(career);
         try {
           const r = await profileApi('save', { career: JSON.parse(sent), ver: sync.ver }, keepalive);
           if (r.status === 200) {
-            sync.ver = r.data.ver; sync.base = JSON.parse(sent); sync.dirty = JSON.stringify(career) !== sent;
+            sync.ver = r.data.ver; sync.base = JSON.parse(sent); sync.dirty = JSON.stringify(career) !== sent; sync.pend = [];
             saveSyncMeta(); setSync('ok');
           } else if (r.status === 409 && r.data.career) { mergeServer(r.data.career, r.data.ver); sync.again = true; }
           else if (r.status === 401) signInExpired();
@@ -10489,8 +10497,12 @@
       function mergeServer(srv, ver) {
         srv = upgradeCareer(srv);
         if (!srv) return;
-        const base = sync.base || srv;
-        career.cash = srv.cash + (career.cash - (base.cash ?? career.cash));
+        // what this PC's cash is measured from: the last save the server confirmed, or a later one it got without the
+        // reply reaching us (its id is in the server's saveIds); the server's cash already includes that one's change
+        const landed = [...(sync.pend || [])].reverse().find((p) => (srv.saveIds || []).includes(p.id));
+        const base = sync.base || srv, baseCash = landed ? landed.cash : (base.cash ?? career.cash);
+        career.cash = srv.cash + (career.cash - baseCash);
+        career.saveIds = [...new Set([...(srv.saveIds || []), ...(career.saveIds || [])])].slice(-12);
         const seen = new Set(), hist = [];
         for (const h of [...(srv.history || []), ...(career.history || [])]) { const k = `${h.date}|${h.npc || h.friend}|${h.net}`; if (!seen.has(k)) { seen.add(k); hist.push(h); } }
         career.history = hist.sort((a, b) => a.date - b.date);
@@ -10506,7 +10518,7 @@
         const rs = new Map();                                // handicap rounds from both copies, by date (M2)
         for (const x of [...(srv.rounds || []), ...(career.rounds || [])]) rs.set(x.date, x);
         career.rounds = [...rs.values()].sort((a, b) => a.date - b.date).slice(-HCP.keep);
-        sync.ver = ver; sync.base = srv; sync.dirty = true;
+        sync.ver = ver; sync.base = srv; sync.dirty = true; sync.pend = [];
         saveSyncMeta();
       }
       // fetch the server's copy (opening the clubhouse, signing in): newer than ours → take it (or merge if ours has
@@ -10521,12 +10533,13 @@
             if (session.admin !== adminOk) { session.admin = adminOk; lsSet('golfSession', JSON.stringify(session)); }
           }
           if (r.status !== 200 || !r.data.career) return setSync(r.status === 200 ? '' : 'offline');
+          if (career && sync.busy) return;                   // a save is in flight: its reply (or its 409 and merge) decides
           if (!career || r.data.ver > sync.ver) {
             if (career && sync.dirty) mergeServer(r.data.career, r.data.ver);
             else {
               const c = upgradeCareer(r.data.career);
               if (!career) career = c; else { for (const k of Object.keys(career)) delete career[k]; Object.assign(career, c); }
-              sync.ver = r.data.ver; sync.base = JSON.parse(JSON.stringify(c)); sync.dirty = false;
+              sync.ver = r.data.ver; sync.base = JSON.parse(JSON.stringify(c)); sync.dirty = false; sync.pend = [];
               saveSyncMeta();
             }
             refreshCareerView();
@@ -10710,6 +10723,7 @@
           career.tier = t; cmSel = 0;
           setText('chMsg', `You'll hustle at ${TIERS[t].course} now.`);
         } else if (b.dataset.join) {
+          if (liveMatch()) return setText('chMsg', liveMatchMsg());
           if (!tierReqs(3).every((r) => r.ok)) return;
           career.cash -= TIERS[3].entry; career.tierMax = 3; career.tier = 3; cmSel = 0;
           setText('chMsg', `Welcome to ${TIERS[3].course}. The members play for real money.`);
@@ -10809,7 +10823,7 @@
         lsSet('golfSession', JSON.stringify(session)); playMode = 'profile'; lsSet('golfMode', 'profile');
         lsSet('golfLastProfile', session.id);                // listed first on this PC's home screen
         career = upgradeCareer(r.data.career) || newCareer(r.data.name);
-        sync.ver = r.data.ver; sync.base = JSON.parse(JSON.stringify(career)); sync.dirty = !r.data.career;     // (a brand-new admin profile: send its fresh career)
+        sync.ver = r.data.ver; sync.base = JSON.parse(JSON.stringify(career)); sync.dirty = !r.data.career; sync.pend = [];     // (a brand-new admin profile: send its fresh career)
         saveSyncMeta();
         if (sync.dirty) queueSync(100);
         if (bring && local) lsSet(CAREER.key, null);          // moved into the profile, not copied
@@ -10828,7 +10842,7 @@
           profileApi('logout').catch(() => { /* fine */ });
         }
         session = null; adminOk = false; lsSet('golfSession', null); playMode = ''; lsSet('golfMode', null);
-        career = null; Object.assign(sync, { ver: 0, base: null, dirty: false, state: '' });
+        career = null; Object.assign(sync, { ver: 0, base: null, dirty: false, state: '', pend: [] });
         updateCareerUI(); siMode = 'in';
         applyDevTools();
         closeClubhouse();
@@ -10856,8 +10870,13 @@
         openClubhouse();                                      // straight to a new one
         toast('Career deleted', 1600);
       }
+      // a hustler match teed off and not settled (the game was closed part-way): the stake is riding on your cash, so the
+      // rooms that spend it stay shut until it's finished or forfeited (audit 1.2). The range and the bag room stay open.
+      const liveMatch = () => !!(career && career.match && career.match.feePaid && !career.match.settled);
+      const liveMatchMsg = () => { const m = career.match; return `You've got a match on vs ${npcById(m.npc).nick} (${money(m.stake)}${m.format === 'skins' ? ' a hole' : ''}): finish it or forfeit it first. The money riding on it isn't yours to spend yet.`; };
       function clubhouseGo(where) {
         if (where === 'range') return careerToRange();
+        if (['shop', 'coach', 'caddie'].includes(where) && liveMatch()) return setText('chMsg', liveMatchMsg());
         if (where === 'match') {                             // one round at a time: a friend round left part-way comes first
           const pc = career.pvpCard;
           if (pc && pc.holes.length) return setText('chMsg', `Finish your round against ${pc.vsName} first (🤝 Friends → Resume).`);
@@ -11227,7 +11246,7 @@
         return `${who} ${st.n} stroke${st.n === 1 ? '' : 's'} (${holes.length === 1 ? 'hole' : 'holes'} ${list}${st.n > HOLES.length ? `; two on the hardest ${st.n - HOLES.length}` : ''})`;
       }
       // the stakes this player has held in challenges that aren't settled
-      const heldCash = () => fr.list.filter((c) => c.status === 'open' && c.held && c.held[session.id]).reduce((s, c) => s + escrowOf(c.format, c.stake), 0);
+      const heldCash = () => fr.list.filter((c) => (c.status === 'open' || c.status === 'pending') && c.held && c.held[session.id]).reduce((s, c) => s + escrowOf(c.format, c.stake), 0);
       async function loadFriends(quiet = false) {
         if (!session || fr.busy) return;
         fr.busy = true;
@@ -11270,7 +11289,7 @@
         const me = session.id, L = fr.list, pc = career.pvpCard;
         setText('frCash', money(career.cash));
         if (fr.loaded && !fr.howSet) { fr.howSet = true; $('frHow').open = !L.length; }    // open until you've had a challenge
-        const held = heldCash(), nOpen = L.filter((c) => c.status === 'open' && c.held && c.held[me]).length;
+        const held = heldCash(), nOpen = L.filter((c) => (c.status === 'open' || c.status === 'pending') && c.held && c.held[me]).length;
         setText('frHeld', held ? `${money(held)} of your stakes held in ${nOpen} challenge${nOpen > 1 ? 's' : ''} until ${nOpen > 1 ? 'they settle' : 'it settles'} (already out of your cash)` : '');
         const row = (c, cls, status, btns) => {
           const o = chOther(c), sk = c.format === 'skins';
@@ -11281,7 +11300,7 @@
         const groups = [
           ['Waiting for you', L.filter((c) => c.status === 'pending' && c.to === me).map((c) => row(c, 'hot', `${c.names[c.from]} challenged you ${frDate(c.created)} · accepting takes ${money(escrowOf(c.format, c.stake))} from each of you until it settles`,
             B('accept', c.id, `Accept · ${money(escrowOf(c.format, c.stake))}`, 'go') + B('decline', c.id, 'Decline', 'no')))],
-          ['Waiting for them', L.filter((c) => c.status === 'pending' && c.from === me).map((c) => row(c, '', `Sent ${frDate(c.created)} · waiting for ${c.names[c.to]} to accept`, B('cancel', c.id, 'Cancel', 'no')))],
+          ['Waiting for them', L.filter((c) => c.status === 'pending' && c.from === me).map((c) => row(c, '', `Sent ${frDate(c.created)} · waiting for ${c.names[c.to]} to accept${c.held && c.held[me] ? ` · your ${money(escrowOf(c.format, c.stake))} is held (back if they decline)` : ''}`, B('cancel', c.id, 'Cancel', 'no')))],
           ['To play', L.filter((c) => c.status === 'open').map((c) => {
             const o = chOther(c), mine = c.cards[me], theirs = c.cards[o], mp = pc && pc.id === c.id ? pc : null;
             const done = mp && mp.holes.filter(Boolean).length === HOLES.length;
@@ -11313,6 +11332,7 @@
         if (!b || b.disabled) return;
         b.blur();
         const act = b.dataset.act, id = b.dataset.id, c = fr.list.find((x) => x.id === id);
+        if ((act === 'challenge' || act === 'accept') && liveMatch()) return setText('frMsg', liveMatchMsg());
         if (act === 'challenge') return openChalForm(b.dataset.to);
         if (act === 'visit') return visitTrophies(b.dataset.to);
         if (act === 'play') return playFriend(id);
@@ -11359,7 +11379,7 @@
         inp.min = 5; inp.max = Math.max(5, Math.min(cap, 2000)); f.stake = clamp(f.stake, 5, +inp.max); inp.value = f.stake;
         setText('ccStakeL', sk ? 'Per skin' : 'Stake');
         setText('ccStakeV', money(f.stake));
-        setText('ccEscrow', `${money(f.stake * per)} from each of you, held from when ${f.name} accepts until it settles · the winner takes ${sk ? 'what the skins pay' : money(2 * f.stake)}`);
+        setText('ccEscrow', `${money(f.stake * per)} from each of you: yours is held from when you send it, ${f.name}'s from when they accept · the winner takes ${sk ? 'what the skins pay' : money(2 * f.stake)}`);
         $('ccTier').innerHTML = [1, 2, 3].map((t) => `<button data-t="${t}" class="${f.tier === t ? 'on' : ''}" ${f.tiers.includes(t) ? '' : 'disabled title="Not open to both of you"'}>${TIERS[t].course}</button>`).join('');
         for (const b of $('ccHcp').children) b.classList.toggle('on', b.dataset.h === f.hcp);
         $('chChal').classList.toggle('agreed', f.hcp === 'agreed');
@@ -11384,6 +11404,7 @@
       async function sendChallenge() {
         const f = fr.form;
         if (!f || $('ccGo').disabled) return;
+        if (liveMatch()) return setText('ccErr', liveMatchMsg());
         $('ccGo').disabled = true; setText('ccErr', 'Sending…');
         const hcp = f.hcp === 'agreed' ? { strokes: f.n, to: f.who } : f.hcp;
         let r;
@@ -11391,7 +11412,8 @@
         $('ccGo').disabled = false;
         if (r.status !== 200) return setText('ccErr', r.data.error || `Something went wrong (${r.status})`);
         fr.form = null;
-        openFriends(`Challenge sent to ${f.name}. Nothing is taken until they accept.`);
+        await syncLoad();                                    // (the server took your stake: pick up the new cash)
+        openFriends(`Challenge sent to ${f.name}. Your ${money(escrowOf(f.format, f.stake))} is held until it settles; you get it back if they decline.`);
       }
       // ---- playing it: the same course and conditions as the friend (the circuit's holes, each hole's fixed wind and
       // greens), the career's own stats and bag; no hustler, no tee toss, no presses
@@ -12341,6 +12363,7 @@
         const by = e.target.closest('button[data-buyshow]');
         if (by && trophyView) {                              // buy a piece off their wall: they get the money, it's destroyed
           by.blur();
+          if (liveMatch()) return setText('trMsg', liveMatchMsg());
           const it = shownRivals(trophyView).find((x) => x.key === by.dataset.buyshow);
           if (!it || !confirm(`Pay ${trophyView.name} ${money(it.price)} to take down and destroy their ${it.kind === 'card' ? `framed scorecard vs ${it.name}` : `“Beat ${it.name}” trophy`}? It's gone for good.`)) return;
           by.disabled = true; setText('trMsg', 'Buying…');
@@ -12374,6 +12397,7 @@
         if (!b || b.disabled || trophyView) return;
         b.blur();
         const t = TROPHIES.find((x) => x.id === b.dataset.buytr);
+        if (liveMatch()) return setText('trMsg', liveMatchMsg());
         if (!t || (career.trophies || []).includes(t.id) || career.cash < t.price) return;
         if (t.price >= 25000 && !confirm(`Buy the ${t.name} for ${money(t.price)}? It's for show only.`)) return;
         career.cash -= t.price; career.trophies = [...(career.trophies || []), t.id];
@@ -13129,6 +13153,7 @@
           snapped = snapRandomClub(); line = n.lines.cantPay;
         }
         career.cash += net;
+        if (unpaid) career.cash = 0;                         // (cash already below zero is part of the debt the beating wipes)
         Object.assign(m, { settled: true, result, net, unpaid });
         // for the payoff screen at the end (not a forfeit: you chose to walk off)
         if (kind !== 'forfeit') m.outcome = { cashBefore, cashAfter: career.cash, rep: (career.rep || 0) - repBefore, line, snapped: snapped >= 0 ? CLUBS[snapped].name : null, shown: false };

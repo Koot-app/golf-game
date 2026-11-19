@@ -26,8 +26,9 @@ re-read the code you touch first (other sessions edit `index.html`).
    are in. (Live play is a possible later chunk, not planned.)
 2. **Handicaps kept automatically** from completed rounds, with a manual override the two players agree on in the
    challenge.
-3. **Friends bet cash only, held in escrow.** The stake is taken from both careers when the challenge is accepted and
-   paid to the winner at settlement. No credit and no beating between friends, so nobody can end up owing. (The
+3. **Friends bet cash only, held in escrow.** The challenger's stake is taken when the challenge is sent (since audit
+   finding 1.3, 2026-11-19: their own PC could otherwise spend it before hearing of the accept), the other player's
+   when they accept, and the pot is paid to the winner at settlement. No credit and no beating between friends, so nobody can end up owing. (The
    loan-shark rule stays for the hustlers.)
 4. **An existing career on this PC can be brought into a new profile** when that person signs up.
 5. **Passwords are still hashed** on the server (scrypt with a per-user salt), because people reuse passwords, even
@@ -114,10 +115,10 @@ The client keeps `careerBase` (the copy at the last successful sync) for this.
 
 | action | who | does |
 |---|---|---|
-| `create` | A | `to`, `format`, `stake`, `tier`, `hcp` (`auto`, `off`, or `{ strokes, to }`) → a `pending` challenge |
-| `list` | anyone | their challenges, newest first (incoming, outgoing, in play, finished) |
-| `accept` | B | checks both can cover the stake, **takes it from both careers** (escrow) → `open` |
-| `decline` / `cancel` | B / A | `pending` → `closed`, nothing moves |
+| `create` | A | `to`, `format`, `stake`, `tier`, `hcp` (`auto`, `off`, or `{ strokes, to }`) → a `pending` challenge; **takes A's stake** (escrow) |
+| `list` | anyone | their challenges, newest first (incoming, outgoing, in play, finished); also closes unanswered ones (A's stake back) |
+| `accept` | B | checks B can cover the stake, **takes it from B's career** (escrow; from A's too for a challenge made before A's was taken at create) → `open` |
+| `decline` / `cancel` | B / A | `pending` → `closed`, A's stake goes back |
 | `submit` | A or B | their card `[{ strokes, putts }] × 9` (only once; must be `open`); when both are in → **settle** |
 | `forfeit` | A or B | the other wins (if the other has submitted or not) |
 

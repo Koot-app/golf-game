@@ -5,8 +5,10 @@
 //   POST /api/challenge  { action, ... }   (Authorization: Bearer <session token>, as api/profile.js)
 //     create  { to, format, stake, tier, hcp }  -> { challenge }      hcp: 'auto' | 'off' | { strokes, to }
 //     list                                      -> { challenges: [...newest first], me }
-//     accept  { id }   (the one challenged)     -> { challenge }      takes the stake from both careers (escrow)
-//     decline { id }   (the one challenged) / cancel { id } (the challenger): a pending challenge is closed
+//     create takes the challenger's stake (escrow) at once; accept takes the other player's
+//     accept  { id }   (the one challenged)     -> { challenge }      takes the stake from the one challenged (escrow)
+//     decline { id }   (the one challenged) / cancel { id } (the challenger): a pending challenge is closed, the
+//                                               challenger's stake goes back (so it does when nobody answers in 7 days)
 //     submit  { id, card: [{ strokes, putts, pen }] x 9 }  -> { challenge }   settles when both cards are in
 //     forfeit { id }                            -> { challenge }      the other player wins
 //
@@ -138,6 +140,21 @@ async function payOut(ch) {
   }
   return ch;
 }
+// a challenge closed without being played (declined, called off, not answered in time): any stake already held goes
+// back to its owner, once (marked in `paid`), with no history line (nothing happened)
+async function refundHeld(ch) {
+  const E = escrowOf(ch);
+  ch.paid = ch.paid || {};
+  for (const p of [ch.from, ch.to]) {
+    if (!(ch.held && ch.held[p]) || ch.paid[p]) continue;
+    await updateCareer(p, (c) => { c.cash = (c.cash || 0) + E; });
+    ch.paid[p] = true;
+    await putCh(ch);
+  }
+  return ch;
+}
+// a stake held but not yet paid back or out
+const owed = (ch) => [ch.from, ch.to].some((p) => ch.held && ch.held[p] && !(ch.paid || {})[p]);
 async function finish(ch, result) {
   ch.status = result.kind === 'refund' ? 'closed' : 'done';
   ch.result = result; ch.finished = Date.now();
@@ -208,7 +225,15 @@ module.exports = async (req, res) => {
       if (list.filter((c) => c.status === 'pending' || c.status === 'open').length >= MAX_ACTIVE) return send(400, { error: `You're in ${MAX_ACTIVE} challenges already — finish some first` });
       const ch = { id: crypto.randomBytes(8).toString('hex'), from: me, to, names: { [me]: cMe.name, [to]: cTo.name }, format, stake, tier, hcp, status: 'pending', created: Date.now(), cards: {}, held: {} };
       ch.strokes = strokesFor(ch, cMe, cTo);                  // a preview: fixed for good when it's accepted
-      await redis([['SET', `golf:ch:${ch.id}`, JSON.stringify(ch)], ['SADD', `golf:chs:${me}`, ch.id], ['SADD', `golf:chs:${to}`, ch.id]]);
+      // the challenger's stake is held from now, not from the accept: otherwise their own PC, which doesn't hear about
+      // the accept until it next syncs, could spend it in the meantime and go below zero (audit 1.3)
+      await updateCareer(me, (c) => {
+        if ((c.cash || 0) < E) throw fail(400, `You need $${E} to put that up`);
+        c.cash -= E;
+      });
+      ch.held[me] = true;
+      try { await redis([['SET', `golf:ch:${ch.id}`, JSON.stringify(ch)], ['SADD', `golf:chs:${me}`, ch.id], ['SADD', `golf:chs:${to}`, ch.id]]); }
+      catch (e) { await updateCareer(me, (c) => { c.cash = (c.cash || 0) + E; }); throw e; }
       return send(200, { challenge: view(ch, me) });
     }
 
@@ -219,12 +244,13 @@ module.exports = async (req, res) => {
         let ch = await getCh(cid);
         if (!ch) { drop.push(cid); continue; }
         const stale = ch.status === 'pending' && Date.now() > ch.created + DAYS;
-        const due = (ch.status === 'open' && Date.now() > ch.deadline) || (ch.status === 'done' && ch.result && [ch.from, ch.to].some((p) => ch.held[p] && !(ch.paid || {})[p]));
+        const due = (ch.status === 'open' && Date.now() > ch.deadline) || (ch.status === 'done' && ch.result && owed(ch)) || (ch.status === 'closed' && owed(ch));
         if (stale || due) {
           try {
             ch = await withLock(cid, async (c) => {
-              if (c.status === 'pending' && Date.now() > c.created + DAYS) { c.status = 'closed'; c.result = { kind: 'unanswered', line: 'Not answered in time' }; c.finished = Date.now(); await putCh(c); return c; }
+              if (c.status === 'pending' && Date.now() > c.created + DAYS) { c.status = 'closed'; c.result = { kind: 'unanswered', line: 'Not answered in time' }; c.finished = Date.now(); await putCh(c); return refundHeld(c); }
               if (c.status === 'open') return expire(c);
+              if (c.status === 'closed') return c.result && c.result.payout ? payOut(c) : refundHeld(c);
               return payOut(c);
             });
           } catch { /* busy: next time */ }
@@ -247,7 +273,7 @@ module.exports = async (req, res) => {
         ch.status = 'closed'; ch.finished = Date.now();
         ch.result = { kind: action === 'decline' ? 'declined' : 'cancelled', line: action === 'decline' ? `${ch.names[me]} declined` : `${ch.names[me]} called it off` };
         await putCh(ch);
-        return ch;
+        return refundHeld(ch);                                 // the challenger's stake goes back
       }
       if (action === 'accept') {
         if (ch.to !== me) throw fail(400, 'Only the one challenged can accept');
@@ -260,14 +286,16 @@ module.exports = async (req, res) => {
           if ((c.cash || 0) < E) throw fail(400, p === me ? `You need $${E} to accept` : `${ch.names[p]} doesn't have $${E} any more`);
           c.cash -= E;
         });
+        // (the challenger's stake is normally held since the challenge was made; one made before that rule is taken now)
+        const taken = [];
         for (const p of [ch.to, ch.from]) {
           if (ch.held[p]) continue;
           try { await take(p); } catch (e) {
-            for (const q of [ch.to, ch.from]) if (ch.held[q]) { await updateCareer(q, (c) => { c.cash = (c.cash || 0) + E; }); delete ch.held[q]; }    // give back what was taken
+            for (const q of taken) { await updateCareer(q, (c) => { c.cash = (c.cash || 0) + E; }); delete ch.held[q]; }    // give back what this accept took
             await putCh(ch);
             throw e;
           }
-          ch.held[p] = true; await putCh(ch);
+          ch.held[p] = true; taken.push(p); await putCh(ch);
         }
         ch.status = 'open'; ch.accepted = Date.now(); ch.deadline = ch.accepted + DAYS;
         await putCh(ch);
