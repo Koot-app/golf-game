@@ -569,3 +569,41 @@ the gear.
 - **Modal keys:** every new overlay (clubhouse, shop, coach, results, beating) needs its place in the keydown intercept
   chain, or game keys will fire behind it.
 - **Stats at 2** make the game hard. Play-test chunk 1 and 3 at the starting stats and tune `CAREER` before chunk 6.
+
+---
+
+## Caddies (end game) — ✅ built 2026-11-19 (user request)
+
+A money sink for late careers. The caddie shack (a sign in the lobby, its own illustrated room) lists five caddies, each
+with a one-time **hire** fee and a **loop** fee paid every hustler match with the green fee (can't pay it: the caddie
+sits that match out). One at a time; hiring another replaces yours, no refunds; "Let go" is free.
+
+| Caddie | Needs | Hire | Loop | Effect |
+|---|---|---|---|---|
+| Scooter Briggs | — | $750 | $15 | +1 Perception |
+| "Lefty" Doyle | rep 40 | $3,000 | $40 | +1 Composure, +1 Perception |
+| Marisol Vega | Resorts, rep 80 | $8,000 | $90 | +1 Composure, +2 Perception, walks off one level of tilt each hole |
+| "Big Walt" Okafor | Country clubs, rep 120 | $15,000 | $150 | +3 Composure, +1 Perception, every hole starts with no tilt |
+| Eleanor Finch | Country clubs, rep 200 | $40,000 | $400 | +3 Composure, +3 Perception, every hole starts with no tilt |
+
+Code: `CADDIES`, `career.caddie`, `caddieOf()`, `caddieOn()`, `careerStats()` (the career's stats plus the caddie's,
+never past 10 — Perception's formulas break above 10), `caddieWalkOff(streak)` (in `nextRoundHole()`), the loop fee in
+`startMatch()` (`m.caddieFee` / `m.noCaddie`), `openCaddies()` / `renderCaddies()` / `caddieClick()`. The character
+sheet shows the caddie's help as green pips. Friend rounds use the caddie without a loop fee.
+
+## Trophy room (end game) — ✅ built 2026-11-19 (user request)
+
+A second money sink with nothing to gain but bragging rights. A sign in the lobby opens the trophy room: two lit glass
+cases where each piece bought sits in its own place (so the room fills up), and a top shelf of trophies that are
+**earned** (worked out from the career, nothing stored): first hustle won, resort card, country-club member, friendly
+fire (beat a friend), the big score ($1,000+ in one match), single figures, scratch golfer.
+
+For sale (`TROPHIES`, `career.trophies` = ids): Gus Haney's betting ledger $2,500 · gutta-percha ball $4,000 ·
+hickory mashie $7,500 · persimmon driver $12,000 · long-nose putter $18,000 · featherie ball $30,000 · signed 18th
+flag $45,000 · silver claret jug (replica) $75,000 · champion's tartan blazer $100,000 · the golden putter $150,000
+(all ten: $444,000). No selling back.
+
+Bragging: `collectionOf(ids)` → pieces and value, shown on the character sheet, the home card, the profile list on the
+sign-in screen and the Friends list (`api/profile.js` `roster` / `players` return each career's `trophies`).
+Code: `trophyArt(kind, x, y, s)` draws every piece and cup (also the panel's thumbnails), `chScene('trophy')`,
+`openTrophies()` / `renderTrophies()` / `trophyClick()`.

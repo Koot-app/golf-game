@@ -1796,11 +1796,15 @@
     #clubhouse.shop:not(.coach) #chShop,
     #clubhouse.coach #chCoach,
     #clubhouse.friends #chFriends,
-    #clubhouse.chal #chChal {
+    #clubhouse.chal #chChal,
+    #clubhouse.caddie #chCaddie,
+    #clubhouse.trophy #chTrophy {
       display: block;
     }
 
     #chShop,
+    #chCaddie,
+    #chTrophy,
     #chCoach,
     #chFriends,
     #chChal {
@@ -4365,6 +4369,220 @@
       top: 66%;
       grid-column: auto;
     }
+
+    .ch-spots .ch-menu [data-go=caddie] {
+      left: 50.6%;
+      top: 82%;
+    }
+
+    /* the caddie shack */
+    .cd-row {
+      display: grid;
+      grid-template-columns: 54px 1fr 170px;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(216, 180, 90, .22);
+      background: rgba(255, 236, 196, .045);
+    }
+
+    .cd-row.mine {
+      border-color: #6fbf7f;
+      background: rgba(94, 224, 138, .08);
+    }
+
+    .cd-row.locked {
+      opacity: .6;
+    }
+
+    .cd-face {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-family: Georgia, serif;
+      font-weight: 700;
+      font-size: 18px;
+      color: #3a2508;
+      background: radial-gradient(circle at 35% 30%, #fff1c2, #d9ae55 45%, #8c6420);
+      border: 2px solid #5b4012;
+    }
+
+    .cd-row b {
+      font-size: 15px;
+      color: #fbefd2;
+    }
+
+    .cd-row>div>i {
+      display: block;
+      font-style: normal;
+      font-size: 12px;
+      color: #dcc9a4;
+      margin: 2px 0 6px;
+    }
+
+    .cd-perks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .cd-perks em {
+      font-style: normal;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: rgba(94, 224, 138, .14);
+      color: #b9f5cb;
+    }
+
+    .cd-perks s {
+      text-decoration: none;
+      color: #ffd98a;
+      font-weight: 400;
+    }
+
+    .cd-buy {
+      display: grid;
+      gap: 6px;
+      justify-items: end;
+      text-align: right;
+    }
+
+    .cd-price {
+      font-size: 18px;
+      font-weight: 800;
+      color: #5ee08a;
+    }
+
+    .cd-price small {
+      display: block;
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--dim);
+    }
+
+    .cd-buy button {
+      width: auto;
+      margin: 0;
+      padding: 6px 14px;
+      font-weight: 700;
+    }
+
+    .cd-on {
+      color: #5ee08a;
+      font-weight: 700;
+    }
+
+    .cd-lock {
+      font-size: 11.5px;
+      color: #ffd98a;
+    }
+
+    .ch-spots .ch-menu [data-go=trophy] {
+      left: 88%;
+      top: 82%;
+    }
+
+    /* the trophy room */
+    .tr-row {
+      display: grid;
+      grid-template-columns: 64px 1fr 150px;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(216, 180, 90, .22);
+      background: rgba(255, 236, 196, .045);
+    }
+
+    .tr-row.own {
+      border-color: #e9c46a;
+      background: rgba(233, 196, 106, .1);
+    }
+
+    .tr-row.earned {
+      grid-template-columns: 64px 1fr auto;
+    }
+
+    .tr-row.earned.no {
+      opacity: .5;
+    }
+
+    .tr-art svg {
+      width: 64px;
+      height: 64px;
+      display: block;
+      border-radius: 8px;
+      background: radial-gradient(circle at 50% 40%, #3b2a1a, #1a110a);
+    }
+
+    .tr-row b {
+      font-size: 14.5px;
+      color: #fbefd2;
+    }
+
+    .tr-row b small {
+      margin-left: 6px;
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-weight: 400;
+      font-size: 12px;
+      color: #e9c46a;
+    }
+
+    .tr-row>div>i {
+      display: block;
+      font-style: normal;
+      font-size: 12px;
+      color: #dcc9a4;
+      margin-top: 2px;
+    }
+
+    .tr-buy {
+      display: grid;
+      gap: 6px;
+      justify-items: end;
+    }
+
+    .tr-buy button {
+      width: auto;
+      margin: 0;
+      padding: 6px 14px;
+      font-weight: 700;
+    }
+
+    .tr-own {
+      color: #e9c46a;
+      font-weight: 700;
+    }
+
+    .tr-sum {
+      display: flex;
+      gap: 18px;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, .25);
+      border: 1px solid rgba(216, 180, 90, .22);
+      font-size: 12px;
+      color: var(--dim);
+    }
+
+    .tr-sum b {
+      display: block;
+      font-size: 17px;
+      color: #f6dc95;
+    }
+
+    #clubhouse .ch-pips i.cad {
+      background: linear-gradient(#8ff0ae, #3fb36a);
+    }
   </style>
 </head>
 
@@ -4742,6 +4960,8 @@
           <button data-go="coach"><b>🎓 Coach</b><i>Lessons and new shots</i></button>
           <button data-go="friends" id="chFriendsBtn"><b>🤝 Friends</b><i>Bet a friend on a round</i></button>
           <button data-go="range" class="wide"><b>🎯 Practice range</b><i>Hit balls with your own game (Esc)</i></button>
+          <button data-go="caddie" id="chCaddieBtn"><b>🧢 Caddie shack</b><i>Hire a looper</i></button>
+          <button data-go="trophy" id="chTrophyBtn"><b>🏆 Trophy room</b><i>Your collection</i></button>
         </div>
         <div class="ch-msg" id="chMsg"></div>
         <div class="ch-foot"><button id="chLeave">Leave career</button><button id="chSwitch">Switch player</button><button id="chRetire">Retire (start over)</button><span
@@ -4759,6 +4979,21 @@
         <div class="sh-list" id="coList"></div>
         <div class="ch-msg" id="coMsg"></div>
         <div class="ch-btns"><button id="coBack">Back to the clubhouse (Esc)</button></div>
+      </div>
+      <div id="chCaddie">
+        <div class="sh-top"><div class="ch-lead">The caddie shack</div><span class="sh-cash" id="cdCash"></span></div>
+        <p class="ch-p">A good caddie keeps you calm and reads what you can't. They're on your bag for every career round, for a
+          loop fee each match on top of the green fee. Hiring another replaces yours: no refunds.</p>
+        <div class="sh-list" id="cdList"></div>
+        <div class="ch-msg" id="cdMsg"></div>
+        <div class="ch-btns"><button id="cdBack">Back to the clubhouse (Esc)</button></div>
+      </div>
+      <div id="chTrophy">
+        <div class="sh-top"><div class="ch-lead">The trophy room</div><span class="sh-cash" id="trCash"></span></div>
+        <p class="ch-p" id="trIntro"></p>
+        <div class="sh-list" id="trList"></div>
+        <div class="ch-msg" id="trMsg"></div>
+        <div class="ch-btns"><button id="trBack">Back to the clubhouse (Esc)</button></div>
       </div>
       <div id="chFriends">
         <div class="sh-top"><div class="ch-lead">Friends</div><span class="sh-cash" id="frCash"></span></div>
@@ -6871,7 +7106,8 @@
       function newTracer() {
         trails.forEach((t) => t.dim());
         while (trails.length >= 6) { const t = trails.shift(); t.group.removeFromParent(); t.dispose(); }
-        const t = new Tracer(0xff3ea5, isChip() ? 0.35 : 1); t.group.visible = !isPutt(); scene.add(t.group); trails.push(t); return t;
+        const demoShot = careerOn && demo && demo.model && demo.on && demo.idx === state.club;      // a pro-shop demo flies gold, like its badge
+        const t = new Tracer(demoShot ? 0xffd23a : 0xff3ea5, isChip() ? 0.35 : 1); t.group.visible = !isPutt(); scene.add(t.group); trails.push(t); return t;
       }
       function clearTrails() {
         for (let i = trails.length - 1; i >= 0; i--) {
@@ -8256,7 +8492,7 @@
         const streak = state.badStreak;
         hideScorecard();
         hp.holeIdx++; buildHole(hp.holeIdx); enterHole();
-        setBadStreak(streak);                                                       // tilt follows you to the next tee
+        setBadStreak(caddieWalkOff(streak));                                        // tilt follows you to the next tee (a calm caddie walks some off)
       }
       function quitRound() {
         if (swing.active) return;
@@ -8368,7 +8604,7 @@
       function upgradeCareer(c) {
         if (!(c && c.v === 1 && typeof c.name === 'string' && c.stats)) return null;
         c.out = c.out || []; c.putters = c.putters || [c.putter || CAREER.putter]; c.tierMax = c.tierMax || c.tier || 1;      // (older saves)
-        c.history = c.history || []; c.rounds = c.rounds || []; c.pvpSeen = c.pvpSeen || [];
+        c.history = c.history || []; c.rounds = c.rounds || []; c.pvpSeen = c.pvpSeen || []; c.trophies = c.trophies || [];
         return c;
       }
       function readCareer(key) { try { return upgradeCareer(JSON.parse(lsGet(key) || 'null')); } catch { return null; } }
@@ -8495,7 +8731,7 @@
           applyCareerClubs();
           state.putter = PUTTERS[career.putter] ? career.putter : 'blade';
           if (!canUseClub(state.club)) state.club = usableClub(0);
-          setStats(career.stats); refreshShotType(); enforceUnlocks();
+          setStats(careerStats()); refreshShotType(); enforceUnlocks();
         }
         updateCareerUI();
         if (clubOpen && $('clubhouse').classList.contains('new') && career) openClubhouse();
@@ -8509,7 +8745,7 @@
           cash: CAREER.cash, rep: CAREER.rep, tier: CAREER.tier, stats: { ...CAREER.stats },
           bag: { ...CAREER.bag }, snapped: [], putter: CAREER.putter, out: [], putters: [CAREER.putter],
           unlocks: { draw: false, fade: false, stinger: false, high: false, flop: false, spin: false },
-          match: null, history: [], rounds: [], pvpSeen: [], created: Date.now(), stamp: 0, tierMax: 1,
+          match: null, history: [], rounds: [], pvpSeen: [], trophies: [], created: Date.now(), stamp: 0, tierMax: 1,
         };
       }
       // switch the game over to the career (its stats), and back to the player's own
@@ -8521,7 +8757,7 @@
         applyCareerClubs();                                   // the career's own bag (chunk 2)
         state.putter = PUTTERS[career.putter] ? career.putter : 'blade';
         if (!canUseClub(state.club)) state.club = usableClub(0);
-        setStats(career.stats);                               // (re-renders the bag)
+        setStats(careerStats());                               // (re-renders the bag)
         refreshShotType();
         enforceUnlocks();                                     // only what the coach has taught (chunk 6)
         updateCareerUI();
@@ -8544,12 +8780,14 @@
         updateMeChip();
         $('btnCareer').textContent = careerOn ? `🏠 Clubhouse (J) · ${money(career.cash)}` : career ? `🏌️ Career · ${career.name}` : session ? `🏌️ ${session.name}` : '🏌️ Career · sign in';
         if (careerOn) {
-          setText('careerStatNote', `Career: ${career.name}'s stats — ${CAREER_STATS.map(([k, n]) => `${n} ${career.stats[k]}`).join(' · ')}. The coach raises them.`);
+          const es = careerStats(), cdn = caddieOn() ? caddieOf() : null;
+          setText('careerStatNote', `Career: ${career.name}'s stats — ${CAREER_STATS.map(([k, n]) => `${n} ${es[k]}${es[k] > career.stats[k] ? ` (+${es[k] - career.stats[k]} caddie)` : ''}`).join(' · ')}. The coach raises them.${cdn ? ` 🧢 ${cdn.short} is on your bag.` : ''}`);
         }
         if (!career) return;
         setText('chWho', career.name);
         setText('chMedal', career.name.slice(0, 2).toUpperCase());
-        setText('chRank', `${rankOf(career.rep || 0)} · ${CAREER.tiers[career.tier]} circuit`);
+        const colv = collectionOf(career.trophies).value;
+        setText('chRank', `${rankOf(career.rep || 0)} · ${CAREER.tiers[career.tier]} circuit${caddieOf() ? ` · 🧢 ${caddieOf().short}` : ''}${colv ? ` · 🏆 ${money(colv)}` : ''}`);
         setText('chCash', money(career.cash));
         setText('chRep', String(career.rep));
         setText('chTier', `${career.tier} · ${CAREER.tiers[career.tier]}`);
@@ -8568,8 +8806,9 @@
           ? `<b>⛳ Resume your match</b><i>vs ${npcById(m.npc).nick} · ${matchLine(m)} thru ${matchStatus(m).played} · ${money(m.stake)}${m.format === 'skins' ? ' a hole' : ' on it'}</i>`
           : '<b>⛳ Play a match</b><i>Hustle a local for money</i>';
         $('chStats').innerHTML = CAREER_STATS.map(([k, n, what]) => {
-          const v = career.stats[k];
-          return `<div class="ch-stat" title="${n}: ${what}"><span>${n}</span><div class="ch-pips">${Array.from({ length: 10 }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}</div><b>${v}</b></div>`;
+          const v = career.stats[k], cd = caddieOf();                     // the caddie's help: green pips past your own
+          const e = cd ? Math.min(COACH.maxStat, v + (k === 'composure' ? cd.comp : k === 'perception' ? cd.per : 0)) : v;
+          return `<div class="ch-stat" title="${n}: ${what}${e > v ? ` (${v} + ${e - v} from ${cd.short})` : ''}"><span>${n}</span><div class="ch-pips">${Array.from({ length: 10 }, (_, i) => `<i class="${i < v ? 'on' : i < e ? 'cad' : ''}"></i>`).join('')}</div><b>${e}</b></div>`;
         }).join('');
       }
       // ---- the circuits (chunk 8): tier 2 opens at 40 reputation; tier 3 needs 120, players' irons, a newer driver and a
@@ -8632,7 +8871,7 @@
         const ch = $('clubhouse');
         ch.classList.add('on'); clubOpen = true;
         setText('chMsg', '');
-        ch.classList.remove('match', 'shop', 'coach', 'friends', 'chal');
+        ch.classList.remove('match', 'shop', 'coach', 'friends', 'chal', 'caddie', 'trophy');
         if (career && careerOn) clearDemo();                 // back from a free demo
         if (!career) {                                       // who's playing? (signed in but nothing here yet: fetch it)
           if (session) { siMode = 'in'; renderSignIn('Loading your profile…'); syncLoad(); }
@@ -8664,7 +8903,7 @@
       let siMode = 'in';
       function renderSignIn(msg = '') {
         const ch = $('clubhouse'), local = readCareer(CAREER.key);
-        ch.classList.add('new'); ch.classList.remove('hub', 'match', 'shop', 'coach', 'friends', 'chal');
+        ch.classList.add('new'); ch.classList.remove('hub', 'match', 'shop', 'coach', 'friends', 'chal', 'caddie', 'trophy');
         setText('chTag', 'Profiles');
         $('chNew').className = siMode + (siMode === 'local' && local ? ' continue' : '') + (local ? '' : ' nobring');
         for (const b of $('siTabs').children) b.classList.toggle('on', b.dataset.si === siMode);
@@ -8763,6 +9002,8 @@
           return openMatchPicker();
         }
         if (where === 'friends') return openFriends();
+        if (where === 'caddie') return openCaddies();
+        if (where === 'trophy') return openTrophies();
         if (where === 'shop') return openShop();
         if (where === 'coach') return openCoach();
         const soon = { shop: 'The pro shop', coach: 'The coach' }[where];
@@ -8780,7 +9021,7 @@
           else if ((e.code === 'Enter' || e.code === 'NumpadEnter') && !e.repeat) { e.preventDefault(); sendChallenge(); }
           return;
         }
-        if ($('clubhouse').classList.contains('coach')) { if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); } return; }
+        if (['coach', 'caddie', 'trophy'].some((v) => $('clubhouse').classList.contains(v))) { if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); } return; }
         if ($('clubhouse').classList.contains('shop')) {       // the pro shop: 1–6 tabs, Esc back
           const tabs = ['iron', 'driver', 'wood', 'wedge', 'putter', 'bag'], dg = /^Digit([1-6])$/.exec(e.code);
           if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); }
@@ -8812,9 +9053,10 @@
       const CH_ROOMS = {
         lobby: { name: 'The Clubhouse', panel: '🏌️ Clubhouse' }, shop: { name: 'The Pro Shop', panel: '🛒 Pro shop' },
         coach: { name: 'The Teaching Bay', panel: '🎓 The coach' }, bar: { name: 'The 19th Hole', panel: '🤝 Friends' },
-        tee: { name: 'The First Tee', panel: '⛳ Hustlers' },
+        tee: { name: 'The First Tee', panel: '⛳ Hustlers' }, shack: { name: 'The Caddie Shack', panel: '🧢 Caddies' },
+        trophy: { name: 'The Trophy Room', panel: '🏆 Trophy room' },
       };
-      const chRoomOf = (cl) => (cl.contains('coach') ? 'coach' : cl.contains('shop') ? 'shop' : cl.contains('friends') || cl.contains('chal') ? 'bar' : cl.contains('match') ? 'tee' : 'lobby');
+      const chRoomOf = (cl) => (cl.contains('trophy') ? 'trophy' : cl.contains('caddie') ? 'shack' :cl.contains('coach') ? 'coach' : cl.contains('shop') ? 'shop' : cl.contains('friends') || cl.contains('chal') ? 'bar' : cl.contains('match') ? 'tee' : 'lobby');
       let chRoomNow = '';
       function chSetRoom() {
         const room = chRoomOf($('clubhouse').classList);
@@ -8892,6 +9134,8 @@
             <rect x="1250" y="660" width="54" height="125" rx="14" fill="#7a1f24" stroke="#2a190d" stroke-width="3"/><path d="M1262 660 v-40 M1277 660 v-55 M1292 660 v-35" stroke="#bbb" stroke-width="4"/>
             <circle cx="1262" cy="618" r="8" fill="#222"/><circle cx="1277" cy="603" r="8" fill="#333"/><circle cx="1292" cy="623" r="8" fill="#1d3a6b"/>
             <path d="M1135 640 L1110 790 M1185 640 L1210 790 M1160 640 L1160 785" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
+            <path d="M780 790 L755 895 M840 790 L865 895 M810 790 V890" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
+            <path d="M1378 790 L1353 895 M1438 790 L1463 895 M1408 790 V890" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
             ${lamp(300)}${lamp(800)}${lamp(1300)}
             <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
         }
@@ -8968,6 +9212,55 @@
             <rect y="770" width="${W}" height="130" fill="#1a0f08"/>
             ${stool(140)}${stool(360)}${stool(580)}${stool(800)}
             ${lamp(220, 40)}${lamp(520, 40)}${lamp(820, 40)}
+            <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
+        }
+        if (room === 'trophy') {         // the trophy room: earned cups on the top shelf, two lit glass cases for what you've bought
+          const own = (career && career.trophies) || [];
+          const cups = EARNED.map((t, i) => { const x = 110 + i * 122, got = career && t.got(career); return got ? trophyArt(t.art, x, 150, 96) : `<g opacity=".18">${trophyArt(t.art, x, 150, 96)}</g>`; }).join('');
+          const cabinet = (x0, items) => `<rect x="${x0 - 14}" y="226" width="428" height="590" rx="6" fill="#2a190d"/><rect x="${x0}" y="240" width="400" height="560" fill="#16100b"/>`
+            + `<circle cx="${x0 + 200}" cy="300" r="260" fill="url(#glow)"/>`
+            + [0, 1, 2].map((r) => `<rect x="${x0}" y="${396 + r * 180}" width="400" height="8" fill="#6b4422"/>`).join('')
+            + items.map((t, k) => {
+              const cx = x0 + 100 + (k % 2) * 200, cy = 320 + Math.floor(k / 2) * 180, mine = own.includes(t.id);
+              return (mine ? trophyArt(t.art, cx, cy, 130) : '') + `<rect x="${cx - 46}" y="${cy + 56}" width="92" height="16" rx="2" fill="${mine ? '#c9a253' : '#3a2a1a'}"/>`
+                + (mine ? `<text x="${cx}" y="${cy + 68}" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#2a190d">${t.tag}</text>` : '');
+            }).join('')
+            + `<rect x="${x0}" y="240" width="400" height="560" fill="#cfe9f7" opacity=".05"/><path d="M${x0 + 30} 250 L${x0 + 90} 790" stroke="#fff" stroke-width="10" opacity=".05"/><rect x="${x0 + 196}" y="240" width="8" height="560" fill="#2a190d"/>`;
+          return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}
+            <rect width="${W}" height="${H}" fill="#1f3a2a"/>${Array.from({ length: 30 }, (_, i) => `<rect x="${i * 56}" width="2" height="${H}" fill="#2a4a36"/>`).join('')}
+            <rect width="${W}" height="40" fill="#24160c"/><rect y="40" width="${W}" height="8" fill="#b08a45"/>
+            <rect x="40" y="198" width="900" height="16" fill="#5a3820"/><rect x="40" y="210" width="900" height="6" fill="#2a190d"/>${cups}
+            ${cabinet(70, TROPHIES.slice(0, 6))}${cabinet(510, TROPHIES.slice(6))}
+            <rect y="816" width="${W}" height="84" fill="url(#floor)"/>${floorLines(816)}
+            ${lamp(270, 30)}${lamp(710, 30)}
+            <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
+        }
+        if (room === 'shack') {          // the caddie shack: bibs on hooks, a bag rack, the loop sheet, a bench, the coffee
+          const bib = (x, y, n, c) => `<line x1="${x + 40}" y1="${y - 18}" x2="${x + 40}" y2="${y}" stroke="#2a190d" stroke-width="4"/><circle cx="${x + 40}" cy="${y - 20}" r="5" fill="#b08a45"/>`
+            + `<path d="M${x} ${y} h80 l8 140 h-96 Z" fill="#f4f1e8" stroke="#bdb6a3" stroke-width="2"/><path d="M${x + 22} ${y} q18 22 36 0" fill="#d9d2c0"/>`
+            + `<text x="${x + 40}" y="${y + 95}" text-anchor="middle" font-family="Georgia, serif" font-size="40" font-weight="700" fill="${c}">${n}</text>`;
+          const rackBag = (x, c) => `<rect x="${x}" y="470" width="58" height="190" rx="14" fill="${c}" stroke="#111" stroke-width="3"/><rect x="${x}" y="520" width="58" height="12" fill="rgba(255,255,255,.25)"/>`
+            + `<path d="M${x + 12} 470 l-6 -50 M${x + 29} 470 v-62 M${x + 46} 470 l8 -48" stroke="#cfd6dd" stroke-width="4"/><circle cx="${x + 6}" cy="418" r="10" fill="#222"/><circle cx="${x + 29}" cy="406" r="10" fill="#333"/><circle cx="${x + 54}" cy="420" r="10" fill="#1d3a6b"/>`;
+          return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}
+            <rect width="${W}" height="${H}" fill="#6b4a2b"/>${Array.from({ length: 30 }, (_, i) => `<rect x="${i * 56}" width="5" height="${H}" fill="#4f3520"/><rect x="${i * 56 + 18}" width="2" height="${H}" fill="#7a5634" opacity=".6"/>`).join('')}
+            <rect width="${W}" height="36" fill="#2a190d"/>
+            <!-- the window, the bibs on their hooks -->
+            <rect x="60" y="80" width="260" height="190" fill="#2a190d"/>${vista(72, 92, 236, 166)}<path d="M190 92 V258 M72 175 H308" stroke="#2a190d" stroke-width="8"/>
+            <rect x="350" y="96" width="560" height="14" fill="#3a2314"/>
+            ${bib(370, 124, 7, '#1f6b3a')}${bib(480, 124, 12, '#1f6b3a')}${bib(590, 124, 3, '#8a1c22')}${bib(700, 124, 22, '#1d3a6b')}${bib(810, 124, 9, '#1f6b3a')}
+            <!-- the loop sheet -->
+            <rect x="60" y="300" width="270" height="200" rx="4" fill="#24302a" stroke="#7a5a2c" stroke-width="10"/>
+            <text x="195" y="338" text-anchor="middle" font-family="Segoe Print, Comic Sans MS, cursive" font-size="22" fill="#f4f1e8">LOOPS TODAY</text>
+            ${['7:10  Scooter', '7:40  Lefty', '8:20  Marisol', '9:00  Walt', '9:30  Finch'].map((l, i) => `<text x="85" y="${372 + i * 26}" font-family="Segoe Print, Comic Sans MS, cursive" font-size="17" fill="#e8e3d3" opacity=".85">${l}</text>`).join('')}
+            <!-- the bag rack -->
+            <rect x="380" y="640" width="520" height="22" fill="#3a2314"/><rect x="380" y="455" width="520" height="14" fill="#3a2314"/>
+            ${rackBag(400, '#1d3a6b')}${rackBag(480, '#8a1c22')}${rackBag(560, '#222')}${rackBag(640, '#f2f2f2')}${rackBag(720, '#2f6b3f')}${rackBag(800, '#b8862b')}
+            <rect y="760" width="${W}" height="140" fill="#3a2516"/>${floorLines(760)}
+            <!-- the bench, towels, the coffee -->
+            <rect x="60" y="640" width="290" height="20" fill="#7a5a2c"/><path d="M80 660 v90 M330 660 v90" stroke="#4a3216" stroke-width="12"/>
+            <rect x="90" y="600" width="70" height="40" rx="6" fill="#f4f1e8"/><rect x="170" y="610" width="60" height="30" rx="6" fill="#2f6b3f"/>
+            <rect x="260" y="560" width="50" height="80" rx="6" fill="#1c1f22"/><rect x="266" y="570" width="38" height="44" fill="#4a2c16"/><path d="M310 590 q14 6 0 16" stroke="#1c1f22" stroke-width="5" fill="none"/>
+            ${lamp(250, 40)}${lamp(640, 40)}
             <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
         }
         // the first tee
@@ -9086,7 +9379,7 @@
           .map((p) => ({ ...p, rec: h2h(p.name.toLowerCase()) }))
           .sort((a, b) => b.rec.n - a.rec.n || a.name.localeCompare(b.name));
         const recText = (r) => `${r.w}–${r.l}–${r.h}`;
-        const players = pl.map((p) => `<div class="fr-pl"><div><b>${p.name}</b><i>Handicap ${p.handicap === null || p.handicap === undefined ? `— (${p.rounds || 0} / ${HCP.min} rounds)` : fmtHcp(p.handicap)} · ${CAREER.tiers[p.tierMax || 1]} · ${money(p.cash)}</i>`
+        const players = pl.map((p) => `<div class="fr-pl"><div><b>${p.name}</b><i>Handicap ${p.handicap === null || p.handicap === undefined ? `— (${p.rounds || 0} / ${HCP.min} rounds)` : fmtHcp(p.handicap)} · ${CAREER.tiers[p.tierMax || 1]} · ${money(p.cash)}${collectionOf(p.trophies).value ? ` · 🏆 ${money(collectionOf(p.trophies).value)} collection` : ''}</i>`
           + `${p.rec.n ? `<i>You vs ${p.name}: ${recText(p.rec)} (won–lost–halved) · <span class="${p.rec.money > 0 ? 'won' : p.rec.money < 0 ? 'lost' : ''}">${p.rec.money > 0 ? '+' : p.rec.money < 0 ? '−' : '±'}${money(Math.abs(p.rec.money))}</span></i>` : ''}</div>`
           + `<div class="fr-btns"><button data-act="challenge" data-to="${p.name.toLowerCase()}" class="go">Challenge</button></div></div>`).join('');
         const all = h2h(null);
@@ -9425,6 +9718,7 @@
         $('hmMe').innerHTML = `${avatarHTML(name)}<div><b>${name}</b>${session && session.admin ? ' <span title="admin">👑</span>' : ''}<div class="hm-kpis">`
           + (c ? `<span>Cash<em class="cash">${money(c.cash)}</em></span><span>Handicap<em>${h === null ? `— (${(c.rounds || []).length}/${HCP.min} rounds)` : fmtHcp(h)}</em></span>`
             + `<span>Circuit<em>${CAREER.tiers[c.tier || 1]}</em></span>${rec && rec.n ? `<span>vs friends<em>${rec.w}–${rec.l}–${rec.h}</em></span>` : ''}`
+            + (collectionOf(c.trophies).value ? `<span>🏆 Collection<em>${money(collectionOf(c.trophies).value)}</em></span>` : '')
             : `<span>${session ? 'Loading your career…' : 'Guest · nothing saved online · no career yet'}</span>`) + '</div></div>';
         const m = c && c.match, pc = c && c.pvpCard;
         $('hmCareer').innerHTML = `<b>🏌️ ${c ? 'Career' : 'Start a career'}</b><i>${m && !m.settled && m.feePaid ? `Resume your match vs ${npcById(m.npc).nick}`
@@ -9447,7 +9741,8 @@
         $('hmRoster').innerHTML = L.map((p) => {
           const id = p.name.toLowerCase(), on = homeSel === id;
           return `<div class="hm-p${on ? ' on' : ''}" data-id="${id}">${avatarHTML(p.name)}<div><b>${p.name}</b>${p.admin ? '<span class="crown" title="admin">👑</span>' : ''}`
-            + `<i>${p.cash === null || p.cash === undefined ? 'New' : `${money(p.cash)} · ${CAREER.tiers[p.tierMax || 1]} · ${p.rounds || 0} round${p.rounds === 1 ? '' : 's'}`}${id === last ? ' · last on this PC' : ''}</i></div>`
+            + `<i>${p.cash === null || p.cash === undefined ? 'New' : `${money(p.cash)} · ${CAREER.tiers[p.tierMax || 1]} · ${p.rounds || 0} round${p.rounds === 1 ? '' : 's'}`}`
+            + `${collectionOf(p.trophies).value ? ` · 🏆 ${money(collectionOf(p.trophies).value)}` : ''}${id === last ? ' · last on this PC' : ''}</i></div>`
             + `<div class="hm-hcp"><span>Handicap</span><b>${p.handicap === null || p.handicap === undefined ? '—' : fmtHcp(p.handicap)}</b></div>`
             + `<div class="hm-pw"><input type="password" placeholder="${p.name}'s password" autocomplete="current-password"><button class="go" data-signin="${id}">Sign in</button></div></div>`;
         }).join('') || `<div class="hm-note">${roster.err || (roster.loaded ? 'No profiles yet: make the first one.' : 'Loading players…')}</div>`;
@@ -9716,7 +10011,7 @@
           const lv = career.stats[k], p = lessonPrice(lv);
           if (lv >= COACH.maxStat || career.cash < p) return;
           career.cash -= p; career.stats[k] = lv + 1;
-          setStats(career.stats);
+          setStats(careerStats());
           setText('coMsg', `${CAREER_STATS.find(([s]) => s === k)[1]} ${lv} → ${lv + 1} (${money(p)}).`);
         } else if (u) {
           const it = COACH.unlocks[u];
@@ -9725,6 +10020,180 @@
           setText('coMsg', `You've learned ${it.name.toLowerCase()} (${money(it.price)}). ${it.what}.`);
         } else return;
         careerSave(); updateCareerUI(); updateLockUI(); renderBag(); renderCoach();
+      }
+
+      // =====================================================================================================
+      //  CADDIES (user request, 2026-11-19): an end-game money sink. A caddie adds Composure and / or Perception (on top of
+      //  your own, up to the usual 10) whenever the career plays, and the better ones walk off your tilt between holes of a
+      //  round (calm 1 = one level, 2 = all of it), which still matters once your stats are maxed. Hire = a one-time fee;
+      //  loop = paid each hustler match with the green fee (can't pay it: the caddie sits that match out). One at a time;
+      //  hiring another replaces yours, no refunds. career.caddie = the id.
+      // =====================================================================================================
+      const CADDIES = [
+        { id: 'scooter', short: 'Scooter', name: 'Scooter Briggs', tier: 1, rep: 0, hire: 750, loop: 15, comp: 0, per: 1, calm: 0,
+          bio: 'The muni\'s summer kid. Knows where every sprinkler head is, and how far to the front edge.', say: 'Shake it off, boss.' },
+        { id: 'lefty', short: 'Lefty', name: '“Lefty” Doyle', tier: 1, rep: 40, hire: 3000, loop: 40, comp: 1, per: 1, calm: 0,
+          bio: 'Forty years of loops. Says almost nothing, then points at the right club.', say: 'Next one.' },
+        { id: 'marisol', short: 'Marisol', name: 'Marisol Vega', tier: 2, rep: 80, hire: 8000, loop: 90, comp: 1, per: 2, calm: 1,
+          bio: 'Reads the resort greens like a book, and walks off a bad hole with you.', say: 'That hole\'s gone. This one\'s ours.' },
+        { id: 'walt', short: 'Big Walt', name: '“Big Walt” Okafor', tier: 3, rep: 120, hire: 15000, loop: 150, comp: 3, per: 1, calm: 2,
+          bio: 'Nothing rattles him, so nothing rattles you. Every hole starts fresh.', say: 'Breathe. New hole, new day.' },
+        { id: 'finch', short: 'Finch', name: 'Eleanor Finch', tier: 3, rep: 200, hire: 40000, loop: 400, comp: 3, per: 3, calm: 2,
+          bio: 'Twenty years on tour bags. Her yardages are gospel and her voice is a sedative.', say: 'Forget it. Commit to this one.' },
+      ];
+      const caddieOf = () => (career && career.caddie && CADDIES.find((c) => c.id === career.caddie)) || null;
+      // on your bag right now: a career is on, and not a match the caddie is sitting out (unpaid loop fee)
+      const caddieOn = () => careerOn && !!caddieOf() && !(round.match && round.match.noCaddie);
+      // the career's stats with the caddie's help (never past 10)
+      function careerStats() {
+        const s = { ...career.stats }, c = caddieOn() ? caddieOf() : null;
+        if (c) { s.composure = Math.min(COACH.maxStat, s.composure + c.comp); s.perception = Math.min(COACH.maxStat, s.perception + c.per); }
+        return s;
+      }
+      // between holes of a round: a calm caddie walks some (or all) of the tilt off
+      function caddieWalkOff(streak) {
+        const c = caddieOn() ? caddieOf() : null;
+        if (!c || !c.calm || !streak) return streak;
+        const n = c.calm >= 2 ? 0 : Math.max(0, streak - 1);
+        setTimeout(() => toast(`🧢 ${c.short}: “${c.say}”\nTilt ${streak} → ${n}`, 2400), 3400);      // (after the hole's own toast)
+        return n;
+      }
+      function openCaddies() {
+        clearDemo();
+        const ch = $('clubhouse');
+        ch.classList.remove('hub', 'new', 'match'); ch.classList.add('caddie');
+        setText('cdMsg', '');
+        renderCaddies();
+      }
+      function renderCaddies() {
+        setText('cdCash', money(career.cash));
+        const cur = career.caddie, st = career.stats;
+        $('cdList').innerHTML = CADDIES.map((c) => {
+          const open = (career.tierMax || 1) >= c.tier && (career.rep || 0) >= c.rep, mine = cur === c.id;
+          const gc = Math.min(COACH.maxStat, st.composure + c.comp) - st.composure, gp = Math.min(COACH.maxStat, st.perception + c.per) - st.perception;
+          const perks = [c.comp && `<em>+${c.comp} Composure${gc < c.comp ? ` <s>(+${gc} for you: near the top)</s>` : ''}</em>`,
+            c.per && `<em>+${c.per} Perception${gp < c.per ? ` <s>(+${gp} for you: near the top)</s>` : ''}</em>`,
+            c.calm === 1 ? '<em>walks off one level of tilt each hole</em>' : c.calm === 2 ? '<em>every hole starts with no tilt</em>' : ''].filter(Boolean).join('');
+          const reqs = [(career.tierMax || 1) < c.tier ? `${CAREER.tiers[c.tier]} circuit` : '', (career.rep || 0) < c.rep ? `reputation ${c.rep}` : ''].filter(Boolean).join(' · ');
+          const btn = mine ? `<span class="cd-on">✓ On your bag</span><button data-release="1" class="no">Let go</button>`
+            : open ? `<button data-hire="${c.id}" class="go" ${career.cash < c.hire ? 'disabled' : ''}>Hire · ${money(c.hire)}</button>`
+            : `<span class="cd-lock">🔒 Needs ${reqs}</span>`;
+          return `<div class="cd-row${mine ? ' mine' : ''}${open ? '' : ' locked'}"><div class="cd-face">${c.short.replace(/[^A-Za-z ]/g, '').split(' ').map((w) => w[0]).join('').slice(0, 2)}</div>`
+            + `<div><b>${c.name}</b><i>${c.bio}</i><div class="cd-perks">${perks}</div></div>`
+            + `<div class="cd-buy"><div class="cd-price">${money(c.hire)}<small>+ ${money(c.loop)} a match</small></div>${btn}</div></div>`;
+        }).join('');
+      }
+      function caddieClick(e) {
+        const b = e.target.closest('button');
+        if (!b || b.disabled) return;
+        b.blur();
+        if (b.dataset.release) {
+          const c = caddieOf();
+          if (!c || !confirm(`Let ${c.name} go? You'd have to pay the ${money(c.hire)} again to hire them back.`)) return;
+          career.caddie = null;
+          setText('cdMsg', `${c.short} hands you the bag and heads back to the shack.`);
+        } else if (b.dataset.hire) {
+          const c = CADDIES.find((x) => x.id === b.dataset.hire), old = caddieOf();
+          if (!c || career.cash < c.hire) return;
+          if (old && !confirm(`Hire ${c.name} for ${money(c.hire)}? ${old.name} goes back to the shack (no refund).`)) return;
+          career.cash -= c.hire; career.caddie = c.id;
+          setText('cdMsg', `${c.name} is on your bag (${money(c.hire)}). “${c.say}”`);
+        } else return;
+        setStats(careerStats());
+        careerSave(); updateCareerUI(); renderBag(); renderCaddies();
+      }
+
+      // =====================================================================================================
+      //  THE TROPHY ROOM (user request, 2026-11-19): an end-game money sink with nothing to gain but bragging rights.
+      //  Collectibles bought here (career.trophies = ids) sit in the room's display cases, in fixed places, so the room
+      //  fills up; the collection's value shows on your character sheet, your home card, the profile list and Friends.
+      //  The top shelf holds trophies that are earned, not bought (worked out from the career, nothing stored).
+      // =====================================================================================================
+      const TROPHIES = [
+        { tag: 'THE LEDGER', id: 'ledger', name: 'Gus “Gravel” Haney\'s betting ledger', era: 'the muni, last summer', price: 2500, art: 'ledger', note: 'Every bet he ever won at Rolling Pines. Your name is in it. Twice.' },
+        { tag: '1870s', id: 'gutta', name: 'Gutta-percha ball', era: '1870s', price: 4000, art: 'gutta', note: 'Hand-hammered rubber: the ball that put the featherie out of business.' },
+        { tag: '1910s', id: 'mashie', name: 'Hickory-shafted mashie', era: '1910s', price: 7500, art: 'mashie', note: 'A hand-forged mid-iron on a hickory shaft. Still swings sweet.' },
+        { tag: '1960s', id: 'persimmon', name: 'Persimmon driver', era: '1960s', price: 12000, art: 'persimmon', note: 'Oil-hardened persimmon with a fibre insert, and the click you can\'t buy any more.' },
+        { tag: '1880s', id: 'longnose', name: 'Long-nose wooden putter', era: '1880s', price: 18000, art: 'longnose', note: 'A beech-headed long-nose from a links clubmaker\'s shop.' },
+        { tag: '1840s', id: 'featherie', name: 'Featherie ball', era: '1840s', price: 30000, art: 'featherie', note: 'A top hat of boiled goose feathers stuffed into stitched leather. Few survive.' },
+        { tag: 'THE 18TH', id: 'flag', name: 'Signed 18th-hole flag', era: 'a famous final round', price: 45000, art: 'flag', note: 'Signed by the champion on the green, grass stains and all.' },
+        { tag: 'STERLING', id: 'jug', name: 'Silver claret jug', era: 'a full-size replica', price: 75000, art: 'jug', note: 'Sterling silver, hallmarked, and heavier than it looks.' },
+        { tag: 'ONE OF ONE', id: 'blazer', name: 'Champion\'s tartan blazer', era: 'one of one', price: 100000, art: 'blazer', note: 'From a members\' invitational, long ago. It almost fits.' },
+        { tag: '24 CARAT', id: 'goldputter', name: 'The golden putter', era: 'commissioned', price: 150000, art: 'goldputter', note: 'Solid gold head, hand-milled face. It has never missed, because nobody dares putt with it.' },
+      ];
+      const EARNED = [
+        { id: 'firstwin', name: 'First hustle won', art: 'cup-bronze', how: 'Win a match against a hustler', got: (c) => (c.history || []).some((h) => h.npc && h.net > 0) },
+        { id: 'resort', name: 'Resort card', art: 'cup-silver', how: 'Open the resort circuit', got: (c) => (c.tierMax || 1) >= 2 },
+        { id: 'member', name: 'Country-club member', art: 'cup-gold', how: 'Join the country club', got: (c) => (c.tierMax || 1) >= 3 },
+        { id: 'friendly', name: 'Friendly fire', art: 'cup-silver', how: 'Beat a friend in a challenge', got: (c) => (c.history || []).some((h) => h.friend && /^won/.test(h.result || '')) },
+        { id: 'bigscore', name: 'The big score', art: 'cup-gold', how: 'Win $1,000 or more in one match', got: (c) => (c.history || []).some((h) => h.net >= 1000) },
+        { id: 'single', name: 'Single figures', art: 'cup-silver', how: 'Get your handicap under 10', got: (c) => { const h = handicapOf(c); return h !== null && h < 10; } },
+        { id: 'scratch', name: 'Scratch golfer', art: 'cup-gold', how: 'Get your handicap to 0 or better', got: (c) => { const h = handicapOf(c); return h !== null && h <= 0; } },
+      ];
+      // a collection (a list of ids, e.g. from another player's profile): how many pieces, and what they're worth
+      function collectionOf(ids) {
+        const own = TROPHIES.filter((t) => (ids || []).includes(t.id));
+        return { n: own.length, value: own.reduce((s, t) => s + t.price, 0) };
+      }
+      // one piece's picture, drawn around (x, y) at size s (the drawings are made in a 100 × 100 box)
+      function trophyArt(kind, x, y, s) {
+        const g = (body) => `<g transform="translate(${x} ${y}) scale(${s / 100})">${body}</g>`;
+        const plinth = '<rect x="-30" y="34" width="60" height="12" rx="2" fill="#2a190d"/><rect x="-24" y="30" width="48" height="6" fill="#5a3820"/>';
+        const club = (head, shaft = '#8a5a2c') => g(`<line x1="-26" y1="-40" x2="16" y2="22" stroke="${shaft}" stroke-width="4" stroke-linecap="round"/><line x1="-26" y1="-40" x2="-18" y2="-28" stroke="#2a1a0e" stroke-width="6"/>${head}${plinth}`);
+        const cup = (c1, c2) => `<path d="M-22 -30 h44 q0 34 -22 40 q-22 -6 -22 -40 Z" fill="${c1}" stroke="${c2}" stroke-width="2"/><path d="M-22 -24 q-14 2 -12 12 q2 8 14 6 M22 -24 q14 2 12 12 q-2 8 -14 6" fill="none" stroke="${c2}" stroke-width="3"/>`
+          + `<rect x="-4" y="10" width="8" height="14" fill="${c1}"/><rect x="-16" y="24" width="32" height="8" rx="2" fill="${c2}"/><rect x="-20" y="32" width="40" height="10" rx="2" fill="#2a190d"/>`;
+        switch (kind) {
+          case 'ledger': return g(`<rect x="-26" y="-30" width="50" height="60" rx="3" fill="#5c2a16" stroke="#2a120a" stroke-width="2"/><rect x="-22" y="-30" width="4" height="60" fill="#3a1a0c"/><text x="2" y="10" text-anchor="middle" font-family="Georgia, serif" font-size="30" font-weight="700" fill="#e9c46a">$</text>${plinth}`);
+          case 'gutta': return g(`<circle cx="0" cy="8" r="20" fill="#4a2e1a"/><circle cx="-6" cy="2" r="6" fill="#7a5034" opacity=".7"/>${Array.from({ length: 6 }, (_, i) => `<circle cx="${-10 + (i % 3) * 10}" cy="${2 + Math.floor(i / 3) * 10}" r="1.6" fill="#2a170c"/>`).join('')}${plinth}`);
+          case 'featherie': return g(`<circle cx="0" cy="8" r="20" fill="#c9a46a"/><path d="M-20 6 Q0 -2 20 6" stroke="#7a5a2c" stroke-width="2" fill="none" stroke-dasharray="3 2"/><circle cx="-7" cy="1" r="5" fill="#e3c891" opacity=".7"/>${plinth}`);
+          case 'mashie': return club('<path d="M14 18 l18 -4 l2 12 l-20 4 Z" fill="#a8b0b8" stroke="#555" stroke-width="1.5"/>');
+          case 'persimmon': return club('<ellipse cx="22" cy="24" rx="14" ry="10" fill="#6b2f1a" stroke="#2a120a" stroke-width="2"/><rect x="26" y="20" width="8" height="8" fill="#d9d2c0"/>', '#9aa1a8');
+          case 'longnose': return club('<path d="M10 22 h30 q4 0 4 4 v2 h-34 Z" fill="#a0703a" stroke="#4a3216" stroke-width="2"/>');
+          case 'goldputter': return club('<rect x="10" y="18" width="30" height="10" rx="2" fill="#f2c94c" stroke="#a87b1c" stroke-width="2"/><rect x="12" y="20" width="10" height="3" fill="#fff6c8"/>', '#e3b341');
+          case 'flag': return g(`<line x1="-12" y1="-40" x2="-12" y2="32" stroke="#ddd" stroke-width="3"/><path d="M-12 -40 h36 v26 h-36 Z" fill="#f4c542"/><text x="6" y="-21" text-anchor="middle" font-family="Georgia, serif" font-size="16" font-weight="700" fill="#2a190d">18</text><path d="M-2 -32 q6 4 14 -2" stroke="#1d3a6b" stroke-width="1.5" fill="none"/>${plinth}`);
+          case 'jug': return g(`<path d="M-14 -34 h22 l-2 8 q14 10 12 30 q-2 18 -18 22 h-6 q-16 -4 -18 -22 q-2 -20 12 -30 Z" fill="#d6dbe0" stroke="#7d868f" stroke-width="2"/><path d="M14 -18 q16 0 14 18 q-2 12 -12 12" fill="none" stroke="#7d868f" stroke-width="3"/><path d="M-10 -10 q-4 14 2 26" stroke="#fff" stroke-width="3" opacity=".6" fill="none"/>${plinth}`);
+          case 'blazer': return g(`<path d="M-28 -34 l16 -6 l12 14 l12 -14 l16 6 l6 64 h-24 l-10 -40 l-10 40 h-24 Z" fill="#8a1c22" stroke="#4a0c10" stroke-width="2"/>${[-20, -8, 4, 16].map((v) => `<line x1="-30" y1="${v}" x2="30" y2="${v}" stroke="#1d3a6b" stroke-width="2" opacity=".55"/>`).join('')}${[-18, -6, 6, 18].map((v) => `<line x1="${v}" y1="-36" x2="${v}" y2="30" stroke="#2f6b3f" stroke-width="2" opacity=".5"/>`).join('')}<path d="M-12 -40 l12 30 l12 -30" fill="none" stroke="#f3dca0" stroke-width="2"/>`);
+          case 'cup-gold': return g(cup('#f2c94c', '#a87b1c'));
+          case 'cup-silver': return g(cup('#d6dbe0', '#7d868f'));
+          case 'cup-bronze': return g(cup('#cd8a4a', '#7a4a1c'));
+          default: return '';
+        }
+      }
+      const artSvg = (kind) => `<svg viewBox="-50 -50 100 100">${trophyArt(kind, 0, 0, 100)}</svg>`;
+      function openTrophies() {
+        clearDemo();
+        const ch = $('clubhouse');
+        ch.classList.remove('hub', 'new', 'match'); ch.classList.add('trophy');
+        setText('trMsg', '');
+        renderTrophies();
+      }
+      function renderTrophies() {
+        const own = career.trophies || [], col = collectionOf(own), earned = EARNED.filter((t) => t.got(career)).length;
+        setText('trCash', money(career.cash));
+        setText('trIntro', 'Rare clubs, old balls and silverware for the cases. They don\'t help your game one bit: they\'re for showing off. Your collection\'s worth shows on your profile for everyone to see.');
+        let h = `<div class="tr-sum"><div><b>${col.n} / ${TROPHIES.length}</b>pieces</div><div><b>${money(col.value)}</b>collection</div><div><b>${earned} / ${EARNED.length}</b>trophies earned</div></div>`;
+        h += '<div class="sh-cat">For sale</div>' + TROPHIES.map((t) => {
+          const mine = own.includes(t.id);
+          return `<div class="tr-row${mine ? ' own' : ''}"><div class="tr-art">${artSvg(t.art)}</div><div><b>${t.name}<small>${t.era}</small></b><i>${t.note}</i></div>`
+            + `<div class="tr-buy"><div class="cd-price">${money(t.price)}</div>${mine ? '<span class="tr-own">✓ In your case</span>' : `<button data-buytr="${t.id}" class="go" ${career.cash < t.price ? 'disabled' : ''}>Buy</button>`}</div></div>`;
+        }).join('');
+        h += '<div class="sh-cat">Earned, not bought</div>' + EARNED.map((t) => {
+          const got = t.got(career);
+          return `<div class="tr-row earned${got ? '' : ' no'}"><div class="tr-art">${artSvg(t.art)}</div><div><b>${t.name}</b><i>${t.how}</i></div><span class="tr-own">${got ? '✓ Earned' : '—'}</span></div>`;
+        }).join('');
+        $('trList').innerHTML = h;
+      }
+      function trophyClick(e) {
+        const b = e.target.closest('button[data-buytr]');
+        if (!b || b.disabled) return;
+        b.blur();
+        const t = TROPHIES.find((x) => x.id === b.dataset.buytr);
+        if (!t || (career.trophies || []).includes(t.id) || career.cash < t.price) return;
+        if (t.price >= 25000 && !confirm(`Buy the ${t.name} for ${money(t.price)}? It's for show only.`)) return;
+        career.cash -= t.price; career.trophies = [...(career.trophies || []), t.id];
+        setText('trMsg', `${t.name} is in your case (${money(t.price)}). Not that you'll ever use it.`);
+        careerSave(); updateCareerUI(); renderTrophies();
+        $('chScene').innerHTML = chScene('trophy');                // it appears in the case
       }
 
       // =====================================================================================================
@@ -9905,13 +10374,18 @@
         applyCareerClubs(); careerToRange();
         state.club = i; refreshShotType(); renderBag();
         const key = CLUB_KEYS[bagOrder().indexOf(i)];
-        toast(`Trying the ${modelName(id)} ${CLUBS[i].name}\nFree on the range${demoCanSwap() ? ` · ${key ? `${key} again` : 'Click the bag'} swaps to your own` : ''} · J back to the shop`, 3200);
+        toast(`Trying the ${modelName(id)} ${CLUBS[i].name}\nFree on the range${demoCanSwap() ? ` · ${key ? `${key} again` : 'Click the bag'} swaps to your own` : ''} · Esc back to the shop`, 3200);
       }
       function startPutterDemo(id) {
         demo = { putter: id };
         careerToRange(); setMode('putt');
         state.putter = id; syncPanel();
-        toast(`Trying the ${PUTTERS[id].name}\nOn the putting green · J back to the shop`, 2600);
+        toast(`Trying the ${PUTTERS[id].name}\nOn the putting green · Esc back to the shop`, 2600);
+      }
+      // done trying it: straight back to the pro shop, on the tab you tried it from (opening the clubhouse ends the demo)
+      function backToShop() {
+        openClubhouse();
+        if (clubOpen && career) openShop();
       }
       function clearDemo() {
         if (!demo) return;
@@ -10054,7 +10528,7 @@
         inp.value = clamp(+inp.value || 20, minS, Math.max(minS, cap));
         // broke: the starter lets you rake bunkers to cover the green fee (so a career can't get stuck at $0)
         setText('cmFee', career.cash < fee ? `${money(fee)}: you're broke, so you'll rake bunkers for the starter to cover it`
-          : `${money(fee)} (paid when you tee off, in cash) · you have ${money(career.cash)}`);
+          : `${money(fee)}${caddieOf() ? ` + ${caddieOf().short}'s ${money(caddieOf().loop)} loop fee` : ''} (paid when you tee off, in cash) · you have ${money(career.cash)}`);
         updateStakeLabel();
         const clubs = usableOrder().length;
         const why = cap < minS ? `You can't cover even a ${money(minS)} ${skins ? 'skin' : 'stake'}`
@@ -10090,11 +10564,14 @@
         closeClubhouse();
         if (!m.feePaid) {                                       // the green fee: cash, or (broke) raking bunkers for it
           if (career.cash >= MATCH.fee[m.tier]) career.cash -= MATCH.fee[m.tier]; else m.feeWorked = true;
+          const cd = caddieOf();                                // the caddie's loop fee: can't pay it, they sit this one out
+          if (cd) { if (career.cash >= cd.loop) { career.cash -= cd.loop; m.caddieFee = cd.loop; } else m.noCaddie = true; }
           m.feePaid = true;
         }
         careerSave(); updateCareerUI();
         round.saved = { mph: state.windMph, dir: state.windDir, power: state.power, dex: state.dex, composure: state.composure, perception: state.perception };
         round.on = true; round.over = false; round.match = m; round.lbDone = true; lbEntry.active = false;
+        if (m.noCaddie) setStats(careerStats());              // (your own stats this match; they come back after it)
         round.scores = m.holes.map((h) => h && { strokes: h.me, putts: h.putts, par: h.par, pen: h.pen });
         document.body.classList.add('round', 'match'); hideScorecard();
         hp.holeIdx = Math.min(m.holes.length, HOLES.length - 1); courseV = TIERS[m.tier] || null;
@@ -10104,7 +10581,8 @@
         m.presses = m.presses || [];
         const n = npcById(m.npc), s = matchStatus(m);
         const form = npcForm(m), look = form < -0.18 ? `\n${n.first} looks sharp today` : form > 0.18 ? `\n${n.first} looks a bit rusty today` : '';
-        toast(`${n.nick}: “${m.holes.length ? 'Where were we?' : n.lines.hello}”${look}\n${m.format === 'skins' ? `Skins at ${money(m.stake)} a hole` : `Match play for ${money(m.stake)}`}${s.played ? ` · ${matchLine(m)} thru ${s.played}` : ''} · ${HOLE.name}, par ${HOLE.par}`, 3600);
+        const cdl = caddieOf(), cdTxt = cdl ? (m.noCaddie ? `\n🧢 ${cdl.short} sits this one out: you couldn't pay the ${money(cdl.loop)} loop fee` : `\n🧢 ${cdl.short} is on your bag`) : '';
+        toast(`${n.nick}: “${m.holes.length ? 'Where were we?' : n.lines.hello}”${look}${cdTxt}\n${m.format === 'skins' ? `Skins at ${money(m.stake)} a hole` : `Match play for ${money(m.stake)}`}${s.played ? ` · ${matchLine(m)} thru ${s.played}` : ''} · ${HOLE.name}, par ${HOLE.par}`, 3600);
       }
       // after each hole: the hustler's score, who won it, the bets (or the skins), his presses, and the money once it's over
       function matchAfterHole(i) {
@@ -10870,8 +11348,12 @@
         if (dir) {
           const u = usableOrder();
           if (!u.length) return;
-          const p = u.indexOf(state.club);
-          i = u[p < 0 ? 0 : (p + dir + u.length) % u.length];
+          // a pro-shop demo you can swap with your own club is two stops in its slot: yours, then the demo
+          const swap = demoCanSwap(), stops = u.flatMap((k) => (swap && k === demo.idx ? [[k, false], [k, true]] : [[k, null]]));
+          const p = stops.findIndex(([k, d]) => k === state.club && (d === null || d === demo.on));
+          const [k, d] = stops[p < 0 ? 0 : (p + dir + stops.length) % stops.length];
+          if (d !== null && d !== demo.on) toggleDemo(d);
+          i = k;
         } else if (i === undefined || i < 0 || i >= CLUBS.length || !canUseClub(i)) {
           if (careerOn) toast(career.snapped.includes(i) ? `Your ${CLUBS[i].name} is snapped\nRepair it in the pro shop` : 'Not in your bag', 1200);
           return;
@@ -11170,7 +11652,7 @@
           return;
         }
         held.add(c);
-        if (c === 'Escape' && !e.repeat && !swing.active) return openHome();        // back to the home screen (a round says to leave it first)
+        if (c === 'Escape' && !e.repeat && !swing.active) return careerOn && demo && !hp.on && !round.on ? backToShop() : openHome();   // home (a round says to leave it first); trying a club: back to the shop
         if (c === 'KeyH' && !e.repeat) return hp.on ? leaveHole() : enterHole();
         if (c === 'KeyK' && !e.repeat && round.on) { if ($('scorecard').classList.contains('on')) hideScorecard(); else showScorecard(); return; }   // K only shows / hides
         if (c === 'KeyP' && !e.repeat && round.match && canPress(round.match)) return playerPress();     // a career match: press when 2 down
@@ -11381,6 +11863,10 @@
         $('ccGo').addEventListener('click', (e) => { e.currentTarget.blur(); sendChallenge(); });
         $('ccBack').addEventListener('click', (e) => { e.currentTarget.blur(); openFriends(); });
         $('chCoach').addEventListener('click', coachClick);
+        $('cdList').addEventListener('click', caddieClick);
+        $('trList').addEventListener('click', trophyClick);
+        $('trBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
+        $('cdBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('coBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('shBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('ttGo').addEventListener('click', (e) => { e.currentTarget.blur(); closeToss(); });

@@ -39,6 +39,8 @@ function handicapOf(c) {
 }
 const hashPw = (pw, salt) => new Promise((resolve, reject) => crypto.scrypt(String(pw), salt, 32, (e, k) => (e ? reject(e) : resolve(k.toString('hex')))));
 const parse = (s) => { try { return JSON.parse(s); } catch { return null; } };
+// a career's trophy-room pieces (ids), for the profile list's bragging rights
+const tro = (c) => (Array.isArray(c.trophies) ? c.trophies.filter((x) => typeof x === 'string').slice(0, 40) : []);
 
 // (sessionId lives in _redis.js)
 async function newSession(id) {
@@ -111,7 +113,7 @@ module.exports = async (req, res) => {
       const list = (ids || []).slice(0, 200);
       const rows = list.length ? await redis(list.flatMap((p) => [['HGET', `golf:career:${p}`, 'data'], ['HGET', `golf:user:${p}`, 'name']])) : [];
       const players = list.map((p, i) => [p, parse(rows[2 * i]), rows[2 * i + 1]]).filter(([, c, n]) => c || n)
-        .map(([p, c, n]) => (c ? { name: c.name, tierMax: c.tierMax || 1, cash: c.cash, handicap: handicapOf(c), rounds: (c.rounds || []).length, last: c.stamp || 0, admin: isAdmin(p) }
+        .map(([p, c, n]) => (c ? { name: c.name, tierMax: c.tierMax || 1, cash: c.cash, handicap: handicapOf(c), rounds: (c.rounds || []).length, last: c.stamp || 0, admin: isAdmin(p), trophies: tro(c) }
           : { name: n, tierMax: 1, cash: null, handicap: null, rounds: 0, last: 0, admin: isAdmin(p) }));     // (an admin who hasn't played yet)
       return send(200, { players });
     }
@@ -144,7 +146,7 @@ module.exports = async (req, res) => {
       const [ids] = await redis([['SMEMBERS', 'golf:players']]);
       const list = (ids || []).slice(0, 200);
       const rows = list.length ? await redis(list.map((p) => ['HGET', `golf:career:${p}`, 'data'])) : [];
-      const players = rows.map(parse).filter(Boolean).map((c) => ({ name: c.name, tierMax: c.tierMax || 1, cash: c.cash, rep: c.rep, handicap: handicapOf(c), rounds: (c.rounds || []).length }));
+      const players = rows.map(parse).filter(Boolean).map((c) => ({ name: c.name, tierMax: c.tierMax || 1, cash: c.cash, rep: c.rep, handicap: handicapOf(c), rounds: (c.rounds || []).length, trophies: tro(c) }));
       return send(200, { players });
     }
     return send(400, { error: 'Unknown action' });
