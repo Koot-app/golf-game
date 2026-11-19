@@ -3466,6 +3466,15 @@
       line-height: 1;
     }
 
+    /* the top bar without repeats (user request): the hole and shot are on the shot counter, the club and its yardage in
+       the bag card, and on a hole the distance to the pin is on the counter too (the range keeps its target distance;
+       the greens keep the putter / chip type) */
+    #tbHoleCell,
+    body.hole .tb:has(#tbPin),
+    body:not(.putt):not(.chip) .tb:has(#tbClub) {
+      display: none !important;
+    }
+
     /* (on a hole the caddie-tips button moves down, under the shot counter, and the messages below that) */
     body.hole #btnTips {
       top: 136px;
@@ -11862,8 +11871,7 @@
         drawMapWind(g);
         drawMapZoomLabel(g, W, H, ['Whole range', 'Your shot', 'Landing'][rangeZoom]);
         setText('mapTitle', 'Range map');
-        const pin = PINS[state.pin];
-        setText('mapTag', `${pin.yd} yd target`);
+        setText('mapTag', '');                               // (the target's distance is in the top bar)
       }
       // the hole's words around the map: the panel title, the distance tag, the shot count and the round's score
       function holeMapText() {
@@ -11873,11 +11881,13 @@
           const flying = !!(shot && !shot.done), resting = !!(shot && shot.done && state.view === 'flight');
           const sp = !isPutt() && !hp.done && (flying || resting) && shot.flight ? shotHolePos() : null;
           setText('hbShotL', hp.done ? 'Holed in' : 'Shot'); setText('hbShot', String(hp.done || flying ? hp.strokes : hp.strokes + 1));
-          setText('hbDist', hp.done ? '—' : sp ? fmtToPin(Math.hypot(hole.pin.x - sp.x, hole.pin.z - sp.z)) : fmtToPin(pinDist()));
+          // (on the green and around it, the distance is the Perception-fuzzed read, never the exact one: it mustn't give the answer away)
+          setText('hbDist', hp.done ? '—' : sp ? fmtToPin(Math.hypot(hole.pin.x - sp.x, hole.pin.z - sp.z))
+            : isPutt() && markRead && !puttRun ? `${fmtBandFt(markRead.cupLo, markRead.cupHi)} ft`
+            : isChip() && chipRead ? `${fmtBandYd(chipRead.pinLo, chipRead.pinHi)} yds` : fmtToPin(pinDist()));
         }
         setText('tbPinL', isPutt() ? 'Hole' : 'To the pin'); setText('panelTitle', `⛳ ${HOLE.name} · Par ${HOLE.par}`);
-        setText('mapTag', hp.done ? `${hp.strokes} strokes` : isPutt() && markRead && !puttRun ? `${fmtBandFt(markRead.cupLo, markRead.cupHi)} ft to the pin`
-          : isChip() && chipRead ? `${fmtBandYd(chipRead.pinLo, chipRead.pinHi)} yds to the pin` : `${fmtToPin(pinDist())} to the pin`);
+        setText('mapTag', '');                               // (the distance is on the shot counter: the map's header doesn't repeat it)
         setText('tbHole', hp.done ? `Holed in ${hp.strokes}` : `Shot ${hp.strokes + 1}${hp.putts ? ` · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}` : ''}`);
         if (round.on) {          // test round: score so far (holes finished) and where you are
           const t = roundTotals();
