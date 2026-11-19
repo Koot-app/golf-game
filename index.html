@@ -1798,10 +1798,12 @@
     #clubhouse.friends #chFriends,
     #clubhouse.chal #chChal,
     #clubhouse.caddie #chCaddie,
-    #clubhouse.trophy #chTrophy {
+    #clubhouse.trophy #chTrophy,
+    #clubhouse.tour #chTour {
       display: block;
     }
 
+    #chTour,
     #chShop,
     #chCaddie,
     #chTrophy,
@@ -3888,6 +3890,20 @@
       z-index: 1;
     }
 
+    /* (the in-game cards' navy style must not reach the clubhouse's walnut board) */
+    #clubhouse .ch-panel.card {
+      border-radius: 10px;
+      border: 2px solid #9c7a37;
+      background:
+        repeating-linear-gradient(92deg, rgba(255, 255, 255, .018) 0 2px, transparent 2px 9px),
+        linear-gradient(160deg, rgba(52, 33, 18, .96), rgba(24, 15, 9, .97));
+      box-shadow: 0 18px 50px rgba(0, 0, 0, .65), inset 0 0 0 1px rgba(255, 226, 150, .14), inset 0 0 40px rgba(0, 0, 0, .45);
+    }
+
+    #clubhouse .ch-panel.card .card-h>span:first-child {
+      color: #e9c46a;
+    }
+
     #clubhouse.hub .ch-panel,
     #clubhouse.new .ch-panel {
       left: 28px;
@@ -4580,6 +4596,22 @@
       color: #f6dc95;
     }
 
+    #cmTours,
+    #toHustle {
+      width: auto;
+      margin: 0 0 0 auto;
+      padding: 6px 14px;
+      font-weight: 700;
+    }
+
+    #toHustle {
+      margin-left: 14px;
+    }
+
+    #clubhouse.tour .ch-panel {
+      width: min(720px, calc(100vw - 56px));
+    }
+
     #clubhouse .ch-pips i.cad {
       background: linear-gradient(#8ff0ae, #3fb36a);
     }
@@ -4955,7 +4987,7 @@
         <div class="ch-stats" id="chStats"></div>
         <div class="ch-tiers" id="chTiers"></div>
         <div class="ch-menu">
-          <button data-go="match" id="chMatchBtn"><b>⛳ Play a match</b><i>Hustle a local for money</i></button>
+          <button data-go="match" id="chMatchBtn"><b>⛳ Play a match</b><i>Hustle a local, or enter an invitational</i></button>
           <button data-go="shop"><b>🛒 Pro shop</b><i>Clubs, repairs and your bag</i></button>
           <button data-go="coach"><b>🎓 Coach</b><i>Lessons and new shots</i></button>
           <button data-go="friends" id="chFriendsBtn"><b>🤝 Friends</b><i>Bet a friend on a round</i></button>
@@ -5020,8 +5052,16 @@
         <div class="ch-err" id="ccErr"></div>
         <div class="ch-btns"><button id="ccGo" class="go">Send the challenge (Enter)</button><button id="ccBack">Back (Esc)</button></div>
       </div>
+      <div id="chTour">
+        <div class="sh-top"><div class="ch-lead">Invitationals</div><button id="toHustle">⛳ Hustle a local instead</button><span class="sh-cash" id="toCash"></span></div>
+        <p class="ch-p">Nine holes of stroke play against all twelve hustlers. A big entry fee, a purse for the top three, and a trophy
+          for your trophy room if you win.</p>
+        <div class="sh-list" id="toList"></div>
+        <div class="ch-msg" id="toMsg"></div>
+        <div class="ch-btns"><button id="toBack">Back to the clubhouse (Esc)</button></div>
+      </div>
       <div id="chMatch">
-        <div class="ch-lead">Pick a hustler</div>
+        <div class="sh-top"><div class="ch-lead">Pick a hustler</div><button id="cmTours">🏆 Invitationals</button></div>
         <div class="cm-npcs" id="cmNpcs"></div>
         <div class="cm-bet">
           <div class="cm-row"><span>Format</span><div class="cm-fmt" id="cmFmt"><button data-fmt="match">Match play</button><button data-fmt="skins">Skins</button></div><i id="cmFmtNote" class="cm-fmtnote"></i></div>
@@ -7857,6 +7897,7 @@
         if (swing.active) return;
         if (round.match && !confirmForfeit()) return;       // leaving a career match early forfeits it
         if (round.pvp && !confirmLeavePvp()) return;         // a friend round can be resumed
+        if (round.tour && !confirmWithdraw()) return;        // an invitational: leaving is withdrawing
         const leftPvp = !!round.pvp && !round.over;
         if (round.on) endRound();          // leaving the course ends a test round
         hp.on = false; document.body.classList.remove('hole');
@@ -8431,8 +8472,8 @@
           round.scores[hp.holeIdx] = { strokes: hp.strokes, putts: hp.putts, par: HOLE.par, pen: hp.pen };
           $('toast').classList.remove('on');
           const pv = round.pvp && pvpAfterHole(hp.holeIdx);                         // a friend round: the card so far (M3)
-          const vs = round.match ? `\n${matchAfterHole(hp.holeIdx)}` : pv ? `\n${pv}` : '';   // a career match: the hustler's score, the match
-          const cr = round.match || round.pvp;
+          const vs = round.match ? `\n${matchAfterHole(hp.holeIdx)}` : pv ? `\n${pv}` : round.tour ? `\n\n${tourAfterHole(hp.holeIdx)}` : '';   // a career match: the hustler's score, the match; an invitational: the board
+          const cr = round.match || round.pvp || round.tour;
           const hc = cr && careerOn ? recordCareerRound(cr) : '';                     // all 9 played: it counts for your handicap (M2)
           showScorecard(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}${vs}${hc}`);
           if (round.pvp && round.over) submitPvp();                                  // the last hole of a friend round: send the card
@@ -8476,6 +8517,12 @@
           npc.plan = null; npc.anim = null; npc.busy = false; npcTurn = false;
           if (tossOpen) { tossOpen = false; $('teeToss').classList.remove('on'); }
         }
+        if (round.tour) {                                    // an invitational: done (settled or withdrawn) is cleared; otherwise it can be resumed
+          if (round.tour.settled && career && career.tour === round.tour) career.tour = null;
+          round.tour = null; document.body.classList.remove('match');
+          setCourse(null);
+          careerSave(); updateCareerUI();
+        }
         if (round.pvp) {                                     // a friend round: its card stays in career.pvpCard to resume
           round.pvp = null; document.body.classList.remove('match');
           setCourse(null);
@@ -8496,8 +8543,9 @@
       }
       function quitRound() {
         if (swing.active) return;
-        const wasMatch = !!round.match, wasPvp = !!round.pvp;
-        if (wasMatch && !confirmForfeit()) return;
+        const wasMatch = !!round.match || !!round.tour, wasPvp = !!round.pvp;
+        if (round.match && !confirmForfeit()) return;
+        if (round.tour && !confirmWithdraw()) return;
         if (wasPvp && !confirmLeavePvp()) return;
         endRound();
         if (hp.on) leaveHole();
@@ -8505,6 +8553,8 @@
         else if (!wasMatch) toast('Test round ended', 1600);
       }
       const doneHint = () => lbEntry.active ? 'Type your initials (or <kbd>↑</kbd><kbd>↓</kbd>) · <kbd>←</kbd><kbd>→</kbd> move · <kbd>Enter</kbd> save · <kbd>Esc</kbd> skip'
+        : round.tour
+        ? (round.over ? '<kbd>N</kbd> back to the clubhouse · <kbd>K</kbd> scorecard' : '<kbd>N</kbd> or <kbd>R</kbd> next hole · <kbd>K</kbd> scorecard and leaderboard · <kbd>H</kbd> withdraw')
         : round.pvp
         ? (round.over ? '<kbd>N</kbd> back to the clubhouse · <kbd>K</kbd> scorecard' : '<kbd>N</kbd> or <kbd>R</kbd> next hole · <kbd>K</kbd> scorecard · <kbd>H</kbd> leave (you can resume)')
         : round.match
@@ -8524,6 +8574,14 @@
         $('roundIntro').querySelector('.ri-note').textContent = mm
           ? `${mm.format === 'skins' ? `Skins at ${money(mm.stake)} a hole against ${nn.first} “${nn.nick}”: win a hole outright to take its skin; a halved hole carries it to the next.` : `Match play for ${money(mm.stake)} against ${nn.first} “${nn.nick}”: win the most holes. Whoever is 2 down may press.`} Your own stats and bag; each hole's wind and greens are fixed. Teeing off pays the ${money(MATCH.fee[mm.tier])} green fee. Leaving before it's decided forfeits the stake.`
           : 'Everyone plays the same course: each hole\'s wind and green speed are fixed, and everyone plays standard stats (all 5). Holes are played in order; your score goes on the Top 10.';
+        const tv = mode === 'tour' && career && career.tour, TV = tv && tourById(tv.id);      // an invitational
+        if (tv) {
+          $('roundIntro').querySelector('.card-h span').textContent = `🏆 ${TV.name} · course preview`;
+          $('roundIntro').querySelector('.ri-note').textContent = `Stroke play at ${TIERS[tv.tier].course} against all twelve hustlers. Lowest score wins: `
+            + `${money(TV.purse[0])} · ${money(TV.purse[1])} · ${money(TV.purse[2])} for the top three. Your own stats, bag and caddie; each hole's wind and greens are fixed. `
+            + `${tv.paid ? 'You\'ve paid your entry.' : `Teeing off pays the ${money(TV.entry)} entry fee.`} Leaving before the 9th is a withdrawal: no refund.`;
+          $('riStart').textContent = tv.holes.length ? `Resume on hole ${tv.holes.length + 1} (Enter)` : `Tee off · ${money(TV.entry)} (Enter)`;
+        }
         const pv = mode === 'pvp' && career && career.pvpCard;            // a friend round (M3)
         if (pv) {
           $('roundIntro').querySelector('.card-h span').textContent = `vs ${pv.vsName} · ${FR_FMT[pv.format]} · course preview`;
@@ -8531,7 +8589,7 @@
             + `${strokesText({ player: pv.n ? (pv.mine ? session.id : pv.vs) : null, n: pv.n }, { [pv.vs]: pv.vsName })}. ${pv.vsName} plays the same holes, wind and greens on their own PC; `
             + `the bet settles when both cards are in. You can leave and resume until ${frDate(pv.deadline)}.`;
         }
-        $('riStart').textContent = mm || pv ? (pv && pv.holes.length ? `Resume on hole ${pv.holes.length + 1} (Enter)` : 'Tee off (Enter)') : 'Start round (Enter)';
+        if (!tv) $('riStart').textContent = mm || pv ? (pv && pv.holes.length ? `Resume on hole ${pv.holes.length + 1} (Enter)` : 'Tee off (Enter)') : 'Start round (Enter)';
         hideScorecard();
         $('roundIntro').classList.add('on'); introOpen = true;        // shown first so each map can be drawn at its real width
         const grid = $('riGrid'), dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -8604,7 +8662,7 @@
       function upgradeCareer(c) {
         if (!(c && c.v === 1 && typeof c.name === 'string' && c.stats)) return null;
         c.out = c.out || []; c.putters = c.putters || [c.putter || CAREER.putter]; c.tierMax = c.tierMax || c.tier || 1;      // (older saves)
-        c.history = c.history || []; c.rounds = c.rounds || []; c.pvpSeen = c.pvpSeen || []; c.trophies = c.trophies || [];
+        c.history = c.history || []; c.rounds = c.rounds || []; c.pvpSeen = c.pvpSeen || []; c.trophies = c.trophies || []; c.titles = c.titles || [];
         return c;
       }
       function readCareer(key) { try { return upgradeCareer(JSON.parse(lsGet(key) || 'null')); } catch { return null; } }
@@ -8745,7 +8803,7 @@
           cash: CAREER.cash, rep: CAREER.rep, tier: CAREER.tier, stats: { ...CAREER.stats },
           bag: { ...CAREER.bag }, snapped: [], putter: CAREER.putter, out: [], putters: [CAREER.putter],
           unlocks: { draw: false, fade: false, stinger: false, high: false, flop: false, spin: false },
-          match: null, history: [], rounds: [], pvpSeen: [], trophies: [], created: Date.now(), stamp: 0, tierMax: 1,
+          match: null, history: [], rounds: [], pvpSeen: [], trophies: [], titles: [], created: Date.now(), stamp: 0, tierMax: 1,
         };
       }
       // switch the game over to the career (its stats), and back to the player's own
@@ -8804,7 +8862,7 @@
         const m = career.match, live = m && !m.settled && m.feePaid;
         $('chMatchBtn').innerHTML = live
           ? `<b>⛳ Resume your match</b><i>vs ${npcById(m.npc).nick} · ${matchLine(m)} thru ${matchStatus(m).played} · ${money(m.stake)}${m.format === 'skins' ? ' a hole' : ' on it'}</i>`
-          : '<b>⛳ Play a match</b><i>Hustle a local for money</i>';
+          : tourLive() ? `<b>🏆 Resume your invitational</b><i>${tourById(career.tour.id).short} · thru ${career.tour.holes.filter(Boolean).length}</i>` : '<b>⛳ Play a match</b><i>Hustle a local, or enter an invitational</i>';
         $('chStats').innerHTML = CAREER_STATS.map(([k, n, what]) => {
           const v = career.stats[k], cd = caddieOf();                     // the caddie's help: green pips past your own
           const e = cd ? Math.min(COACH.maxStat, v + (k === 'composure' ? cd.comp : k === 'perception' ? cd.per : 0)) : v;
@@ -8861,6 +8919,7 @@
       function openClubhouse() {
         if (swing.active || lbEntry.active) return;
         if (round.match) { toast(round.match.settled ? 'Finish your round first\nOr H to leave the course' : 'You\'re in a match\nFinish it first — H forfeits', 1800); return; }
+        if (round.tour) { if (round.over) return tourToClubhouse(); toast('You\'re in an invitational\nFinish it first — H withdraws', 1800); return; }
         if (round.pvp) { if (round.over) return pvpToClubhouse(); toast(`You're playing ${round.pvp.vsName}\nFinish the round, or H to leave (you can resume it)`, 2000); return; }
         if (tipsOn) setTips(false);
         if (introOpen) closeRoundIntro();
@@ -8871,7 +8930,7 @@
         const ch = $('clubhouse');
         ch.classList.add('on'); clubOpen = true;
         setText('chMsg', '');
-        ch.classList.remove('match', 'shop', 'coach', 'friends', 'chal', 'caddie', 'trophy');
+        ch.classList.remove('match', 'shop', 'coach', 'friends', 'chal', 'caddie', 'trophy', 'tour');
         if (career && careerOn) clearDemo();                 // back from a free demo
         if (!career) {                                       // who's playing? (signed in but nothing here yet: fetch it)
           if (session) { siMode = 'in'; renderSignIn('Loading your profile…'); syncLoad(); }
@@ -8903,7 +8962,7 @@
       let siMode = 'in';
       function renderSignIn(msg = '') {
         const ch = $('clubhouse'), local = readCareer(CAREER.key);
-        ch.classList.add('new'); ch.classList.remove('hub', 'match', 'shop', 'coach', 'friends', 'chal', 'caddie', 'trophy');
+        ch.classList.add('new'); ch.classList.remove('hub', 'match', 'shop', 'coach', 'friends', 'chal', 'caddie', 'trophy', 'tour');
         setText('chTag', 'Profiles');
         $('chNew').className = siMode + (siMode === 'local' && local ? ' continue' : '') + (local ? '' : ' nobring');
         for (const b of $('siTabs').children) b.classList.toggle('on', b.dataset.si === siMode);
@@ -8958,7 +9017,7 @@
       }
       // sign out (or stop playing this PC's career) and ask who's playing
       async function switchPlayer() {
-        if (round.match || round.pvp) return;
+        if (round.match || round.pvp || round.tour) return;
         fr.list = []; fr.players = []; fr.loaded = 0;        // (the next player's friends and challenges are their own)
         if (careerOn) leaveCareer(true);
         if (session) {
@@ -8999,6 +9058,7 @@
         if (where === 'match') {                             // one round at a time: a friend round left part-way comes first
           const pc = career.pvpCard;
           if (pc && pc.holes.length) return setText('chMsg', `Finish your round against ${pc.vsName} first (🤝 Friends → Resume).`);
+          if (tourLive()) return openTours();               // an invitational in progress: back to it
           return openMatchPicker();
         }
         if (where === 'friends') return openFriends();
@@ -9021,7 +9081,7 @@
           else if ((e.code === 'Enter' || e.code === 'NumpadEnter') && !e.repeat) { e.preventDefault(); sendChallenge(); }
           return;
         }
-        if (['coach', 'caddie', 'trophy'].some((v) => $('clubhouse').classList.contains(v))) { if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); } return; }
+        if (['coach', 'caddie', 'trophy', 'tour'].some((v) => $('clubhouse').classList.contains(v))) { if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); } return; }
         if ($('clubhouse').classList.contains('shop')) {       // the pro shop: 1–6 tabs, Esc back
           const tabs = ['iron', 'driver', 'wood', 'wedge', 'putter', 'bag'], dg = /^Digit([1-6])$/.exec(e.code);
           if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); }
@@ -9054,9 +9114,9 @@
         lobby: { name: 'The Clubhouse', panel: '🏌️ Clubhouse' }, shop: { name: 'The Pro Shop', panel: '🛒 Pro shop' },
         coach: { name: 'The Teaching Bay', panel: '🎓 The coach' }, bar: { name: 'The 19th Hole', panel: '🤝 Friends' },
         tee: { name: 'The First Tee', panel: '⛳ Hustlers' }, shack: { name: 'The Caddie Shack', panel: '🧢 Caddies' },
-        trophy: { name: 'The Trophy Room', panel: '🏆 Trophy room' },
+        trophy: { name: 'The Trophy Room', panel: '🏆 Trophy room' }, tourney: { name: 'The First Tee', panel: '🏆 Invitationals' },
       };
-      const chRoomOf = (cl) => (cl.contains('trophy') ? 'trophy' : cl.contains('caddie') ? 'shack' :cl.contains('coach') ? 'coach' : cl.contains('shop') ? 'shop' : cl.contains('friends') || cl.contains('chal') ? 'bar' : cl.contains('match') ? 'tee' : 'lobby');
+      const chRoomOf = (cl) => (cl.contains('tour') ? 'tourney' : cl.contains('trophy') ? 'trophy' : cl.contains('caddie') ? 'shack' :cl.contains('coach') ? 'coach' : cl.contains('shop') ? 'shop' : cl.contains('friends') || cl.contains('chal') ? 'bar' : cl.contains('match') ? 'tee' : 'lobby');
       let chRoomNow = '';
       function chSetRoom() {
         const room = chRoomOf($('clubhouse').classList);
@@ -9216,7 +9276,8 @@
         }
         if (room === 'trophy') {         // the trophy room: earned cups on the top shelf, two lit glass cases for what you've bought
           const own = (career && career.trophies) || [];
-          const cups = EARNED.map((t, i) => { const x = 110 + i * 122, got = career && t.got(career); return got ? trophyArt(t.art, x, 150, 96) : `<g opacity=".18">${trophyArt(t.art, x, 150, 96)}</g>`; }).join('');
+          const shelf = earnedList(), gap = Math.min(122, 800 / shelf.length), sz = Math.min(96, gap * 0.9);
+          const cups = shelf.map((t, i) => { const x = 90 + gap / 2 + i * gap, got = career && t.got(career); return got ? trophyArt(t.art, x, 205 - sz / 2, sz) : `<g opacity=".18">${trophyArt(t.art, x, 205 - sz / 2, sz)}</g>`; }).join('');
           const cabinet = (x0, items) => `<rect x="${x0 - 14}" y="226" width="428" height="590" rx="6" fill="#2a190d"/><rect x="${x0}" y="240" width="400" height="560" fill="#16100b"/>`
             + `<circle cx="${x0 + 200}" cy="300" r="260" fill="url(#glow)"/>`
             + [0, 1, 2].map((r) => `<rect x="${x0}" y="${396 + r * 180}" width="400" height="8" fill="#6b4422"/>`).join('')
@@ -10126,10 +10187,13 @@
         { id: 'resort', name: 'Resort card', art: 'cup-silver', how: 'Open the resort circuit', got: (c) => (c.tierMax || 1) >= 2 },
         { id: 'member', name: 'Country-club member', art: 'cup-gold', how: 'Join the country club', got: (c) => (c.tierMax || 1) >= 3 },
         { id: 'friendly', name: 'Friendly fire', art: 'cup-silver', how: 'Beat a friend in a challenge', got: (c) => (c.history || []).some((h) => h.friend && /^won/.test(h.result || '')) },
-        { id: 'bigscore', name: 'The big score', art: 'cup-gold', how: 'Win $1,000 or more in one match', got: (c) => (c.history || []).some((h) => h.net >= 1000) },
+        { id: 'bigscore', name: 'The big score', art: 'cup-gold', how: 'Win $1,000 or more in one match or event', got: (c) => (c.history || []).some((h) => h.net >= 1000) },
         { id: 'single', name: 'Single figures', art: 'cup-silver', how: 'Get your handicap under 10', got: (c) => { const h = handicapOf(c); return h !== null && h < 10; } },
         { id: 'scratch', name: 'Scratch golfer', art: 'cup-gold', how: 'Get your handicap to 0 or better', got: (c) => { const h = handicapOf(c); return h !== null && h <= 0; } },
       ];
+      // the top shelf: the trophies above, then one for each invitational won (career.titles)
+      const earnedList = () => [...EARNED, ...TOURS.map((T) => ({ id: `t-${T.id}`, name: `${T.short} champion`, art: T.art, how: `Win ${T.name.replace(/^The /, 'the ')}`,
+        got: (c) => (c.titles || []).some((x) => x.id === T.id) }))];
       // a collection (a list of ids, e.g. from another player's profile): how many pieces, and what they're worth
       function collectionOf(ids) {
         const own = TROPHIES.filter((t) => (ids || []).includes(t.id));
@@ -10156,6 +10220,11 @@
           case 'cup-gold': return g(cup('#f2c94c', '#a87b1c'));
           case 'cup-silver': return g(cup('#d6dbe0', '#7d868f'));
           case 'cup-bronze': return g(cup('#cd8a4a', '#7a4a1c'));
+          case 'salver': return g(`<ellipse cx="0" cy="-2" rx="34" ry="34" fill="#d6dbe0" stroke="#7d868f" stroke-width="3"/><ellipse cx="0" cy="-2" rx="24" ry="24" fill="none" stroke="#9aa3ac" stroke-width="2"/>`
+            + `<path d="M-10 -8 h20 M-14 0 h28 M-8 8 h16" stroke="#7d868f" stroke-width="2"/><path d="M-6 32 h12 l4 8 h-20 Z" fill="#7d868f"/><rect x="-22" y="38" width="44" height="8" rx="2" fill="#2a190d"/>`);
+          case 'bigcup': return g(`<path d="M-8 -46 h16 l-2 6 h-12 Z" fill="#a87b1c"/><path d="M-20 -40 h40 v4 h-40 Z" fill="#f2c94c"/><path d="M-24 -36 h48 q0 36 -24 44 q-24 -8 -24 -44 Z" fill="#f2c94c" stroke="#a87b1c" stroke-width="2"/>`
+            + `<circle cx="0" cy="-18" r="5" fill="#c23b3b"/><path d="M-24 -30 q-16 2 -14 14 q2 10 16 8 M24 -30 q16 2 14 14 q-2 10 -16 8" fill="none" stroke="#a87b1c" stroke-width="3"/>`
+            + `<rect x="-4" y="8" width="8" height="14" fill="#f2c94c"/><rect x="-18" y="22" width="36" height="8" rx="2" fill="#a87b1c"/><rect x="-24" y="30" width="48" height="14" rx="2" fill="#2a190d"/><rect x="-14" y="34" width="28" height="5" fill="#c9a253"/>`);
           default: return '';
         }
       }
@@ -10168,16 +10237,16 @@
         renderTrophies();
       }
       function renderTrophies() {
-        const own = career.trophies || [], col = collectionOf(own), earned = EARNED.filter((t) => t.got(career)).length;
+        const own = career.trophies || [], col = collectionOf(own), earned = earnedList().filter((t) => t.got(career)).length;
         setText('trCash', money(career.cash));
         setText('trIntro', 'Rare clubs, old balls and silverware for the cases. They don\'t help your game one bit: they\'re for showing off. Your collection\'s worth shows on your profile for everyone to see.');
-        let h = `<div class="tr-sum"><div><b>${col.n} / ${TROPHIES.length}</b>pieces</div><div><b>${money(col.value)}</b>collection</div><div><b>${earned} / ${EARNED.length}</b>trophies earned</div></div>`;
+        let h = `<div class="tr-sum"><div><b>${col.n} / ${TROPHIES.length}</b>pieces</div><div><b>${money(col.value)}</b>collection</div><div><b>${earned} / ${earnedList().length}</b>trophies earned</div></div>`;
         h += '<div class="sh-cat">For sale</div>' + TROPHIES.map((t) => {
           const mine = own.includes(t.id);
           return `<div class="tr-row${mine ? ' own' : ''}"><div class="tr-art">${artSvg(t.art)}</div><div><b>${t.name}<small>${t.era}</small></b><i>${t.note}</i></div>`
             + `<div class="tr-buy"><div class="cd-price">${money(t.price)}</div>${mine ? '<span class="tr-own">✓ In your case</span>' : `<button data-buytr="${t.id}" class="go" ${career.cash < t.price ? 'disabled' : ''}>Buy</button>`}</div></div>`;
         }).join('');
-        h += '<div class="sh-cat">Earned, not bought</div>' + EARNED.map((t) => {
+        h += '<div class="sh-cat">Earned, not bought</div>' + earnedList().map((t) => {
           const got = t.got(career);
           return `<div class="tr-row earned${got ? '' : ' no'}"><div class="tr-art">${artSvg(t.art)}</div><div><b>${t.name}</b><i>${t.how}</i></div><span class="tr-own">${got ? '✓ Earned' : '—'}</span></div>`;
         }).join('');
@@ -10509,7 +10578,7 @@
         if (m && !m.settled && m.feePaid) return startMatch();          // a match in progress: back out to the course
         if (m) career.match = null;
         const ch = $('clubhouse');
-        ch.classList.remove('hub', 'new'); ch.classList.add('match');
+        ch.classList.remove('hub', 'new', 'tour'); ch.classList.add('match');
         cmSel = clamp(cmSel, 0, tierNpcs().length - 1);
         renderMatchPicker();
       }
@@ -10692,6 +10761,162 @@
         endRound();
         if (hp.on) leaveHole();
         openClubhouse();
+      }
+
+      // =====================================================================================================
+      //  INVITATIONALS (user request, 2026-11-19): 9-hole stroke play against a field of all twelve hustlers, on the event's
+      //  circuit, for a big entry fee and a purse for the top three. The field's scores are rolled per hole like a match's
+      //  hustler (seeded by the entry, so a reload can't change them), plus the event's own "form" (a sharper field at the
+      //  big ones); the leaderboard moves after every hole. A win puts the event's trophy in the trophy room
+      //  (career.titles). One entry at a time (career.tour, resumable); leaving it part-way is a withdrawal: the fee is gone.
+      // =====================================================================================================
+      const TOURS = [
+        { id: 'muniopen', name: 'The Rolling Pines Muni Open', short: 'Muni Open', tier: 1, rep: 20, entry: 250, purse: [1500, 700, 400], repWin: [15, 8, 4], form: 0, art: 'cup-silver',
+          desc: 'The muni\'s summer stroke-play shootout. Every hustler in town turns up, even the country-club ones.' },
+        { id: 'palmproam', name: 'The Palm Crest Pro-Am', short: 'Palm Crest Pro-Am', tier: 2, rep: 80, entry: 1500, purse: [9000, 4000, 2000], repWin: [30, 15, 8], form: -0.05, art: 'salver',
+          desc: 'Resort money, resort greens. The pros play for pride; you play for the purse.' },
+        { id: 'hawthorne', name: 'The Hawthorne Members\' Invitational', short: 'Hawthorne Invitational', tier: 3, rep: 150, entry: 7500, purse: [50000, 20000, 10000], repWin: [60, 30, 15], form: -0.1, art: 'cup-gold',
+          desc: 'Jackets, juleps and lightning greens. The members don\'t like losing their own trophy.' },
+        { id: 'classic', name: 'The Hustlers\' Classic', short: 'Hustlers\' Classic', tier: 3, rep: 250, entry: 25000, purse: [150000, 60000, 30000], repWin: [100, 50, 25], form: -0.2, art: 'bigcup',
+          desc: 'Invitation only. Twelve hustlers at their sharpest, one card each, and the biggest pot nobody talks about.' },
+      ];
+      const tourById = (id) => TOURS.find((t) => t.id === id);
+      const tourLive = () => !!(career && career.tour && career.tour.paid && !career.tour.settled);
+      // a field player's score on hole i (k = their place in the field): the hustler's own formula, plus the event's form
+      function fieldHoleScore(t, n, k, i) {
+        const T = tourById(t.id), fm = { npc: n.id, tier: t.tier, no: 5000 + t.no, salt: (t.salt ^ Math.imul(k + 1, 2654435761)) >>> 0 };
+        const def = variantDef(HOLES[i], TIERS[t.tier]), r = rng32(matchSeed(fm, Math.imul(i + 1, 104729))), g = gauss(r);
+        const cond = Math.max(0, (def.stimp || 11.5) - 11.5) * 0.1 + ((def.wind && def.wind.mph) || 0) / 40;
+        let d = n.skill - 0.14 + npcForm(fm) + cond + n.spread * 1.05 * g + T.form;
+        if (r() < 0.09) d += 1 + Math.floor(r() * 2);
+        return def.par + clamp(Math.round(d), -2, 5);
+      }
+      // the leaderboard after `upto` holes: everyone's total and to-par, best first (a tie goes to the better last three
+      // holes, then the last hole; you take a dead heat)
+      const tourCache = new Map();
+      function tourStandings(t, upto) {
+        const key = `${t.id}|${t.salt}|${t.no}|${upto}|${t.holes.slice(0, upto).map((h) => h && h.strokes).join(',')}|${career.seed}`;
+        if (tourCache.has(key)) return tourCache.get(key);
+        if (tourCache.size > 40) tourCache.clear();
+        const out = tourStandingsCalc(t, upto);
+        tourCache.set(key, out);
+        return out;
+      }
+      function tourStandingsCalc(t, upto) {
+        const par =HOLES.slice(0, upto).reduce((s, h) => s + h.par, 0);
+        const rows = NPCS.map((n, k) => ({ name: `${n.first} ${n.last}`, nick: n.nick, card: HOLES.slice(0, upto).map((_, i) => fieldHoleScore(t, n, k, i)) }));
+        rows.push({ name: career.name, me: true, card: t.holes.slice(0, upto).map((h) => h.strokes) });
+        for (const r of rows) { r.total = r.card.reduce((s, x) => s + x, 0); r.toPar = r.total - par; r.last3 = r.card.slice(-3).reduce((s, x) => s + x, 0); r.last = r.card[r.card.length - 1] || 0; }
+        rows.sort((a, b) => a.total - b.total || a.last3 - b.last3 || a.last - b.last || (b.me ? 1 : 0) - (a.me ? 1 : 0));
+        rows.forEach((r, i) => { r.pos = rows.findIndex((x) => x.total === r.total) + 1; r.tied = rows.filter((x) => x.total === r.total).length > 1; });
+        return rows;
+      }
+      const posText = (r) => `${r.tied ? 'T' : ''}${r.pos}`;
+      // the board as text, for the scorecard: the top five, and you if you're not in it
+      function tourBoardText(t, upto) {
+        const st = tourStandings(t, upto), me = st.find((r) => r.me), top = st.slice(0, 5);
+        const line = (r) => `${posText(r).padEnd(3)} ${r.me ? 'YOU' : r.name} ${fmtToPar(r.toPar)}`;
+        return `LEADERBOARD thru ${upto}\n${top.map(line).join('\n')}${top.includes(me) ? '' : `\n…\n${line(me)}`}`;
+      }
+      // ---- the board in the clubhouse (the first tee): the events, what they cost and pay, and your titles
+      function openTours() {
+        const ch = $('clubhouse');
+        ch.classList.remove('hub', 'new', 'match'); ch.classList.add('tour');
+        setText('toMsg', '');
+        renderTours();
+      }
+      function renderTours() {
+        setText('toCash', money(career.cash));
+        const live = tourLive() ? career.tour : null;
+        $('toList').innerHTML = TOURS.map((T) => {
+          const open = (career.tierMax || 1) >= T.tier && (career.rep || 0) >= T.rep, wins = (career.titles || []).filter((x) => x.id === T.id).length;
+          const best = (career.history || []).filter((h) => h.tour === T.id).reduce((b, h) => Math.min(b, h.place || 99), 99);
+          const reqs = [(career.tierMax || 1) < T.tier ? `the ${CAREER.tiers[T.tier]} circuit` : '', (career.rep || 0) < T.rep ? `reputation ${T.rep}` : ''].filter(Boolean).join(' and ');
+          const btn = live && live.id === T.id ? `<button data-tour="${T.id}" class="go">Resume · thru ${live.holes.filter(Boolean).length}</button>`
+            : live ? '<span class="cd-lock">You\'re in another event</span>'
+            : open ? `<button data-tour="${T.id}" class="go" ${career.cash < T.entry ? 'disabled' : ''}>Enter · ${money(T.entry)}</button>`
+            : `<span class="cd-lock">🔒 Needs ${reqs}</span>`;
+          return `<div class="cd-row${wins ? ' mine' : ''}${open ? '' : ' locked'}"><div class="tr-art">${artSvg(T.art)}</div>`
+            + `<div><b>${T.name}</b><i>${T.desc}</i><div class="cd-perks"><em>${TIERS[T.tier].course}</em><em>1st ${money(T.purse[0])}</em><em>2nd ${money(T.purse[1])}</em><em>3rd ${money(T.purse[2])}</em>`
+            + `${wins ? `<em>🏆 won ${wins > 1 ? `${wins} times` : 'once'}</em>` : best < 99 ? `<em>best: ${best === 1 ? '1st' : best === 2 ? '2nd' : best === 3 ? '3rd' : `${best}th`}</em>` : ''}</div></div>`
+            + `<div class="cd-buy"><div class="cd-price">${money(T.entry)}<small>entry fee</small></div>${btn}</div></div>`;
+        }).join('');
+      }
+      function toursClick(e) {
+        const b = e.target.closest('button[data-tour]');
+        if (!b || b.disabled) return;
+        b.blur();
+        const T = tourById(b.dataset.tour);
+        if (tourLive()) return enterTour(career.tour);              // resume
+        const m = career.match, pc = career.pvpCard;
+        if (m && !m.settled && m.feePaid) return setText('toMsg', 'Finish (or forfeit) your hustler match first.');
+        if (pc && pc.holes.length) return setText('toMsg', `Finish your round against ${pc.vsName} first (🤝 Friends).`);
+        if (career.cash < T.entry) return;
+        career.tour = { id: T.id, tier: T.tier, no: (career.history || []).length + 1, salt: (Math.random() * 2 ** 31) >>> 0, holes: [], paid: false, settled: false };
+        careerSave();
+        enterTour(career.tour);
+      }
+      function enterTour(t) {
+        closeClubhouse();
+        setCourse(t.tier);
+        openRoundIntro('tour');
+      }
+      // teeing off: the entry fee is paid (no refund from here on)
+      function startTour() {
+        const t = career && career.tour;
+        if (!t || swing.active) return;
+        const T = tourById(t.id);
+        closeClubhouse();
+        if (!careerOn) enterCareer();
+        if (!t.paid) { career.cash -= T.entry; t.paid = true; careerSave(); updateCareerUI(); }
+        round.saved = { mph: state.windMph, dir: state.windDir, power: state.power, dex: state.dex, composure: state.composure, perception: state.perception };
+        round.on = true; round.over = false; round.match = null; round.pvp = null; round.tour = t; round.lbDone = true; lbEntry.active = false;
+        round.scores = t.holes.map((h) => h && { strokes: h.strokes, putts: h.putts, par: h.par, pen: h.pen });
+        document.body.classList.add('round', 'match'); hideScorecard();
+        hp.holeIdx = Math.min(t.holes.length, HOLES.length - 1); courseV = TIERS[t.tier] || null;
+        for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
+        buildHole(hp.holeIdx); enterHole();
+        $('btnRound').textContent = 'Withdraw';
+        toast(`🏆 ${T.name}\n${t.holes.length ? `Resuming on hole ${hp.holeIdx + 1}` : `Twelve hustlers in the field · ${money(T.purse[0])} to the winner`} · ${HOLE.name}, par ${HOLE.par}`, 3600);
+      }
+      // after each hole: your score in, the board, and (after the 9th) the prize
+      function tourAfterHole(i) {
+        const t = round.tour;
+        t.holes[i] = { strokes: hp.strokes, putts: hp.putts, pen: hp.pen, par: HOLE.par };
+        const played = t.holes.filter(Boolean).length;
+        let msg = tourBoardText(t, played);
+        if (played === HOLES.length && !t.settled) msg += `\n\n${settleTour(t)}`;
+        careerSave();
+        return msg;
+      }
+      function settleTour(t) {
+        const T = tourById(t.id), st = tourStandings(t, HOLES.length), me = st.find((r) => r.me);
+        const place = st.indexOf(me) + 1, prize = T.purse[place - 1] || 0, rep = T.repWin[place - 1] || 0;
+        career.cash += prize; career.rep = (career.rep || 0) + rep;
+        if (place === 1) career.titles = [...(career.titles || []), { id: T.id, date: Date.now(), score: me.total }];
+        const ord = place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : `${place}th`;
+        career.history.push({ tour: T.id, format: 'stroke', stake: T.entry, place, result: `${ord} in the ${T.short} (${me.total}, ${fmtToPar(me.toPar)})`, net: prize - T.entry, date: Date.now() });
+        Object.assign(t, { settled: true, place, prize });
+        careerSave(); updateCareerUI();
+        return place === 1 ? `🏆 YOU WIN THE ${T.short.toUpperCase()}! +${money(prize)} · reputation +${rep}\nThe trophy is in your trophy room.`
+          : prize ? `You finish ${ord}: +${money(prize)} · reputation +${rep}` : `You finish ${posText(me)} of ${st.length}: out of the money (${money(T.entry)} entry).`;
+      }
+      // leaving part-way is a withdrawal (the entry fee is gone)
+      function confirmWithdraw() {
+        const t = round.tour;
+        if (!t || t.settled) return true;
+        if (!confirm(`Withdraw from the ${tourById(t.id).name}? Your ${money(tourById(t.id).entry)} entry fee is gone.`)) return false;
+        const T = tourById(t.id);
+        career.history.push({ tour: T.id, format: 'stroke', stake: T.entry, place: 99, result: `withdrew from the ${T.short}`, net: -T.entry, date: Date.now() });
+        Object.assign(t, { settled: true, place: 0, prize: 0, wd: true });
+        careerSave();
+        return true;
+      }
+      function tourToClubhouse() {
+        endRound();
+        if (hp.on) leaveHole();
+        openClubhouse();
+        openTours();
       }
       // =====================================================================================================
       //  THE HUSTLER ON THE COURSE (chunk 3, user request): his shots are played out, turn by turn. His score on each hole
@@ -10876,9 +11101,14 @@
         if (!e.repeat && (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space')) closeToss();
       }
       // the course preview's buttons start a test round or the career's match
-      function introStart() { closeRoundIntro(); if (introMode === 'match') startMatch(); else if (introMode === 'pvp') startFriendRound(); else startRound(); }
+      function introStart() { closeRoundIntro(); if (introMode === 'match') startMatch(); else if (introMode === 'pvp') startFriendRound(); else if (introMode === 'tour') startTour(); else startRound(); }
       function introCancel() {
         closeRoundIntro();
+        if (introMode === 'tour') {                          // not teed off yet: no entry, nothing kept
+          if (career && career.tour && !career.tour.paid) { career.tour = null; careerSave(); }
+          setCourse(null); openClubhouse(); openTours();
+          return;
+        }
         if (introMode === 'pvp') {                           // back to Friends; a round not started yet isn't kept
           if (career && career.pvpCard && !career.pvpCard.holes.length) { career.pvpCard = null; careerSave(); }
           setCourse(null); openClubhouse(); openFriends();
@@ -11000,6 +11230,21 @@
           sc.classList.add('on');
           return;
         }
+        const tr = round.tour;
+        if (tr) {                                            // an invitational: your card, the board in the message
+          const T = tourById(tr.id), played = tr.holes.filter(Boolean).length, me = played ? tourStandings(tr, played).find((r) => r.me) : null;
+          $('scTitle').textContent = `${final ? 'Final · ' : ''}🏆 ${T.name}`;
+          $('scTag').textContent = tr.settled && !tr.wd ? (tr.prize ? `${tr.place === 1 ? 'WINNER' : `${tr.place === 2 ? '2nd' : '3rd'}`} · +${money(tr.prize)}` : 'out of the money') : me ? `${posText(me)} · ${fmtToPar(me.toPar)} thru ${played}` : 'Stroke play';
+          if (!msg && played) $('scMsg').textContent = tourBoardText(tr, played);
+          if (final) $('scMsg').textContent = `${msg ? msg + '\n\n' : ''}Round complete: ${t.strokes} strokes (${fmtToPar(t.toPar)})`;
+          $('scNext').textContent = final ? 'Back to the clubhouse (N)' : hp.done ? `Next: Hole ${hp.holeIdx + 2} (N)` : 'Back to the hole (K)';
+          $('scClose').textContent = final ? 'Back to the clubhouse' : 'Close (K)';
+          const sc = $('scorecard');
+          scMode = 'round';
+          sc.classList.remove('entry', 'board', 'lbonly');
+          sc.classList.add('on');
+          return;
+        }
         if (pv) {
           $('scTitle').textContent = `${final ? 'Final · ' : ''}vs ${pv.vsName} · ${FR_FMT[pv.format]}, ${money(pv.stake)}${pv.format === 'skins' ? ' a skin' : ''}`;
           $('scTag').textContent = pv.n ? `${pv.mine ? 'you get' : `${pv.vsName} gets`} ${pv.n} stroke${pv.n === 1 ? '' : 's'}` : 'no strokes';
@@ -11028,6 +11273,7 @@
         if (scMode === 'board') { if (round.on) return hideScorecard(); hideScorecard(); return openRoundIntro(); }
         if (round.match) { if (round.over) return matchToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
         if (round.pvp) { if (round.over) return pvpToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
+        if (round.tour) { if (round.over) return tourToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
         if (round.over) return startRound();
         if (hp.done) return nextRoundHole();
         hideScorecard();
@@ -11037,6 +11283,7 @@
         if (scMode === 'board') return hideScorecard();
         if (round.match && (round.over || round.match.settled)) return matchToClubhouse();
         if (round.pvp && round.over) return pvpToClubhouse();
+        if (round.tour && round.over) return tourToClubhouse();
         if (round.over) return quitRound();
         hideScorecard();
       }
@@ -11332,8 +11579,9 @@
           const t = roundTotals();
           const pv = round.pvp;
           setText('tbRoundL', round.match ? (round.match.format === 'skins' ? `Skins · ${money(round.match.stake)} a hole` : `Match · ${money(round.match.stake)}`)
-            : pv ? `${FR_FMT[pv.format]} · ${money(pv.stake)}` : 'Test round');
-          const mt = round.match ? `${round.match.settled ? round.match.result.replace(/:.*/, '') : `${matchLine(round.match)} vs ${npcById(round.match.npc).nick}`} · ` : pv ? `vs ${pv.vsName} · ` : '';
+            : pv ? `${FR_FMT[pv.format]} · ${money(pv.stake)}` : round.tour ? `🏆 ${tourById(round.tour.id).short}` : 'Test round');
+          const tps = round.tour && t.played ? tourStandings(round.tour, t.played).find((r) => r.me) : null;
+          const mt = round.match ? `${round.match.settled ? round.match.result.replace(/:.*/, '') : `${matchLine(round.match)} vs ${npcById(round.match.npc).nick}`} · ` : pv ? `vs ${pv.vsName} · ` : tps ? `${posText(tps)} · ` : '';
           setText('tbRound', mt + (t.played ? `${fmtToPar(t.toPar)} thru ${t.played} · Hole ${hp.holeIdx + 1}/${HOLES.length}` : `Hole ${hp.holeIdx + 1}/${HOLES.length}`));
           $('tbRoundCell').classList.toggle('over', t.toPar > 0);
         }
@@ -11865,6 +12113,10 @@
         $('chCoach').addEventListener('click', coachClick);
         $('cdList').addEventListener('click', caddieClick);
         $('trList').addEventListener('click', trophyClick);
+        $('toList').addEventListener('click', toursClick);
+        $('toBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
+        $('toHustle').addEventListener('click', (e) => { e.currentTarget.blur(); openMatchPicker(); });
+        $('cmTours').addEventListener('click', (e) => { e.currentTarget.blur(); openTours(); });
         $('trBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('cdBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('coBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });

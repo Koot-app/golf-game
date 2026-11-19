@@ -607,3 +607,23 @@ Bragging: `collectionOf(ids)` → pieces and value, shown on the character sheet
 sign-in screen and the Friends list (`api/profile.js` `roster` / `players` return each career's `trophies`).
 Code: `trophyArt(kind, x, y, s)` draws every piece and cup (also the panel's thumbnails), `chScene('trophy')`,
 `openTrophies()` / `renderTrophies()` / `trophyClick()`.
+
+## Invitationals (end game) — ✅ built 2026-11-19 (user request)
+
+9-hole stroke play against a field of all twelve hustlers, on the event's circuit (the first tee: "Play a match" →
+🏆 Invitationals). Entry fee paid when you tee off; a purse for the top three; reputation for the top three; a win
+puts the event's trophy on the trophy room's earned shelf (`career.titles`).
+
+| Event | Needs | Entry | Purse (1st / 2nd / 3rd) | Field form |
+|---|---|---|---|---|
+| The Rolling Pines Muni Open | rep 20 | $250 | $1,500 / $700 / $400 | 0 |
+| The Palm Crest Pro-Am | Resorts, rep 80 | $1,500 | $9,000 / $4,000 / $2,000 | −0.05 |
+| The Hawthorne Members' Invitational | Country clubs, rep 150 | $7,500 | $50,000 / $20,000 / $10,000 | −0.1 |
+| The Hustlers' Classic | Country clubs, rep 250 | $25,000 | $150,000 / $60,000 / $30,000 | −0.2 |
+
+The field's scores: `fieldHoleScore()` = the hustler's own per-hole formula (seeded by the entry, so a reload can't
+change it) plus the event's form (strokes per hole; negative = sharper). `tourStandings()` (cached): totals, ties by
+the last three holes, then the last hole; you take a dead heat. The leaderboard shows in the scorecard after every hole
+and the position in the top bar. Leaving part-way (H / Withdraw) forfeits the entry; a reload resumes it
+(`career.tour`). One round at a time with matches and friend rounds. Code: `TOURS`, `openTours()` / `renderTours()` /
+`toursClick()`, `startTour()`, `tourAfterHole()`, `settleTour()`, `confirmWithdraw()`, `tourToClubhouse()`.
