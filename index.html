@@ -1855,10 +1855,12 @@
     #clubhouse.chal #chChal,
     #clubhouse.caddie #chCaddie,
     #clubhouse.trophy #chTrophy,
-    #clubhouse.tour #chTour {
+    #clubhouse.tour #chTour,
+    #clubhouse.bagroom #chBagRoom {
       display: block;
     }
 
+    #chBagRoom,
     #chTour,
     #chShop,
     #chCaddie,
@@ -3437,10 +3439,6 @@
       --wc: #8d9aab;
     }
 
-    body.putt #windDial {
-      display: none;
-    }
-
     #windDial.light {
       --wc: #35e0ff;
     }
@@ -3552,12 +3550,14 @@
 
     /* the caddie-tips button and the messages sit under the top centre */
     body.hole #btnTips,
-    body.chip #btnTips {
+    body.chip #btnTips,
+    body.putt #btnTips {
       top: 162px !important;
     }
 
     body.hole #toast,
-    body.chip #toast {
+    body.chip #toast,
+    body.putt #toast {
       top: 24% !important;
     }
 
@@ -4804,6 +4804,7 @@
     }
 
     .ch-spots .ch-menu b {
+      white-space: nowrap;
       font-family: Georgia, "Palatino Linotype", serif;
       font-size: 15px;
       letter-spacing: .06em;
@@ -4960,8 +4961,137 @@
     }
 
     .ch-spots .ch-menu [data-go=trophy] {
-      left: 88%;
+      left: 92%;
       top: 82%;
+    }
+
+    .ch-spots .ch-menu [data-go=bagroom] {
+      left: 76%;
+      top: 84%;
+    }
+
+    /* your bag (the locker room) */
+    #clubhouse.bagroom .ch-panel {
+      width: min(880px, calc(100vw - 56px));
+    }
+
+    .br-sum {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .br-sum div {
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, .25);
+      border: 1px solid rgba(216, 180, 90, .22);
+      font-size: 11px;
+      color: var(--dim);
+    }
+
+    .br-sum b {
+      display: block;
+      font-size: 15px;
+      color: #f6dc95;
+    }
+
+    .br-model {
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(216, 180, 90, .22);
+      background: rgba(255, 236, 196, .045);
+    }
+
+    .br-head {
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      gap: 6px 16px;
+      align-items: start;
+    }
+
+    .br-head b {
+      font-size: 15px;
+      color: #fbefd2;
+    }
+
+    .br-head em {
+      font-style: normal;
+      font-size: 11px;
+      margin-left: 8px;
+      padding: 1px 8px;
+      border-radius: 99px;
+      background: rgba(233, 196, 106, .16);
+      color: #f3dca0;
+    }
+
+    .br-head i {
+      display: block;
+      font-style: normal;
+      font-size: 12px;
+      color: #dcc9a4;
+      margin-top: 3px;
+    }
+
+    .br-tbl {
+      width: 100%;
+      margin-top: 8px;
+      border-collapse: collapse;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .br-tbl th {
+      font-size: 9.5px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--dim);
+      text-align: right;
+      padding: 3px 6px;
+      border-bottom: 1px solid rgba(216, 180, 90, .22);
+    }
+
+    .br-tbl td {
+      text-align: right;
+      padding: 4px 6px;
+      color: #f3e6c8;
+      border-bottom: 1px solid rgba(216, 180, 90, .08);
+    }
+
+    .br-tbl th:first-child,
+    .br-tbl td:first-child {
+      text-align: left;
+    }
+
+    .br-tbl td:first-child {
+      font-weight: 700;
+      color: #fbefd2;
+    }
+
+    .br-tbl tr.out td {
+      opacity: .5;
+    }
+
+    .br-tbl tr.snapped td {
+      text-decoration: line-through;
+      color: #ff9aa4;
+    }
+
+    .br-tbl td.l {
+      color: #ffb3bb;
+    }
+
+    .br-tbl td.r {
+      color: #b3d4ff;
+    }
+
+    .br-tbl small {
+      color: var(--dim);
+      font-size: 10px;
+      margin-left: 4px;
     }
 
     /* the trophy room */
@@ -5461,6 +5591,7 @@
           <button data-go="range" class="wide"><b>🎯 Practice range</b><i>Hit balls with your own game (Esc)</i></button>
           <button data-go="caddie" id="chCaddieBtn"><b>🧢 Caddie shack</b><i>Hire a looper</i></button>
           <button data-go="trophy" id="chTrophyBtn"><b>🏆 Trophy room</b><i>Your collection</i></button>
+          <button data-go="bagroom" id="chBagBtn"><b>🎒 Your bag</b><i>Every club, every number</i></button>
         </div>
         <div class="ch-msg" id="chMsg"></div>
         <div class="ch-foot"><button id="chLeave">Leave career</button><button id="chSwitch">Switch player</button><button id="chRetire">Retire (start over)</button><span
@@ -5486,6 +5617,12 @@
         <div class="sh-list" id="cdList"></div>
         <div class="ch-msg" id="cdMsg"></div>
         <div class="ch-btns"><button id="cdBack">Back to the clubhouse (Esc)</button></div>
+      </div>
+      <div id="chBagRoom">
+        <div class="sh-top"><div class="ch-lead">Your bag</div><span class="sh-cash" id="brValue"></span></div>
+        <div class="br-sum" id="brSum"></div>
+        <div class="sh-list" id="brList"></div>
+        <div class="ch-btns"><button id="brBack">Back to the clubhouse (Esc)</button><span class="cm-help">Numbers: a full, centred swing from the fairway, no wind, with your stats and caddie</span></div>
       </div>
       <div id="chTrophy">
         <div class="sh-top"><div class="ch-lead">The trophy room</div><span class="sh-cash" id="trCash"></span></div>
@@ -9422,7 +9559,7 @@
         const ch = $('clubhouse');
         ch.classList.add('on'); clubOpen = true;
         setText('chMsg', '');
-        ch.classList.remove('match', 'shop', 'coach', 'friends', 'chal', 'caddie', 'trophy', 'tour');
+        ch.classList.remove('match', 'shop', 'coach', 'friends', 'chal', 'caddie', 'trophy', 'tour', 'bagroom');
         if (career && careerOn) clearDemo();                 // back from a free demo
         if (!career) {                                       // who's playing? (signed in but nothing here yet: fetch it)
           if (session) { siMode = 'in'; renderSignIn('Loading your profile…'); syncLoad(); }
@@ -9454,7 +9591,7 @@
       let siMode = 'in';
       function renderSignIn(msg = '') {
         const ch = $('clubhouse'), local = readCareer(CAREER.key);
-        ch.classList.add('new'); ch.classList.remove('hub', 'match', 'shop', 'coach', 'friends', 'chal', 'caddie', 'trophy', 'tour');
+        ch.classList.add('new'); ch.classList.remove('hub', 'match', 'shop', 'coach', 'friends', 'chal', 'caddie', 'trophy', 'tour', 'bagroom');
         setText('chTag', 'Profiles');
         $('chNew').className = siMode + (siMode === 'local' && local ? ' continue' : '') + (local ? '' : ' nobring');
         for (const b of $('siTabs').children) b.classList.toggle('on', b.dataset.si === siMode);
@@ -9557,6 +9694,7 @@
         if (where === 'friends') return openFriends();
         if (where === 'caddie') return openCaddies();
         if (where === 'trophy') return openTrophies();
+        if (where === 'bagroom') return openBagRoom();
         if (where === 'shop') return openShop();
         if (where === 'coach') return openCoach();
         const soon = { shop: 'The pro shop', coach: 'The coach' }[where];
@@ -9574,7 +9712,7 @@
           else if ((e.code === 'Enter' || e.code === 'NumpadEnter') && !e.repeat) { e.preventDefault(); sendChallenge(); }
           return;
         }
-        if (['coach', 'caddie', 'trophy', 'tour'].some((v) => $('clubhouse').classList.contains(v))) { if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); } return; }
+        if (['coach', 'caddie', 'trophy', 'tour', 'bagroom'].some((v) => $('clubhouse').classList.contains(v))) { if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); } return; }
         if ($('clubhouse').classList.contains('shop')) {       // the pro shop: 1–6 tabs, Esc back
           const tabs = ['iron', 'driver', 'wood', 'wedge', 'putter', 'bag'], dg = /^Digit([1-6])$/.exec(e.code);
           if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); }
@@ -9607,9 +9745,9 @@
         lobby: { name: 'The Clubhouse', panel: '🏌️ Clubhouse' }, shop: { name: 'The Pro Shop', panel: '🛒 Pro shop' },
         coach: { name: 'The Teaching Bay', panel: '🎓 The coach' }, bar: { name: 'The 19th Hole', panel: '🤝 Friends' },
         tee: { name: 'The First Tee', panel: '⛳ Hustlers' }, shack: { name: 'The Caddie Shack', panel: '🧢 Caddies' },
-        trophy: { name: 'The Trophy Room', panel: '🏆 Trophy room' }, tourney: { name: 'The First Tee', panel: '🏆 Invitationals' },
+        trophy: { name: 'The Trophy Room', panel: '🏆 Trophy room' }, tourney: { name: 'The First Tee', panel: '🏆 Invitationals' }, locker: { name: 'The Locker Room', panel: '🎒 Your bag' },
       };
-      const chRoomOf = (cl) => (cl.contains('tour') ? 'tourney' : cl.contains('trophy') ? 'trophy' : cl.contains('caddie') ? 'shack' :cl.contains('coach') ? 'coach' : cl.contains('shop') ? 'shop' : cl.contains('friends') || cl.contains('chal') ? 'bar' : cl.contains('match') ? 'tee' : 'lobby');
+      const chRoomOf = (cl) => (cl.contains('bagroom') ? 'locker' : cl.contains('tour') ? 'tourney' : cl.contains('trophy') ? 'trophy' : cl.contains('caddie') ? 'shack' :cl.contains('coach') ? 'coach' : cl.contains('shop') ? 'shop' : cl.contains('friends') || cl.contains('chal') ? 'bar' : cl.contains('match') ? 'tee' : 'lobby');
       let chRoomNow = '';
       function chSetRoom() {
         const room = chRoomOf($('clubhouse').classList);
@@ -9688,7 +9826,8 @@
             <circle cx="1262" cy="618" r="8" fill="#222"/><circle cx="1277" cy="603" r="8" fill="#333"/><circle cx="1292" cy="623" r="8" fill="#1d3a6b"/>
             <path d="M1135 640 L1110 790 M1185 640 L1210 790 M1160 640 L1160 785" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
             <path d="M780 790 L755 895 M840 790 L865 895 M810 790 V890" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
-            <path d="M1378 790 L1353 895 M1438 790 L1463 895 M1408 790 V890" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
+            <path d="M1442 790 L1417 895 M1502 790 L1527 895 M1472 790 V890" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
+            <path d="M1186 810 L1166 895 M1246 810 L1266 895 M1216 810 V890" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
             ${lamp(300)}${lamp(800)}${lamp(1300)}
             <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
         }
@@ -9787,6 +9926,34 @@
             ${cabinet(70, TROPHIES.slice(0, 6))}${cabinet(510, TROPHIES.slice(6))}
             <rect y="816" width="${W}" height="84" fill="url(#floor)"/>${floorLines(816)}
             ${lamp(270, 30)}${lamp(710, 30)}
+            <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
+        }
+        if (room === 'locker') {         // the locker room: wooden lockers with brass plates, your bag on its stand, a bench
+          const locker = (x, n) => `<rect x="${x}" y="110" width="120" height="560" fill="url(#wood)" stroke="#1d1209" stroke-width="4"/>`
+            + Array.from({ length: 5 }, (_, k) => `<rect x="${x + 30}" y="${140 + k * 10}" width="60" height="4" rx="2" fill="#1d1209"/>`).join('')
+            + `<rect x="${x + 38}" y="215" width="44" height="22" rx="3" fill="#c9a253" stroke="#7a5a2c" stroke-width="2"/><text x="${x + 60}" y="231" text-anchor="middle" font-family="Georgia, serif" font-size="14" font-weight="700" fill="#3a2508">${n}</text>`
+            + `<rect x="${x + 96}" y="380" width="8" height="40" rx="3" fill="#c9a253"/>`;
+          const head = (x, y, c, wood) => wood ? `<path d="M${x - 16} ${y} q-4 -26 16 -30 q20 4 16 30 Z" fill="${c}" stroke="#111" stroke-width="2"/><path d="M${x - 10} ${y - 18} h20" stroke="rgba(255,255,255,.4)" stroke-width="3"/>`
+            : `<path d="M${x} ${y} l14 -6 l2 10 l-16 6 Z" fill="#b8c0c8" stroke="#555" stroke-width="1.5"/>`;
+          return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}
+            <rect width="${W}" height="${H}" fill="#2a2f2a"/>${Array.from({ length: 40 }, (_, i) => `<rect x="${i * 40}" width="2" height="${H}" fill="#232823"/>`).join('')}
+            <rect width="${W}" height="40" fill="#1a1d1a"/><rect y="40" width="${W}" height="8" fill="#b08a45"/>
+            ${[60, 190, 320, 450, 580, 710].map((x, k) => locker(x, 101 + k)).join('')}
+            <rect y="670" width="${W}" height="230" fill="#3a3f3a"/>${Array.from({ length: 22 }, (_, i) => `<line x1="${i * 80 - 300}" y1="${H}" x2="${400 + (i * 80 - 700) * 0.4}" y2="670" stroke="#000" stroke-opacity=".25"/>`).join('')}
+            <line x1="0" y1="760" x2="${W}" y2="760" stroke="#000" stroke-opacity=".2"/>
+            <!-- the bench -->
+            <rect x="80" y="700" width="560" height="26" rx="4" fill="#7a5a2c"/><path d="M110 726 v80 M610 726 v80" stroke="#4a3216" stroke-width="14"/>
+            <rect x="420" y="680" width="120" height="22" rx="6" fill="#f4f1e8"/><rect x="430" y="684" width="100" height="5" fill="#1f4a2c"/>
+            <!-- your bag on its stand -->
+            <path d="M250 840 L300 640 M370 840 L320 640" stroke="#2a2a2a" stroke-width="6"/>
+            <rect x="255" y="430" width="120" height="330" rx="34" fill="#8a1c22" stroke="#2a0c0e" stroke-width="4" transform="rotate(-6 315 595)"/>
+            <rect x="262" y="500" width="108" height="20" fill="rgba(255,255,255,.25)" transform="rotate(-6 315 595)"/>
+            <rect x="270" y="560" width="40" height="110" rx="10" fill="#6a1418" transform="rotate(-6 315 595)"/>
+            <text x="318" y="728" text-anchor="middle" font-family="Georgia, serif" font-size="18" font-weight="700" fill="#f3dca0" transform="rotate(-6 315 595)">${career ? career.name.slice(0, 8) : ''}</text>
+            ${[[262, 300, true, '#111'], [292, 286, true, '#1d3a6b'], [322, 296, true, '#8a1c22']].map(([x, y, w, c]) => `<line x1="${x}" y1="${y}" x2="${x + 12}" y2="440" stroke="#999" stroke-width="3"/>${head(x, y + 30, c, w)}`).join('')}
+            ${[0, 1, 2, 3, 4, 5].map((k) => `<line x1="${298 + k * 12}" y1="${330 + (k % 2) * 14}" x2="${300 + k * 10}" y2="440" stroke="#bbb" stroke-width="3"/>${head(296 + k * 12, 330 + (k % 2) * 14, '', false)}`).join('')}
+            <circle cx="330" cy="420" r="120" fill="url(#glow)"/>
+            ${lamp(320, 30)}${lamp(700, 30)}
             <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
         }
         if (room === 'shack') {          // the caddie shack: bibs on hooks, a bag rack, the loop sheet, a bench, the coffee
@@ -10938,6 +11105,83 @@
         if (d.useputter) { career.putter = d.useputter; state.putter = d.useputter; return shopChanged(`The ${PUTTERS[d.useputter].name} is in the bag.`); }
         if (d.try) return startDemo(d.try);
         if (d.tryputter) return startPutterDemo(d.tryputter);
+      }
+      // =====================================================================================================
+      //  YOUR BAG (user request, 2026-11-19): the locker room, a page that just shows off what you play. Every model you
+      //  own (the driver, the woods, the iron set, the wedges) with its pro-shop bars and note, and a table for each of its
+      //  clubs: loft, carry, total, ball speed, launch, spin, apex, curve (a used club's bent lie shows here) and spread,
+      //  for a full, centred, straight swing from the fairway with no wind, at your stats (and caddie). Then the putter,
+      //  the caddie, and what it's all worth.
+      // =====================================================================================================
+      const bagNumCache = new Map();
+      function bagClubNumbers(i) {
+        const c = CLUBS[i], key = `${i}|${c.model || ''}|${state.power}|${state.dex}|${state.composure}`;
+        if (bagNumCache.has(key)) return bagNumCache.get(key);
+        const saved = [state.lie, state.slope];
+        state.lie = 'fairway'; state.slope = 'flat';
+        try {
+          const su = { face: 0, ballPos: 0, stance: 0, traj: 0, spinCtl: 0 }, { r, f } = stockFlightOf(i, su);
+          // the spread: SPREAD.n ordinary swings, as the minimap's landing area (no tilt, no wind)
+          const teed = isTeed(c), env0 = { lie: 'fairway', slope: 'flat', power: state.power, dex: state.dex, composure: state.composure, badStreak: 0, teed };
+          const rnd = rng32(90210), bell = () => rnd() + rnd() - 1, P = [];
+          for (let k = 0; k < SPREAD.n; k++) {
+            const sw = { bs: 1 + SPREAD.backswing * bell(), ds: 1, thetaMouse: SPREAD.mouseDeg * 2 * bell(), sigma: SPREAD.wobble * rnd(), lateSign: rnd() < 0.5 ? 1 : -1, vImpact: 1, vPeak: 1, miss: 0 };
+            const rr = computeImpact(sw, su, c, env0, rnd);
+            const ff = createFlight({ ballSpeed: rr.ballSpeed, vla: rr.vla, dir: rr.hla, spin: rr.spin, axis: rr.axis, release: rr.release }, { x: 0, z: 0 }, teed ? 0.04 : 0);
+            for (let n = 0; ff.phase !== 'stopped' && n < 20000; n++) stepFlight(ff, 1 / 120);
+            P.push(ff.p);
+          }
+          const mx = P.reduce((s, p) => s + p.x, 0) / P.length, mz = P.reduce((s, p) => s + p.z, 0) / P.length;
+          const sd = (k, m) => Math.sqrt(P.reduce((s, p) => s + (p[k] - m) ** 2, 0) / P.length) * 2 * SPREAD.sigmas / YD;
+          const out = { loft: c.loft, carry: f.carry / YD, total: Math.hypot(f.p.x, f.p.z) / YD, side: f.p.x / YD, speed: r.ballSpeed, vla: r.vla, spin: r.spin, apex: f.apex / YD, wide: sd('x', mx), deep: sd('z', mz) };
+          if (bagNumCache.size > 200) bagNumCache.clear();
+          bagNumCache.set(key, out);
+          return out;
+        } finally { [state.lie, state.slope] = saved; }
+      }
+      function openBagRoom() {
+        clearDemo();
+        const ch = $('clubhouse');
+        ch.classList.remove('hub', 'new', 'match'); ch.classList.add('bagroom');
+        renderBagRoom();
+      }
+      function renderBagRoom() {
+        const slotsOf = (id) => Object.entries(career.bag).filter(([, m]) => m === id).map(([k]) => +k).sort((a, b) => a - b);
+        const models = [...new Set(Object.values(career.bag))].filter((id) => CLUB_MODELS[id])
+          .sort((a, b) => Math.min(...slotsOf(a)) - Math.min(...slotsOf(b)));
+        const KIND = { driver: 'Driver', wood: 'Fairway wood / hybrid', iron: 'Iron set', wedge: 'Wedge' };
+        const value = models.reduce((s, id) => s + (CLUB_MODELS[id].price || 0), 0) + (career.putters || []).reduce((s, p) => s + ((SHOP.putters[p] || {}).price || 0), 0);
+        const inb = carried(), cd = caddieOf();
+        setText('brValue', `${money(value)} of gear`);
+        $('brSum').innerHTML = `<div><b>${inb} / ${SHOP.bagMax}</b>clubs in the bag</div><div><b>${(career.out || []).length}</b>in the locker</div>`
+          + `<div><b>${career.snapped.length}</b>snapped</div><div><b>${cd ? cd.short : '—'}</b>caddie</div>`
+          + `<div><b>${CAREER_STATS.map(([k]) => careerStats()[k]).join(' · ')}</b>Pow · Dex · Com · Per</div>`;
+        const lr = (v) => (Math.abs(v) < 0.5 ? '<td>straight</td>' : `<td class="${v < 0 ? 'l' : 'r'}">${Math.abs(v).toFixed(0)} ${v < 0 ? 'L' : 'R'}</td>`);
+        let h = models.map((id) => {
+          const m = CLUB_MODELS[id], st = shopStats(id), slots = slotsOf(id);
+          const bars = barRow('Distance', shopBar(m.kind, 'carry', st.carry)) + barRow('Stopping', shopBar(m.kind, 'land', st.land))
+            + barRow('Forgiveness', shopBar(m.kind, 'forgive', st.forgive)) + barRow('Shaping', shopBar(m.kind, 'shape', st.shape));
+          const rows = slots.map((i) => {
+            const n = bagClubNumbers(i), out = (career.out || []).includes(i), snapped = career.snapped.includes(i);
+            return `<tr class="${out ? 'out' : ''}${snapped ? ' snapped' : ''}"><td>${CLUBS[i].name}${out ? '<small>locker</small>' : ''}${snapped ? '<small>snapped</small>' : ''}</td>`
+              + `<td>${n.loft.toFixed(1)}°</td><td>${n.carry.toFixed(0)}</td><td>${n.total.toFixed(0)}</td><td>${n.speed.toFixed(0)}</td><td>${n.vla.toFixed(1)}°</td>`
+              + `<td>${Math.round(n.spin).toLocaleString()}</td><td>${n.apex.toFixed(0)}</td>${lr(n.side)}<td>${n.wide.toFixed(0)} × ${n.deep.toFixed(0)}</td></tr>`;
+          }).join('');
+          return `<div class="br-model"><div class="br-head"><div><b>${m.brand} ${m.name}</b><em>${m.cat}</em><em>${KIND[m.kind]}${slots.length > 1 ? ` · ${slots.length} clubs` : ''}</em>`
+            + `<i>${m.note}</i>${m.bias ? `<i>Used: each club's lie angle is bent a little (fixed for your career), so some pull and some push — see Curve.</i>` : ''}</div><div class="sh-bars">${bars}</div></div>`
+            + `<table class="br-tbl"><tr><th>Club</th><th>Loft</th><th>Carry</th><th>Total</th><th>Ball mph</th><th>Launch</th><th>Spin</th><th>Apex</th><th>Curve</th><th>Spread</th></tr>${rows}</table></div>`;
+        }).join('');
+        // the putter (and the others in the locker)
+        const P = PUTTERS[career.putter] || {}, sp = SHOP.putters[career.putter] || {};
+        const pbar = (lbl, v) => barRow(lbl, Math.round(clamp(v, 0.04, 1) * 100));
+        h += `<div class="br-model"><div class="br-head"><div><b>${P.name}</b><em>${sp.cat || 'Putter'}</em><em>Putter</em><i>${sp.note || ''}</i>`
+          + `${(career.putters || []).length > 1 ? `<i>In the locker: ${career.putters.filter((p) => p !== career.putter).map((p) => PUTTERS[p].name).join(', ')}</i>` : ''}</div>`
+          + `<div class="sh-bars">${pbar('Stroke gate', (P.gate - 0.025) / 0.03)}${pbar('Start line', (0.45 - P.pathGain) / 0.3)}${pbar('Sweet spot', (P.sweet - 3) / 9)}${pbar('Tempo', (P.tempoZone - 0.03) / 0.07)}</div></div></div>`;
+        if (cd) {
+          const b = caddieBonus(cd), help = [['power', 'Power'], ['dex', 'Dexterity'], ['composure', 'Composure'], ['perception', 'Perception']].filter(([k]) => b[k]).map(([k, n]) => `+${b[k]} ${n}`);
+          h += `<div class="br-model"><div class="br-head"><div><b>🧢 ${cd.name}</b><em>Caddie</em><i>${cd.bio}</i><i>${help.join(' · ')}${cd.calm ? ` · ${cd.calm >= 2 ? 'every hole starts with no tilt' : 'walks off one level of tilt each hole'}` : ''} · ${money(cd.loop)} a match</i></div><div></div></div></div>`;
+        }
+        $('brList').innerHTML = h;
       }
       // ---- try before you buy: one club (or a putter) on the range / putting green, free; gone when you leave
       function startDemo(id) {
@@ -12803,6 +13047,7 @@
         $('chCoach').addEventListener('click', coachClick);
         $('cdList').addEventListener('click', caddieClick);
         $('trList').addEventListener('click', trophyClick);
+        $('brBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('toList').addEventListener('click', toursClick);
         $('toBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('toHustle').addEventListener('click', (e) => { e.currentTarget.blur(); openMatchPicker(); });
@@ -13262,6 +13507,7 @@
         const distTxt = puttRun || !markRead ? `${green.distFt < 10 ? green.distFt.toFixed(1) : green.distFt.toFixed(0)} ft` : `${fmtBandFt(markRead.cupLo, markRead.cupHi)} ft`;
         setText('tbPin', `${distTxt} · ${aimTxt}`);
         setText('tbWind', `${scale.name}: 100% = ${scale.ft} ft${state.puttScaleAuto ? ' (auto)' : ''}`);
+        updateWindDial(state.windDir - frameBeta() - state.aim);      // the wind dial on the green too (user request)
         setText('tbLie', `Stimp ${green.stimp.toFixed(1)}`);
         setText('tbSetup', markRead ? `Marker ${fmtBandFt(markRead.lo, markRead.hi)} ft · ${fmtBandPct(markRead.lo, markRead.hi, scale.ft)} stroke · flat, adjust for slope` : '');
         $('tbSetup').style.color = '';
