@@ -4389,6 +4389,39 @@
       line-height: 1;
     }
 
+    /* a hustler match: his shots on this hole and where his ball is, in his ball's orange (user request) */
+    #holeBadge .hb-npc {
+      display: none;
+      min-width: 118px;
+      background: rgba(255, 165, 61, .16);
+      border-left: 1px solid rgba(255, 165, 61, .45);
+    }
+
+    #holeBadge .hb-npc.on {
+      display: flex;
+    }
+
+    #holeBadge .hb-npc i {
+      color: #ffc98a;
+    }
+
+    #holeBadge .hb-npc b {
+      font-size: 22px;
+      line-height: 1;
+      color: #ffa53d;
+    }
+
+    #holeBadge .hb-npc u {
+      text-decoration: none;
+      font-size: 10.5px;
+      color: #ffd9ad;
+      white-space: nowrap;
+    }
+
+    #holeBadge .hb-npc.holed b {
+      color: #fff;
+    }
+
     /* the top bar without repeats (user request): the hole and shot are on the shot counter, the club and its yardage in
        the bag card, and on a hole the distance to the pin is on the counter too (the range keeps its target distance;
        the greens keep the putter / chip type) */
@@ -6762,7 +6795,7 @@
     <!-- a hole's title card, for a couple of seconds as you step onto the tee; and the shot counter while you play it -->
     <div id="holeTitle"><small id="htCourse"></small><i id="htNum">Hole 1</i><b id="htPar">Par 5</b><span id="htDist"></span><em id="htDesc"></em><small id="htCond"></small></div>
     <div id="topCenter">
-      <div id="holeBadge"><span><b id="hbHole">Hole 1</b><i id="hbPar">Par 5</i></span><span class="hb-shot"><i id="hbShotL">Shot</i><b id="hbShot">1</b></span><span><b id="hbDist">—</b><i>to the pin</i></span></div>
+      <div id="holeBadge"><span><b id="hbHole">Hole 1</b><i id="hbPar">Par 5</i></span><span class="hb-shot"><i id="hbShotL">Shot</i><b id="hbShot">1</b></span><span><b id="hbDist">—</b><i>to the pin</i></span><span class="hb-npc" id="hbNpc"><i id="hbNpcL">Him</i><b id="hbNpcN">0</b><u id="hbNpcW">on the tee</u></span></div>
       <!-- the wind, front and centre (user request): an arrow for where it blows relative to your aim (up = toward the
            target), the speed, the words, coloured by strength -->
       <div id="windDial" class="calm">
@@ -14162,6 +14195,21 @@
           setText('hbDist', hp.done ? '—' : sp ? fmtToPin(Math.hypot(hole.pin.x - sp.x, hole.pin.z - sp.z))
             : isPutt() && markRead && !puttRun ? `${fmtBandFt(markRead.cupLo, markRead.cupHi)} ft`
             : isChip() && chipRead ? `${fmtBandYd(chipRead.pinLo, chipRead.pinHi)} yds` : fmtToPin(pinDist()));
+        }
+        {   // a hustler match: his shots so far on this hole (counting the one in the air) and where his ball lies
+          const el = $('hbNpc'), on = !!(round.match && npc.plan);
+          el.classList.toggle('on', on);
+          if (on) {
+            const nn = npcById(round.match.npc), a = npc.anim, flying = !!(a && a.delay <= 0);
+            const n = npc.k + (flying ? 1 : 0), d = npcDist();
+            const where = npc.holed ? 'holed out' : flying ? (a.st.type === 'putt' ? 'rolling…' : 'in the air…') : npc.k === 0 ? 'on the tee'
+              : inEllipse(hole.green, npc.pos.x, npc.pos.z) < 0.95 ? `on the green · ${Math.max(1, Math.round(d / FT))} ft`
+              : `${SURF[surfaceAt(npc.pos.x, npc.pos.z)].name.toLowerCase()} · ${Math.round(d / YD)} yds`;
+            el.classList.toggle('holed', npc.holed);
+            setText('hbNpcL', npc.holed ? `${nn.first} holed in` : `${nn.first} · ${n === 1 ? 'shot' : 'shots'}`);
+            setText('hbNpcN', String(n));
+            setText('hbNpcW', where);
+          }
         }
         setText('tbPinL', isPutt() ? 'Hole' : 'To the pin'); setText('panelTitle', `⛳ ${HOLE.name} · Par ${HOLE.par}`);
         setText('mapTag', '');                               // (the distance is on the shot counter: the map's header doesn't repeat it)
