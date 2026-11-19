@@ -2,6 +2,7 @@
 //
 //   GET  /api/leaderboard?holes=9            -> { top: [...10], total }
 //   POST /api/leaderboard  { name, strokes, putts, par, holes, scores: [per-hole strokes] }
+//     (signed in, with the session token in Authorization: the profile's name is used instead of `name`)
 //                                           -> { entry, rank, total, top }
 //
 // Credentials come from the Vercel project's environment variables. Connecting Upstash through Vercel's Storage tab
@@ -57,13 +58,18 @@ async function redis(commands) {
 }
 
 const isInt = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
+// a signed-in player's round goes on the board under their profile name (taken from their session, never from the
+// request); a guest's under three arcade initials
+const { sessionId } = require('./_redis');
+const PROFILE_NAME = /^[A-Za-z0-9 _-]{3,12}$/;
 
 // Only well-formed fields go out, whatever is in the database.
 function clean(member) {
   try {
     const e = JSON.parse(member);
-    if (!/^[A-Z0-9]{3}$/.test(e.name) || !isInt(e.strokes, 1, 999) || !isInt(e.putts, 0, 999) || !isInt(e.par, 1, 999)) return null;
-    return { t: +e.t || 0, name: e.name, strokes: e.strokes, putts: e.putts, par: e.par, toPar: e.strokes - e.par };
+    const okName = e.pro ? PROFILE_NAME.test(e.name) : /^[A-Z0-9]{3}$/.test(e.name);
+    if (!okName || !isInt(e.strokes, 1, 999) || !isInt(e.putts, 0, 999) || !isInt(e.par, 1, 999)) return null;
+    return { t: +e.t || 0, name: e.name, pro: !!e.pro, strokes: e.strokes, putts: e.putts, par: e.par, toPar: e.strokes - e.par };
   } catch { return null; }
 }
 
@@ -100,9 +106,17 @@ module.exports = async (req, res) => {
 
     if (req.method === 'POST') {
       const b = await readBody(req);
-      const { name, strokes, putts, par, holes, scores } = b || {};
-      // a believable round: three initials, whole numbers, a per-hole card that adds up
-      if (typeof name !== 'string' || !/^[A-Z0-9]{3}$/.test(name)) return send(400, { error: 'Initials must be 3 letters or digits' });
+      const { strokes, putts, par, holes, scores } = b || {};
+      let name = b && b.name, pro = false;
+      // signed in: the profile's own name (looked up from the session); a guest: three initials
+      let me = null;
+      try { me = await sessionId(req); } catch { me = null; }
+      if (me) {
+        const [pn] = await redis([['HGET', `golf:user:${me}`, 'name']]);
+        if (pn && PROFILE_NAME.test(pn)) { name = pn; pro = true; }
+      }
+      // a believable round: a name, whole numbers, a per-hole card that adds up
+      if (!pro && (typeof name !== 'string' || !/^[A-Z0-9]{3}$/.test(name))) return send(400, { error: 'Initials must be 3 letters or digits' });
       if (!isInt(holes, 1, 18) || !isInt(par, holes * 3, holes * 5)) return send(400, { error: 'Bad course' });
       if (!Array.isArray(scores) || scores.length !== holes || !scores.every((s) => isInt(s, 1, 40))) return send(400, { error: 'Bad scorecard' });
       if (!isInt(strokes, holes, holes * 40) || scores.reduce((a, s) => a + s, 0) !== strokes) return send(400, { error: 'Scorecard does not add up' });
@@ -115,7 +129,7 @@ module.exports = async (req, res) => {
 
       const key = `golf:lb:${holes}h`, t = Date.now();
       const id = Math.random().toString(36).slice(2, 8);                 // two identical rounds in the same ms stay two
-      const member = JSON.stringify({ t, id, name, strokes, putts, par });
+      const member = JSON.stringify({ t, id, name, strokes, putts, par, ...(pro ? { pro: true } : {}) });
       const [, rank, total, top] = await redis([
         ['ZADD', key, strokes * 1000 + putts, member],
         ['ZRANK', key, member],

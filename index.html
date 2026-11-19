@@ -1036,6 +1036,20 @@
       background: rgba(53, 224, 255, .12);
     }
 
+    /* the players' names on their rows */
+    #scTable tr.me td:first-child {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    #scTable .sc-nick {
+      display: block;
+      font-size: 10px;
+      font-weight: 400;
+      color: var(--dim);
+      line-height: 1.1;
+    }
+
     #scTable .tot {
       font-weight: 700;
       background: rgba(255, 255, 255, .05);
@@ -12172,7 +12186,9 @@
         const n = HOLES.length, t = roundTotals(), final = t.played === n;
         round.over = final;
         const cur = hp.on && !hp.done ? hp.holeIdx : -1;
-        let head = '<tr><th>Hole</th>', parRow = '<tr><td>Par</td>', windRow = '<tr><td>Wind</td>', scRow = '<tr><td>Score</td>', ptRow = '<tr><td>Putts</td>', pnRow = '<tr><td>Penalties</td>', tpRow = '<tr><td>To par</td>';
+        // your row carries your name (a career's, else your profile's; the test round's standard player is just "Score")
+        const myName = careerOn && career ? career.name : session ? session.name : 'Score';
+        let head = '<tr><th>Hole</th>', parRow = '<tr><td>Par</td>', windRow = '<tr><td>Wind</td>', scRow = `<tr class="me"><td>${myName}</td>`, ptRow = '<tr><td>Putts</td>', pnRow = '<tr><td>Penalties</td>', tpRow = '<tr><td>To par</td>';
         let run = 0;
         for (let i = 0; i < n; i++) {
           const s = round.scores[i], c = i === cur ? ' class="cur"' : '';
@@ -12204,7 +12220,7 @@
         const m = round.match;
         if (m) {
           const nn = npcById(m.npc);
-          let npcRow = `<tr class="npc"><td>${nn.nick}</td>`, npcTot = 0;
+          let npcRow = `<tr class="npc"><td title="${npcName(nn)}">${nn.first}<small class="sc-nick">“${nn.nick}”</small></td>`, npcTot = 0;
           for (let i = 0; i < n; i++) {
             const h = m.holes[i], c = i === cur ? ' class="cur"' : '';
             if (!h) { npcRow += `<td${c}></td>`; continue; }
@@ -12301,7 +12317,9 @@
         scMode = 'round';
         sc.classList.remove('entry', 'board', 'lbonly');
         if (final) {
-          if (!round.lbDone && !lbEntry.active) startEntry();
+          if (!round.lbDone && !lbEntry.active) {            // signed in: your profile's name goes up; a guest types arcade initials
+            if (session && sync.state !== 'signedout') submitAsProfile(); else startEntry();
+          }
           if (lbEntry.active) sc.classList.add('entry');
           else { renderBoard(); sc.classList.add('board'); }
         }
@@ -12369,7 +12387,7 @@
         if (lbBoardShown()) renderBoard();
         try {
           const r = await fetch(LB_API, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json', ...(entry.pro && session ? { Authorization: `Bearer ${session.token}` } : {}) },
             body: JSON.stringify({ name: entry.name, strokes: entry.strokes, putts: entry.putts, par: entry.par, holes: HOLES.length, scores }),
           });
           const j = await r.json().catch(() => ({}));
@@ -12394,6 +12412,16 @@
       }
       function renderEntry() {
         [...$('lbSlots').children].forEach((s, i) => { s.textContent = lbEntry.chars[i]; s.classList.toggle('on', i === lbEntry.pos); });
+      }
+      // a signed-in player's round: straight onto the board under their profile name (the server takes the name from the
+      // sign-in, not from us), no initials screen
+      function submitAsProfile() {
+        round.lbDone = true;
+        const t = roundTotals();
+        const entry = { name: session.name, pro: true, strokes: t.strokes, toPar: t.toPar, putts: t.putts, par: t.par, t: Date.now() };
+        lbSave([...lbLoad(), entry].sort(lbCmp).slice(0, 10));      // this device's board keeps it either way
+        lbEntry.mineT = entry.t;
+        lbSubmit(entry, HOLES.map((_, i) => (round.scores[i] ? round.scores[i].strokes : 0)));
       }
       function finishEntry(save) {
         if (!lbEntry.active) return;
