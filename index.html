@@ -5244,6 +5244,18 @@
       opacity: .55;
     }
 
+    .tr-bagbtn {
+      margin: 0 0 10px;
+    }
+
+    .tr-bagbtn button {
+      width: 100%;
+      margin: 0;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
     .tr-acts {
       display: flex;
       flex-direction: column;
@@ -5728,7 +5740,7 @@
         <div class="ch-btns"><button id="cdBack">Back to the clubhouse (Esc)</button></div>
       </div>
       <div id="chBagRoom">
-        <div class="sh-top"><div class="ch-lead">Your bag</div><span class="sh-cash" id="brValue"></span></div>
+        <div class="sh-top"><div class="ch-lead" id="brLead">Your bag</div><span class="sh-cash" id="brValue"></span></div>
         <div class="br-sum" id="brSum"></div>
         <div class="sh-list" id="brList"></div>
         <div class="ch-btns"><button id="brBack">Back to the clubhouse (Esc)</button><span class="cm-help">Numbers: a full, centred swing from the fairway, no wind, with your stats and caddie</span></div>
@@ -9715,6 +9727,7 @@
         ch.classList.add('on'); clubOpen = true;
         setText('chMsg', '');
         ch.classList.remove('match', 'shop', 'coach', 'friends', 'chal', 'caddie', 'trophy', 'tour', 'bagroom');
+        trophyView = null; bagView = null;                   // (back in your own clubhouse)
         if (career && careerOn) clearDemo();                 // back from a free demo
         if (!career) {                                       // who's playing? (signed in but nothing here yet: fetch it)
           if (session) { siMode = 'in'; renderSignIn('Loading your profile…'); syncLoad(); }
@@ -9868,6 +9881,7 @@
           return;
         }
         if (trophyView && $('clubhouse').classList.contains('trophy')) { if (e.code === 'Escape') { e.preventDefault(); openFriends(); } return; }   // visiting: back to Friends
+        if (bagView && $('clubhouse').classList.contains('bagroom')) { if (e.code === 'Escape') { e.preventDefault(); bagRoomBack(); } return; }    // a friend's bag: back to their room
         if (['coach', 'caddie', 'trophy', 'tour', 'bagroom'].some((v) => $('clubhouse').classList.contains(v))) { if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); } return; }
         if ($('clubhouse').classList.contains('shop')) {       // the pro shop: 1–6 tabs, Esc back
           const tabs = ['iron', 'driver', 'wood', 'wedge', 'putter', 'bag'], dg = /^Digit([1-6])$/.exec(e.code);
@@ -9910,7 +9924,7 @@
         if (room === chRoomNow) return;
         chRoomNow = room;
         $('chScene').innerHTML = chScene(room);
-        setText('chRoomName', room === 'trophy' && trophyView ? `${trophyView.name}'s Trophy Room` : CH_ROOMS[room].name);     // (visiting a friend's)
+        setText('chRoomName', room === 'trophy' && trophyView ? `${trophyView.name}'s Trophy Room` : room === 'locker' && bagView ? `${bagView.name}'s Locker` : CH_ROOMS[room].name);     // (visiting a friend's)
         setText('chPanelName', CH_ROOMS[room].panel);
       }
       new MutationObserver(chSetRoom).observe($('clubhouse'), { attributes: true, attributeFilter: ['class'] });
@@ -10110,7 +10124,7 @@
             <rect x="255" y="430" width="120" height="330" rx="34" fill="#8a1c22" stroke="#2a0c0e" stroke-width="4" transform="rotate(-6 315 595)"/>
             <rect x="262" y="500" width="108" height="20" fill="rgba(255,255,255,.25)" transform="rotate(-6 315 595)"/>
             <rect x="270" y="560" width="40" height="110" rx="10" fill="#6a1418" transform="rotate(-6 315 595)"/>
-            <text x="318" y="728" text-anchor="middle" font-family="Georgia, serif" font-size="18" font-weight="700" fill="#f3dca0" transform="rotate(-6 315 595)">${career ? career.name.slice(0, 8) : ''}</text>
+            <text x="318" y="728" text-anchor="middle" font-family="Georgia, serif" font-size="18" font-weight="700" fill="#f3dca0" transform="rotate(-6 315 595)">${(bagView || career) ? (bagView || career).name.slice(0, 8) : ''}</text>
             ${[[262, 300, true, '#111'], [292, 286, true, '#1d3a6b'], [322, 296, true, '#8a1c22']].map(([x, y, w, c]) => `<line x1="${x}" y1="${y}" x2="${x + 12}" y2="440" stroke="#999" stroke-width="3"/>${head(x, y + 30, c, w)}`).join('')}
             ${[0, 1, 2, 3, 4, 5].map((k) => `<line x1="${298 + k * 12}" y1="${330 + (k % 2) * 14}" x2="${300 + k * 10}" y2="440" stroke="#bbb" stroke-width="3"/>${head(296 + k * 12, 330 + (k % 2) * 14, '', false)}`).join('')}
             <circle cx="330" cy="420" r="120" fill="url(#glow)"/>
@@ -11168,6 +11182,7 @@
         let h = `<div class="tr-sum"><div><b>${col.n} / ${TROPHIES.length}</b>pieces</div><div><b>${money(col.value)}</b>collection</div><div><b>${earned} / ${earnedList().length}</b>trophies earned</div><div><b>${shownRivals(C).length}</b>rivalry trophies</div></div>`;
         if (visiting) {                                     // read-only: what they have, and the rivalry wall as they show it
           const rv = shownRivals(C), cards = C.cards || {};
+          if (C.gear && C.gear.bag) h += `<div class="tr-bagbtn"><button data-viewbag="1" class="go">🎒 ${C.name}'s bag · see the gear they play</button></div>`;
           h += `<div class="sh-cat">The rivalry wall · buy a piece off it and it's destroyed for good (the money goes to ${C.name})</div>`;
           h += rv.length ? rv.map((it) => `<div class="tr-row rv"><div class="tr-art">${plaqueSvg(it)}</div><div><b>${it.kind === 'rival' ? `${C.name}'s record vs ${it.name}` : it.kind === 'card' ? `Framed scorecard: ${C.name} vs ${it.name}` : `${C.name} beat ${it.name}`}</b>`
             + `<i>${it.kind === 'rival' ? `${it.big} (won–lost–halved) · ${it.sub}` : `${it.big} · ${it.sub}${it.date ? ` · ${frDate(it.date)}` : ''}`}</i></div><div class="tr-acts">`
@@ -11204,6 +11219,8 @@
       const myCard = (cid) => fr.list.find((x) => x.id === cid && x.status === 'done') || (ownWallCards && ownWallCards[cid]) || null;
       let ownWallCards = null;
       async function trophyClick(e) {
+        const vb = e.target.closest('button[data-viewbag]');
+        if (vb && trophyView) { vb.blur(); return openBagRoom(trophyView); }     // a friend's bag, read-only
         const vc = e.target.closest('button[data-viewcard]');
         if (vc) {                                            // a framed scorecard, full size (the shared card)
           vc.blur();
@@ -11459,43 +11476,74 @@
           return out;
         } finally { [state.lie, state.slope] = saved; }
       }
-      function openBagRoom() {
+      // view = a friend's showcase (from their trophy room): their gear, read-only, worked out with THEIR stats and caddie
+      let bagView = null;
+      function openBagRoom(view = null) {
         clearDemo();
+        bagView = view && view.gear && view.gear.bag ? view : null;
         const ch = $('clubhouse');
-        ch.classList.remove('hub', 'new', 'match'); ch.classList.add('bagroom');
+        ch.classList.remove('hub', 'new', 'match', 'trophy'); ch.classList.add('bagroom');
+        $('brBack').textContent = bagView ? `Back to ${bagView.name}'s trophy room (Esc)` : 'Back to the clubhouse (Esc)';
         renderBagRoom();
+        $('chScene').innerHTML = chScene('locker');
+        setText('chRoomName', bagView ? `${bagView.name}'s Locker` : 'The Locker Room');
+      }
+      // from a friend's bag back to their trophy room (no new fetch)
+      function bagRoomBack() {
+        if (!bagView) return openClubhouse();
+        bagView = null;
+        const ch = $('clubhouse');
+        ch.classList.remove('bagroom'); ch.classList.add('trophy');
+        renderTrophies();
+        $('chScene').innerHTML = chScene('trophy'); setText('chRoomName', `${trophyView.name}'s Trophy Room`);
       }
       function renderBagRoom() {
-        const slotsOf = (id) => Object.entries(career.bag).filter(([, m]) => m === id).map(([k]) => +k).sort((a, b) => a - b);
-        const models = [...new Set(Object.values(career.bag))].filter((id) => CLUB_MODELS[id])
+        const V = bagView, G = V ? V.gear : { bag: career.bag, out: career.out || [], snapped: career.snapped || [], putter: career.putter, putters: career.putters || [], caddie: career.caddie };
+        const cd = G.caddie ? CADDIES.find((c) => c.id === G.caddie) || null : null;
+        const statsOf = () => { if (!V) return careerStats(); const s = { ...(G.stats || CAREER.stats) }, b = caddieBonus(cd); for (const k of Object.keys(b)) s[k] = Math.min(COACH.maxStat, s[k] + b[k]); return s; };
+        const eff = statsOf();
+        // a friend's club: their model in the slot, their stats (and their career's seed for a used club's bent lie), then put everything back
+        const numbersOf = (i) => {
+          if (!V) return bagClubNumbers(i);
+          const keep = { power: state.power, dex: state.dex, composure: state.composure, perception: state.perception, seed: career && career.seed };
+          Object.assign(state, { power: eff.power, dex: eff.dex, composure: eff.composure, perception: eff.perception });
+          if (career) career.seed = G.seed || 0;
+          try { return withClubModel(i, G.bag[i], () => bagClubNumbers(i)); } finally {
+            Object.assign(state, { power: keep.power, dex: keep.dex, composure: keep.composure, perception: keep.perception });
+            if (career) career.seed = keep.seed;
+          }
+        };
+        const slotsOf = (id) => Object.entries(G.bag).filter(([, m]) => m === id).map(([k]) => +k).sort((a, b) => a - b);
+        const models = [...new Set(Object.values(G.bag))].filter((id) => CLUB_MODELS[id])
           .sort((a, b) => Math.min(...slotsOf(a)) - Math.min(...slotsOf(b)));
         const KIND = { driver: 'Driver', wood: 'Fairway wood / hybrid', iron: 'Iron set', wedge: 'Wedge' };
-        const value = models.reduce((s, id) => s + (CLUB_MODELS[id].price || 0), 0) + (career.putters || []).reduce((s, p) => s + ((SHOP.putters[p] || {}).price || 0), 0);
-        const inb = carried(), cd = caddieOf();
+        const value = models.reduce((s, id) => s + (CLUB_MODELS[id].price || 0), 0) + (G.putters || []).reduce((s, p) => s + ((SHOP.putters[p] || {}).price || 0), 0);
+        const inb = Object.keys(G.bag).filter((k) => !(G.out || []).includes(+k)).length + 1;
+        setText('brLead', V ? `${V.name}'s bag` : 'Your bag');
         setText('brValue', `${money(value)} of gear`);
-        $('brSum').innerHTML = `<div><b>${inb} / ${SHOP.bagMax}</b>clubs in the bag</div><div><b>${(career.out || []).length}</b>in the locker</div>`
-          + `<div><b>${career.snapped.length}</b>snapped</div><div><b>${cd ? cd.short : '—'}</b>caddie</div>`
-          + `<div><b>${CAREER_STATS.map(([k]) => careerStats()[k]).join(' · ')}</b>Pow · Dex · Com · Per</div>`;
+        $('brSum').innerHTML = `<div><b>${inb} / ${SHOP.bagMax}</b>clubs in the bag</div><div><b>${(G.out || []).length}</b>in the locker</div>`
+          + `<div><b>${(G.snapped || []).length}</b>snapped</div><div><b>${cd ? cd.short : '—'}</b>caddie</div>`
+          + `<div><b>${CAREER_STATS.map(([k]) => eff[k]).join(' · ')}</b>Pow · Dex · Com · Per</div>`;
         const lr = (v) => (Math.abs(v) < 0.5 ? '<td>straight</td>' : `<td class="${v < 0 ? 'l' : 'r'}">${Math.abs(v).toFixed(0)} ${v < 0 ? 'L' : 'R'}</td>`);
         let h = models.map((id) => {
           const m = CLUB_MODELS[id], st = shopStats(id), slots = slotsOf(id);
           const bars = barRow('Distance', shopBar(m.kind, 'carry', st.carry)) + barRow('Stopping', shopBar(m.kind, 'land', st.land))
             + barRow('Forgiveness', shopBar(m.kind, 'forgive', st.forgive)) + barRow('Shaping', shopBar(m.kind, 'shape', st.shape));
           const rows = slots.map((i) => {
-            const n = bagClubNumbers(i), out = (career.out || []).includes(i), snapped = career.snapped.includes(i);
+            const n = numbersOf(i), out = (G.out || []).includes(i), snapped = (G.snapped || []).includes(i);
             return `<tr class="${out ? 'out' : ''}${snapped ? ' snapped' : ''}"><td>${CLUBS[i].name}${out ? '<small>locker</small>' : ''}${snapped ? '<small>snapped</small>' : ''}</td>`
               + `<td>${n.loft.toFixed(1)}°</td><td>${n.carry.toFixed(0)}</td><td>${n.total.toFixed(0)}</td><td>${n.speed.toFixed(0)}</td><td>${n.vla.toFixed(1)}°</td>`
               + `<td>${Math.round(n.spin).toLocaleString()}</td><td>${n.apex.toFixed(0)}</td>${lr(n.side)}<td>${n.wide.toFixed(0)} × ${n.deep.toFixed(0)}</td></tr>`;
           }).join('');
           return `<div class="br-model"><div class="br-head"><div><b>${m.brand} ${m.name}</b><em>${m.cat}</em><em>${KIND[m.kind]}${slots.length > 1 ? ` · ${slots.length} clubs` : ''}</em>`
-            + `<i>${m.note}</i>${m.bias ? `<i>Used: each club's lie angle is bent a little (fixed for your career), so some pull and some push — see Curve.</i>` : ''}</div><div class="sh-bars">${bars}</div></div>`
+            + `<i>${m.note}</i>${m.bias ? `<i>Used: each club's lie angle is bent a little (fixed for ${V ? 'their' : 'your'} career), so some pull and some push — see Curve.</i>` : ''}</div><div class="sh-bars">${bars}</div></div>`
             + `<table class="br-tbl"><tr><th>Club</th><th>Loft</th><th>Carry</th><th>Total</th><th>Ball mph</th><th>Launch</th><th>Spin</th><th>Apex</th><th>Curve</th><th>Spread</th></tr>${rows}</table></div>`;
         }).join('');
         // the putter (and the others in the locker)
-        const P = PUTTERS[career.putter] || {}, sp = SHOP.putters[career.putter] || {};
+        const P = PUTTERS[G.putter] || {}, sp = SHOP.putters[G.putter] || {};
         const pbar = (lbl, v) => barRow(lbl, Math.round(clamp(v, 0.04, 1) * 100));
-        h += `<div class="br-model"><div class="br-head"><div><b>${P.name}</b><em>${sp.cat || 'Putter'}</em><em>Putter</em><i>${sp.note || ''}</i>`
-          + `${(career.putters || []).length > 1 ? `<i>In the locker: ${career.putters.filter((p) => p !== career.putter).map((p) => PUTTERS[p].name).join(', ')}</i>` : ''}</div>`
+        h += `<div class="br-model"><div class="br-head"><div><b>${P.name || '—'}</b><em>${sp.cat || 'Putter'}</em><em>Putter</em><i>${sp.note || ''}</i>`
+          + `${(G.putters || []).length > 1 ? `<i>In the locker: ${G.putters.filter((p) => p !== G.putter && PUTTERS[p]).map((p) => PUTTERS[p].name).join(', ')}</i>` : ''}</div>`
           + `<div class="sh-bars">${pbar('Stroke gate', (P.gate - 0.025) / 0.03)}${pbar('Start line', (0.45 - P.pathGain) / 0.3)}${pbar('Sweet spot', (P.sweet - 3) / 9)}${pbar('Tempo', (P.tempoZone - 0.03) / 0.07)}</div></div></div>`;
         if (cd) {
           const b = caddieBonus(cd), help = [['power', 'Power'], ['dex', 'Dexterity'], ['composure', 'Composure'], ['perception', 'Perception']].filter(([k]) => b[k]).map(([k, n]) => `+${b[k]} ${n}`);
@@ -13391,7 +13439,7 @@
         $('chCoach').addEventListener('click', coachClick);
         $('cdList').addEventListener('click', caddieClick);
         $('trList').addEventListener('click', trophyClick);
-        $('brBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
+        $('brBack').addEventListener('click', (e) => { e.currentTarget.blur(); bagRoomBack(); });     // (a friend's bag: back to their trophy room)
         $('toList').addEventListener('click', toursClick);
         $('toBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('toHustle').addEventListener('click', (e) => { e.currentTarget.blur(); openMatchPicker(); });

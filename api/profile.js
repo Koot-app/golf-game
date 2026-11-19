@@ -187,6 +187,14 @@ module.exports = async (req, res) => {
         name: c.name, trophies: tro(c), titles: (c.titles || []).slice(-40), tierMax: c.tierMax || 1,
         rounds: (c.rounds || []).slice(-10).map((r) => ({ gross: r.gross, par: r.par, tier: r.tier, date: r.date })),
         history: hist, showcase: { hide: strs(sc.hide, 300), cards: cids, destroyed: strs(sc.destroyed, 300) }, cards,
+        // their gear, for "their bag" (the clubs and models, the putter, the caddie and the stats; still no cash)
+        gear: {
+          bag: Object.fromEntries(Object.entries(c.bag || {}).filter(([k, v]) => /^\d{1,2}$/.test(k) && typeof v === 'string').slice(0, 16)),
+          out: (c.out || []).filter(Number.isInteger).slice(0, 16), snapped: (c.snapped || []).filter(Number.isInteger).slice(0, 16),
+          putter: typeof c.putter === 'string' ? c.putter : null, putters: strs(c.putters, 12), caddie: typeof c.caddie === 'string' ? c.caddie : null,
+          stats: c.stats && typeof c.stats === 'object' ? { power: +c.stats.power || 1, dex: +c.stats.dex || 1, composure: +c.stats.composure || 1, perception: +c.stats.perception || 1 } : null,
+          seed: Number.isInteger(c.seed) ? c.seed : 0,
+        },
       } });
     }
     // buy something off another player's rivalry wall: the buyer pays the owner, and the piece is destroyed for good
