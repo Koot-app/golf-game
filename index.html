@@ -5246,7 +5246,7 @@
             <button data-h="putt"><b>🕳️ Putting</b><i>Read the break</i></button>
           </div>
         </div>
-        <div class="hm-foot"><button id="hmSwitch">Switch player</button><label class="hm-dev" id="hmDevBox"><input type="checkbox" id="hmDev"> 🛠 Developer tools</label><span id="hmSync"></span></div>
+        <div class="hm-foot"><button id="hmReauth" class="go" style="display:none">Sign in again</button><button id="hmSwitch">Switch player</button><label class="hm-dev" id="hmDevBox"><input type="checkbox" id="hmDev"> 🛠 Developer tools</label><span id="hmSync"></span></div>
       </div>
     </div>
     <div class="hm-board">
@@ -9325,8 +9325,16 @@
       function setSync(s) {
         sync.state = s;
         const el = $('chSync');
-        el.textContent = !session ? 'Playing on this PC only' : `Signed in as ${session.name}${adminOk ? ' 👑 admin' : ''} · ${{ ok: '✓ saved', saving: 'saving…', offline: '⚠ not synced (offline) — will retry', signedout: '⚠ signed out elsewhere — switch player to sign in again', '': '✓' }[s] || ''}`;
+        el.textContent = !session ? 'Playing on this PC only' : `Signed in as ${session.name}${adminOk ? ' 👑 admin' : ''} · ${{ ok: '✓ saved', saving: 'saving…', offline: '⚠ not synced (offline) — will retry', signedout: '⚠ your sign-in has expired — sign in again (home screen)', '': '✓' }[s] || ''}`;
         el.className = s === 'ok' ? 'ok' : s === 'offline' || s === 'signedout' ? 'bad' : '';
+      }
+      // the server no longer accepts this sign-in (it expired, it was signed out, or the admin password changed): say so,
+      // drop anything admin, and let the home screen offer "Sign in again"
+      function signInExpired() {
+        setSync('signedout');
+        if (adminOk) { adminOk = false; applyDevTools(); }
+        if (homeOpen) renderHome();
+        updateMeChip();
       }
       function queueSync(delay = 1200) { clearTimeout(sync.timer); sync.timer = setTimeout(() => syncNow(), delay); }
       // send the career; a newer copy on the server (another PC) is merged in and sent again
@@ -9341,7 +9349,7 @@
             sync.ver = r.data.ver; sync.base = JSON.parse(sent); sync.dirty = JSON.stringify(career) !== sent;
             saveSyncMeta(); setSync('ok');
           } else if (r.status === 409 && r.data.career) { mergeServer(r.data.career, r.data.ver); sync.again = true; }
-          else if (r.status === 401) setSync('signedout');
+          else if (r.status === 401) signInExpired();
           else setSync('offline');
         } catch { setSync('offline'); }
         sync.busy = false;
@@ -9369,7 +9377,7 @@
         if (!session || round.on) return;
         try {
           const r = await profileApi('load');
-          if (r.status === 401) { if (adminOk) { adminOk = false; applyDevTools(); } return setSync('signedout'); }
+          if (r.status === 401) return signInExpired();
           if (r.status === 200) {                            // the server says whether this is the admin
             if (adminOk !== !!r.data.admin) { adminOk = !!r.data.admin; applyDevTools(); if (homeOpen) renderHome(); updateMeChip(); }
             if (session.admin !== adminOk) { session.admin = adminOk; lsSet('golfSession', JSON.stringify(session)); }
@@ -10013,7 +10021,7 @@
       // back resumes it. One round at a time: a hustler match and a friend round can't both be in progress.
       const CH_API = '/api/challenge';
       const FR_FMT = { match: 'Match play', stroke: 'Stroke play', skins: 'Skins' };
-      const fr = { list: [], players: [], loaded: 0, busy: false, form: null, sending: false };
+      const fr = { list: [], players: [], loaded: 0, busy: false, form: null, sending: false, err: '' };
       const chApi = (action, body = {}) => apiPost(CH_API, action, body);
       // strokes received on each hole: one on every hole whose stroke index is ≤ n, two on the hardest past 9 (= api/challenge.js)
       const holeStrokes = (n) => HOLES.map((h) => (h.si <= n ? 1 : 0) + (h.si <= n - HOLES.length ? 1 : 0));
@@ -10036,13 +10044,14 @@
         if (!quiet) setText('frMsg', fr.loaded ? '' : 'Loading…');
         try {
           const [p, l] = await Promise.all([profileApi('players'), chApi('list')]);
-          if (p.status === 401 || l.status === 401) { setSync('signedout'); if (!quiet) setText('frMsg', 'Signed out — switch player to sign in again'); }
-          else if (p.status !== 200 || l.status !== 200) { if (!quiet) setText('frMsg', (l.data && l.data.error) || 'Can\'t reach the server (it runs on the deployed site)'); }
+          if (p.status === 401 || l.status === 401) { signInExpired(); fr.err = 'Your sign-in has expired. Sign in again (home screen → Sign in again) to see your friends.'; }
+          else if (p.status !== 200 || l.status !== 200) fr.err = (l.data && l.data.error) || (p.data && p.data.error) || 'Can\'t reach the server (it runs on the deployed site)';
           else {
-            fr.players = p.data.players || []; fr.list = l.data.challenges || []; fr.loaded = Date.now();
+            fr.players = p.data.players || []; fr.list = l.data.challenges || []; fr.loaded = Date.now(); fr.err = '';
             if (!quiet) setText('frMsg', '');
           }
-        } catch { if (!quiet) setText('frMsg', 'Can\'t reach the server (it runs on the deployed site)'); }
+        } catch { fr.err = 'Can\'t reach the server (it runs on the deployed site)'; }
+        if (fr.err) setText('frMsg', fr.err);              // (always say why, even on a quiet refresh: never a bare "…")
         fr.busy = false;
         updateFriendsTile();
         if ($('clubhouse').classList.contains('friends')) renderFriends();
@@ -10105,7 +10114,7 @@
           + `<div class="fr-btns"><button data-act="challenge" data-to="${p.name.toLowerCase()}" class="go">Challenge</button></div></div>`).join('');
         const all = h2h(null);
         $('frList').innerHTML = groups.filter(([, items]) => items.length).map(([t, items]) => `<div class="sh-cat">${t}</div>${items.join('')}`).join('')
-          + `<div class="sh-cat">Players${all.n ? ` · your record vs friends ${recText(all)}, ${all.money >= 0 ? '+' : '−'}${money(Math.abs(all.money))}` : ''}</div>${players ||`<div class="fr-empty">${fr.loaded ? 'Nobody else has a profile yet. Get a friend to make one (Switch player → New profile on their PC).' : '…'}</div>`}`;
+          + `<div class="sh-cat">Players${all.n ? ` · your record vs friends ${recText(all)}, ${all.money >= 0 ? '+' : '−'}${money(Math.abs(all.money))}` : ''}</div>${players ||`<div class="fr-empty">${fr.loaded ? 'Nobody else has a profile yet. Get a friend to make one (Switch player → New profile on their PC).' : fr.err || 'Loading players…'}</div>`}`;
       }
       async function friendsClick(e) {
         const b = e.target.closest('button[data-act]');
@@ -10452,7 +10461,8 @@
           : news ? `${news} result${news > 1 ? 's' : ''} in` : wait ? `${wait} challenge${wait > 1 ? 's' : ''} waiting for you` : play ? `${play} round${play > 1 ? 's' : ''} to play` : 'Bet a friend on a round'}</i>${badge ? `<em class="hm-badge">${badge}</em>` : ''}`;
         $('hmDev').checked = devOn();
         setText('hmSync', !session ? 'Guest · saved on this PC only'
-          : sync.state === 'offline' ? '⚠ not synced (offline)' : sync.state === 'signedout' ? '⚠ signed out elsewhere — switch player' : 'Saved to your profile');
+          : sync.state === 'offline' ? '⚠ not synced (offline)' : sync.state === 'signedout' ? '⚠ Your sign-in has expired' : 'Saved to your profile');
+        $('hmReauth').style.display = session && sync.state === 'signedout' ? '' : 'none';
       }
       function renderRoster() {
         const last = lsGet('golfLastProfile') || '';
@@ -13032,6 +13042,12 @@
         $('hmNewGo').addEventListener('click', (e) => { e.currentTarget.blur(); homeNewProfile(); });
         $('hmGuest').addEventListener('click', (e) => { e.currentTarget.blur(); homeGuest(); });
         $('hmSwitch').addEventListener('click', (e) => { e.currentTarget.blur(); switchPlayer(); });
+        $('hmReauth').addEventListener('click', async (e) => {       // an expired sign-in: back to your own card, password box open
+          e.currentTarget.blur();
+          const id = session && session.id;
+          await switchPlayer();
+          if (id) { homeSel = id; renderRoster(); }
+        });
         $('hmDev').addEventListener('change', (e) => { lsSet('golfDevTools', e.target.checked ? 'on' : 'off'); e.target.blur(); applyDevTools(); });
         $('hmMenu').querySelector('.hm-tiles').addEventListener('click', (e) => { const b = e.target.closest('button[data-h]'); if (b) { b.blur(); homeGo(b.dataset.h); } });
         $('hmBoardBtn').addEventListener('click', (e) => { e.currentTarget.blur(); closeHome(); showLeaderboard(); });
