@@ -10,7 +10,8 @@
 //     players                             -> { players: [{ name, tierMax, cash, rep, handicap, rounds }] }
 //     roster  (no session)                -> { players: [{ name, tierMax, cash, handicap, rounds, last, admin }] }  for the sign-in screen
 //
-// Admin profiles (api/_admins.js) have a reserved name and a baked-in password hash; their first sign-in creates them.
+// Admin profiles (api/_admins.js) have a reserved name and a credential in the server's environment (GOLF_ADMIN_<ID>);
+// their first sign-in creates them. Nobody else can sign up with an admin's name or become an admin.
 // login / load also return { admin: true | false } for the admin rights to come.
 //
 // Keys: golf:user:<id> (hash: name, salt, hash, created), golf:players (set of ids), golf:sess:<token> (-> id, 30 days),
@@ -20,8 +21,8 @@
 // people reuse passwords. Saves are compare-and-set on `ver`, so a copy that's out of date never overwrites a newer one.
 
 const crypto = require('crypto');
-const { redis, readBody, clientIp, rateLimit, sessionId, CAS } = require('./_redis');
-const { ADMINS, isAdmin } = require('./_admins');
+const { redis, readBody, clientIp, rateLimit, sessionId, sessionValue, CAS } = require('./_redis');
+const { isAdmin, adminCred } = require('./_admins');
 
 const NAME_RE = /^[A-Za-z0-9 _-]{3,12}$/;
 const SESSION_S = 30 * 24 * 3600;
@@ -45,7 +46,7 @@ const tro = (c) => (Array.isArray(c.trophies) ? c.trophies.filter((x) => typeof 
 // (sessionId lives in _redis.js)
 async function newSession(id) {
   const token = crypto.randomBytes(32).toString('hex');
-  await redis([['SET', `golf:sess:${token}`, id, 'EX', SESSION_S]]);
+  await redis([['SET', `golf:sess:${token}`, sessionValue(id), 'EX', SESSION_S]]);     // (an admin's is tied to the current credential)
   return token;
 }
 // a career the client sent: an object of a sensible size, named after the profile
@@ -68,9 +69,11 @@ module.exports = async (req, res) => {
       if (!(await rateLimit(`golf:rl:auth:${clientIp(req)}`, 10, 60))) return send(429, { error: 'Too many tries — wait a minute' });
       const name = String(b.name || '').trim(), id = idOf(name), pw = String(b.password || '');
       if (!NAME_RE.test(name)) return send(400, { error: 'Names are 3–12 letters, numbers, spaces, - or _' });
-      const admin = ADMINS[id];                                // a reserved admin name: its baked-in password, any length
-      if (!admin && (pw.length < 4 || pw.length > 128)) return send(400, { error: 'Passwords are at least 4 characters' });
-      if (admin) {
+      // a reserved admin name (in any capitals): only its credential from the environment signs in; nobody can sign it up
+      if (isAdmin(id)) {
+        const admin = adminCred(id);
+        if (!admin) return send(action === 'signup' ? 409 : 503, { error: action === 'signup' ? 'That name is reserved' : 'Admin sign-in isn\'t set up on this server' });
+        if (pw.length > 128) return send(401, { error: 'Wrong password' });
         const h = await hashPw(pw, admin.salt);
         if (!crypto.timingSafeEqual(Buffer.from(h, 'hex'), Buffer.from(admin.hash, 'hex'))) return send(action === 'signup' ? 409 : 401, { error: action === 'signup' ? 'That name is reserved' : 'Wrong password' });
         // first sign-in (or sign-up) creates the profile; its career comes from the client (or a fresh one on the next save)
@@ -80,6 +83,7 @@ module.exports = async (req, res) => {
         const [[cd, cv]] = await redis([['HMGET', `golf:career:${id}`, 'data', 'ver']]);
         return send(200, { token: await newSession(id), name: admin.name, career: parse(cd), ver: +cv || 0, admin: true });
       }
+      if (pw.length < 4 || pw.length > 128) return send(400, { error: 'Passwords are at least 4 characters' });
 
       if (action === 'signup') {
         const data = cleanCareer(b.career, name);

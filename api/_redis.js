@@ -57,13 +57,20 @@ async function rateLimit(key, max, windowS) {
   return count <= max;
 }
 
-// the profile id of a request's session (Authorization: Bearer <token>), or null
+// the profile id of a request's session (Authorization: Bearer <token>), or null. An admin's session is stored as
+// "<id>#<credential fingerprint>" and only counts while that credential is the current one, so changing the admin
+// password signs out every session made with the old one (and an admin session without a fingerprint never counts).
 async function sessionId(req) {
   const m = /^Bearer ([a-f0-9]{64})$/.exec((req.headers && req.headers.authorization) || '');
   if (!m) return null;
-  const [id] = await redis([['GET', `golf:sess:${m[1]}`]]);
-  return id || null;
+  const [v] = await redis([['GET', `golf:sess:${m[1]}`]]);
+  if (!v) return null;
+  const [id, fp] = String(v).split('#');
+  if (isAdmin(id)) { const c = adminCred(id); if (!c || fp !== c.fp) return null; }
+  return id;
 }
+// what to store for a new session of this profile
+const sessionValue = (id) => (isAdmin(id) && adminCred(id) ? `${id}#${adminCred(id).fp}` : id);
 
 // A career is golf:career:<id> = { data (JSON), ver }. Writes are compare-and-set on ver (this Lua script), so a copy
 // that's out of date never overwrites a newer one; it returns the new version, or -1.
@@ -88,4 +95,6 @@ async function updateCareer(id, fn) {
   throw new Error('Busy — try again');
 }
 
-module.exports = { findCreds, redis, readBody, clientIp, rateLimit, sessionId, CAS, updateCareer };
+const { isAdmin, adminCred } = require('./_admins');
+
+module.exports = { findCreds, redis, readBody, clientIp, rateLimit, sessionId, sessionValue, CAS, updateCareer };

@@ -206,13 +206,24 @@ shows it; a stale save gets 409 and merges without losing the purchase.
 
 ### Admin profile (user request, 2026-11-18) — ✅ built
 
-`api/_admins.js`: `ADMINS` (the reserved profile **Keeto**, with a scrypt salt + hash of its password — no
-plain-text password in the code) and `isAdmin(id)`. In `api/profile.js`: a reserved name can't be signed up by anyone
-else ("That name is reserved"); signing in checks the baked-in hash (any password length); the first sign-in creates
-the profile (the client then sends a fresh career). `login` / `load` return `admin`; the client keeps
-`session.admin` and the clubhouse footer shows "👑 admin". **No admin rights yet** — they'll check `isAdmin(id)` on
-the server (never trust the client's flag). Before any admin right can change other players' data, switch to a
-longer password (the hash of a 3-letter password can be guessed if the repo is public).
+`api/_admins.js`: `ADMINS` (the reserved profile **Keeto**) and `isAdmin(id)`. In `api/profile.js`: a reserved name
+can't be signed up by anyone else, in any capitals or with spaces around it ("That name is reserved"); the first
+sign-in creates the profile (the client then sends a fresh career). `login` / `load` return `admin`. The developer
+tools are the only admin right so far.
+
+**Audit (user request, 2026-11-19): only Keeto can be an admin.** Changes:
+- The credential is **not in the repo** any more (the repo is public, and the old 3-letter password's hash in it
+  could be cracked; that password must be treated as known). It's the Vercel environment variable
+  `GOLF_ADMIN_KEETO = <salt>:<hash>`, made on your own PC with `node tools/admin-hash.js` (12+ characters, typed
+  hidden). `adminCred(id)` reads it; until it's set, signing in as Keeto answers 503 and nobody can.
+- Admin sessions are stored as `keeto#<credential fingerprint>` (`sessionValue()`), and `sessionId()` refuses an admin
+  session whose fingerprint isn't the current credential's, so changing the password signs out every old admin
+  session (including any made with the old password).
+- The client trusts only the server: `adminOk` is set from the `login` / `load` answers of this visit, never from the
+  browser's saved `golfSession` (anyone could edit that); a stale saved flag is corrected on load.
+- Checked: signing up "keeto" / "KEETO" / "  Keeto  " is refused; the old password fails; look-alike names ("Keeto2",
+  "Kee to") are ordinary profiles; accented look-alikes are refused by the name rules; saving `admin: true` in a
+  career does nothing; a faked admin flag in the browser shows no developer tools.
 
 ### M2 — Handicaps (S) — ✅ built 2026-11-18
 

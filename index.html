@@ -912,6 +912,12 @@
       padding-bottom: 8px;
     }
 
+    /* the map is for full swings: the hole's, or the driving range's (not the practice greens) */
+    body:not(.hole).putt #mapCard,
+    body:not(.hole).chip #mapCard {
+      display: none;
+    }
+
     /* ---- test round + scorecard ---- */
     body:not(.round) .only-round {
       display: none !important;
@@ -1733,6 +1739,56 @@
     .bag-cmp span.hint {
       margin-left: auto;
       color: var(--dim);
+    }
+
+    /* the demo's other numbers, against yours */
+    .bag-stats {
+      flex-basis: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px 12px;
+      margin-top: 4px;
+      padding-top: 5px;
+      border-top: 1px dashed rgba(255, 224, 102, .25);
+    }
+
+    .bag-stat {
+      display: grid;
+      grid-template-columns: 62px 1fr auto;
+      align-items: baseline;
+      gap: 4px;
+      font-size: 11.5px;
+    }
+
+    .bag-stat i {
+      font-style: normal;
+      font-size: 10px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    .bag-stat span {
+      color: #e8eef5;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bag-stat b {
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      color: var(--dim);
+    }
+
+    .bag-stat b.up {
+      color: #5ee08a;
+    }
+
+    .bag-stat b.dn {
+      color: var(--red);
+    }
+
+    .bag-stat b.nt {
+      color: var(--cyan);
     }
 
     .bag-row.snapped span,
@@ -4689,7 +4745,7 @@
   <button id="btnTips" title="Caddie tips: how the wind, your shot shape, your lie and the difficulty work (I)">💡 <span id="btnTipsTxt">Caddie tips</span> <kbd>I</kbd></button>
 
   <div id="leftcol">
-    <div id="mapCard" class="card only-hole">
+    <div id="mapCard" class="card">
       <div class="card-h">
         <span id="mapTitle">Hole 1 · Par 5</span>
         <span class="tag" id="mapTag"></span>
@@ -7085,7 +7141,7 @@
       // ---- shot tracer: a neon tube with an additive glow, plus a 1-px line so it stays visible from the tee
       class Tracer {
         constructor(color, thin = 1) {      // thin < 1: a slimmer tube for short shots seen through a zoomed lens (chips)
-          this.max = 1500; this.R = 6; this.n = 0; this.pts = []; this.thin = thin;
+          this.max = 1500; this.R = 6; this.n = 0; this.pts = []; this.thin = thin; this.color = color;
           const idx = new Uint32Array((this.max - 1) * this.R * 6);
           for (let i = 0, o = 0; i < this.max - 1; i++) for (let k = 0; k < this.R; k++) {
             const a = i * this.R + k, b = i * this.R + (k + 1) % this.R, c = a + this.R, d = b + this.R;
@@ -8654,6 +8710,9 @@
       const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
       const lsSet = (k, v) => { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* storage blocked */ } };
       let session = null;
+      // admin (the developer tools): only what the SERVER said in this visit (sign-in or load), never the copy saved in the
+      // browser, which anyone could edit. Only the profile Keeto is an admin (api/_admins.js).
+      let adminOk = false;
       try { session = JSON.parse(lsGet('golfSession') || 'null'); } catch { session = null; }
       let playMode = lsGet('golfMode') || (lsGet(CAREER.key) ? 'local' : '');           // (a career from before profiles: on this PC)
       const careerKey = () => (session ? `golfCareer_p_${session.id}` : CAREER.key);
@@ -8699,7 +8758,7 @@
       function setSync(s) {
         sync.state = s;
         const el = $('chSync');
-        el.textContent = !session ? 'Playing on this PC only' : `Signed in as ${session.name}${session.admin ? ' 👑 admin' : ''} · ${{ ok: '✓ saved', saving: 'saving…', offline: '⚠ not synced (offline) — will retry', signedout: '⚠ signed out elsewhere — switch player to sign in again', '': '✓' }[s] || ''}`;
+        el.textContent = !session ? 'Playing on this PC only' : `Signed in as ${session.name}${adminOk ? ' 👑 admin' : ''} · ${{ ok: '✓ saved', saving: 'saving…', offline: '⚠ not synced (offline) — will retry', signedout: '⚠ signed out elsewhere — switch player to sign in again', '': '✓' }[s] || ''}`;
         el.className = s === 'ok' ? 'ok' : s === 'offline' || s === 'signedout' ? 'bad' : '';
       }
       function queueSync(delay = 1200) { clearTimeout(sync.timer); sync.timer = setTimeout(() => syncNow(), delay); }
@@ -8743,8 +8802,11 @@
         if (!session || round.on) return;
         try {
           const r = await profileApi('load');
-          if (r.status === 401) return setSync('signedout');
-          if (r.status === 200 && session.admin !== !!r.data.admin) { session.admin = !!r.data.admin; lsSet('golfSession', JSON.stringify(session)); }
+          if (r.status === 401) { if (adminOk) { adminOk = false; applyDevTools(); } return setSync('signedout'); }
+          if (r.status === 200) {                            // the server says whether this is the admin
+            if (adminOk !== !!r.data.admin) { adminOk = !!r.data.admin; applyDevTools(); if (homeOpen) renderHome(); updateMeChip(); }
+            if (session.admin !== adminOk) { session.admin = adminOk; lsSet('golfSession', JSON.stringify(session)); }
+          }
           if (r.status !== 200 || !r.data.career) return setSync(r.status === 200 ? '' : 'offline');
           if (!career || r.data.ver > sync.ver) {
             if (career && sync.dirty) mergeServer(r.data.career, r.data.ver);
@@ -9003,6 +9065,7 @@
         catch { r = { status: 0, data: { error: 'Can\'t reach the profile server (it runs on the deployed site)' } }; }
         if (r.status !== 200) return r.data.error || `Something went wrong (${r.status})`;
         session = { token: r.data.token, id: r.data.name.toLowerCase(), name: r.data.name, admin: !!r.data.admin };
+        adminOk = !!r.data.admin;
         lsSet('golfSession', JSON.stringify(session)); playMode = 'profile'; lsSet('golfMode', 'profile');
         lsSet('golfLastProfile', session.id);                // listed first on this PC's home screen
         career = upgradeCareer(r.data.career) || newCareer(r.data.name);
@@ -9012,7 +9075,7 @@
         if (bring && local) lsSet(CAREER.key, null);          // moved into the profile, not copied
         fr.list = []; fr.players = []; fr.loaded = 0;
         applyDevTools();
-        updateCareerUI();
+        updateCareerUI(); setSync(sync.dirty ? 'saving' : 'ok');
         return '';
       }
       // sign out (or stop playing this PC's career) and ask who's playing
@@ -9024,7 +9087,7 @@
           if (sync.dirty) await syncNow();
           profileApi('logout').catch(() => { /* fine */ });
         }
-        session = null; lsSet('golfSession', null); playMode = ''; lsSet('golfMode', null);
+        session = null; adminOk = false; lsSet('golfSession', null); playMode = ''; lsSet('golfMode', null);
         career = null; Object.assign(sync, { ver: 0, base: null, dirty: false, state: '' });
         updateCareerUI(); siMode = 'in';
         applyDevTools();
@@ -9723,7 +9786,7 @@
       const GAME_NAME = 'Back Nine Hustle';
       let homeOpen = false, homeSel = '';
       const roster = { list: [], loaded: false, err: '' };
-      const devOn = () => !!(session && session.admin) && lsGet('golfDevTools') !== 'off';
+      const devOn = () => !!session && adminOk && lsGet('golfDevTools') !== 'off';
       function applyDevTools() {
         const on = devOn();
         document.body.classList.toggle('dev', on);
@@ -9771,12 +9834,12 @@
       function renderHome() {
         const home = $('home'), signed = homeSigned();
         home.classList.toggle('who', !signed); home.classList.toggle('menu', signed);
-        home.classList.toggle('admin', !!(session && session.admin));
+        home.classList.toggle('admin', !!session && adminOk);
         setText('hmTitle', GAME_NAME);
         if (!signed) return renderRoster();
         const c = career, name = session ? session.name : c ? c.name : 'Guest';
         const h = c ? handicapOf(c) : null, rec = session && c ? h2h(null) : null;
-        $('hmMe').innerHTML = `${avatarHTML(name)}<div><b>${name}</b>${session && session.admin ? ' <span title="admin">👑</span>' : ''}<div class="hm-kpis">`
+        $('hmMe').innerHTML = `${avatarHTML(name)}<div><b>${name}</b>${session && adminOk ? ' <span title="admin">👑</span>' : ''}<div class="hm-kpis">`
           + (c ? `<span>Cash<em class="cash">${money(c.cash)}</em></span><span>Handicap<em>${h === null ? `— (${(c.rounds || []).length}/${HCP.min} rounds)` : fmtHcp(h)}</em></span>`
             + `<span>Circuit<em>${CAREER.tiers[c.tier || 1]}</em></span>${rec && rec.n ? `<span>vs friends<em>${rec.w}–${rec.l}–${rec.h}</em></span>` : ''}`
             + (collectionOf(c.trophies).value ? `<span>🏆 Collection<em>${money(collectionOf(c.trophies).value)}</em></span>` : '')
@@ -9878,7 +9941,7 @@
         el.style.display = name ? '' : 'none';
         if (!name) return;
         const h = career ? handicapOf(career) : null;
-        el.innerHTML = `${avatarHTML(name)}<div><b>${name}${session && session.admin ? ' 👑' : ''}</b>`
+        el.innerHTML = `${avatarHTML(name)}<div><b>${name}${session && adminOk ? ' 👑' : ''}</b>`
           + `<i>${career ? `<span class="cash">${money(career.cash)}</span>${h !== null ? ` · hcp ${fmtHcp(h)}` : ''}` : 'Guest'}</i></div>`;
       }
       // the area tabs: the practice areas and a hole (a round plays in order, so it has no tabs)
@@ -11518,16 +11581,39 @@
           g.strokeStyle = '#35e0ff'; g.lineWidth = 1.5; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(bx, by); g.lineTo(X(m.x, m.z), Y(m.x, m.z)); g.stroke(); g.setLineDash([]);
           g.fillStyle = '#35e0ff'; g.beginPath(); g.arc(X(m.x, m.z), Y(m.x, m.z), 3, 0, 7); g.fill();
         }
-        if (!onGreenView() && !hp.done && state.view !== 'flight') {                              // aim line: tick at carry, end at total + landing area
+        if (!onGreenView() && !hp.done && state.view !== 'flight') drawShotPreview(g, X, Y, hp.ball);     // aim line: tick at carry, end at total + landing area
+        if (shot && !shot.done) { const s = shotHolePos(); g.fillStyle = '#ff3ea5'; g.beginPath(); g.arc(X(s.x, s.z), Y(s.x, s.z), 2.5, 0, 7); g.fill(); }
+        const px = X(hole.pin.x, hole.pin.z), py = Y(hole.pin.x, hole.pin.z);
+        g.strokeStyle = '#fff'; g.lineWidth = 1; g.beginPath(); g.moveTo(px, py); g.lineTo(px, py - 9); g.stroke();
+        g.fillStyle = '#ff3b3b'; g.fillRect(px, py - 9, 6, 4);
+        g.fillStyle = '#ffffff'; g.strokeStyle = '#0b1016'; g.lineWidth = 1.5; g.beginPath(); g.arc(bx, by, 3.5, 0, 7); g.fill(); g.stroke();
+        drawMapWind(g);
+        drawMapZoomLabel(g, W, H, ['Whole hole', 'Your shot', 'Landing'][hp.done ? 0 : hp.mapZoom]);
+        holeMapText();
+      }
+      // which zoom the map is on, bottom right (click the map, or M, to cycle)
+      function drawMapZoomLabel(g, W, H, name) {
+        const lbl = `${name} · click to zoom`;
+        g.save(); g.font = '600 9.5px "Segoe UI", system-ui, sans-serif';
+        const tw = g.measureText(lbl).width + 12;
+        g.fillStyle = 'rgba(9, 13, 19, .78)'; g.beginPath(); g.roundRect(W - tw - 6, H - 22, tw, 16, 5); g.fill();
+        g.fillStyle = '#c9d4e0'; g.textBaseline = 'middle'; g.fillText(lbl, W - tw, H - 13.5);
+        g.restore();
+      }
+      // the shot that's set up, on a map (the hole's or the range's): its path (curved for a draw / fade), a tick at the carry
+      // (or the carry band from a rough lie), and the landing area. ball = where it's hit from, in the map's world frame.
+      function drawShotPreview(g, X, Y, ball) {
+        const bx = X(ball.x, ball.z), by = Y(ball.x, ball.z);
+        {
           const r = lieRead(state.club), a = heading(state.aim), tot = r.totalMid * YD, car = r.carryMid * YD;
-          const ex = hp.ball.x + a.x * tot, ez = hp.ball.z + a.z * tot, cx = hp.ball.x + a.x * car, cz = hp.ball.z + a.z * car;
-          const x1 = X(hp.ball.x + a.x * r.carryLo * YD, hp.ball.z + a.z * r.carryLo * YD), y1 = Y(hp.ball.x + a.x * r.carryLo * YD, hp.ball.z + a.z * r.carryLo * YD);
+          const ex = ball.x + a.x * tot, ez = ball.z + a.z * tot, cx = ball.x + a.x * car, cz = ball.z + a.z * car;
+          const x1 = X(ball.x + a.x * r.carryLo * YD, ball.z + a.z * r.carryLo * YD), y1 = Y(ball.x + a.x * r.carryLo * YD, ball.z + a.z * r.carryLo * YD);
           // the shot's path (curved for a draw / fade), scaled to the read so a rough lie's fuzz is not given away
           const st = stockShot(state.club), k2 = st.total > 0 ? r.totalMid / st.total : 1, tv = new THREE.Vector3();
           // the landing area: where this shot is likely to finish (see landSpread), scaled to the read like the path; from
           // a rough lie the read's own uncertainty stretches it down the line
           {
-            const la = landArea(), M = (x, z) => ({ x: X(x, z), y: Y(x, z) });
+            const la = landArea(ball), M = (x, z) => ({ x: X(x, z), y: Y(x, z) });
             const c = M(la.c.x, la.c.z), p1 = M(la.c.x + la.u.x, la.c.z + la.u.z), p2 = M(la.c.x + la.v.x, la.c.z + la.v.z);
             const u = { x: p1.x - c.x, y: p1.y - c.y }, v = { x: p2.x - c.x, y: p2.y - c.y };
             const grow = (w) => { const L = Math.hypot(w.x, w.y); return L < 4 ? (L > 0.01 ? { x: w.x / L * 4, y: w.y / L * 4 } : { x: 4, y: 0 }) : w; };    // never smaller than a dot
@@ -11542,12 +11628,12 @@
             g.restore();
           }
           g.strokeStyle = '#ffffff'; g.lineWidth = 1.5; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(bx, by);
-          if (st.track) for (const p of st.track) { toWorld(tv.set(p.x * k2, 0, p.z * k2)); g.lineTo(X(hp.ball.x + tv.x, hp.ball.z + tv.z), Y(hp.ball.x + tv.x, hp.ball.z + tv.z)); }
+          if (st.track) for (const p of st.track) { toWorld(tv.set(p.x * k2, 0, p.z * k2)); g.lineTo(X(ball.x + tv.x, ball.z + tv.z), Y(ball.x + tv.x, ball.z + tv.z)); }
           else g.lineTo(X(ex, ez), Y(ex, ez));
           g.stroke(); g.setLineDash([]);
           if (!r.exact) {
             const cHi = r.carryHi * YD;
-            const lx = x1, ly = y1, hx = X(hp.ball.x + a.x * cHi, hp.ball.z + a.z * cHi), hy = Y(hp.ball.x + a.x * cHi, hp.ball.z + a.z * cHi);
+            const lx = x1, ly = y1, hx = X(ball.x + a.x * cHi, ball.z + a.z * cHi), hy = Y(ball.x + a.x * cHi, ball.z + a.z * cHi);
             g.strokeStyle = '#ffc24a'; g.lineWidth = 3; g.beginPath(); g.moveTo(lx, ly); g.lineTo(hx, hy); g.stroke();
             g.fillStyle = '#ffc24a';
             g.beginPath(); g.arc(lx, ly, 2, 0, 7); g.arc(hx, hy, 2, 0, 7); g.fill();
@@ -11555,22 +11641,79 @@
             g.fillStyle = '#ffffff'; g.beginPath(); g.arc(X(cx, cz), Y(cx, cz), 2.5, 0, 7); g.fill();
           }
         }
-        if (shot && !shot.done) { const s = shotHolePos(); g.fillStyle = '#ff3ea5'; g.beginPath(); g.arc(X(s.x, s.z), Y(s.x, s.z), 2.5, 0, 7); g.fill(); }
-        const px = X(hole.pin.x, hole.pin.z), py = Y(hole.pin.x, hole.pin.z);
-        g.strokeStyle = '#fff'; g.lineWidth = 1; g.beginPath(); g.moveTo(px, py); g.lineTo(px, py - 9); g.stroke();
-        g.fillStyle = '#ff3b3b'; g.fillRect(px, py - 9, 6, 4);
-        g.fillStyle = '#ffffff'; g.strokeStyle = '#0b1016'; g.lineWidth = 1.5; g.beginPath(); g.arc(bx, by, 3.5, 0, 7); g.fill(); g.stroke();
-        drawMapWind(g);
-        const level = hp.done ? 0 : hp.mapZoom;
-        // which zoom this is, bottom right (click the map, or M, to cycle)
-        {
-          const lbl = ['Whole hole', 'Your shot', 'Landing'][level] + ' · click to zoom';
-          g.save(); g.font = '600 9.5px "Segoe UI", system-ui, sans-serif';
-          const tw = g.measureText(lbl).width + 12;
-          g.fillStyle = 'rgba(9, 13, 19, .78)'; g.beginPath(); g.roundRect(W - tw - 6, H - 22, tw, 16, 5); g.fill();
-          g.fillStyle = '#c9d4e0'; g.textBaseline = 'middle'; g.fillText(lbl, W - tw, H - 13.5);
-          g.restore();
+      }
+      // ---- the RANGE's minimap (user request, 2026-11-19): the same card as on a hole, for the driving range: the field
+      // with yardage arcs, the five target greens (the one you're aiming at ringed), the shot that's set up (path, carry,
+      // landing area: drawShotPreview), where your recent shots finished (pink; gold for a pro-shop demo), and the wind.
+      // Zoom: whole range → your shot → landing (click the map or M).
+      let rangeZoom = 0;
+      const RANGE_TEE = { x: 0, z: 0 };
+      function rangeMapTransform() {
+        if (!rangeZoom) return makeMapTransform(-14, 305 * YD, -88, 88);
+        const r = lieRead(state.club), a = heading(state.aim), pts = [];
+        const la = landArea(RANGE_TEE), ends = [1, -1].flatMap((s) => [{ x: la.c.x + s * la.u.x, z: la.c.z + s * la.u.z }, { x: la.c.x + s * la.v.x, z: la.c.z + s * la.v.z }]);
+        const tot = Math.max(r.totalMid, r.totalHi) * YD, cLo = r.carryLo * YD, pin = PINS[state.pin].pos;
+        if (rangeZoom === 1) pts.push(RANGE_TEE, { x: a.x * tot, z: a.z * tot }, ...ends);
+        else pts.push({ x: a.x * cLo, z: a.z * cLo }, { x: a.x * tot, z: a.z * tot }, ...ends);
+        if (Math.hypot(pin.x - a.x * tot, pin.z - a.z * tot) <= 40 * YD) pts.push(pin);
+        let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+        for (const p of pts) { u0 = Math.min(u0, -p.z); u1 = Math.max(u1, -p.z); v0 = Math.min(v0, p.x); v1 = Math.max(v1, p.x); }
+        const pad = rangeZoom === 1 ? 16 : 12, minU = rangeZoom === 1 ? 70 : 46, minV = minU * (MAP_H / MAP_W);
+        u0 -= pad; u1 += pad; v0 -= pad; v1 += pad;
+        if (u1 - u0 < minU) { const c = (u0 + u1) / 2; u0 = c - minU / 2; u1 = c + minU / 2; }
+        if (v1 - v0 < minV) { const c = (v0 + v1) / 2; v0 = c - minV / 2; v1 = c + minV / 2; }
+        return makeMapTransform(u0, u1, v0, v1);
+      }
+      function drawRangeMap() {
+        const g = mapCtx, { W, H, k, X, Y } = rangeMapTransform();
+        g.clearRect(0, 0, W, H);
+        g.fillStyle = '#2f6b2a'; g.fillRect(0, 0, W, H);
+        for (let d = 0; d < 320; d += 10) {                  // mowing stripes, 10 yds apart
+          if ((d / 10) % 2) continue;
+          const x0 = X(0, -d * YD), x1 = X(0, -(d + 10) * YD);
+          g.fillStyle = 'rgba(255,255,255,.035)'; g.fillRect(Math.min(x0, x1), 0, Math.abs(x1 - x0), H);
         }
+        const tx = X(0, 0), ty = Y(0, 0);
+        g.save(); g.strokeStyle = 'rgba(255,255,255,.22)'; g.fillStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1; g.setLineDash([2, 4]);
+        g.font = '600 9px "Segoe UI", system-ui, sans-serif'; g.textAlign = 'center';
+        for (let d = 50; d <= 300; d += 50) {                // yardage arcs from the tee
+          const R = d * YD * k;
+          g.beginPath(); g.arc(tx, ty, R, -0.5, 0.5); g.stroke();
+          const lx = tx + R * Math.cos(-0.44), ly = ty + R * Math.sin(-0.44);
+          if (lx > 8 && lx < W - 8 && ly > 10 && ly < H - 6) g.fillText(String(d), lx, ly);
+        }
+        g.restore();
+        g.fillStyle = '#4f9a50'; g.fillRect(tx - 5, ty - 8, 9, 16);      // the tee box
+        PINS.forEach((p, i) => {                             // the target greens
+          const rad = 8 + i * 1.5, cx = X(p.pos.x, p.pos.z), cy = Y(p.pos.x, p.pos.z), sel = i === state.pin;
+          g.fillStyle = '#3f8a33'; g.beginPath(); g.arc(cx, cy, Math.max(2.5, (rad + 3) * k), 0, 7); g.fill();
+          g.fillStyle = '#86d96a'; g.beginPath(); g.arc(cx, cy, Math.max(2, rad * k), 0, 7); g.fill();
+          if (sel) { g.strokeStyle = '#ffe066'; g.lineWidth = 1.5; g.beginPath(); g.arc(cx, cy, Math.max(5, (rad + 5) * k), 0, 7); g.stroke(); }
+          g.strokeStyle = '#fff'; g.lineWidth = 1; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx, cy - 8); g.stroke();
+          g.fillStyle = '#ff3b3b'; g.fillRect(cx, cy - 8, 5, 3.5);
+          if (rangeZoom === 0 || sel) { g.fillStyle = sel ? '#ffe066' : 'rgba(255,255,255,.7)'; g.font = '700 9px "Segoe UI", system-ui, sans-serif'; g.textAlign = 'left'; g.fillText(String(p.yd), cx + 7, cy + 3); }
+        });
+        if (state.view !== 'flight' && !swing.active) drawShotPreview(g, X, Y, RANGE_TEE);
+        trails.forEach((t, i) => {                           // where recent shots finished (older ones fainter)
+          const P = t.pts, j = P.length - 3;
+          if (j < 0 || (shot && !shot.done && t === shot.tracer)) return;
+          const c = '#' + new THREE.Color(t.color).getHexString(), last = i === trails.length - 1;
+          g.globalAlpha = last ? 1 : 0.45 + 0.1 * i;
+          g.fillStyle = c; g.strokeStyle = '#0b1016'; g.lineWidth = 1;
+          g.beginPath(); g.arc(X(P[j], P[j + 2]), Y(P[j], P[j + 2]), last ? 3.5 : 2.5, 0, 7); g.fill(); if (last) g.stroke();
+        });
+        g.globalAlpha = 1;
+        if (shot && !shot.done && shot.flight) { const p = shot.flight.p; g.fillStyle = shot.tracer ? '#' + new THREE.Color(shot.tracer.color).getHexString() : '#ff3ea5'; g.beginPath(); g.arc(X(p.x, p.z), Y(p.x, p.z), 3, 0, 7); g.fill(); }
+        g.fillStyle = '#ffffff'; g.strokeStyle = '#0b1016'; g.lineWidth = 1.5; g.beginPath(); g.arc(tx, ty, 3.5, 0, 7); g.fill(); g.stroke();
+        drawMapWind(g);
+        drawMapZoomLabel(g, W, H, ['Whole range', 'Your shot', 'Landing'][rangeZoom]);
+        setText('mapTitle', 'Range map');
+        const pin = PINS[state.pin];
+        setText('mapTag', `${pin.yd} yd target`);
+      }
+      // the hole's words around the map: the panel title, the distance tag, the shot count and the round's score
+      function holeMapText() {
+        setText('mapTitle', `${HOLE.name} · Par ${HOLE.par}`);       // (the range's map may have had the card)
         setText('tbPinL', isPutt() ? 'Hole' : 'To the pin'); setText('panelTitle', `⛳ ${HOLE.name} · Par ${HOLE.par}`);
         setText('mapTag', hp.done ? `${hp.strokes} strokes` : isPutt() && markRead && !puttRun ? `${fmtBandFt(markRead.cupLo, markRead.cupHi)} ft to the pin`
           : isChip() && chipRead ? `${fmtBandYd(chipRead.pinLo, chipRead.pinHi)} yds to the pin` : `${fmtToPin(pinDist())} to the pin`);
@@ -11640,7 +11783,7 @@
       function landSpread(ci) {
         const club = CLUBS[ci], teed = isTeed(club), su = setup();
         const env0 = { lie: state.lie, slope: state.slope, power: state.power, dex: state.dex, composure: state.composure, badStreak: state.badStreak, teed };
-        const key = [ci, JSON.stringify(su), JSON.stringify(env0)].join('|');
+        const key = [ci, club.model || '', JSON.stringify(su), JSON.stringify(env0)].join('|');     // (the model: a demo shares its slot)
         if (spreadCache.has(key)) return spreadCache.get(key);
         const rnd = rng32(90210), bell = () => rnd() + rnd() - 1, P = [];
         for (let i = 0; i < SPREAD.n; i++) {
@@ -11661,13 +11804,13 @@
       }
       // The minimap's landing area in WORLD coordinates: centre and the two axis vectors, scaled to the read like the path
       // (k2), and stretched down the line by a rough lie's read uncertainty.
-      function landArea() {
+      function landArea(ball = hp.ball) {                    // (ball: where it's hit from — the hole's ball, or the range's tee)
         const r = lieRead(state.club), st = stockShot(state.club), k2 = st.total > 0 ? r.totalMid / st.total : 1;
         const sp = landSpread(state.club), tot = r.totalMid * YD;
         const [a1, a2] = spreadAxes(sp.sxx, sp.szz + (r.exact ? 0 : (r.half * tot / 2) ** 2), sp.sxz);
         const tv = new THREE.Vector3(), w = (x, z) => { toWorld(tv.set(x * k2, 0, z * k2)); return { x: tv.x, z: tv.z }; };
         const c = w(sp.mx, sp.mz);
-        return { c: { x: hp.ball.x + c.x, z: hp.ball.z + c.z }, u: w(a1.x, a1.z), v: w(a2.x, a2.z), exact: r.exact };
+        return { c: { x: ball.x + c.x, z: ball.z + c.z }, u: w(a1.x, a1.z), v: w(a2.x, a2.z), exact: r.exact };
       }
       // the 2-sigma axes of a covariance, as two vectors
       function spreadAxes(sxx, szz, sxz) {
@@ -11686,9 +11829,10 @@
         }
         const key = `${ci}|${club.model || ''}|${state.power}|${state.dex}|${bs}|${state.lie}|${teed}|${su.face}|${su.ballPos}|${su.stance}|${su.traj}|${su.spinCtl}`;     // (the model: a demo club and your own share a slot)
         if (!stockCache.has(key)) {
-          const { f, pts } = stockFlightOf(ci, su, bs, bs === 1);
+          const { r, f, pts } = stockFlightOf(ci, su, bs, bs === 1);
           if (stockCache.size > 600) stockCache.clear();
-          stockCache.set(key, { carry: f.carry / YD, total: Math.hypot(f.p.x, f.p.z) / YD, side: f.p.x / YD, track: pts });
+          stockCache.set(key, { carry: f.carry / YD, total: Math.hypot(f.p.x, f.p.z) / YD, side: f.p.x / YD, track: pts,
+            speed: r.ballSpeed, vla: r.vla, spin: r.spin, apex: f.apex / YD });         // (the launch numbers too: the demo comparison)
         }
         return stockCache.get(key);
       }
@@ -11837,13 +11981,37 @@
         const own = career.bag[i], c = CLUBS[i], sel = i === state.club;
         const a = withClubModel(i, own, () => lieRead(i)), b = withClubModel(i, demo.model, () => lieRead(i));
         const d = (x, y) => { const v = Math.round(y - x); return `<b class="${v > 0 ? 'up' : v < 0 ? 'dn' : ''}">${v > 0 ? '+' : v < 0 ? '−' : '±'}${Math.abs(v)}</b>`; };
+        // the rest of the numbers: the same stock shot's launch, and the spread of 36 ordinary swings (no wind)
+        const nums = (id) => withClubModel(i, id, () => {
+          const s = stockShot(i), sp = landSpread(i), k = 2 * SPREAD.sigmas / YD;
+          return { speed: s.speed, vla: s.vla, spin: s.spin, apex: s.apex, roll: s.total - s.carry, side: s.side, wide: Math.sqrt(sp.sxx) * k, deep: Math.sqrt(sp.szz) * k };
+        });
+        const A = nums(own), Bn = nums(demo.model);
+        // a cell: the demo's value, and the change from yours (green / red where one way is better, blue where it's a trade-off)
+        const cell = (label, va, vb, fmt, unit, better, tip) => {
+          const dv = vb - va, step = /^0(\.0)?$/.test(fmt(Math.abs(dv))) ? 0 : dv, good = better === 'up' ? dv > 0 : better === 'down' ? dv < 0 : null;
+          const cls = !step ? '' : good === null ? 'nt' : good ? 'up' : 'dn';
+          return `<div class="bag-stat" title="${tip}: yours ${fmt(va)}${unit} · demo ${fmt(vb)}${unit}"><i>${label}</i><span>${fmt(vb)}${unit}</span>`
+            + `<b class="${cls}">${step ? `${dv > 0 ? '+' : '−'}${fmt(Math.abs(dv))}` : '±0'}</b></div>`;
+        };
+        const lr = (v) => (Math.abs(v) < 0.5 ? 'straight' : `${Math.abs(v).toFixed(0)} yd ${v > 0 ? 'R' : 'L'}`);
+        const r0 = (v) => Math.round(v).toLocaleString(), r1 = (v) => v.toFixed(1);
+        const curveCell = `<div class="bag-stat" title="Where a straight swing finishes, off your aim line: yours ${lr(A.side)} · demo ${lr(Bn.side)}"><i>Curve</i><span>${lr(Bn.side)}</span>`
+          + `<b class="${Math.abs(Math.abs(Bn.side) - Math.abs(A.side)) < 0.5 ? '' : Math.abs(Bn.side) < Math.abs(A.side) ? 'up' : 'dn'}">${Math.abs(Math.abs(Bn.side) - Math.abs(A.side)) < 0.5 ? 'same' : Math.abs(Bn.side) < Math.abs(A.side) ? 'straighter' : 'more'}</b></div>`;
+        const stats = `<div class="bag-stats">${cell('Ball speed', A.speed, Bn.speed, r0, ' mph', 'up', 'Ball speed off the face')}`
+          + `${cell('Launch', A.vla, Bn.vla, r1, '°', null, 'Launch angle: higher flies higher and lands softer')}`
+          + `${cell('Spin', A.spin, Bn.spin, r0, '', null, 'Backspin (rpm): more stops it quicker, less runs it out')}`
+          + `${cell('Apex', A.apex, Bn.apex, r0, ' yd', null, 'The highest point of the flight')}`
+          + `${cell('Roll', A.roll, Bn.roll, r0, ' yd', null, 'How far it runs after landing (total − carry)')}${curveCell}`
+          + `${cell('Spread', A.wide, Bn.wide, r0, ' yd', 'down', 'How wide ordinary swings scatter, side to side (about 85% of shots): smaller is more forgiving')}`
+          + `${cell('Depth', A.deep, Bn.deep, r0, ' yd', 'down', 'How much the distance varies, short to long (about 85% of shots): smaller is more consistent')}</div>`;
         const short = (id) => CLUB_MODELS[id].name.replace(/ \(\d{4}\)/, '');
         return `<div class="bag-row bag-own${sel && !demo.on ? ' on' : ''}" data-i="${i}" data-pick="own" title="Your ${modelName(own)} — click to hit it"><kbd>${CLUB_KEYS[pos] || '·'}</kbd>`
           + `<span>${c.name} <em class="bag-tag">yours · ${short(own)}</em></span><b>${a.carryTxt}</b><i>${a.totalTxt}</i></div>`
           + `<div class="bag-row bag-demo${sel && demo.on ? ' on' : ''}" data-i="${i}" data-pick="demo" title="${modelName(demo.model)}: ${CLUB_MODELS[demo.model].note} — click to hit it"><kbd>⇄</kbd>`
           + `<span>${c.name} <em class="bag-tag demo">demo · ${short(demo.model)}</em></span><b>${b.carryTxt}</b><i>${b.totalTxt}</i></div>`
           + `<div class="bag-cmp"><span>Demo vs yours: carry ${d(a.carryMid, b.carryMid)} · total ${d(a.totalMid, b.totalMid)} yds</span>`
-          + `<span class="hint">${sel ? `${CLUB_KEYS[pos] || 'Click'} ${CLUB_KEYS[pos] ? 'again ' : ''}swaps · hitting ${demo.on ? 'the demo' : 'yours'}` : 'click a row to hit it'}</span></div>`;
+          + `<span class="hint">${sel ? `${CLUB_KEYS[pos] || 'Click'} ${CLUB_KEYS[pos] ? 'again ' : ''}swaps · hitting ${demo.on ? 'the demo' : 'yours'}` : 'click a row to hit it'}</span>${stats}</div>`;
       }
       function setPin(i) { state.pin = (i + PINS.length) % PINS.length; state.aim = PINS[state.pin].brg; }
       function togglePractice() {
@@ -11910,6 +12078,7 @@
         }
         if (c === 'KeyN' && !e.repeat && hp.on && !swing.active) return selectHole((hp.holeIdx + 1) % HOLES.length);
         if (c === 'KeyM' && !e.repeat && hp.on) { hp.mapZoom = (hp.mapZoom + 1) % 3; return; }
+        if (c === 'KeyM' && !e.repeat && !hp.on && state.mode === 'range') { rangeZoom = (rangeZoom + 1) % 3; return; }
         if (c === 'KeyG' && !e.repeat) { if (!hp.on) setMode(isPutt() ? 'range' : 'putt'); return; }      // on the hole the game decides when you putt
         if (isPutt()) return puttKey(c, e);
         if (isChip() && chipKey(c, e)) return;
@@ -12132,7 +12301,9 @@
         $('scNext').addEventListener('click', (e) => { scorecardNext(); e.currentTarget.blur(); });
         $('scClose').addEventListener('click', (e) => { scorecardClose(); e.currentTarget.blur(); });
         $('inHole').addEventListener('change', (e) => { selectHole(+e.target.value); });
-        $('holeMap').addEventListener('click', () => { if (hp.on && !hp.done) hp.mapZoom = (hp.mapZoom + 1) % 3; });      // whole hole -> shot -> landing -> ...
+        $('holeMap').addEventListener('click', () => {       // whole hole (range) -> shot -> landing -> ...
+          if (hp.on) { if (!hp.done) hp.mapZoom = (hp.mapZoom + 1) % 3; } else rangeZoom = (rangeZoom + 1) % 3;
+        });
         bind('inComp', (v) => { setComposure(+v); });
         bind('inSwingPx', (v) => { state.cal.swingPx = +v; saveCal(); });
         bind('inVTarget', (v) => { state.cal.vTarget = +v; saveCal(); });
@@ -12974,6 +13145,7 @@
         updateCamera(dt, now);
         if (isPutt()) updatePuttHUD(); else updateHUD();
         if (hp.on) drawHoleMap();
+        else if (state.mode === 'range' && !document.body.classList.contains('home-on')) drawRangeMap();     // the range's own map
         if (tipsAvail()) { updateTips(now); updateTipsButton(); }
         else { document.body.classList.remove('tipsNew'); if (tipsOn) setTips(false); }
         drawSwingFx();
