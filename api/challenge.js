@@ -29,14 +29,8 @@ const KEEP = 60 * 24 * 3600 * 1000;              // finished challenges drop off
 const MAX_ACTIVE = 12;                           // pending + open challenges a player can be in
 const MAX_STAKE = 100000;
 
-// a career's handicap — the same as handicapOf() in index.html and api/profile.js: keep all three alike
-const HCP = { rating: { 1: 0, 2: 1.5, 3: 3 }, recent: 10, best: 4, factor: 0.96, min: 3 };
-function handicapOf(c) {
-  const r = ((c && c.rounds) || []).slice(-HCP.recent);
-  if (r.length < HCP.min) return null;
-  const d = r.map((x) => x.gross - x.par - (HCP.rating[x.tier] || 0)).sort((a, b) => a - b).slice(0, HCP.best);
-  return Math.round((d.reduce((a, b) => a + b, 0) / d.length) * HCP.factor * 10) / 10;
-}
+// a career's handicap: _career.js (shared with api/profile.js, and the same as handicapOf() in index.html)
+const { handicapOf, outcomeFor } = require('./_career');
 // strokes received on each hole: one on every hole whose stroke index is ≤ n, two on the hardest past 9 (same in index.html)
 const holeStrokes = (n) => SI.map((si) => (si <= n ? 1 : 0) + (si <= n - HOLES ? 1 : 0));
 const escrowOf = (ch) => ch.stake * (ch.format === 'skins' ? HOLES : 1);
@@ -129,12 +123,15 @@ async function payOut(ch) {
   for (const p of [ch.from, ch.to]) {
     if (ch.paid[p] || !(ch.held && ch.held[p])) continue;
     const res = ch.result, net = res.net[p];
-    const outcome = res.kind === 'refund' ? 'refunded' : !res.winner ? 'halved' : res.winner === p ? 'won' : res.kind === 'played' ? 'lost' : res.kind === 'expired' ? 'lost (out of time)' : 'lost (forfeit)';
-    await updateCareer(p, (c) => {
-      c.cash = (c.cash || 0) + (res.payout[p] || 0);
-      c.history = c.history || [];
-      c.history.push({ friend: other(ch, p), friendName: ch.names[other(ch, p)], ch: ch.id, format: ch.format, stake: ch.stake, result: `${outcome} · ${res.line}`, net, date: Date.now() });
-    });
+    const outcome = outcomeFor(res, p);
+    // each player on their own (audit 3.2): a failure paying one never stops the other; the unpaid one is retried by
+    // `list` (held but not paid)
+    try {
+      await updateCareer(p, (c) => {
+        c.cash = (c.cash || 0) + (res.payout[p] || 0);
+        c.history.push({ friend: other(ch, p), friendName: ch.names[other(ch, p)], ch: ch.id, format: ch.format, stake: ch.stake, result: `${outcome} · ${res.line}`, net, date: Date.now() });
+      });
+    } catch { continue; }
     ch.paid[p] = true;
     await putCh(ch);
   }

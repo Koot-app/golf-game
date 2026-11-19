@@ -14,11 +14,17 @@
 // (by member) puts the earlier round first. The set is trimmed to the best MAX_KEEP rounds.
 //
 // The scores are submitted by the browser, so a determined player could post a fake one. The checks below stop
-// malformed or impossible rounds and flooding (a few saves per minute per IP), not a careful cheat.
+// malformed or impossible rounds and flooding (a few saves per minute per IP), not a careful cheat; the admin can take
+// a round off the board (POST { action: 'remove', t, id } with the admin's sign-in).
 
 const MAX_KEEP = 1000;
 const TOP_N = 10;
 const RATE_MAX = 5, RATE_WINDOW_S = 60;
+// the test round's holes (index.html HOLES): the only board there is. A score must be one a real round could have
+// (audit 3.6: nine holes-in-one went straight to the top): no better than two under par on any hole (so a hole-in-one
+// only on a par 3), and the round no better than one under par a hole.
+const PARS = [5, 3, 4, 4, 3, 5, 4, 3, 4];
+const PAR = PARS.reduce((a, b) => a + b, 0);
 
 // Vercel may put a custom prefix on the names (e.g. GOLF_KV_REST_API_URL), so look for the pairs by their ending too.
 // A URL and token are only used together when they share the same prefix.
@@ -61,6 +67,7 @@ const isInt = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
 // a signed-in player's round goes on the board under their profile name (taken from their session, never from the
 // request); a guest's under three arcade initials
 const { sessionId } = require('./_redis');
+const { isAdmin } = require('./_admins');
 const PROFILE_NAME = /^[A-Za-z0-9 _-]{3,12}$/;
 
 // Only well-formed fields go out, whatever is in the database.
@@ -69,7 +76,7 @@ function clean(member) {
     const e = JSON.parse(member);
     const okName = e.pro ? PROFILE_NAME.test(e.name) : /^[A-Z0-9]{3}$/.test(e.name);
     if (!okName || !isInt(e.strokes, 1, 999) || !isInt(e.putts, 0, 999) || !isInt(e.par, 1, 999)) return null;
-    return { t: +e.t || 0, name: e.name, pro: !!e.pro, strokes: e.strokes, putts: e.putts, par: e.par, toPar: e.strokes - e.par };
+    return { t: +e.t || 0, id: /^[a-z0-9]{1,8}$/.test(e.id || '') ? e.id : '', name: e.name, pro: !!e.pro, strokes: e.strokes, putts: e.putts, par: e.par, toPar: e.strokes - e.par };
   } catch { return null; }
 }
 
@@ -106,6 +113,18 @@ module.exports = async (req, res) => {
 
     if (req.method === 'POST') {
       const b = await readBody(req);
+      // the admin takes an entry off the board: { action: 'remove', t, id } (its time and id, as the board lists them)
+      if (b && b.action === 'remove') {
+        let me = null;
+        try { me = await sessionId(req); } catch { me = null; }
+        if (!me || !isAdmin(me)) return send(403, { error: 'Only the admin can remove a round' });
+        const key = `golf:lb:${PARS.length}h`;
+        const [all] = await redis([['ZRANGE', key, 0, -1]]);
+        const hit = (all || []).find((m) => { const e = clean(m); return e && e.t === b.t && e.id === b.id; });
+        if (!hit) return send(404, { error: 'That round isn\'t on the board' });
+        const [, top, total] = await redis([['ZREM', key, hit], ['ZRANGE', key, 0, TOP_N - 1], ['ZCARD', key]]);
+        return send(200, { ok: true, top: top.map(clean).filter(Boolean), total });
+      }
       const { strokes, putts, par, holes, scores } = b || {};
       let name = b && b.name, pro = false;
       // signed in: the profile's own name (looked up from the session); a guest: three initials
@@ -121,6 +140,8 @@ module.exports = async (req, res) => {
       if (!Array.isArray(scores) || scores.length !== holes || !scores.every((s) => isInt(s, 1, 40))) return send(400, { error: 'Bad scorecard' });
       if (!isInt(strokes, holes, holes * 40) || scores.reduce((a, s) => a + s, 0) !== strokes) return send(400, { error: 'Scorecard does not add up' });
       if (!isInt(putts, 0, strokes - 1)) return send(400, { error: 'Bad putts' });
+      if (holes !== PARS.length || par !== PAR) return send(400, { error: 'Bad course' });
+      if (scores.some((s, i) => s < Math.max(1, PARS[i] - 2)) || strokes < PAR - PARS.length) return send(400, { error: 'That score isn\'t possible' });
 
       const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
       const rlKey = `golf:rl:${ip}`;

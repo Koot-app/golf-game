@@ -18,7 +18,7 @@ device or a friend's challenge gets involved. Eight findings: 1 critical, 2 high
 | 1.4 | Medium | Reopening the game restarts the hole you were on, wiping its strokes | M |
 | 1.5 | Medium | With two devices, a purchase made on one can be paid for and then lost | M–L |
 | 1.6 | Medium | Server payouts and escrow are two steps; a failure between them pays twice or loses the stake | M |
-| 1.7 | Low | A wall purchase charges the server's price, not the price you confirmed | S |
+| 1.7 | Low | A wall purchase charges the server's price, not the price you confirmed | ✅ Fixed (with 3.5) |
 | 1.8 | Low | Small inconsistencies: green fee when nearly broke, invitational wording | S |
 
 The probe scripts are in `tools/test/` (`money-*.js`). Each one's header says how to run it and what a correct result
@@ -182,6 +182,9 @@ looks like, so they double as regression tests once the fixes are in.
   edits their own save between the two can raise it, up to everything the buyer has.
 - **Evidence:** code path traced.
 - **Fix (S):** send the confirmed price with the request, and refuse if the server's price is different.
+- **✅ Fixed 2026-11-19, with 3.5.** The page sends the price it showed; `buyshow` refuses any other (409 with the
+  real price, and the page reloads their wall). The price now comes from the challenge's record, which the owner
+  can't edit.
 
 ### 1.8 [Low] Small inconsistencies: green fee when nearly broke, invitational wording
 - **Green fee:** in `startMatch` (about line 13056), cash of $1 less than the fee waives the whole fee and you keep
@@ -472,3 +475,271 @@ The probe scripts are `tools/test/sync-*.js`. Each one's header says how to run 
   object under the size limit).
 - **Section 8:** every `careerSave` writes the whole career to this PC's storage twice (the career and the copy from
   its last sync). At 500 matches that is about 275,000 characters, several times a hole.
+
+## Section 3 — Server security (2026-11-19, Fable 5.2)
+
+**Summary.** The basics hold: nobody can act as another player, passwords are hashed and compared safely, `keeto` is
+the only admin and no path can make another one, and there are no secrets in the repo or its history. The problems
+come from one design fact: **the server stores whatever career a browser sends, and then trusts it** when it shows
+that career to other players, computes with it, or prices things from it. Nine findings: 1 critical, 3 high,
+4 medium, 1 low.
+
+| # | Severity | Finding | Fix size |
+|---|---|---|---|
+| 3.1 | Critical | Visiting another player's trophy room can run their script in your browser | ✅ Fixed |
+| 3.2 | High | One player's malformed save takes down the sign-in list and Friends for everyone, and can hold up a payout | ✅ Fixed |
+| 3.3 | High | Anyone can fill the database and overload the shared lists: no cap on profiles or on data read per request | M |
+| 3.4 | High | A friend-challenge card is whatever the browser sends, so a player can post a fake score and take the stake | M–L |
+| 3.5 | Medium | The rivalry wall is built from the owner's own save, so wins and prices can be made up | ✅ Fixed |
+| 3.6 | Medium | Anyone can put fake scores on the shared Top 10 | ✅ Fixed |
+| 3.7 | Medium | Passwords can be 4 characters, and guessing is limited per address only | S |
+| 3.8 | Medium | The admin password's hash is public, so its length is the only protection | S |
+| 3.9 | Low | Smaller gaps (challenge flooding, sign-ins that never end, no security headers, repo files on the live site) | S |
+
+The probes are `tools/test/sec-api.js` (run with `node`, no browser) and `tools/test/sec-wall-xss.js`. Both refuse to
+run against anything but the local dev server.
+
+**Before pushing this section:** the repo is public and the live site serves every file in it, including this one.
+Fix 3.1 (and ideally 3.2) first, then commit the findings and the fixes together. (Done: 3.1, 3.2, 3.5 and 3.6 were
+fixed before this section was first pushed.)
+
+### 3.1 [Critical] Visiting another player's trophy room can run their script in your browser
+- **Where:** `renderTrophies`, the visiting branch (about lines 12267–12277); `rivalItems` (about line 12175);
+  `api/profile.js` `showcase` (about line 174), which passes history text through unchanged.
+- **Scenario:** the rivalry wall of a visited player is drawn from their history: a friend's name, the format and a
+  challenge id go into the page as HTML. The picture of each plaque escapes its text, but the row beside it doesn't.
+  Because a career is whatever its owner's browser saved, the owner controls those strings.
+  1. An attacker makes a profile and saves a career whose history has markup in a friend's name.
+  2. Anyone who opens the attacker's trophy room from Friends runs that markup as script, inside the game's page.
+  3. The script can read the visitor's sign-in token and then do anything the visitor can: overwrite their career,
+     send challenges, or "buy" a made-up trophy off the attacker's wall with all the visitor's cash (see 3.5).
+
+  If the admin visits, it's the admin's sign-in that is taken.
+- **Evidence:** `sec-wall-xss.js` (a harmless marker; it sends nothing anywhere):
+  ```
+  inTheirTrophyRoom true
+  scriptFromTheirName "script ran; token readable: true"
+  htmlFromFormat true · htmlFromChallengeId true
+  ```
+- **Fix (S–M):**
+  - **Client:** escape every value from another player before it goes into HTML (one shared helper that also escapes
+    quotes), and only use a challenge id that looks like one (16 hex characters) and a format the game knows.
+  - **Server:** `showcase` should send only clean values: names that match the profile-name rule, known formats,
+    numbers as numbers, and a result line from a fixed set of characters.
+  - Both are needed: the client fix closes the hole, the server fix stops the next one like it.
+- **✅ Fixed 2026-11-19.**
+  - **Client:**
+    - A shared `escH()` escapes `& < > " '`. Every value from a career on the rivalry wall goes through it, in
+      visitors' rooms and in your own: names, the result, the score line, and the challenge ids and keys in button
+      attributes. So do the "bought off your wall" rows and the Scorecards tab's friend names and older result lines.
+    - `rivalItems` keeps only a challenge id of 16 hex characters, a format the game knows, and numbers for stake,
+      net and date.
+    - The plaque pictures use the same helper.
+  - **Server:** `showcase` now sends only clean values:
+    - friend ids and names that match the profile rules;
+    - a known format;
+    - finite numbers;
+    - result text with markup characters removed (`plain()` in the new `api/_career.js`);
+    - titles reduced to `{ id, date, score }`.
+  - Verified with `sec-wall-xss.js`: `scriptFromTheirName "did not run" · htmlFromFormat false · htmlFromChallengeId
+    false`. An honest wall still shows its record, trophy, score and buy-off price.
+
+### 3.2 [High] One player's malformed save takes down the sign-in list and Friends for everyone, and can hold up a payout
+- **Where:** `api/profile.js`: `cleanCareer` (checks only "an object under 250,000 characters"), `handicapOf`,
+  `roster`, `players`; `api/challenge.js`: `payOut`, `strokesFor`.
+- **Scenario:** the server reads fields of stored careers as if they had the right type.
+  - **Shared lists.** `roster` (the sign-in screen's list, no sign-in needed) and `players` (Friends) compute every
+    player's handicap in one pass. If one career has `rounds` as a string, that throws, and the whole request fails
+    with "Profiles unavailable". So one player, with one save, removes the profile list from the sign-in screen and
+    breaks Friends for everybody, until they save a normal career again. It could also happen by accident, from a
+    bug in a future version of the game.
+  - **Payouts.** `payOut` pays the challenger first, then the other player. If the challenger's career has `history`
+    as a string, the first step throws and the second never runs. A challenger who loses can leave their career
+    like that, and the winner's pot is never paid.
+- **Evidence:** `sec-api.js`:
+  ```
+  one player saves rounds: "xxx" -> the sign-in list 500 Profiles unavailable, the Friends list 500, challenging them 500
+  the loser's career has history: "x" -> the winner's submit 500; "… wins 5 & 4"; the winner's cash 300 -> 300 (should be 700)
+  once the loser's career is normal again, the next list pays the winner -> 700
+  ```
+- **Fix (M):**
+  - Check a career's shape when it is saved: cash a finite number, `rounds` and `history` arrays of plain entries with
+    numbers where numbers belong and short strings, and so on. Refuse or repair anything else.
+  - Make the shared endpoints defensive: work each player out inside its own try/catch, so one bad career is skipped.
+  - In `payOut`, pay each player in its own try/catch, so one failure doesn't block the other.
+- **✅ Fixed 2026-11-19.**
+  - **New module, `api/_career.js`:**
+    - `normCareer()` repairs a career's shape: cash, reputation and circuit as numbers; stats; the arrays; handicap
+      rounds, scorecards and history entries of the right kind; and the wall lists.
+    - The module also holds the one shared `handicapOf`, which now ignores malformed rounds. `api/profile.js` and
+      `api/challenge.js` used to keep their own copies; both now use this one.
+  - **Where repairs happen:**
+    - every career saved or signed up with (`cleanCareer`);
+    - every career the server changes itself (`updateCareer`: payouts, stakes, refunds, wall sales).
+  - **The shared lists:** `roster` and `players` work out each player on their own and skip one that fails. They send
+    clean numbers only.
+  - **Payouts:** `payOut` pays each player in its own try/catch. One that fails stays "held but not paid", and `list`
+    retries it.
+  - **Verified with `sec-api.js`:**
+    - `rounds: "xxx"` gives the sign-in list 200, the Friends list 200, and challenging them 200;
+    - a loser's career with `history: "x"` no longer stops the winner's payout (`295 -> 695`).
+  - **Verified with `sec-bad-stored.js`** (careers already in the database before this fix): the lists are 200 with
+    the broken player shown as `cash 0`; their trophy room is 200; the winner is paid `300 -> 700`.
+
+### 3.3 [High] Anyone can fill the database and overload the shared lists
+- **Where:** `api/profile.js`: `signup`, `roster`, `players`; `api/_redis.js` `rateLimit`.
+- **Scenario:**
+  - **Profiles are free and unlimited.** Sign-up needs no email and no check that a person is there. The only limit
+    is 10 sign-ups or sign-ins a minute per address: about 14,000 profiles a day from one address. Each can carry
+    250,000 characters of anything, so one address can add over 3 GB a day to a small database. When it is full,
+    saves fail for every player.
+  - **The lists read whole careers.** `roster` and `players` fetch the complete career of up to 200 profiles on
+    every call, to show five numbers each. `roster` needs no sign-in (60 calls a minute per address); `players` has
+    no limit at all. With 200 large careers that is up to 50 MB read from the database per call, enough to time the
+    request out. Even with honest players it grows: 200 players with 100 matches each is about 14 MB every time
+    anyone opens the home screen or Friends.
+  - **Other calls have no limit either:** `save` (250,000 characters each), `load`, `showcase`, and the challenge
+    `list`.
+- **Evidence:** `sec-api.js`: `a new profile with 248,000 characters of junk and $1,000,000,000,000 -> 200; on the
+  public sign-in list with cash 1000000000000`. The volumes are worked out from the code (`slice(0, 200)` and a
+  whole-career `HGET` per profile).
+- **Fix (M):**
+  - Keep a small summary per player (name, cash, circuit, handicap, rounds, trophies), written when the career is
+    saved. `roster` and `players` read only the summaries.
+  - Limit sign-ups much harder (a few per address per day, and a ceiling per day overall), and start new profiles
+    with a server-made career, not one sent by the browser.
+  - Put a per-player limit on `save`, `players`, `showcase` and `list`.
+
+### 3.4 [High] A friend-challenge card is whatever the browser sends
+- **Where:** `api/challenge.js` `submit` and `cleanCard` (each hole 1–30 strokes, putts and penalties in range;
+  nothing else).
+- **Scenario:** the round is played in the browser and only the nine scores are sent. Anyone can send a card
+  straight to the API, without playing, and win the stake. The same goes for softer cheats: replaying a hole
+  (finding 1.4), or editing your own handicap rounds to get more strokes in an "auto" handicap challenge.
+- **Evidence:** `sec-api.js`: `nine holes-in-one sent as a card -> 200, "… wins 5 & 4"; the honest player's cash
+  1000 -> 500`.
+- **Fix (M–L):** a server that doesn't simulate the shots can't make this impossible, but it can make it much harder
+  and more visible:
+  - Send each hole to the server as it is finished (not the card at the end), with the server recording the time, so
+    a hole can't be replayed or the card rewritten.
+  - Refuse cards that can't be real: a round finished faster than it can be played, or a hole score nobody makes
+    (a hole-in-one on a par 5).
+  - Work the handicap out on the server from rounds it recorded itself.
+  - Both players already see both cards after it settles, which is the social check. A "dispute" note on the shared
+    card would add to it.
+
+### 3.5 [Medium] The rivalry wall is built from the owner's own save
+- **Where:** `api/profile.js`: `wallItem`, `wallPrice`, `showcase`, `buyshow`; the client's `rivalItems`.
+- **Scenario:** the trophies on a player's wall ("Beat Keith 3 & 2") and their buy-off prices come from that
+  player's history, which their browser saved. A player can put up wins that never happened, against anyone, at any
+  price. A visitor who buys one pays real cash to the forger. This is also what finding 1.7 rests on.
+- **Evidence:** `sec-api.js`: `a win that never happened is on the wall -> "won · made up" vs …, priced at $500000
+  by the server`.
+- **Fix (M):** the server has the real record of every settled challenge. Build the wall, and price it, from those
+  records: a trophy exists only if the challenge is done and this player won it, and the price is twice what that
+  result paid.
+- **✅ Fixed 2026-11-19.**
+  - **What visitors see:** every friend line other players see comes from the challenge records (`golf:ch:<id>`,
+    written only by `api/challenge.js`; they're never deleted). `showcase` takes the challenge ids in the owner's
+    history, looks each one up, and keeps only challenges that are settled and include this player. It shows the
+    record's result and money, once per challenge. Lines with no record, or a record that doesn't match, are dropped.
+    The owner still chooses what's shown, hidden or framed. Hustler wins and big scores still come from the career;
+    they only decide earned trophies, not money.
+  - **What can be bought:** a piece is for sale only if it's on the owner's wall *and* the record says the owner won.
+    The price is twice the record's net. Wins with no challenge id (very old ones) are no longer for sale.
+  - **1.7 is fixed with it:** the page sends the price it showed, and the server refuses a different one (409, then
+    the page reloads their wall and says the new price).
+  - The won / lost / halved wording is one shared `outcomeFor()` in `api/_career.js`, used by payouts and the wall.
+  - **Verified with `sec-api.js`:**
+    - a made-up win and an inflated real one in the owner's history: the made-up one isn't shown; the real one shows
+      once, at the record's $200;
+    - buying the made-up one gives 404; the real one at the inflated price gives 409 (`it's $400 now`);
+    - at $400 it's bought: buyer `1000 -> 600`, owner `695 -> 1095`; buying it again gives 404.
+  - **Verified with `sec-ui-paths.js`** (the game's own buttons): the visitor sees the record and the trophy, and
+    buying it says "Done: you paid … $400".
+
+### 3.6 [Medium] Anyone can put fake scores on the shared Top 10
+- **Where:** `api/leaderboard.js` POST.
+- **Scenario:** the board accepts any card that adds up, from anyone, signed in or not, five a minute per address.
+  Nine holes-in-one goes straight to the top. The file's own comments accept that a determined player can cheat;
+  this is one request, not a determined effort.
+- **Evidence:** `sec-api.js`: `a guest posts nine holes-in-one to the Top 10 -> 200, rank 1`.
+- **Fix (S):** refuse scores nobody makes (for example more than two under par on a hole, or a round far below the
+  best real one), and give the admin a way to remove an entry. Taking only signed-in players' scores would also tie
+  each entry to a profile.
+- **✅ Fixed 2026-11-19.**
+  - **The checks:** `api/leaderboard.js` knows the test round's pars (5 3 4 4 3 5 4 3 4, 35). It refuses any other
+    course, any hole better than two under par (so a hole-in-one only on a par 3), and a round better than one under
+    par a hole (−9).
+  - **Removing a round:** the admin can take one off the board. A ✕ shows on each world-board row for Keeto only, and
+    the server checks the admin sign-in (`POST { action: 'remove', t, id }`; anyone else gets 403). Board entries now
+    carry their short id for this.
+  - Names on the board are escaped too.
+  - **Verified with `sec-api.js`:**
+    - nine holes-in-one gives 400 ("That score isn't possible"), and so does two under on every hole;
+    - a great real round (30, −5) gives 200;
+    - removal by a non-admin gives 403, and by the admin 200, after which the round is gone. This was tested with a
+      throwaway admin credential that existed only in the local test server's memory.
+  - **Verified with `sec-ui-paths.js`:** a real test round still reaches the board ("Your round: 1ST").
+- **Still possible:** a believable fake (a 30 posted without playing). Only scoring holes on the server as they're
+  played would stop that; it's the same problem as 3.4.
+
+### 3.7 [Medium] Passwords can be 4 characters, and guessing is limited per address only
+- **Where:** `api/profile.js` `signup` / `login`.
+- **Scenario:** every profile name is public on the sign-in screen. A password needs only 4 characters. Guesses are
+  limited to 10 a minute per address, with no limit per profile, so someone can work through the common short
+  passwords for a friend's profile in minutes, or from several addresses at once.
+- **Evidence:** `sec-api.js`: `a 4-character password ("aaaa") is accepted -> 200`; the per-address limit does work
+  (`14 wrong passwords in a row -> 401 ×5 then 429`).
+- **Fix (S):** a longer minimum (8), a limit per profile as well as per address (for example 10 wrong tries an hour,
+  then a wait), and a way to change a password.
+
+### 3.8 [Medium] The admin password's hash is public, so its length is the only protection
+- **Where:** `api/_admins.js` (the salt and hash for `keeto`), in a public repo.
+- **Scenario:** with the salt and hash, anyone can guess the password on their own computer as fast as they like;
+  the server's limits don't apply. The hash is scrypt, which is slow to guess, so a long random password is out of
+  reach. A short or common one can be found in hours or days. Whoever finds it can sign in as Keeto. There are no
+  admin powers on the server, so what they'd get is that profile's career and the developer tools in their browser.
+- **Evidence:** the file itself; its header comment already says the same. The git history holds only this one
+  hash, and no plain password.
+- **Fix (S):** this is your decision, and the file stays where you put it. If the password is under about 12
+  characters, make a new, longer one with `node tools/admin-hash.js` and paste the new salt and hash in.
+
+### 3.9 [Low] Smaller gaps
+- **Flooding a player with challenges.** One profile can have 12 open challenges, but there is no limit on how many
+  a target receives. `list` then fetches each challenge with its own database call, so a flooded player's Friends
+  page slows down and can time out. Fix: one batched read, and a cap on pending challenges per target.
+- **Sign-ins that never end.** Since fix 2.1 a sign-in lasts as long as it's used. There is no "sign out
+  everywhere", no password change and no overall time limit, so a stolen token works for ever. Fix: an overall limit
+  (say 180 days), and sign out the other sessions when a password changes.
+- **No security headers.** There is no `vercel.json`, so no content security policy, and three.js is loaded from a
+  public CDN with no integrity check. A policy would have limited what 3.1 could do.
+- **Repo files on the live site.** Every file in the repo is served, including the plans, this findings file and the
+  test tools. Fix: a `.vercelignore` for `*.md` and `tools/`.
+- **Leaderboard when storage isn't set up** answers with the names (never the values) of storage settings it can see.
+- **A request body that isn't an object** (a bare number, for example) makes a function wait until it times out.
+
+### Checked and fine
+- **Acting as someone else.** Every signed-in action takes the player from the session, never from the request. A
+  career saved under another name is stored under your own. A third player can't accept, forfeit or see into
+  someone else's challenge (`sec-api.js`: all 404). No token, or a made-up one, gets a 401.
+- **Passwords** are hashed with scrypt and a per-user salt, compared in constant time, and never sent back.
+- **Session tokens** are 32 random bytes; signing out deletes the token on the server.
+- **Admin.** `keeto` is the only entry in `ADMINS`; the name is reserved in any capitals (`sign up as the admin's
+  name -> 409`); the environment setting can change the admin's credential but can't add an admin; an admin session
+  dies when the credential changes. A new profile is never an admin. The browser only believes "admin" from the
+  server's reply in that visit. There are no admin-only server actions, so nothing is enforced in the browser alone.
+- **Database commands** are sent as lists of values, so nothing a player types can change a command.
+- **Other players' data elsewhere in the page:** names (profile names are limited to letters, digits, space, `-` and
+  `_` by the server), challenge lines (made by the server), the leaderboard (checked on the way out), and a visited
+  player's bag (every id is looked up in the game's own tables) are safe. The plaque pictures escape their text.
+- **What the lists reveal:** `roster` and `players` return name, cash, circuit, handicap, rounds and trophies. No
+  password data, no whole careers. This is as designed.
+- **Error messages** are generic and don't show internals.
+- **Secrets:** none in the files. The whole git history has one admin hash, no tokens and no plain passwords.
+- **Cheating in your own career** (editing your own cash or clubs) is possible and accepted, as the plan says.
+
+### Noticed for later
+- **Section 4:** an "auto" handicap challenge throws on the server if either career's `rounds` is malformed (part
+  of 3.2).
+- **Section 9:** `api/leaderboard.js` has its own copies of `findCreds`, `redis` and `readBody`.

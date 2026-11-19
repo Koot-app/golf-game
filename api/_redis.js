@@ -91,7 +91,7 @@ async function updateCareer(id, fn) {
   for (let tries = 0; tries < 6; tries++) {
     const [[data, ver]] = await redis([['HMGET', `golf:career:${id}`, 'data', 'ver']]);
     if (!data) throw Object.assign(new Error('That player has no career'), { status: 404 });
-    const c = JSON.parse(data);
+    const c = normCareer(JSON.parse(data));         // (the right types first: a bad save can't block a payout, audit 3.2)
     fn(c);
     const [n] = await redis([['EVAL', CAS, 1, `golf:career:${id}`, String(+ver || 0), JSON.stringify(c)]]);
     if (n !== -1) return c;
@@ -100,5 +100,6 @@ async function updateCareer(id, fn) {
 }
 
 const { isAdmin, adminCred } = require('./_admins');
+const { normCareer } = require('./_career');
 
 module.exports = { findCreds, redis, readBody, clientIp, rateLimit, sessionId, sessionValue, SESSION_S, CAS, updateCareer };

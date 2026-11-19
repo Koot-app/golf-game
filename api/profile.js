@@ -10,7 +10,8 @@
 //     players                             -> { players: [{ name, tierMax, cash, rep, handicap, rounds }] }
 //     roster  (no session)                -> { players: [{ name, tierMax, cash, handicap, rounds, last, admin }] }  for the sign-in screen
 //     showcase { name }                   -> { player: { name, trophies, titles, tierMax, rounds, history, showcase, cards } }  their trophy room
-//     buyshow { owner, key }              -> { ok, price, cash }  buy (and destroy) a trophy or framed scorecard off their wall
+//     buyshow { owner, key, price }       -> { ok, price, cash }  buy (and destroy) a trophy or framed scorecard off their wall
+//                                            (only a win the challenge records confirm, and only at the price the buyer saw)
 //
 // Admin profiles (api/_admins.js) have a reserved name and a credential in the server's environment (GOLF_ADMIN_<ID>);
 // their first sign-in creates them. Nobody else can sign up with an admin's name or become an admin.
@@ -25,20 +26,46 @@
 const crypto = require('crypto');
 const { redis, readBody, clientIp, rateLimit, sessionId, sessionValue, SESSION_S, CAS, updateCareer } = require('./_redis');
 const { isAdmin, adminCred } = require('./_admins');
+const { arr, num, tierOf, plain, goodRounds, handicapOf, normCareer, outcomeFor } = require('./_career');
+const FORMATS = ['match', 'stroke', 'skins'];
+const ID_RE = /^[a-z0-9 _-]{3,12}$/;                // a profile id: the name lower-cased
 
 // ---- the rivalry wall (index.html: rivalItems): a victory trophy per challenge won ("w-<challenge>") and, if its owner
 // frames it, the scorecard ("s-<challenge>"). Anyone may buy one off the wall: the buyer pays the owner, and it's
 // destroyed for good (career.showcase.destroyed). Price: twice what the win paid, at least $50 — the same in index.html.
+//
+// THE WALL IS THE SERVER'S RECORD, NOT THE OWNER'S WORD (audit 3.5): a career is whatever its owner's browser saved, so
+// its history could claim wins that never happened, at any price. Every friend line other players see, and every piece
+// on sale, comes from the challenge's own record (golf:ch:<id>, written only by api/challenge.js): it must be settled,
+// this player must be in it, and the result and the money are the record's. Lines that don't check out are dropped.
 const wallPrice = (h) => Math.max(50, Math.round(Math.abs(h.net || 0) * 2));
-const winsOf = (c) => (c.history || []).filter((h) => h && h.friend && /^won/.test(h.result || ''));
-function wallItem(c, key) {                       // the history line behind a wall item, if it's on the wall right now
-  const sc = c.showcase || {}, destroyed = new Set(sc.destroyed || []), hide = new Set(sc.hide || []), cards = new Set(sc.cards || []);
-  if (destroyed.has(key)) return null;
-  for (const h of winsOf(c)) {
-    if (key === `w-${h.ch || h.date}` && !hide.has(key)) return { h, label: `“Beat ${h.friendName || h.friend}” trophy` };
-    if (h.ch && key === `s-${h.ch}` && cards.has(h.ch)) return { h, label: `framed scorecard vs ${h.friendName || h.friend}` };
-  }
-  return null;
+const CH_ID = /^[a-f0-9]{16}$/;
+const getChs = async (ids) => (ids.length ? (await redis(ids.map((x) => ['GET', `golf:ch:${x}`]))).map(parse) : []);
+// a settled challenge as one player's history line (the same line payOut writes), or null if it isn't theirs / settled
+function lineFromRecord(ch, who) {
+  if (!ch || ch.status !== 'done' || !ch.result || (ch.from !== who && ch.to !== who)) return null;
+  const o = ch.from === who ? ch.to : ch.from, res = ch.result;
+  return { friend: o, friendName: (ch.names || {})[o] || o, ch: ch.id, format: FORMATS.includes(ch.format) ? ch.format : 'match', stake: num(ch.stake),
+    result: plain(`${outcomeFor(res, who)} · ${res.line}`), net: num((res.net || {})[who]), date: num(ch.finished) };
+}
+// the friend lines of a career's history that check out against the records (one line per challenge)
+async function verifiedFriendLines(c, who) {
+  const ids = [...new Set(arr(c.history).filter((h) => h && h.friend && CH_ID.test(String(h.ch || ''))).map((h) => h.ch))].slice(-200);
+  return (await getChs(ids)).map((ch) => lineFromRecord(ch, who)).filter(Boolean);
+}
+// is this piece on the owner's wall right now (their own show / hide / frame choices; destroyed for good)?
+function onWall(c, key) {
+  const sc = c.showcase && typeof c.showcase === 'object' ? c.showcase : {};
+  const m = /^([ws])-([a-f0-9]{16})$/.exec(key);
+  if (!m || arr(sc.destroyed).includes(key)) return false;
+  return m[1] === 'w' ? !arr(sc.hide).includes(key) : arr(sc.cards).includes(m[2]);
+}
+// a piece for sale: on the wall, and a win the record confirms → { price, label }, or null
+async function wallItem(c, who, key) {
+  if (!onWall(c, key)) return null;
+  const [ch] = await getChs([key.slice(2)]), h = lineFromRecord(ch, who);
+  if (!h || ch.result.winner !== who) return null;
+  return { price: wallPrice(h), label: key[0] === 'w' ? `“Beat ${h.friendName}” trophy` : `framed scorecard vs ${h.friendName}` };
 }
 
 const NAME_RE = /^[A-Za-z0-9 _-]{3,12}$/;
@@ -47,14 +74,7 @@ const MAX_CAREER = 250000;                 // bytes of career JSON
 // (the compare-and-set script CAS lives in _redis.js)
 
 const idOf = (name) => String(name).trim().toLowerCase();
-// a career's handicap (M2) — the same as handicapOf() in index.html: keep both alike
-const HCP = { rating: { 1: 0, 2: 1.5, 3: 3 }, recent: 10, best: 4, factor: 0.96, min: 3 };
-function handicapOf(c) {
-  const r = ((c && c.rounds) || []).slice(-HCP.recent);
-  if (r.length < HCP.min) return null;
-  const d = r.map((x) => x.gross - x.par - (HCP.rating[x.tier] || 0)).sort((a, b) => a - b).slice(0, HCP.best);
-  return Math.round((d.reduce((a, b) => a + b, 0) / d.length) * HCP.factor * 10) / 10;
-}
+// (a career's handicap, handicapOf, lives in _career.js with the other career readers)
 const hashPw = (pw, salt) => new Promise((resolve, reject) => crypto.scrypt(String(pw), salt, 32, (e, k) => (e ? reject(e) : resolve(k.toString('hex')))));
 const parse = (s) => { try { return JSON.parse(s); } catch { return null; } };
 // a career's trophy-room pieces (ids), for the profile list's bragging rights
@@ -66,9 +86,11 @@ async function newSession(id) {
   await redis([['SET', `golf:sess:${token}`, sessionValue(id), 'EX', SESSION_S]]);     // (an admin's is tied to the current credential)
   return token;
 }
-// a career the client sent: an object of a sensible size, named after the profile
+// a career the client sent: an object of a sensible size, named after the profile, with its fields repaired to the
+// right types (normCareer, audit 3.2)
 function cleanCareer(c, name) {
   if (!c || typeof c !== 'object' || Array.isArray(c)) return null;
+  normCareer(c);
   c.name = name;
   const s = JSON.stringify(c);
   return s.length <= MAX_CAREER ? s : null;
@@ -134,8 +156,14 @@ module.exports = async (req, res) => {
       const list = (ids || []).slice(0, 200);
       const rows = list.length ? await redis(list.flatMap((p) => [['HGET', `golf:career:${p}`, 'data'], ['HGET', `golf:user:${p}`, 'name']])) : [];
       const players = list.map((p, i) => [p, parse(rows[2 * i]), rows[2 * i + 1]]).filter(([, c, n]) => c || n)
-        .map(([p, c, n]) => (c ? { name: c.name, tierMax: c.tierMax || 1, cash: c.cash, handicap: handicapOf(c), rounds: (c.rounds || []).length, last: c.stamp || 0, admin: isAdmin(p), trophies: tro(c) }
-          : { name: n, tierMax: 1, cash: null, handicap: null, rounds: 0, last: 0, admin: isAdmin(p) }));     // (an admin who hasn't played yet)
+        .map(([p, c, n]) => {                                // (one player at a time: a bad career is skipped, never the list)
+          try {
+            const name = c && NAME_RE.test(String(c.name)) ? c.name : n;
+            if (!NAME_RE.test(String(name))) return null;
+            return c ? { name, tierMax: tierOf(c.tierMax), cash: num(c.cash), handicap: handicapOf(c), rounds: goodRounds(c).length, last: num(c.stamp), admin: isAdmin(p), trophies: tro(c) }
+              : { name, tierMax: 1, cash: null, handicap: null, rounds: 0, last: 0, admin: isAdmin(p) };     // (an admin who hasn't played yet)
+          } catch { return null; }
+        }).filter(Boolean);
       return send(200, { players });
     }
 
@@ -171,10 +199,15 @@ module.exports = async (req, res) => {
       const [[data]] = await redis([['HMGET', `golf:career:${who}`, 'data']]);
       const c = parse(data);
       if (!c) return send(404, { error: 'No player with that name' });
-      const hist = (c.history || []).filter((h) => h && ((h.npc && h.net > 0) || h.friend || h.net >= 1000))
-        .slice(-200).map((h) => ({ npc: h.npc ? 1 : 0, friend: h.friend || null, friendName: h.friendName || null, ch: h.ch || null, format: h.format, stake: h.stake, result: h.result, net: h.net, date: h.date }));
+      // only clean values go out (audit 3.1: a career is whatever its owner's browser saved, and a visitor's page shows
+      // these): ids and names that match the profile rules, a known format, finite numbers, plain short text
+      // the friend lines (the rivalry wall: records and wins) come from the challenge records, never from the career
+      // (audit 3.5); the others (hustler wins and big scores, for their earned trophies) are the career's own
+      const own = arr(c.history).filter((h) => h && typeof h === 'object' && !h.friend && !h.sale && ((h.npc && num(h.net) > 0) || num(h.net) >= 1000))
+        .slice(-200).map((h) => ({ npc: h.npc ? 1 : 0, friend: null, friendName: null, ch: null, format: FORMATS.includes(h.format) ? h.format : 'match', stake: num(h.stake), result: plain(h.result), net: num(h.net), date: num(h.date) }));
+      const hist = [...own, ...(await verifiedFriendLines(c, who))].sort((x, y) => x.date - y.date).slice(-300);
       // the framed scorecards: the settled challenges themselves (both cards), for whoever looks at the wall
-      const sc = c.showcase || {}, strs = (a, n) => (Array.isArray(a) ? a.filter((x) => typeof x === 'string').slice(0, n) : []);
+      const sc = c.showcase && typeof c.showcase === 'object' ? c.showcase : {}, strs = (a, n) => (Array.isArray(a) ? a.filter((x) => typeof x === 'string').slice(0, n) : []);
       const cids = strs(sc.cards, 20).filter((x) => /^[a-f0-9]{16}$/.test(x));
       const chs = cids.length ? await redis(cids.map((x) => ['GET', `golf:ch:${x}`])) : [];
       const cards = {};
@@ -184,8 +217,8 @@ module.exports = async (req, res) => {
           result: { kind: ch.result.kind, winner: ch.result.winner, loser: ch.result.loser, line: ch.result.line, net: ch.result.net } };
       });
       return send(200, { player: {
-        name: c.name, trophies: tro(c), titles: (c.titles || []).slice(-40), tierMax: c.tierMax || 1,
-        rounds: (c.rounds || []).slice(-10).map((r) => ({ gross: r.gross, par: r.par, tier: r.tier, date: r.date })),
+        name: c.name, trophies: tro(c), titles: arr(c.titles).filter((x) => x && typeof x === 'object').slice(-40).map((x) => ({ id: String(x.id || '').slice(0, 40), date: num(x.date), score: num(x.score) })), tierMax: tierOf(c.tierMax),
+        rounds: goodRounds(c).slice(-10).map((r) => ({ gross: r.gross, par: r.par, tier: r.tier, date: r.date })),
         history: hist, showcase: { hide: strs(sc.hide, 300), cards: cids, destroyed: strs(sc.destroyed, 300) }, cards,
         // their gear, for "their bag" (the clubs and models, the putter, the caddie and the stats; still no cash)
         gear: {
@@ -202,9 +235,11 @@ module.exports = async (req, res) => {
       const owner = idOf(b.owner || ''), key = String(b.key || '');
       if (!owner || owner === id) return send(400, { error: 'You can\'t buy your own' });
       const [[od]] = await redis([['HMGET', `golf:career:${owner}`, 'data']]);
-      const oc = parse(od), it = oc && wallItem(oc, key);
+      const oc = parse(od), it = oc && (await wallItem(oc, owner, key));      // (on the wall, and a win the record confirms)
       if (!it) return send(404, { error: 'That isn\'t on their wall any more' });
-      const price = wallPrice(it.h), ownerName = oc.name, when = Date.now();
+      const price = it.price, ownerName = oc.name, when = Date.now();
+      // the price the buyer agreed to (audit 1.7): if it isn't the server's, nothing is bought
+      if (b.price !== price) return send(409, { error: `The price has changed: it's $${price} now. Have another look.`, price });
       const buyer = await updateCareer(id, (c) => {
         if ((c.cash || 0) < price) throw Object.assign(new Error(`You need ${'$' + price} to buy it`), { status: 400 });
         c.cash -= price;
@@ -212,8 +247,7 @@ module.exports = async (req, res) => {
       });
       try {
         await updateCareer(owner, (c) => {
-          const again = wallItem(c, key);                    // (someone else may just have bought it)
-          if (!again) throw Object.assign(new Error('Someone just bought it'), { status: 409 });
+          if (!onWall(c, key)) throw Object.assign(new Error('Someone just bought it'), { status: 409 });     // (or it was just taken down)
           const s = c.showcase || {};
           c.showcase = { ...s, destroyed: [...(s.destroyed || []), key], cards: (s.cards || []).filter((x) => `s-${x}` !== key) };
           c.cash = (c.cash || 0) + price;
@@ -229,7 +263,12 @@ module.exports = async (req, res) => {
       const [ids] = await redis([['SMEMBERS', 'golf:players']]);
       const list = (ids || []).slice(0, 200);
       const rows = list.length ? await redis(list.map((p) => ['HGET', `golf:career:${p}`, 'data'])) : [];
-      const players = rows.map(parse).filter(Boolean).map((c) => ({ name: c.name, tierMax: c.tierMax || 1, cash: c.cash, rep: c.rep, handicap: handicapOf(c), rounds: (c.rounds || []).length, trophies: tro(c) }));
+      const players = rows.map(parse).filter((c) => c && typeof c === 'object').map((c) => {   // (one at a time: a bad career is skipped)
+        try {
+          if (!NAME_RE.test(String(c.name))) return null;
+          return { name: c.name, tierMax: tierOf(c.tierMax), cash: num(c.cash), rep: num(c.rep), handicap: handicapOf(c), rounds: goodRounds(c).length, trophies: tro(c) };
+        } catch { return null; }
+      }).filter(Boolean);
       return send(200, { players });
     }
     return send(400, { error: 'Unknown action' });

@@ -30,6 +30,7 @@ function run([cmd, ...a]) {
     case 'ZADD': { const z = zs(a[0]); z.push([+a[1], String(a[2])]); z.sort((x, y) => x[0] - y[0] || (x[1] < y[1] ? -1 : 1)); return 1; }
     case 'ZRANK': { const i = zs(a[0]).findIndex((x) => x[1] === String(a[1])); return i < 0 ? null : i; }
     case 'ZCARD': return zs(a[0]).length;
+    case 'ZREM': { const z = zs(a[0]), i = z.findIndex((x) => x[1] === String(a[1])); if (i < 0) return 0; z.splice(i, 1); return 1; }
     case 'ZRANGE': { const z = zs(a[0]), e = +a[2] < 0 ? z.length + +a[2] : +a[2]; return z.slice(+a[1], e + 1).map((x) => x[1]); }
     case 'ZREMRANGEBYRANK': { const z = zs(a[0]); if (+a[1] < z.length) z.splice(+a[1]); return 0; }
     case 'EVAL': {   // only the profile CAS script
