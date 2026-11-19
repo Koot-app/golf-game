@@ -1682,6 +1682,59 @@
       display: none !important;
     }
 
+    /* a pro-shop demo next to your own club */
+    .bag-tag {
+      font-style: normal;
+      font-size: 10.5px;
+      color: var(--dim);
+      margin-left: 4px;
+    }
+
+    .bag-tag.demo {
+      color: #1a1a1a;
+      background: #ffe066;
+      border-radius: 4px;
+      padding: 0 5px;
+      font-weight: 700;
+    }
+
+    .bag-row.bag-demo {
+      background: rgba(255, 224, 102, .07);
+    }
+
+    .bag-row.bag-demo.on {
+      background: rgba(255, 224, 102, .2);
+      border-left-color: #ffe066;
+    }
+
+    .bag-row.bag-demo kbd {
+      color: #ffe066;
+    }
+
+    .bag-cmp {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px 10px;
+      padding: 3px 14px 6px 46px;
+      font-size: 11.5px;
+      color: #c9d4e0;
+      background: rgba(255, 224, 102, .07);
+      border-bottom: 1px solid rgba(255, 224, 102, .2);
+    }
+
+    .bag-cmp b.up {
+      color: #5ee08a;
+    }
+
+    .bag-cmp b.dn {
+      color: var(--red);
+    }
+
+    .bag-cmp span.hint {
+      margin-left: auto;
+      color: var(--dim);
+    }
+
     .bag-row.snapped span,
     .bag-row.snapped b,
     .bag-row.snapped i {
@@ -9557,18 +9610,35 @@
         CLUBS.forEach((c, i) => {
           for (const f of Object.keys(c)) if (!(f in BASE_CLUBS[i])) delete c[f];
           Object.assign(c, BASE_CLUBS[i]);
-          const id = careerOn && (demo && demo.idx === i ? demo.model : career.bag[i]);
+          const id = careerOn && (demo && demo.idx === i && demo.on ? demo.model : career.bag[i]);
           if (id && CLUB_MODELS[id]) Object.assign(c, modelMods(CLUB_MODELS[id], i), { model: id });
         });
         stockCache.clear(); shapeCache.clear(); spreadCache.clear();
         telemetry = null;
       }
-      // a shop model tried on the range for free (chunk 5): { idx, model } for a club, or { putter } (never saved)
+      // a shop model tried on the range for free (chunk 5): { idx, model, on } for a club, or { putter } (never saved).
+      // on = you're hitting the demo; off = your own club in that slot (swap with the club's key again, or a click)
       let demo = null;
       // which clubs can be used: all of them outside a career; in one, the owned clubs in the bag (not the locker) that
       // aren't snapped, plus a demo club
       const inBag = (i) => !!career.bag[i] && !career.out.includes(i);
-      const canUseClub = (i) => !careerOn || (demo && demo.idx === i) || (inBag(i) && !career.snapped.includes(i));
+      const canUseClub = (i) => !careerOn || (demo && demo.idx === i && demo.on) || (inBag(i) && !career.snapped.includes(i));
+      // can you swap between the demo and your own club in its slot? (you own one there, in the bag and not snapped)
+      const demoCanSwap = () => !!(demo && demo.model && inBag(demo.idx) && !career.snapped.includes(demo.idx));
+      function toggleDemo(on = !demo.on) {
+        if (!demoCanSwap() || swing.active || on === demo.on) return;
+        demo.on = on;
+        applyCareerClubs(); state.club = demo.idx; refreshShotType(); renderBag();
+        toast(on ? `Hitting the demo: ${modelName(demo.model)}` : `Hitting your own: ${modelName(career.bag[demo.idx])}`, 1400);
+      }
+      // a club's numbers as another model (your own vs the demo): swap the model in, read, swap back
+      function withClubModel(i, id, fn) {
+        const c = CLUBS[i], saved = { ...c };
+        for (const f of Object.keys(c)) if (!(f in BASE_CLUBS[i])) delete c[f];
+        Object.assign(c, BASE_CLUBS[i]);
+        if (id && CLUB_MODELS[id]) Object.assign(c, modelMods(CLUB_MODELS[id], i), { model: id });
+        try { return fn(); } finally { for (const f of Object.keys(c)) delete c[f]; Object.assign(c, saved); }
+      }
       const bagOrder = () => CLUBS.map((_, i) => i).filter((i) => careerOn ? inBag(i) || (demo && demo.idx === i) : true);
       const usableOrder = () => bagOrder().filter(canUseClub);
       // the first usable club from a list of preferences, else the most lofted usable one below a lob wedge's loft
@@ -9831,10 +9901,11 @@
       // ---- try before you buy: one club (or a putter) on the range / putting green, free; gone when you leave
       function startDemo(id) {
         const m = CLUB_MODELS[id], i = SHOP.testClub[m.kind];
-        demo = { idx: i, model: id };
+        demo = { idx: i, model: id, on: true };
         applyCareerClubs(); careerToRange();
         state.club = i; refreshShotType(); renderBag();
-        toast(`Trying the ${modelName(id)} ${CLUBS[i].name}\nFree on the range · J back to the shop`, 2600);
+        const key = CLUB_KEYS[bagOrder().indexOf(i)];
+        toast(`Trying the ${modelName(id)} ${CLUBS[i].name}\nFree on the range${demoCanSwap() ? ` · ${key ? `${key} again` : 'Click the bag'} swaps to your own` : ''} · J back to the shop`, 3200);
       }
       function startPutterDemo(id) {
         demo = { putter: id };
@@ -10883,7 +10954,7 @@
           const sg = SHOT_SHAPES[state.shotShape].sign;
           su = { ...su, ...(sg ? solveShape(ci, sg) : { face: 0, stance: 0 }), ballPos: 0 };
         }
-        const key = `${ci}|${state.power}|${state.dex}|${bs}|${state.lie}|${teed}|${su.face}|${su.ballPos}|${su.stance}|${su.traj}|${su.spinCtl}`;
+        const key = `${ci}|${club.model || ''}|${state.power}|${state.dex}|${bs}|${state.lie}|${teed}|${su.face}|${su.ballPos}|${su.stance}|${su.traj}|${su.spinCtl}`;     // (the model: a demo club and your own share a slot)
         if (!stockCache.has(key)) {
           const { f, pts } = stockFlightOf(ci, su, bs, bs === 1);
           if (stockCache.size > 600) stockCache.clear();
@@ -10921,7 +10992,7 @@
       };
       const shapeCache = new Map();
       function solveShape(ci, sign) {             // sign -1 = draw, +1 = fade -> { face, stance } for the current height and spin
-        const key = `${ci}|${sign}|${state.height}|${state.spinCtl}|${state.lie}|${state.power}|${state.dex}|${isTeed(CLUBS[ci])}`;
+        const key = `${ci}|${CLUBS[ci].model || ''}|${sign}|${state.height}|${state.spinCtl}|${state.lie}|${state.power}|${state.dex}|${isTeed(CLUBS[ci])}`;
         if (shapeCache.has(key)) return shapeCache.get(key);
         const base = { face: 0, ballPos: 0, stance: 0, traj: state.height, spinCtl: state.spinCtl };
         const carry = stockFlightOf(ci, base).f.carry;
@@ -11010,7 +11081,9 @@
         const irons = careerOn && Object.entries(career.bag).find(([i, id]) => +i >= 4 && +i <= 10 && id);
         setText('bagTitle', careerOn && demo && demo.model ? `Bag · demo: ${CLUB_MODELS[demo.model].name}`
           : careerOn ? `Bag${irons && CLUB_MODELS[irons[1]] ? ` · ${CLUB_MODELS[irons[1]].name.replace(/ \(\d{4}\)/, '')} irons` : ''}` : 'Bag');
+        const pair = careerOn && demoCanSwap();               // trying a club you have one of: both rows, and the difference
         bagOrder().forEach((i, pos) => {
+          if (pair && i === demo.idx) { h += demoPairRows(i, pos); return; }
           const c = CLUBS[i], r = lieRead(i), snapped = careerOn && career.snapped.includes(i);
           const fit = clubFit(c, state.lie, isTeed(c)), risk = fit.s >= 0.5 ? ' risk2' : fit.s > 0.02 ? ' risk1' : '';      // how this club suits the current lie
           const model = careerOn && career.bag[i] ? modelName(career.bag[i]) : '';
@@ -11027,6 +11100,20 @@
           if (top < list.scrollTop) list.scrollTop = top;
           else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
         }
+      }
+      // a demo from the pro shop next to your own club in the same slot: your row, the demo's row (gold), and what changes.
+      // Both are read with the same setup and lie, so the difference is the club; click a row (or its key again) to swap.
+      function demoPairRows(i, pos) {
+        const own = career.bag[i], c = CLUBS[i], sel = i === state.club;
+        const a = withClubModel(i, own, () => lieRead(i)), b = withClubModel(i, demo.model, () => lieRead(i));
+        const d = (x, y) => { const v = Math.round(y - x); return `<b class="${v > 0 ? 'up' : v < 0 ? 'dn' : ''}">${v > 0 ? '+' : v < 0 ? '−' : '±'}${Math.abs(v)}</b>`; };
+        const short = (id) => CLUB_MODELS[id].name.replace(/ \(\d{4}\)/, '');
+        return `<div class="bag-row bag-own${sel && !demo.on ? ' on' : ''}" data-i="${i}" data-pick="own" title="Your ${modelName(own)} — click to hit it"><kbd>${CLUB_KEYS[pos] || '·'}</kbd>`
+          + `<span>${c.name} <em class="bag-tag">yours · ${short(own)}</em></span><b>${a.carryTxt}</b><i>${a.totalTxt}</i></div>`
+          + `<div class="bag-row bag-demo${sel && demo.on ? ' on' : ''}" data-i="${i}" data-pick="demo" title="${modelName(demo.model)}: ${CLUB_MODELS[demo.model].note} — click to hit it"><kbd>⇄</kbd>`
+          + `<span>${c.name} <em class="bag-tag demo">demo · ${short(demo.model)}</em></span><b>${b.carryTxt}</b><i>${b.totalTxt}</i></div>`
+          + `<div class="bag-cmp"><span>Demo vs yours: carry ${d(a.carryMid, b.carryMid)} · total ${d(a.totalMid, b.totalMid)} yds</span>`
+          + `<span class="hint">${sel ? `${CLUB_KEYS[pos] || 'Click'} ${CLUB_KEYS[pos] ? 'again ' : ''}swaps · hitting ${demo.on ? 'the demo' : 'yours'}` : 'click a row to hit it'}</span></div>`;
       }
       function setPin(i) { state.pin = (i + PINS.length) % PINS.length; state.aim = PINS[state.pin].brg; }
       function togglePractice() {
@@ -11117,7 +11204,11 @@
 
         if (c === 'Space' && !e.repeat) { state.view = state.view === 'scout' ? 'address' : 'scout'; return; }
         if (c === 'Tab' && !e.repeat) { if (hp.on) { hp.aimPin = !hp.aimPin; state.aim = holeAim(hp.aimPin); return; } return setPin(state.pin + (e.shiftKey ? -1 : 1)); }
-        if (CLUB_CODES.includes(c)) return setClub(bagOrder()[CLUB_CODES.indexOf(c)] ?? -1);     // the keys follow the bag's order
+        if (CLUB_CODES.includes(c)) {                         // the keys follow the bag's order
+          const t = bagOrder()[CLUB_CODES.indexOf(c)] ?? -1;
+          if (!e.repeat && demo && demo.model && t === demo.idx && t === state.club && demoCanSwap()) return toggleDemo();   // again: the demo ⇄ your own
+          return setClub(t);
+        }
         if (c === 'BracketLeft') return setClub(0, -1);       // [ ] step through the bag
         if (c === 'BracketRight') return setClub(0, 1);
         if (state.view !== 'address' || isPeeking()) return;
@@ -11190,7 +11281,12 @@
         bind('inWind', (v) => { state.windMph = +v; orientFlags(); });
         bind('inWindDir', (v) => { state.windDir = +v; orientFlags(); });
         bind('inPower', (v) => { state.power = +v; renderBag(); });
-        $('bagList').addEventListener('click', (e) => { const row = e.target.closest('.bag-row'); if (row) setClub(+row.dataset.i); });
+        $('bagList').addEventListener('click', (e) => {
+          const row = e.target.closest('.bag-row');
+          if (!row) return;
+          if (row.dataset.pick) { toggleDemo(row.dataset.pick === 'demo'); return setClub(+row.dataset.i); }     // a demo and your own: pick one
+          setClub(+row.dataset.i);
+        });
         canvas.addEventListener('wheel', (e) => {
           e.preventDefault();
           if (onGreenView() && state.view === 'overhead') { state.puttZoom = state.puttZoom === 'green' ? 'putt' : 'green'; return; }
@@ -11509,8 +11605,9 @@
         const fitNow = clubFit(club, state.lie, isTeed(club));
         const fitTxt = fitNow.s > 0.02 ? `  ·  ${fitNow.s >= 0.5 ? '✕ WRONG CLUB FOR THIS LIE' : '⚠ risky from this lie'} (${Math.round(fitNow.mishit * 100)}% mishit, −${Math.round((1 - fitNow.power) * 100)}% speed)` : '';
         const stk = chip ? null : stockShot(state.club), sideTxt = stk && Math.abs(stk.side) >= 1 ? ` · finishes ${Math.abs(stk.side).toFixed(0)} yd ${stk.side > 0 ? 'R' : 'L'}` : '';
-        setText('tbClub', chip ? `${club.name} · ${CHIP_TYPES[state.chipType].name}${fitTxt}`
-          : `${club.name}${shotName() !== 'Stock' ? ` · ${shotName()}` : ''} · ${read.carryTxt} yd carry / ${read.totalTxt} total${sideTxt}${fitTxt}`);
+        const demoTxt = careerOn && demo && demo.model && demo.idx === state.club ? (demo.on ? ' (DEMO)' : ' (yours)') : '';       // a pro-shop demo in this slot
+        setText('tbClub', chip ? `${club.name}${demoTxt} · ${CHIP_TYPES[state.chipType].name}${fitTxt}`
+          : `${club.name}${demoTxt}${shotName() !== 'Stock' ? ` · ${shotName()}` : ''} · ${read.carryTxt} yd carry / ${read.totalTxt} total${sideTxt}${fitTxt}`);
         $('tbClub').style.color = fitNow.s >= 0.5 ? 'var(--red)' : fitNow.s > 0.02 ? 'var(--amber)' : '';
         if (chip) {             // the pin's distance is read through the same band as the landing spot, so it cannot give the answer away
           const offYd = Math.tan(state.aim * D2R) * green.distFt * FT / YD;
