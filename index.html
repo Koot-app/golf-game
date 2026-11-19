@@ -3686,6 +3686,429 @@
         display: none;
       }
     }
+
+    /* ---- THE CLUBHOUSE, RPG style: full screen, an illustrated room behind each view (drawn in chScene()), the lobby's
+       doors and signs as the menu, and wood-and-brass panels ---- */
+    #clubhouse {
+      position: fixed;
+      inset: 0;
+      left: 0;
+      top: 0;
+      transform: none;
+      width: auto !important;
+      max-height: none;
+      overflow: hidden;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: #120c08;
+      z-index: 7;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      --dim: #bfa883;
+      --line: rgba(216, 180, 90, .2);
+      --cyan: #e9c46a;
+    }
+
+    /* the scene is a 16:9 picture that covers the screen; the signs sit on it in the same box, so they stay on their doors */
+    .ch-scene {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: max(100vw, 177.78vh);
+      height: max(56.25vw, 100vh);
+      transform: translateY(-50%);
+    }
+
+    /* on a narrower screen the picture is cropped on the panel's side, so the doors, signs and shelves stay in view */
+    #clubhouse.hub .ch-scene,
+    #clubhouse.new .ch-scene {
+      left: auto;
+      right: 0;
+    }
+
+    .ch-scene svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .ch-spots {
+      pointer-events: none;
+    }
+
+    .ch-room {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 7px 34px 8px;
+      border-radius: 6px;
+      background: linear-gradient(#e9cd85, #b88c3c 55%, #8f6a26);
+      border: 1px solid #5b4012;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -2px 0 rgba(0, 0, 0, .2);
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: #3a2508;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, .45);
+      white-space: nowrap;
+      z-index: 2;
+    }
+
+    .ch-room::before,
+    .ch-room::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 6px;
+      height: 6px;
+      margin-top: -3px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fff3c4, #7a5718);
+    }
+
+    .ch-room::before {
+      left: 11px;
+    }
+
+    .ch-room::after {
+      right: 11px;
+    }
+
+    /* the panel: a dark walnut board with a brass rim */
+    .ch-panel {
+      position: absolute;
+      top: 64px;
+      right: 28px;
+      bottom: 22px;
+      width: min(640px, calc(100vw - 56px));
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding-bottom: 14px;
+      border-radius: 10px;
+      border: 2px solid #9c7a37;
+      background:
+        repeating-linear-gradient(92deg, rgba(255, 255, 255, .018) 0 2px, transparent 2px 9px),
+        linear-gradient(160deg, rgba(52, 33, 18, .96), rgba(24, 15, 9, .97));
+      box-shadow: 0 18px 50px rgba(0, 0, 0, .65), inset 0 0 0 1px rgba(255, 226, 150, .14), inset 0 0 40px rgba(0, 0, 0, .45);
+      color: #f3e6c8;
+      z-index: 1;
+    }
+
+    #clubhouse.hub .ch-panel,
+    #clubhouse.new .ch-panel {
+      left: 28px;
+      right: auto;
+      width: min(540px, calc(100vw - 56px));
+      bottom: auto;
+      max-height: calc(100vh - 86px);
+    }
+
+    #clubhouse.shop:not(.coach) .ch-panel {
+      width: min(820px, calc(100vw - 56px));
+    }
+
+    #clubhouse.friends .ch-panel,
+    #clubhouse.chal .ch-panel {
+      width: min(680px, calc(100vw - 56px));
+    }
+
+    #clubhouse .card-h {
+      border-bottom: 1px solid rgba(216, 180, 90, .25);
+      margin-bottom: 10px;
+      font-family: Georgia, "Palatino Linotype", serif;
+    }
+
+    #clubhouse .card-h>span:first-child {
+      color: #e9c46a;
+      letter-spacing: .14em;
+    }
+
+    #clubhouse .tag {
+      background: rgba(233, 196, 106, .12);
+      border-color: rgba(233, 196, 106, .4);
+      color: #f3dca0;
+    }
+
+    #clubhouse .ch-lead,
+    #clubhouse .ch-who,
+    #clubhouse .sh-cat {
+      font-family: Georgia, "Palatino Linotype", serif;
+    }
+
+    #clubhouse .ch-lead {
+      color: #f6e3b4;
+      letter-spacing: .03em;
+    }
+
+    #clubhouse .sh-cat {
+      color: #e9c46a;
+      letter-spacing: .16em;
+    }
+
+    #clubhouse button {
+      background: linear-gradient(rgba(255, 236, 196, .1), rgba(255, 236, 196, .04));
+      border-color: rgba(216, 180, 90, .45);
+      color: #f3e6c8;
+    }
+
+    #clubhouse button:hover:not(:disabled) {
+      background: linear-gradient(rgba(255, 236, 196, .18), rgba(255, 236, 196, .08));
+      border-color: #e9c46a;
+    }
+
+    #clubhouse button.go,
+    #clubhouse .fr-btns button.go,
+    #clubhouse .co-row button {
+      background: linear-gradient(#2f6b3f, #1d4a2a);
+      border-color: #6fbf7f;
+      color: #eaffef;
+    }
+
+    #clubhouse .cm-fmt button.on,
+    #clubhouse .sh-tabs button.on {
+      background: linear-gradient(#e9cd85, #b88c3c);
+      border-color: #f3dca0;
+      color: #2c1c06;
+    }
+
+    #clubhouse .sh-item,
+    #clubhouse .cm-npc,
+    #clubhouse .fr-ch,
+    #clubhouse .fr-pl,
+    #clubhouse .ch-tier,
+    #clubhouse .ch-stats,
+    #clubhouse .cm-bet {
+      background: rgba(255, 236, 196, .045);
+      border-color: rgba(216, 180, 90, .22);
+    }
+
+    #clubhouse .cm-npc.on,
+    #clubhouse .fr-ch.hot {
+      border-color: #e9c46a;
+      background: rgba(233, 196, 106, .12);
+    }
+
+    #clubhouse .ch-tier b,
+    #clubhouse .sh-name b,
+    #clubhouse .cm-npc b,
+    #clubhouse .fr-ch b,
+    #clubhouse .fr-pl b {
+      color: #fbefd2;
+    }
+
+    #clubhouse .ch-tier,
+    #clubhouse .sh-note,
+    #clubhouse .cm-npc i,
+    #clubhouse .ch-p {
+      color: #dcc9a4;
+    }
+
+    #clubhouse .ch-pips i {
+      background: rgba(255, 236, 196, .1);
+    }
+
+    #clubhouse .ch-pips i.on {
+      background: linear-gradient(#f3d58a, #c4952f);
+    }
+
+    #clubhouse .sh-bar i {
+      background: linear-gradient(90deg, #c4952f, #f3d58a);
+    }
+
+    #clubhouse .ch-msg {
+      color: #ffd98a;
+    }
+
+    #clubhouse input:not([type=checkbox]):not([type=range]),
+    #clubhouse select {
+      background: rgba(0, 0, 0, .35);
+      border-color: rgba(216, 180, 90, .4);
+      color: #fbefd2;
+    }
+
+    /* the character sheet (the lobby's panel) */
+    #clubhouse .ch-prof {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      align-items: center;
+      gap: 6px 14px;
+    }
+
+    .ch-medal {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-family: Georgia, serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: #3a2508;
+      background: radial-gradient(circle at 35% 30%, #fff1c2, #d9ae55 45%, #8c6420);
+      border: 2px solid #5b4012;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .5), inset 0 0 0 3px rgba(255, 241, 194, .35);
+    }
+
+    #clubhouse .ch-who {
+      font-size: 26px;
+      color: #fbefd2;
+      letter-spacing: .06em;
+    }
+
+    .ch-rank {
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 13px;
+      color: #e9c46a;
+    }
+
+    #clubhouse .ch-kpis {
+      grid-column: 1 / -1;
+      margin: 6px 0 2px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    #clubhouse .ch-kpis>div {
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, .25);
+      border: 1px solid rgba(216, 180, 90, .2);
+    }
+
+    #clubhouse .ch-kpis b {
+      font-size: 16px;
+    }
+
+    #clubhouse .ch-tiers {
+      gap: 6px;
+    }
+
+    #clubhouse .ch-tier {
+      padding: 7px 8px;
+      font-size: 11px;
+    }
+
+    #clubhouse .ch-foot {
+      flex-wrap: wrap;
+    }
+
+    #clubhouse .sh-list {
+      max-height: calc(100vh - 340px);
+    }
+
+    #clubhouse ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #clubhouse ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, .25);
+      border-radius: 4px;
+    }
+
+    #clubhouse ::-webkit-scrollbar-thumb {
+      background: linear-gradient(#c9a253, #8c6a2c);
+      border-radius: 4px;
+    }
+
+    #clubhouse .ch-foot button {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    #clubhouse .ch-foot span {
+      flex-basis: 100%;
+      margin-left: 0;
+    }
+
+    /* the lobby's menu: hanging signs on the doors, the window and the bar (positions match the lobby picture) */
+    .ch-spots .ch-menu {
+      display: block;
+      margin: 0;
+    }
+
+    #clubhouse:not(.hub) .ch-spots .ch-menu {
+      display: none;
+    }
+
+    .ch-spots .ch-menu button {
+      position: absolute;
+      pointer-events: auto;
+      transform: translate(-50%, 0);
+      width: auto;
+      min-width: 150px;
+      max-width: 210px;
+      margin: 0;
+      padding: 8px 14px 9px !important;
+      text-align: center;
+      border-radius: 6px;
+      border: 2px solid #5b4012 !important;
+      background: linear-gradient(#4a2f17, #2e1c0d) !important;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, .55), inset 0 0 0 1px rgba(233, 196, 106, .35);
+      color: #f3e6c8;
+      transition: transform .15s, box-shadow .15s;
+    }
+
+    .ch-spots .ch-menu button::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: -16px;
+      width: 40%;
+      height: 16px;
+      transform: translateX(-50%);
+      border: 2px solid rgba(201, 162, 83, .8);
+      border-bottom: 0;
+      border-radius: 14px 14px 0 0;
+    }
+
+    .ch-spots .ch-menu button:hover {
+      transform: translate(-50%, -3px);
+      box-shadow: 0 12px 26px rgba(0, 0, 0, .6), 0 0 0 3px rgba(233, 196, 106, .55), 0 0 30px rgba(255, 210, 120, .35);
+    }
+
+    .ch-spots .ch-menu b {
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: 15px;
+      letter-spacing: .06em;
+      color: #f6dc95;
+    }
+
+    .ch-spots .ch-menu i {
+      font-size: 11px;
+      color: #dcc9a4;
+    }
+
+    .ch-spots .ch-menu [data-go=shop] {
+      left: 44.4%;
+      top: 24%;
+    }
+
+    .ch-spots .ch-menu [data-go=coach] {
+      left: 56.6%;
+      top: 24%;
+    }
+
+    .ch-spots .ch-menu [data-go=match] {
+      left: 72.5%;
+      top: 10.5%;
+    }
+
+    .ch-spots .ch-menu [data-go=friends] {
+      left: 90.6%;
+      top: 22%;
+    }
+
+    .ch-spots .ch-menu [data-go=range] {
+      left: 72.5%;
+      top: 66%;
+      grid-column: auto;
+    }
   </style>
 </head>
 
@@ -4017,8 +4440,12 @@
         <div id="riBtns"><button id="riStart">Start round (Enter)</button><button id="riCancel">Cancel (Esc)</button></div>
       </div>
     </div>
-    <div id="clubhouse" class="card">
-      <div class="card-h"><span>🏌️ The Clubhouse</span><span class="tag" id="chTag"></span></div>
+    <div id="clubhouse">
+      <div class="ch-scene" id="chScene"></div>
+      <div class="ch-scene ch-spots" id="chSpots"></div>
+      <div class="ch-room" id="chRoom"><span id="chRoomName">The Clubhouse</span></div>
+      <div class="ch-panel card" id="chPanel">
+      <div class="card-h"><span id="chPanelName">🏌️ The Clubhouse</span><span class="tag" id="chTag"></span></div>
       <div id="chNew">
         <div class="ch-lead">Who's playing?</div>
         <div class="sh-tabs" id="siTabs"><button data-si="in">Sign in</button><button data-si="new">New profile</button><button data-si="local">Play on this PC only</button></div>
@@ -4033,7 +4460,8 @@
       </div>
       <div id="chHub">
         <div class="ch-prof">
-          <div class="ch-who" id="chWho"></div>
+          <div class="ch-medal" id="chMedal"></div>
+          <div><div class="ch-who" id="chWho"></div><div class="ch-rank" id="chRank"></div></div>
           <div class="ch-kpis">
             <div><i>Cash</i><b id="chCash"></b></div>
             <div><i>Reputation</i><b id="chRep"></b></div>
@@ -4104,6 +4532,7 @@
         <div class="ch-err" id="cmErr"></div>
         <div class="ch-btns"><button id="cmGo" class="go">Tee off (Enter)</button><button id="cmBack">Back (Esc)</button><span
             class="cm-help">↑ ↓ pick a player · F format · ← → stake</span></div>
+      </div>
       </div>
     </div>
     <div id="beating">
@@ -7853,6 +8282,8 @@
         }
         if (!career) return;
         setText('chWho', career.name);
+        setText('chMedal', career.name.slice(0, 2).toUpperCase());
+        setText('chRank', `${rankOf(career.rep || 0)} · ${CAREER.tiers[career.tier]} circuit`);
         setText('chCash', money(career.cash));
         setText('chRep', String(career.rep));
         setText('chTier', `${career.tier} · ${CAREER.tiers[career.tier]}`);
@@ -8108,6 +8539,193 @@
       }
       career = careerLoad();
       if (session) setTimeout(() => syncLoad(), 400);         // signed in: pick up anything played on another PC
+
+      // ---- THE CLUBHOUSE'S ROOMS: an illustrated scene behind each view (drawn here as SVG, 1600 × 900, covering the
+      // screen), swapped whenever the view changes. lobby = the hub (its doors and signs are the menu), shop, coach,
+      // bar = the 19th hole (friends), tee = the first tee (the hustlers). The panel sits where the picture is plain.
+      const CH_ROOMS = {
+        lobby: { name: 'The Clubhouse', panel: '🏌️ Clubhouse' }, shop: { name: 'The Pro Shop', panel: '🛒 Pro shop' },
+        coach: { name: 'The Teaching Bay', panel: '🎓 The coach' }, bar: { name: 'The 19th Hole', panel: '🤝 Friends' },
+        tee: { name: 'The First Tee', panel: '⛳ Hustlers' },
+      };
+      const chRoomOf = (cl) => (cl.contains('coach') ? 'coach' : cl.contains('shop') ? 'shop' : cl.contains('friends') || cl.contains('chal') ? 'bar' : cl.contains('match') ? 'tee' : 'lobby');
+      let chRoomNow = '';
+      function chSetRoom() {
+        const room = chRoomOf($('clubhouse').classList);
+        if (room === chRoomNow) return;
+        chRoomNow = room;
+        $('chScene').innerHTML = chScene(room);
+        setText('chRoomName', CH_ROOMS[room].name);
+        setText('chPanelName', CH_ROOMS[room].panel);
+      }
+      new MutationObserver(chSetRoom).observe($('clubhouse'), { attributes: true, attributeFilter: ['class'] });
+      $('chSpots').appendChild($('clubhouse').querySelector('.ch-menu'));          // the lobby's menu hangs on its doors
+      // the career's standing, as a title under the name (reputation)
+      const RANKS = [[0, 'Muni rat'], [15, 'Range regular'], [40, 'Weekend hustler'], [80, 'Local legend'], [120, 'Resort shark'], [200, 'Country-club menace'], [320, 'Legend of the links']];
+      const rankOf = (rep) => RANKS.filter(([r]) => rep >= r).pop()[1];
+
+      function chScene(room) {
+        const W = 1600, H = 900;
+        const lamp = (x, len = 70) => `<line x1="${x}" y1="0" x2="${x}" y2="${len}" stroke="#1a110a" stroke-width="3"/><path d="M${x - 34} ${len + 30} L${x - 18} ${len} H${x + 18} L${x + 34} ${len + 30} Z" fill="#2b1c10" stroke="#c9a253" stroke-width="2"/>`
+          + `<ellipse cx="${x}" cy="${len + 32}" rx="34" ry="6" fill="#ffe2a0"/><circle cx="${x}" cy="${len + 90}" r="190" fill="url(#glow)"/>`;
+        const defs = `<defs>
+          <radialGradient id="glow"><stop offset="0" stop-color="#ffd27a" stop-opacity=".28"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>
+          <radialGradient id="vig" cx=".5" cy=".45" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".62"/></radialGradient>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5aa7e6"/><stop offset="1" stop-color="#cfe9f7"/></linearGradient>
+          <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a3820"/><stop offset="1" stop-color="#3a2314"/></linearGradient>
+          <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b2515"/><stop offset="1" stop-color="#1f130b"/></linearGradient>
+          <pattern id="stripes" width="34" height="40" patternUnits="userSpaceOnUse"><rect width="34" height="40" fill="#24402e"/><rect width="3" height="40" x="15" fill="#2c4b36"/><circle cx="0" cy="20" r="2" fill="#3d6249" opacity=".6"/></pattern>
+          <filter id="neon" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>`;
+        // a view out of a window (or the real thing on the first tee): sky, hills, a fairway and a flag
+        const vista = (x, y, w, h, flag = true) => {
+          const hy = y + h * 0.55;
+          return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#sky)"/>`
+            + `<ellipse cx="${x + w * 0.25}" cy="${y + h * 0.2}" rx="${w * 0.09}" ry="${h * 0.035}" fill="#fff" opacity=".8"/><ellipse cx="${x + w * 0.7}" cy="${y + h * 0.14}" rx="${w * 0.12}" ry="${h * 0.04}" fill="#fff" opacity=".7"/>`
+            + `<path d="M${x} ${hy} Q${x + w * 0.3} ${hy - h * 0.12} ${x + w * 0.6} ${hy - h * 0.03} T${x + w} ${hy - h * 0.06} V${y + h} H${x} Z" fill="#3f7d45"/>`
+            + `<path d="M${x} ${hy + h * 0.08} Q${x + w * 0.5} ${hy - h * 0.05} ${x + w} ${hy + h * 0.06} V${y + h} H${x} Z" fill="#4f9a50"/>`
+            + `<path d="M${x + w * 0.42} ${y + h} L${x + w * 0.52} ${hy + h * 0.02} L${x + w * 0.58} ${hy + h * 0.02} L${x + w * 0.8} ${y + h} Z" fill="#79c56b"/>`
+            + Array.from({ length: 9 }, (_, i) => { const tx = x + (i < 4 ? w * (0.04 + i * 0.09) : w * (0.66 + (i - 4) * 0.075)), ty = hy - h * (0.02 + (i % 3) * 0.015); return `<path d="M${tx} ${ty - h * 0.13} L${tx - w * 0.03} ${ty} H${tx + w * 0.03} Z" fill="#24502c"/>`; }).join('')
+            + (flag ? `<line x1="${x + w * 0.55}" y1="${hy - h * 0.1}" x2="${x + w * 0.55}" y2="${hy + h * 0.02}" stroke="#eee" stroke-width="2"/><path d="M${x + w * 0.55} ${hy - h * 0.1} l${w * 0.04} ${h * 0.015} l-${w * 0.04} ${h * 0.015} Z" fill="#e33"/>` : '');
+        };
+        const door = (x, w, glass) => `<rect x="${x - 10}" y="290" width="${w + 20}" height="480" fill="#2a190d"/><rect x="${x}" y="300" width="${w}" height="470" fill="url(#wood)" stroke="#1d1209" stroke-width="3"/>`
+          + `<rect x="${x + 16}" y="320" width="${w - 32}" height="170" rx="4" fill="${glass}" stroke="#c9a253" stroke-width="3"/>`
+          + `<rect x="${x + 16}" y="520" width="${w - 32}" height="220" rx="4" fill="none" stroke="#2a190d" stroke-width="4"/><circle cx="${x + w - 20}" cy="560" r="7" fill="#e3c06a"/>`;
+        const floorLines = (y0) => Array.from({ length: 16 }, (_, i) => `<line x1="${i * 110 - 60}" y1="${H}" x2="${800 + (i * 110 - 860) * 0.55}" y2="${y0}" stroke="#000" stroke-opacity=".25"/>`).join('');
+
+        if (room === 'lobby') {
+          return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}
+            <rect width="${W}" height="${H}" fill="url(#stripes)"/>
+            <rect width="${W}" height="46" fill="#24160c"/><rect y="46" width="${W}" height="10" fill="#7a5a2c"/>
+            <rect y="560" width="${W}" height="210" fill="url(#wood)"/><rect y="556" width="${W}" height="8" fill="#b08a45"/>
+            ${Array.from({ length: 16 }, (_, i) => `<rect x="${i * 100 + 12}" y="586" width="76" height="160" rx="3" fill="none" stroke="#2a190d" stroke-width="3" opacity=".7"/>`).join('')}
+            <rect y="770" width="${W}" height="130" fill="url(#floor)"/>${floorLines(770)}
+            <path d="M420 900 L560 790 H1180 L1330 900 Z" fill="#6b1f24" opacity=".85"/><path d="M455 890 L575 800 H1165 L1290 890 Z" fill="none" stroke="#c9a253" stroke-width="3" opacity=".7"/>
+            <!-- the fireplace and the painting over it -->
+            <rect x="110" y="410" width="360" height="360" fill="#5b5148"/><rect x="95" y="400" width="390" height="22" fill="#3a2314"/>
+            <path d="M180 770 V560 Q290 470 400 560 V770 Z" fill="#140c07"/>
+            <path d="M215 760 L365 742 M225 742 L370 762" stroke="#4a2c16" stroke-width="16" stroke-linecap="round"/>
+            <path d="M230 745 Q240 690 262 660 Q262 700 280 710 Q285 650 310 615 Q318 680 335 690 Q345 665 352 650 Q365 700 350 745 Z" fill="#ff8a2a"/>
+            <path d="M255 745 Q265 710 280 690 Q288 715 300 720 Q306 690 318 670 Q330 715 322 745 Z" fill="#ffd25a"/>
+            <circle cx="290" cy="720" r="160" fill="url(#glow)"/>
+            <rect x="150" y="120" width="280" height="200" fill="#c9a253"/><rect x="164" y="134" width="252" height="172" fill="#1d130a"/>${vista(170, 140, 240, 160)}
+            <!-- trophies on the mantel -->
+            <path d="M150 400 v-22 h16 v22 Z M144 378 h28 l-5 -26 h-18 Z" fill="#e3c06a"/><path d="M420 400 v-18 h14 v18 Z M414 382 h26 l-4 -22 h-18 Z" fill="#cfd6dd"/>
+            ${door(640, 140, '#8bb7c9')}
+            <path d="M660 340 v120 M690 330 v130 M720 345 v115 M750 335 v125" stroke="#2b2b2b" stroke-width="3"/><path d="M652 460 h16 M682 460 h16 M712 460 h16 M742 460 h16" stroke="#222" stroke-width="7" stroke-linecap="round"/>
+            ${door(840, 130, '#5d7380')}
+            <path d="M870 450 L900 340 L930 450" fill="none" stroke="#fff" stroke-width="3" opacity=".7"/><circle cx="900" cy="335" r="8" fill="none" stroke="#fff" stroke-width="3" opacity=".7"/>
+            <!-- the big window onto the first tee -->
+            <rect x="1018" y="138" width="284" height="394" fill="#2a190d"/>${vista(1030, 150, 260, 370)}
+            <path d="M1030 273 H1290 M1030 396 H1290 M1160 150 V520" stroke="#2a190d" stroke-width="9"/><rect x="1008" y="520" width="304" height="20" fill="#7a5a2c"/>
+            <!-- the arch to the bar -->
+            <path d="M1340 770 V360 Q1450 240 1560 360 V770 Z" fill="#170d07"/><path d="M1340 770 V360 Q1450 240 1560 360 V770" fill="none" stroke="#7a5a2c" stroke-width="10"/>
+            ${Array.from({ length: 3 }, (_, r) => Array.from({ length: 7 }, (_, i) => `<rect x="${1368 + i * 26}" y="${380 + r * 70}" width="12" height="${36 + (i % 3) * 6}" rx="3" fill="${['#7a2c1f', '#2f6b3f', '#b8862b', '#4b5f8a', '#8c3a5c'][(i + r) % 5]}" opacity=".9"/>`).join('') + `<rect x="1360" y="${420 + r * 70}" width="180" height="5" fill="#5a3820"/>`).join('')}
+            <rect x="1350" y="610" width="200" height="160" fill="#3a2314"/><rect x="1345" y="600" width="210" height="14" fill="#6b4422"/><circle cx="1450" cy="500" r="170" fill="url(#glow)"/>
+            <!-- a bag of clubs by the range door, and the easel sign's legs -->
+            <rect x="1250" y="660" width="54" height="125" rx="14" fill="#7a1f24" stroke="#2a190d" stroke-width="3"/><path d="M1262 660 v-40 M1277 660 v-55 M1292 660 v-35" stroke="#bbb" stroke-width="4"/>
+            <circle cx="1262" cy="618" r="8" fill="#222"/><circle cx="1277" cy="603" r="8" fill="#333"/><circle cx="1292" cy="623" r="8" fill="#1d3a6b"/>
+            <path d="M1135 640 L1110 790 M1185 640 L1210 790 M1160 640 L1160 785" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
+            ${lamp(300)}${lamp(800)}${lamp(1300)}
+            <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
+        }
+        if (room === 'shop') {
+          const club = (x, y, c) => `<line x1="${x}" y1="${y}" x2="${x + 6}" y2="${y + 190}" stroke="#c9ced3" stroke-width="3"/><rect x="${x - 3}" y="${y}" width="7" height="44" rx="2" fill="#222"/>`
+            + `<path d="M${x + 6} ${y + 186} q-2 22 22 24 q22 0 18 -18 q-8 -12 -40 -6 Z" fill="${c}" stroke="#111" stroke-width="2"/><rect x="${x + 10}" y="${y + 120}" width="22" height="13" fill="#fff"/>`;
+          const polo = (x, y, c) => `<path d="M${x} ${y} l20 -12 h12 q8 10 16 0 h12 l20 12 l-10 22 l-12 -6 v60 h-56 v-60 l-12 6 Z" fill="${c}" stroke="rgba(0,0,0,.35)" stroke-width="2"/><line x1="${x + 40}" y1="${y - 12}" x2="${x + 40}" y2="${y + 8}" stroke="rgba(0,0,0,.3)" stroke-width="2"/>`;
+          const box = (x, y, c) => `<rect x="${x}" y="${y}" width="58" height="40" fill="${c}" stroke="rgba(0,0,0,.4)" stroke-width="2"/><circle cx="${x + 18}" cy="${y + 20}" r="9" fill="#fff"/><circle cx="${x + 40}" cy="${y + 20}" r="9" fill="#fff"/>`;
+          const bag = (x, c) => `<rect x="${x}" y="660" width="70" height="170" rx="16" fill="${c}" stroke="#111" stroke-width="3"/><rect x="${x}" y="700" width="70" height="14" fill="rgba(255,255,255,.3)"/>`
+            + `<path d="M${x + 14} 660 l-8 -60 M${x + 30} 660 l0 -76 M${x + 48} 660 l8 -64 M${x + 60} 660 l14 -46" stroke="#cfd6dd" stroke-width="4"/><circle cx="${x + 6}" cy="598" r="11" fill="#222"/><circle cx="${x + 30}" cy="582" r="11" fill="#333"/><circle cx="${x + 57}" cy="594" r="11" fill="#1d3a6b"/>`;
+          return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}
+            <rect width="${W}" height="${H}" fill="#cfae7c"/>
+            ${Array.from({ length: 34 }, (_, i) => `<rect y="${i * 26}" width="${W}" height="4" fill="#9c7a4c" opacity=".55"/>`).join('')}
+            <rect width="${W}" height="30" fill="#2a1a0e"/>
+            <rect x="60" y="48" width="660" height="78" rx="6" fill="#1f4a2c" stroke="#c9a253" stroke-width="4"/>
+            <text x="390" y="104" text-anchor="middle" font-family="Georgia, serif" font-size="46" font-weight="700" letter-spacing="10" fill="#f3dca0">PRO SHOP</text>
+            ${['#1b1b1b', '#21407a', '#8a1c22', '#1b1b1b', '#5a5f66', '#21407a', '#0f5c3a', '#1b1b1b', '#8a1c22'].map((c, i) => club(92 + i * 70, 150, c)).join('')}
+            <rect x="70" y="146" width="660" height="8" fill="#6b4c22"/>
+            <rect x="60" y="420" width="360" height="6" fill="#8a8f94"/>${['#f2f2f2', '#2f6db0', '#d94f4f', '#f5d36b', '#3a8f5a', '#1c2a44'].map((c, i) => polo(64 + i * 58, 446 + (i % 2) * 6, c)).join('')}
+            ${[0, 1, 2].map((r) => `<rect x="450" y="${470 + r * 72}" width="290" height="8" fill="#6b4c22"/>` + Array.from({ length: 4 }, (_, i) => box(458 + i * 70, 430 + r * 72, ['#f0f0f0', '#1d2f5c', '#c23b3b', '#f4c542'][(i + r) % 4])).join('')).join('')}
+            <rect y="780" width="${W}" height="120" fill="#b08657"/>${floorLines(780)}
+            ${bag(470, '#1d3a6b')}${bag(560, '#8a1c22')}${bag(650, '#222')}
+            <!-- the counter and the till -->
+            <rect x="-10" y="660" width="420" height="240" fill="url(#wood)" stroke="#1d1209" stroke-width="4"/><rect x="-10" y="648" width="430" height="20" fill="#7a5a2c"/>
+            <rect x="250" y="590" width="110" height="60" rx="6" fill="#2b2f33"/><rect x="262" y="600" width="86" height="22" fill="#5ee08a" opacity=".7"/><rect x="235" y="640" width="140" height="12" fill="#1c1f22"/>
+            <ellipse cx="120" cy="644" rx="60" ry="8" fill="#000" opacity=".3"/><path d="M80 644 q40 -40 80 0" fill="#f2f2f2" stroke="#ccc"/>
+            ${Array.from({ length: 6 }, (_, i) => `<rect x="${860 + i * 120}" y="160" width="6" height="150" fill="#c9ced3"/><path d="M${856 + i * 120} 310 h30 l-4 14 h-26 Z" fill="#9aa1a8"/>`).join('')}
+            <circle cx="300" cy="300" r="260" fill="url(#glow)"/><circle cx="650" cy="420" r="220" fill="url(#glow)"/>
+            <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
+        }
+        if (room === 'coach') {
+          return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}
+            <rect width="${W}" height="${H}" fill="#24272c"/>${Array.from({ length: 12 }, (_, i) => `<rect x="${i * 140}" width="4" height="620" fill="#1b1d21"/>`).join('')}
+            <path d="M0 620 H${W} V${H} H0 Z" fill="#2f6b3a"/><path d="M0 620 H${W}" stroke="#1d4426" stroke-width="6"/>
+            ${Array.from({ length: 12 }, (_, i) => `<line x1="${i * 150 - 100}" y1="${H}" x2="${650 + (i * 150 - 750) * 0.5}" y2="620" stroke="#26592f" stroke-width="3"/>`).join('')}
+            <!-- the whiteboard -->
+            <rect x="40" y="110" width="300" height="230" rx="4" fill="#f4f6f7" stroke="#9aa1a8" stroke-width="6"/>
+            <circle cx="120" cy="190" r="12" fill="none" stroke="#2a4d8f" stroke-width="3"/><path d="M120 202 v60 l-22 46 M120 262 l22 46 M120 220 l40 -30" fill="none" stroke="#2a4d8f" stroke-width="3"/>
+            <path d="M70 300 Q120 120 240 150" fill="none" stroke="#d94f4f" stroke-width="3" stroke-dasharray="8 6"/><path d="M180 290 L300 200 M286 200 h14 v14" fill="none" stroke="#2f8f4f" stroke-width="3"/>
+            <text x="190" y="135" font-family="Segoe Print, Comic Sans MS, cursive" font-size="20" fill="#d94f4f">face to path!</text><text x="200" y="325" font-family="Segoe Print, Comic Sans MS, cursive" font-size="17" fill="#2a4d8f">in → out = draw</text>
+            <!-- the net -->
+            <path d="M380 90 H900 V630 H380 Z" fill="#1c1e22"/><path d="M390 100 Q645 130 890 100 V610 Q645 640 390 610 Z" fill="#2a2d33"/>
+            ${Array.from({ length: 22 }, (_, i) => `<line x1="${400 + i * 23}" y1="${103 + Math.sin(i / 3) * 4}" x2="${400 + i * 23}" y2="${612}" stroke="#56606b" stroke-width="1.5"/>`).join('')}
+            ${Array.from({ length: 22 }, (_, i) => `<line x1="390" y1="${110 + i * 23}" x2="890" y2="${112 + i * 23}" stroke="#56606b" stroke-width="1.5"/>`).join('')}
+            <circle cx="650" cy="350" r="60" fill="none" stroke="#e3c06a" stroke-width="5"/><circle cx="650" cy="350" r="22" fill="#e3c06a" opacity=".6"/>
+            <path d="M370 90 V640 M910 90 V640" stroke="#9aa1a8" stroke-width="10"/>
+            <!-- the mat, a ball, alignment sticks -->
+            <path d="M470 680 H830 L870 770 H430 Z" fill="#1f4d2a" stroke="#174020" stroke-width="3"/><circle cx="650" cy="712" r="9" fill="#fff"/><rect x="646" y="719" width="8" height="10" fill="#f4c542"/>
+            <path d="M560 860 L620 690 M760 860 L700 690" stroke="#f4c542" stroke-width="6" stroke-linecap="round"/>
+            <!-- the camera on its tripod and the launch monitor -->
+            <path d="M160 780 L200 540 L240 780 M200 540 V790" stroke="#111" stroke-width="6" fill="none"/><rect x="160" y="500" width="84" height="50" rx="6" fill="#151515"/><circle cx="244" cy="525" r="16" fill="#2b4f7a" stroke="#000" stroke-width="4"/><circle cx="172" cy="512" r="5" fill="#e33"/>
+            <rect x="760" y="760" width="90" height="40" rx="6" fill="#151515"/><rect x="770" y="768" width="70" height="18" fill="#35e0ff" opacity=".7"/>
+            ${lamp(300, 30)}${lamp(650, 30)}${lamp(1000, 30)}
+            <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
+        }
+        if (room === 'bar') {
+          const bottle = (x, y, c, h) => `<rect x="${x}" y="${y - h}" width="18" height="${h}" rx="4" fill="${c}"/><rect x="${x + 6}" y="${y - h - 16}" width="6" height="18" fill="${c}"/><rect x="${x + 3}" y="${y - h + 8}" width="4" height="${h - 16}" fill="#fff" opacity=".25"/>`;
+          const stool = (x) => `<ellipse cx="${x}" cy="760" rx="46" ry="14" fill="#6b1f24" stroke="#2a0c0e" stroke-width="3"/><rect x="${x - 5}" y="770" width="10" height="120" fill="#b08a45"/><ellipse cx="${x}" cy="840" rx="30" ry="6" fill="none" stroke="#b08a45" stroke-width="5"/>`;
+          return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}
+            <rect width="${W}" height="${H}" fill="#2a170c"/>${Array.from({ length: 20 }, (_, i) => `<rect x="${i * 80}" width="3" height="${H}" fill="#1e1008"/>`).join('')}
+            <rect x="40" y="100" width="820" height="400" fill="#3c4a4f" stroke="#7a5a2c" stroke-width="12"/><rect x="52" y="112" width="796" height="376" fill="#56666b" opacity=".6"/>
+            ${[0, 1, 2].map((r) => `<rect x="52" y="${226 + r * 118}" width="796" height="10" fill="#5a3820"/>` + Array.from({ length: 24 }, (_, i) => bottle(66 + i * 32 + (r % 2) * 10, 226 + r * 118, ['#5c1a12', '#2f6b3f', '#b8862b', '#d9d2c0', '#3b4f7a', '#8a5a1c'][(i * 7 + r) % 6], 54 + ((i * 13 + r * 5) % 4) * 10)).join('')).join('')}
+            <text x="450" y="178" text-anchor="middle" font-family="Georgia, serif" font-size="56" font-style="italic" font-weight="700" fill="#ffb3c7" filter="url(#neon)">19th Hole</text>
+            <!-- the TV with the board on it -->
+            <rect x="900" y="120" width="300" height="180" rx="6" fill="#0d0f12" stroke="#333" stroke-width="6"/><rect x="915" y="135" width="270" height="150" fill="#12324a"/>
+            <text x="1050" y="165" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="18" font-weight="700" fill="#f3dca0">LEADERBOARD</text>
+            ${[0, 1, 2, 3].map((i) => `<rect x="935" y="${182 + i * 24}" width="${150 - i * 20}" height="12" fill="#cfe9f7" opacity=".5"/><rect x="1130" y="${182 + i * 24}" width="30" height="12" fill="#5ee08a" opacity=".7"/>`).join('')}
+            <!-- the bar -->
+            <rect x="-10" y="540" width="1010" height="30" fill="#7a4a24" stroke="#3a2314" stroke-width="3"/><rect x="-10" y="570" width="1000" height="200" fill="url(#wood)"/>
+            ${Array.from({ length: 10 }, (_, i) => `<rect x="${10 + i * 100}" y="590" width="80" height="150" rx="4" fill="none" stroke="#2a190d" stroke-width="3"/>`).join('')}
+            <rect x="-10" y="740" width="1010" height="10" fill="#c9a253"/>
+            <path d="M300 540 v-60 M330 540 v-60 M360 540 v-60" stroke="#c9a253" stroke-width="8"/><rect x="290" y="470" width="80" height="14" rx="4" fill="#8a6a2c"/>
+            <path d="M520 540 l-8 -46 h34 l-8 46 Z" fill="#f4c542" opacity=".8"/><path d="M512 494 h34 v8 h-34 Z" fill="#fff"/><path d="M640 540 l-6 -40 h28 l-6 40 Z" fill="#c95a2b" opacity=".75"/>
+            <rect y="770" width="${W}" height="130" fill="#1a0f08"/>
+            ${stool(140)}${stool(360)}${stool(580)}${stool(800)}
+            ${lamp(220, 40)}${lamp(520, 40)}${lamp(820, 40)}
+            <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
+        }
+        // the first tee
+        return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}
+          ${vista(0, 0, W, H * 0.92, false)}
+          <line x1="850" y1="452" x2="850" y2="488" stroke="#eee" stroke-width="2"/><path d="M850 452 l16 5 l-16 5 Z" fill="#e33"/>
+          <path d="M0 640 Q500 600 1600 650 V900 H0 Z" fill="#3e8a45"/>
+          <path d="M120 900 L330 690 H1010 L1250 900 Z" fill="#6fbd60"/><path d="M330 690 H1010" stroke="#4f9a50" stroke-width="4"/>
+          ${Array.from({ length: 8 }, (_, i) => `<rect x="${120 + i * 150}" y="690" width="70" height="210" fill="#78c66a" opacity=".35"/>`).join('')}
+          <circle cx="470" cy="742" r="13" fill="#d33"/><circle cx="870" cy="742" r="13" fill="#d33"/><circle cx="640" cy="780" r="7" fill="#fff"/><rect x="637" y="786" width="6" height="8" fill="#f4c542"/>
+          <!-- the starter's hut -->
+          <rect x="30" y="430" width="300" height="260" fill="#e8dcc4" stroke="#6b4c22" stroke-width="4"/><path d="M10 440 L180 330 L350 440 Z" fill="#7a2c1f" stroke="#4a1a12" stroke-width="4"/>
+          <rect x="70" y="500" width="120" height="90" fill="#8bb7c9" stroke="#6b4c22" stroke-width="5"/><rect x="220" y="520" width="80" height="170" fill="#6b4c22"/>
+          <rect x="60" y="390" width="240" height="44" rx="4" fill="#1f4a2c" stroke="#c9a253" stroke-width="3"/><text x="180" y="421" text-anchor="middle" font-family="Georgia, serif" font-size="26" font-weight="700" letter-spacing="4" fill="#f3dca0">1ST TEE</text>
+          <!-- a bench, the ball washer, a cart -->
+          <rect x="380" y="640" width="170" height="14" fill="#7a5a2c"/><rect x="380" y="610" width="170" height="10" fill="#7a5a2c"/><path d="M392 654 v40 M538 654 v40" stroke="#4a3216" stroke-width="8"/>
+          <rect x="1010" y="610" width="10" height="110" fill="#333"/><rect x="996" y="590" width="38" height="30" rx="6" fill="#1d3a6b"/>
+          <rect x="1090" y="600" width="230" height="110" rx="18" fill="#f2f2f2" stroke="#999" stroke-width="3"/><rect x="1100" y="530" width="210" height="14" fill="#2b5c3a"/><path d="M1110 544 v60 M1300 544 v60" stroke="#666" stroke-width="5"/>
+          <circle cx="1140" cy="718" r="26" fill="#222"/><circle cx="1280" cy="718" r="26" fill="#222"/><rect x="1240" y="560" width="50" height="60" rx="8" fill="#8a1c22"/>
+          <!-- someone waiting with a driver -->
+          <circle cx="760" cy="560" r="17" fill="#c58c5c"/><path d="M742 550 h36 l-4 -12 h-28 Z" fill="#fff"/><path d="M742 578 h36 l6 80 h-48 Z" fill="#c23b3b"/><path d="M746 658 l-6 70 M774 658 l6 70" stroke="#2c2c2c" stroke-width="12"/>
+          <line x1="790" y1="600" x2="830" y2="730" stroke="#ccc" stroke-width="3"/><path d="M826 728 q12 8 24 0" stroke="#111" stroke-width="8" fill="none"/>
+          <rect width="${W}" height="${H}" fill="url(#vig)" opacity=".7"/></svg>`;
+      }
 
       // ---- FRIENDS (MULTIPLAYER_PLAN.md, M3). Challenges live on the server (api/challenge.js): it holds both stakes
       // (escrow) once a challenge is accepted and settles the bet when both cards are in, so both players see the same
