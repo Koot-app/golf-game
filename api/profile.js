@@ -8,6 +8,7 @@
 //     load                                -> { career, ver }
 //     save    { career, ver }             -> { ver }   or 409 { career, ver } when the server has a newer copy
 //     players                             -> { players: [{ name, tierMax, cash, rep, handicap, rounds }] }
+//     roster  (no session)                -> { players: [{ name, tierMax, cash, handicap, rounds, last, admin }] }  for the sign-in screen
 //
 // Admin profiles (api/_admins.js) have a reserved name and a baked-in password hash; their first sign-in creates them.
 // login / load also return { admin: true | false } for the admin rights to come.
@@ -101,6 +102,18 @@ module.exports = async (req, res) => {
       if (!crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(user.hash, 'hex'))) return send(401, { error: 'Wrong password' });
       const [data, ver] = await redis([['HMGET', `golf:career:${id}`, 'data', 'ver']]).then(([r]) => r);
       return send(200, { token: await newSession(id), name: user.name, career: parse(data), ver: +ver || 0, admin: false });
+    }
+
+    // the sign-in screen's list of profiles (no session needed; nothing private: name, handicap, cash, circuit)
+    if (action === 'roster') {
+      if (!(await rateLimit(`golf:rl:roster:${clientIp(req)}`, 60, 60))) return send(429, { error: 'Too many requests — wait a minute' });
+      const [ids] = await redis([['SMEMBERS', 'golf:players']]);
+      const list = (ids || []).slice(0, 200);
+      const rows = list.length ? await redis(list.flatMap((p) => [['HGET', `golf:career:${p}`, 'data'], ['HGET', `golf:user:${p}`, 'name']])) : [];
+      const players = list.map((p, i) => [p, parse(rows[2 * i]), rows[2 * i + 1]]).filter(([, c, n]) => c || n)
+        .map(([p, c, n]) => (c ? { name: c.name, tierMax: c.tierMax || 1, cash: c.cash, handicap: handicapOf(c), rounds: (c.rounds || []).length, last: c.stamp || 0, admin: isAdmin(p) }
+          : { name: n, tierMax: 1, cash: null, handicap: null, rounds: 0, last: 0, admin: isAdmin(p) }));     // (an admin who hasn't played yet)
+      return send(200, { players });
     }
 
     // ---- everything else needs a session

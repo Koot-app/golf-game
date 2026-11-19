@@ -3222,12 +3222,520 @@
       text-align: center;
       padding: 30px;
     }
+    /* ---- developer tools (sliders that change the game): the admin profile only ---- */
+    body:not(.dev) .dev-only {
+      display: none !important;
+    }
+
+    /* ---- HOME: the title screen over the range ---- */
+    #home {
+      position: fixed;
+      inset: 0;
+      z-index: 6;
+      display: none;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 28px 32px;
+      background: linear-gradient(90deg, rgba(6, 10, 16, .94) 0%, rgba(6, 10, 16, .86) 34%, rgba(6, 10, 16, .25) 62%, rgba(6, 10, 16, .05) 100%);
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+
+    body.home-on #home {
+      display: flex;
+    }
+
+    body.home-on #topbar,
+    body.home-on #leftcol,
+    body.home-on #rightcol,
+    body.home-on #btnTips,
+    body.home-on #hint,
+    body.home-on #toast {
+      display: none !important;
+    }
+
+    .hm-side {
+      width: min(540px, 100%);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .hm-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .hm-logo {
+      width: 62px;
+      height: 62px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 34px;
+      background: linear-gradient(145deg, #2f9e5a, #17592f);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .25);
+    }
+
+    #hmTitle {
+      margin: 0;
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      line-height: 1.05;
+      color: #fff;
+      text-shadow: 0 2px 14px rgba(0, 0, 0, .5);
+    }
+
+    .hm-sub {
+      margin-top: 4px;
+      font-size: 13px;
+      color: #c9d4e0;
+    }
+
+    .hm-h {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: #ffe066;
+      margin-bottom: 10px;
+    }
+
+    .hm-h2 {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 8px;
+    }
+
+    #hmWho,
+    #hmMenu {
+      display: none;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    #home.who #hmWho,
+    #home.menu #hmMenu {
+      display: flex;
+    }
+
+    .hm-roster {
+      display: grid;
+      gap: 8px;
+      overflow-y: auto;
+      max-height: calc(100vh - 330px);
+      padding-right: 6px;
+    }
+
+    .hm-p {
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, .1);
+      background: rgba(255, 255, 255, .05);
+      cursor: pointer;
+      transition: background .12s, border-color .12s, transform .12s;
+    }
+
+    .hm-p:hover {
+      background: rgba(255, 255, 255, .09);
+      border-color: rgba(255, 255, 255, .22);
+    }
+
+    .hm-p.on {
+      border-color: #ffe066;
+      background: rgba(255, 224, 102, .09);
+      cursor: default;
+    }
+
+    .hm-av {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 16px;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    }
+
+    .hm-p b {
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .hm-p .crown {
+      margin-left: 6px;
+      font-size: 13px;
+    }
+
+    .hm-p i {
+      display: block;
+      font-style: normal;
+      font-size: 12px;
+      color: var(--dim);
+      margin-top: 2px;
+    }
+
+    .hm-hcp {
+      text-align: right;
+    }
+
+    .hm-hcp b {
+      display: block;
+      font-size: 20px;
+      color: #5ee08a;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hm-hcp span {
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    .hm-pw {
+      grid-column: 1 / -1;
+      display: none;
+      gap: 8px;
+    }
+
+    .hm-p.on .hm-pw {
+      display: flex;
+    }
+
+    #home input[type=password],
+    #home input:not([type]) {
+      flex: 1;
+      margin: 0;
+      padding: 9px 12px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, .18);
+      background: rgba(0, 0, 0, .35);
+      color: #fff;
+    }
+
+    #home button {
+      width: auto;
+      margin: 0;
+      padding: 9px 16px;
+      font-weight: 600;
+      border-radius: 8px;
+    }
+
+    #home button.go {
+      background: rgba(94, 224, 138, .2);
+      border-color: rgba(94, 224, 138, .6);
+      color: #d9ffe6;
+    }
+
+    .hm-newform {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 224, 102, .45);
+      background: rgba(255, 224, 102, .06);
+    }
+
+    #home.adding .hm-newform {
+      display: flex;
+    }
+
+    #home.adding .hm-alt {
+      display: none;
+    }
+
+    .hm-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .hm-bring {
+      font-size: 12px;
+      color: #c9d4e0;
+    }
+
+    .hm-bring input {
+      width: auto;
+      margin: 0 4px 0 0;
+      vertical-align: middle;
+    }
+
+    .hm-err {
+      min-height: 18px;
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--red);
+    }
+
+    .hm-alt {
+      display: flex;
+      gap: 8px;
+    }
+
+    .hm-note {
+      margin-top: 10px;
+      font-size: 11.5px;
+      color: var(--dim);
+    }
+
+    .hm-me {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, .1);
+      background: rgba(255, 255, 255, .05);
+    }
+
+    .hm-me .hm-av {
+      width: 56px;
+      height: 56px;
+      font-size: 20px;
+    }
+
+    .hm-me b {
+      font-size: 22px;
+      color: #fff;
+    }
+
+    .hm-kpis {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 18px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--dim);
+    }
+
+    .hm-kpis em {
+      font-style: normal;
+      font-weight: 700;
+      font-size: 14px;
+      color: #fff;
+      margin-left: 4px;
+    }
+
+    .hm-kpis em.cash {
+      color: #5ee08a;
+    }
+
+    .hm-tiles {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .hm-tiles button {
+      position: relative;
+      text-align: left;
+      padding: 14px 16px !important;
+      border-radius: 12px !important;
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 255, 255, .12);
+    }
+
+    .hm-tiles button:hover {
+      background: rgba(255, 255, 255, .11);
+    }
+
+    .hm-tiles b {
+      display: block;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .hm-tiles i {
+      display: block;
+      font-style: normal;
+      font-size: 12px;
+      font-weight: 400;
+      color: #c9d4e0;
+      margin-top: 3px;
+    }
+
+    .hm-tiles .hm-big {
+      grid-column: 1 / -1;
+      padding: 18px 18px !important;
+      background: linear-gradient(120deg, rgba(47, 158, 90, .35), rgba(23, 89, 47, .25));
+      border-color: rgba(94, 224, 138, .5);
+    }
+
+    .hm-tiles .hm-big b {
+      font-size: 21px;
+    }
+
+    .hm-badge {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 800;
+      font-style: normal;
+      background: #ffe066;
+      color: #1a1a1a;
+    }
+
+    .hm-cat {
+      grid-column: 1 / -1;
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+
+    .hm-three {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .hm-foot {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .hm-dev {
+      display: none;
+      font-size: 12px;
+      color: #ffc24a;
+      cursor: pointer;
+    }
+
+    .hm-dev input {
+      width: auto;
+      margin: 0 4px 0 0;
+      vertical-align: middle;
+    }
+
+    #home.admin .hm-dev {
+      display: inline-block;
+    }
+
+    #hmSync {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--dim);
+    }
+
+    .hm-board {
+      align-self: flex-start;
+      width: 300px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(6, 10, 16, .72);
+      border: 1px solid rgba(255, 255, 255, .1);
+      backdrop-filter: blur(4px);
+    }
+
+    #hmBoard {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 10px;
+    }
+
+    #hmBoard td {
+      padding: 4px 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, .06);
+      color: #e6edf5;
+    }
+
+    #hmBoard td:first-child {
+      color: var(--dim);
+      width: 26px;
+    }
+
+    #hmBoard td:last-child {
+      text-align: right;
+      font-weight: 700;
+    }
+
+    #hmBoard .empty td {
+      color: rgba(255, 255, 255, .25);
+    }
+
+    @media (max-width: 900px) {
+      .hm-board {
+        display: none;
+      }
+    }
   </style>
 </head>
 
 <body>
   <canvas id="c" tabindex="0"></canvas>
   <canvas id="swingFx"></canvas>
+
+  <!-- HOME: the title screen. Signed out: who's playing (pick your profile); signed in: what to play -->
+  <div id="home">
+    <div class="hm-side">
+      <div class="hm-brand">
+        <div class="hm-logo">⛳</div>
+        <div><h1 id="hmTitle"></h1><div class="hm-sub">A golf RPG · hustle the locals, beat your friends</div></div>
+      </div>
+      <div id="hmWho">
+        <div class="hm-h">Who's playing?</div>
+        <div class="hm-roster" id="hmRoster"></div>
+        <div class="hm-newform" id="hmNewForm">
+          <div class="hm-h2">New profile</div>
+          <input id="hmNewName" maxlength="12" placeholder="Profile name (3–12 letters)" autocomplete="off" spellcheck="false">
+          <input id="hmNewPw" type="password" maxlength="64" placeholder="Password (at least 4 characters)" autocomplete="new-password">
+          <label class="hm-bring" id="hmBringBox"><input type="checkbox" id="hmBring" checked> <span id="hmBringL"></span></label>
+          <div class="hm-row"><button id="hmNewGo" class="go">Create profile (Enter)</button><button id="hmNewCancel">Cancel</button></div>
+        </div>
+        <div class="hm-err" id="hmErr"></div>
+        <div class="hm-alt"><button id="hmNewBtn">＋ New profile</button><button id="hmGuest">Play as a guest</button></div>
+        <div class="hm-note">No email needed. Pick a password you don't use anywhere else.</div>
+      </div>
+      <div id="hmMenu">
+        <div class="hm-me" id="hmMe"></div>
+        <div class="hm-tiles">
+          <button data-h="career" class="hm-big" id="hmCareer"><b>🏌️ Career</b><i>Hustle the locals for money, buy clubs, take lessons, move up the circuits</i></button>
+          <button data-h="friends" id="hmFriends"><b>🤝 Friends</b><i>Bet a friend on a round</i></button>
+          <button data-h="round"><b>⛳ Play 9 holes</b><i>Standard stats, the same course for everyone · world Top 10</i></button>
+          <div class="hm-cat">Practice</div>
+          <div class="hm-three">
+            <button data-h="range"><b>🎯 Range</b><i>Full swings</i></button>
+            <button data-h="chip"><b>🪃 Chipping</b><i>Around the green</i></button>
+            <button data-h="putt"><b>🕳️ Putting</b><i>Read the break</i></button>
+          </div>
+        </div>
+        <div class="hm-foot"><button id="hmSwitch">Switch player</button><label class="hm-dev" id="hmDevBox"><input type="checkbox" id="hmDev"> 🛠 Developer tools</label><span id="hmSync"></span></div>
+      </div>
+    </div>
+    <div class="hm-board">
+      <div class="hm-h2">🏆 World Top 10 · 9 holes</div>
+      <table id="hmBoard"></table>
+      <button id="hmBoardBtn">Full board (L)</button>
+    </div>
+  </div>
 
   <div id="topbar" class="card">
     <div class="tb only-hole" id="tbHoleCell"><i id="tbHoleL">Hole 1 · Par 5</i><b id="tbHole">Shot 1</b></div>
@@ -3262,7 +3770,10 @@
       </div>
       <div id="panelBody">
         <label class="row wide" style="margin-bottom:4px"><span>Course</span><select id="inHole"></select></label>
-        <button id="btnCareer" style="margin: 0 0 6px" title="Career mode: hustle, upgrade, move up (J)">🏌️ Start a career</button>
+        <div class="btn2" style="grid-template-columns: auto 1fr; margin-bottom: 6px">
+          <button id="btnHome" style="margin: 0" title="The home screen">🏠 Home</button>
+          <button id="btnCareer" style="margin: 0" title="Career mode: hustle, upgrade, move up (J)">🏌️ Start a career</button>
+        </div>
         <div class="btn2" style="grid-template-columns: 1fr auto; margin-bottom: 6px">
           <button id="btnRound" style="margin: 0">Test round · holes 1–9</button>
           <button id="btnBoard" style="margin: 0" title="Top 10 test-round scores (L)">🏆 Top 10</button>
@@ -3275,10 +3786,10 @@
           <label class="row wide sandbox-only"><span>Surface</span><select id="inLie"></select></label>
           <label class="row wide sandbox-only"><span>Slope</span><select id="inSlope"></select></label>
 
-          <div class="sec round-hide">Wind</div>
-          <label class="row round-hide"><span>Speed</span><input type="range" id="inWind" min="0" max="30" step="1" value="0"><b
+          <div class="sec round-hide dev-only">Wind</div>
+          <label class="row round-hide dev-only"><span>Speed</span><input type="range" id="inWind" min="0" max="30" step="1" value="0"><b
               id="outWind"></b></label>
-          <label class="row round-hide"><span>From</span><input type="range" id="inWindDir" min="0" max="359" step="1" value="0"><b
+          <label class="row round-hide dev-only"><span>From</span><input type="range" id="inWindDir" min="0" max="359" step="1" value="0"><b
               id="outWindDir"></b></label>
         </div>
         <div class="only-green">
@@ -3290,12 +3801,12 @@
                 type="range" id="inCDist" min="8" max="45" step="1" value="20"><b id="outCDist"></b></label>
             <label class="row" title="Direction of the putt or chip across the practice green."><span>Ball angle</span><input
                 type="range" id="inPAngle" min="0" max="359" step="1" value="0"><b id="outPAngle"></b></label>
-            <label class="row" title="Overall base slope of the practice green."><span>Tilt</span><input type="range"
+            <label class="row dev-only" title="Overall base slope of the practice green."><span>Tilt</span><input type="range"
                 id="inPTilt" min="0" max="3" step="0.25" value="1.5"><b id="outPTilt"></b></label>
-            <label class="row" title="Extra humps and hollows on top of the overall tilt."><span>Contours</span><input
+            <label class="row dev-only" title="Extra humps and hollows on top of the overall tilt."><span>Contours</span><input
                 type="range" id="inPUnd" min="0" max="1" step="0.1" value="0.4"><b id="outPUnd"></b></label>
           </div>
-          <label class="row round-hide"><span>Stimp</span><input type="range" id="inPStimp" min="8" max="14" step="0.5"
+          <label class="row round-hide dev-only"><span>Stimp</span><input type="range" id="inPStimp" min="8" max="14" step="0.5"
               value="11.5"><b id="outPStimp"></b></label>
           <label class="row wide only-putt"><span>Putter</span><select id="inPutter"></select></label>
           <label class="row wide only-putt"><span>Scale</span><select id="inPScale"></select></label>
@@ -3304,17 +3815,17 @@
         </div>
 
         <div>
-          <div class="sec">Player (RPG test)</div>
-          <div class="note only-round" style="margin: 0 0 4px">Test round: everyone plays standard stats — Power, Dexterity, Composure and Perception all 5. Yours come back after the round.</div>
+          <div class="sec dev-only">Player (RPG test)</div>
+          <div class="note only-round dev-only" style="margin: 0 0 4px">Test round: everyone plays standard stats — Power, Dexterity, Composure and Perception all 5. Yours come back after the round.</div>
           <div class="note only-career" id="careerStatNote" style="margin: 0 0 4px"></div>
-          <label class="row"><span>Power</span><input type="range" id="inPower" min="1" max="10" step="1" value="5"><b
+          <label class="row dev-only"><span>Power</span><input type="range" id="inPower" min="1" max="10" step="1" value="5"><b
               id="outPower"></b></label>
-          <label class="row"><span>Dexterity</span><input type="range" id="inDex" min="1" max="10" step="1" value="5"><b
+          <label class="row dev-only"><span>Dexterity</span><input type="range" id="inDex" min="1" max="10" step="1" value="5"><b
               id="outDex"></b></label>
-          <label class="row"
+          <label class="row dev-only"
             title="Stat points assigned to Composure (1–10). Consecutive bad shots stack a Tilt difficulty penalty behind the scenes; higher Composure offsets that penalty."><span>Composure</span><input
               type="range" id="inComp" min="1" max="10" step="1" value="5"><b id="outComp"></b></label>
-          <label class="row"
+          <label class="row dev-only"
             title="How accurately you read club distances from rough/sand lies and pace/slope on the green."><span>Perception</span><input
               type="range" id="inPer" min="1" max="10" step="1" value="5"><b id="outPer"></b></label>
 
@@ -7295,6 +7806,7 @@
         updateCareerUI();
         if (clubOpen && $('clubhouse').classList.contains('new') && career) openClubhouse();
         if (clubOpen && session && $('clubhouse').classList.contains('friends')) renderFriends();     // (cash, records vs friends)
+        if (homeOpen) renderHome();
       }
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && session && sync.dirty) { clearTimeout(sync.timer); syncNow(true); } });
       function newCareer(name) {
@@ -7418,6 +7930,8 @@
         if (introOpen) closeRoundIntro();
         hideScorecard();
         if (!career) career = careerLoad();
+        if (!career && !session && playMode !== 'local') return openHome();      // nobody chosen yet: the home screen asks who's playing
+        if (homeOpen) closeHome();
         const ch = $('clubhouse');
         ch.classList.add('on'); clubOpen = true;
         setText('chMsg', '');
@@ -7478,22 +7992,33 @@
         if (!pw) return setText('chErr', 'Type your password');      // (length rules are the server's: an admin's baked-in password can be short)
         const local = readCareer(CAREER.key), bring = siMode === 'new' && !!local && $('siBring').checked;
         setText('chErr', siMode === 'in' ? 'Signing in…' : 'Creating your profile…'); $('chCreate').disabled = true;
-        let r;
-        try { r = await profileApi(siMode === 'in' ? 'login' : 'signup', { name, password: pw, ...(siMode === 'new' ? { career: bring ? local : newCareer(name) } : {}) }); }
-        catch { r = { status: 0, data: { error: 'Can\'t reach the profile server (it runs on the deployed site)' } }; }
+        const err = await profileSignIn(siMode, name, pw, bring);
         $('chCreate').disabled = false;
-        if (r.status !== 200) return setText('chErr', r.data.error || `Something went wrong (${r.status})`);
-        session = { token: r.data.token, id: r.data.name.toLowerCase(), name: r.data.name, admin: !!r.data.admin };
-        lsSet('golfSession', JSON.stringify(session)); playMode = 'profile'; lsSet('golfMode', 'profile');
-        career = upgradeCareer(r.data.career) || newCareer(r.data.name);
-        sync.ver = r.data.ver; sync.base = JSON.parse(JSON.stringify(career)); sync.dirty = !r.data.career;     // (a brand-new admin profile: send its fresh career)
-        saveSyncMeta();
-        if (sync.dirty) queueSync(100);
-        if (bring) lsSet(CAREER.key, null);                   // moved into the profile, not copied
+        if (err) return setText('chErr', err);
         const was = siMode;
         $('siPw').value = '';
         openClubhouse();
         setText('chMsg', was === 'new' ? `Welcome, ${session.name}. Your career is saved to your profile.` : `Welcome back, ${session.name}.`);
+      }
+      // sign in (mode 'in') or make a profile ('new', optionally bringing this PC's local career into it); '' or the error
+      async function profileSignIn(mode, name, pw, bring = false) {
+        const local = readCareer(CAREER.key);
+        let r;
+        try { r = await profileApi(mode === 'in' ? 'login' : 'signup', { name, password: pw, ...(mode === 'new' ? { career: bring && local ? local : newCareer(name) } : {}) }); }
+        catch { r = { status: 0, data: { error: 'Can\'t reach the profile server (it runs on the deployed site)' } }; }
+        if (r.status !== 200) return r.data.error || `Something went wrong (${r.status})`;
+        session = { token: r.data.token, id: r.data.name.toLowerCase(), name: r.data.name, admin: !!r.data.admin };
+        lsSet('golfSession', JSON.stringify(session)); playMode = 'profile'; lsSet('golfMode', 'profile');
+        lsSet('golfLastProfile', session.id);                // listed first on this PC's home screen
+        career = upgradeCareer(r.data.career) || newCareer(r.data.name);
+        sync.ver = r.data.ver; sync.base = JSON.parse(JSON.stringify(career)); sync.dirty = !r.data.career;     // (a brand-new admin profile: send its fresh career)
+        saveSyncMeta();
+        if (sync.dirty) queueSync(100);
+        if (bring && local) lsSet(CAREER.key, null);          // moved into the profile, not copied
+        fr.list = []; fr.players = []; fr.loaded = 0;
+        applyDevTools();
+        updateCareerUI();
+        return '';
       }
       // sign out (or stop playing this PC's career) and ask who's playing
       async function switchPlayer() {
@@ -7507,7 +8032,9 @@
         session = null; lsSet('golfSession', null); playMode = ''; lsSet('golfMode', null);
         career = null; Object.assign(sync, { ver: 0, base: null, dirty: false, state: '' });
         updateCareerUI(); siMode = 'in';
-        openClubhouse();
+        applyDevTools();
+        closeClubhouse();
+        openHome();                                          // who's playing: the profile list
       }
       // the practice range with the career's game (Esc, or the button)
       function careerToRange() {
@@ -7621,6 +8148,7 @@
         fr.busy = false;
         updateFriendsTile();
         if ($('clubhouse').classList.contains('friends')) renderFriends();
+        if (homeOpen) renderHome();
         checkNewResults();
       }
       function updateFriendsTile() {
@@ -7947,6 +8475,180 @@
         const c = round.pvp && round.over && fr.list.find((x) => x.id === round.pvp.id && x.status === 'done');
         if (c && scMode !== 'pvp') showSharedCard(c, headlineFor(c));
       }, 20000);
+
+      // =====================================================================================================
+      //  HOME: the title screen, over the range. Signed out it lists the profiles (pick yours, type the password), with
+      //  a new profile and "play as a guest" (a career on this PC only); signed in it's the menu: career, friends, the
+      //  9-hole round, the practice areas, and the world Top 10. The developer tools (the sliders that change the game:
+      //  stats, wind, green speed and slope) are only for an admin profile, and the admin can switch them off.
+      // =====================================================================================================
+      const GAME_NAME = 'Back Nine Hustle';
+      let homeOpen = false, homeSel = '';
+      const roster = { list: [], loaded: false, err: '' };
+      const devOn = () => !!(session && session.admin) && lsGet('golfDevTools') !== 'off';
+      function applyDevTools() {
+        const on = devOn();
+        document.body.classList.toggle('dev', on);
+        if (!on && !careerOn && !round.on && typeof setStats === 'function') {        // everyone else plays the standard game
+          setStats(ROUND_STATS);
+          state.windMph = 0; state.windDir = 0; $('inWind').value = 0; $('inWindDir').value = 0;
+          orientFlags(); syncPanel();
+        }
+      }
+      const homeSigned = () => !!session || playMode === 'local';
+      function avatarHTML(name) {
+        let h = 0;
+        for (const ch of name.toLowerCase()) h = (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0;
+        return `<div class="hm-av" style="background:hsl(${h % 360} 52% 36%)">${name.slice(0, 2).toUpperCase()}</div>`;
+      }
+      function openHome() {
+        if (swing.active) return;
+        if (round.on) { toast('Finish or leave your round first\nThen 🏠 Home', 1800); return; }
+        if (clubOpen) closeClubhouse();
+        if (introOpen) closeRoundIntro();
+        if (tipsOn) setTips(false);
+        hideScorecard();
+        if (!career) career = careerLoad();
+        homeOpen = true; document.body.classList.add('home-on');
+        $('home').classList.remove('adding');
+        setText('hmErr', '');
+        renderHome();
+        lbFetch().then(renderHomeBoard); renderHomeBoard();
+        if (!homeSigned()) loadRoster();
+        else if (session) { syncLoad(); loadFriends(true); }
+      }
+      function closeHome() {
+        homeOpen = false; document.body.classList.remove('home-on');
+        if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+      }
+      async function loadRoster() {
+        roster.err = '';
+        try {
+          const r = await profileApi('roster');
+          if (r.status === 200) { roster.list = r.data.players || []; roster.loaded = true; }
+          else roster.err = r.data.error || `The profile server said ${r.status}`;
+        } catch { roster.err = 'Can\'t reach the profile server (it runs on the deployed site). You can still play as a guest.'; }
+        if (homeOpen && !homeSigned()) renderRoster();
+      }
+      function renderHome() {
+        const home = $('home'), signed = homeSigned();
+        home.classList.toggle('who', !signed); home.classList.toggle('menu', signed);
+        home.classList.toggle('admin', !!(session && session.admin));
+        setText('hmTitle', GAME_NAME);
+        if (!signed) return renderRoster();
+        const c = career, name = session ? session.name : c ? c.name : 'Guest';
+        const h = c ? handicapOf(c) : null, rec = session && c ? h2h(null) : null;
+        $('hmMe').innerHTML = `${avatarHTML(name)}<div><b>${name}</b>${session && session.admin ? ' <span title="admin">👑</span>' : ''}<div class="hm-kpis">`
+          + (c ? `<span>Cash<em class="cash">${money(c.cash)}</em></span><span>Handicap<em>${h === null ? `— (${(c.rounds || []).length}/${HCP.min} rounds)` : fmtHcp(h)}</em></span>`
+            + `<span>Circuit<em>${CAREER.tiers[c.tier || 1]}</em></span>${rec && rec.n ? `<span>vs friends<em>${rec.w}–${rec.l}–${rec.h}</em></span>` : ''}`
+            : `<span>${session ? 'Loading your career…' : 'Guest · nothing saved online · no career yet'}</span>`) + '</div></div>';
+        const m = c && c.match, pc = c && c.pvpCard;
+        $('hmCareer').innerHTML = `<b>🏌️ ${c ? 'Career' : 'Start a career'}</b><i>${m && !m.settled && m.feePaid ? `Resume your match vs ${npcById(m.npc).nick}`
+          : pc && pc.holes.length ? `Resume your round vs ${pc.vsName} (thru ${pc.holes.filter(Boolean).length})`
+          : c ? `${CAREER.tiers[c.tier || 1]} circuit · hustle the locals, buy clubs, take lessons` : 'Start with $150 and a tired bag. Hustle your way up.'}</i>`;
+        const me = session && session.id, wait = me ? fr.list.filter((x) => x.status === 'pending' && x.to === me).length : 0;
+        const play = me ? fr.list.filter((x) => x.status === 'open' && !x.cards[me]).length : 0, news = me ? fr.list.filter((x) => x.status === 'done' && !pvpSeen(x.id)).length : 0;
+        const badge = wait + play + news;
+        $('hmFriends').innerHTML = `<b>🤝 Friends</b><i>${!session ? 'Make a profile to bet your friends'
+          : news ? `${news} result${news > 1 ? 's' : ''} in` : wait ? `${wait} challenge${wait > 1 ? 's' : ''} waiting for you` : play ? `${play} round${play > 1 ? 's' : ''} to play` : 'Bet a friend on a round'}</i>${badge ? `<em class="hm-badge">${badge}</em>` : ''}`;
+        $('hmDev').checked = devOn();
+        setText('hmSync', !session ? 'Guest · saved on this PC only'
+          : sync.state === 'offline' ? '⚠ not synced (offline)' : sync.state === 'signedout' ? '⚠ signed out elsewhere — switch player' : 'Saved to your profile');
+      }
+      function renderRoster() {
+        const last = lsGet('golfLastProfile') || '';
+        const L = [...roster.list].sort((a, b) => (b.name.toLowerCase() === last) - (a.name.toLowerCase() === last) || a.name.localeCompare(b.name));
+        const typed = homeSel && $('hmRoster').querySelector('.hm-p.on input');
+        const keep = typed ? typed.value : '';
+        $('hmRoster').innerHTML = L.map((p) => {
+          const id = p.name.toLowerCase(), on = homeSel === id;
+          return `<div class="hm-p${on ? ' on' : ''}" data-id="${id}">${avatarHTML(p.name)}<div><b>${p.name}</b>${p.admin ? '<span class="crown" title="admin">👑</span>' : ''}`
+            + `<i>${p.cash === null || p.cash === undefined ? 'New' : `${money(p.cash)} · ${CAREER.tiers[p.tierMax || 1]} · ${p.rounds || 0} round${p.rounds === 1 ? '' : 's'}`}${id === last ? ' · last on this PC' : ''}</i></div>`
+            + `<div class="hm-hcp"><span>Handicap</span><b>${p.handicap === null || p.handicap === undefined ? '—' : fmtHcp(p.handicap)}</b></div>`
+            + `<div class="hm-pw"><input type="password" placeholder="${p.name}'s password" autocomplete="current-password"><button class="go" data-signin="${id}">Sign in</button></div></div>`;
+        }).join('') || `<div class="hm-note">${roster.err || (roster.loaded ? 'No profiles yet: make the first one.' : 'Loading players…')}</div>`;
+        if (roster.err && L.length) setText('hmErr', roster.err);
+        const inp = homeSel && $('hmRoster').querySelector('.hm-p.on input');
+        if (inp) { inp.value = keep; setTimeout(() => inp.focus(), 0); }
+        const local = readCareer(CAREER.key);
+        $('hmBringBox').style.display = local ? '' : 'none';
+        if (local) setText('hmBringL', `Bring ${local.name}'s career from this PC (${money(local.cash)})`);
+      }
+      async function homeSignIn() {
+        const card = $('hmRoster').querySelector('.hm-p.on');
+        if (!card) return;
+        const pw = card.querySelector('input').value, p = roster.list.find((x) => x.name.toLowerCase() === card.dataset.id);
+        if (!pw) return setText('hmErr', 'Type your password');
+        setText('hmErr', 'Signing in…');
+        const err = await profileSignIn('in', p.name, pw);
+        if (err) { setText('hmErr', err); card.querySelector('input').select(); return; }
+        homeSel = ''; setText('hmErr', '');
+        renderHome(); loadFriends(true);
+      }
+      async function homeNewProfile() {
+        const name = $('hmNewName').value.trim(), pw = $('hmNewPw').value;
+        if (!/^[A-Za-z0-9 _-]{3,12}$/.test(name)) return setText('hmErr', 'Names are 3–12 letters, numbers, spaces, - or _');
+        if (pw.length < 4) return setText('hmErr', 'Passwords are at least 4 characters');
+        const bring = !!readCareer(CAREER.key) && $('hmBring').checked;
+        setText('hmErr', 'Creating your profile…'); $('hmNewGo').disabled = true;
+        const err = await profileSignIn('new', name, pw, bring);
+        $('hmNewGo').disabled = false;
+        if (err) return setText('hmErr', err);
+        $('hmNewPw').value = ''; $('hmNewName').value = '';
+        $('home').classList.remove('adding'); setText('hmErr', '');
+        renderHome();
+      }
+      function homeGuest() {
+        playMode = 'local'; lsSet('golfMode', 'local');
+        career = careerLoad();
+        updateCareerUI(); renderHome();
+      }
+      // the menu's tiles
+      function homeGo(what) {
+        if (what === 'friends' && !session) { setText('hmSync', 'Friends need a profile: Switch player → New profile'); return; }
+        closeHome();
+        if (what === 'career' || what === 'friends') {
+          if (!career && !session) siMode = 'local';        // a guest's first career: its name
+          openClubhouse();
+          if (what === 'friends' && career && clubOpen) openFriends();
+          return;
+        }
+        if (what === 'round') { if (careerOn) leaveCareer(true); applyDevTools(); return openRoundIntro(); }
+        // practice: your career's game (stats and bag) if you have one; the admin's developer tools play the sandbox
+        if (hp.on) leaveHole();
+        if (career && !devOn()) { if (!careerOn) enterCareer(); }
+        else if (careerOn) leaveCareer(true);
+        if (what === 'range') { if (state.mode !== 'range') setMode('range'); toast('The driving range\nH plays a hole · 🏠 Home in the panel', 2200); }
+        else if (what === 'chip') { setMode('chip'); toast('The chipping green\nN a new chip · 🏠 Home in the panel', 2200); }
+        else if (what === 'putt') { setMode('putt'); toast('The putting green\nN a new putt · 🏠 Home in the panel', 2200); }
+      }
+      function renderHomeBoard() {
+        const L = lbList();
+        let h = '';
+        for (let i = 0; i < 10; i++) {
+          const r = L[i];
+          h += r ? `<tr><td>${i + 1}</td><td>${r.name}</td><td>${r.strokes} <span style="color:var(--dim);font-weight:400">(${fmtToPar(r.toPar)})</span></td></tr>`
+            : `<tr class="empty"><td>${i + 1}</td><td>---</td><td>--</td></tr>`;
+        }
+        $('hmBoard').innerHTML = h;
+      }
+      // while the home screen is up it takes the keys (typing goes to the boxes)
+      function homeKey(e) {
+        const t = e.target, typing = t instanceof HTMLInputElement && t.type !== 'checkbox';
+        if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+          if (typing) { e.preventDefault(); if (t.id === 'hmNewName' || t.id === 'hmNewPw') homeNewProfile(); else homeSignIn(); }
+          return;
+        }
+        if (e.code === 'Escape') {
+          e.preventDefault();
+          if ($('home').classList.contains('adding')) { $('home').classList.remove('adding'); setText('hmErr', ''); }
+          else if (homeSel) { homeSel = ''; setText('hmErr', ''); renderRoster(); }
+          else if (homeSigned()) closeHome();               // back to where you were
+          return;
+        }
+        if (typing) return;
+        if (e.code === 'KeyL' && !e.repeat) { e.preventDefault(); closeHome(); showLeaderboard(); }
+      }
 
       // =====================================================================================================
       //  CAREER CLUBS (CAMPAIGN_PLAN.md, chunk 2 + the club catalogue). Real models, each a set of changes to the base club:
@@ -9511,6 +10213,7 @@
 
       window.addEventListener('keydown', (e) => {
         if (e.target instanceof HTMLSelectElement) return;
+        if (homeOpen) return homeKey(e);                 // the home screen (typing a password, Esc back to the game)
         if (beatOpen) return beatKey(e);                 // the loan shark's beating (Enter to get up)
         if (lbEntry.active) return entryKey(e);          // the initials screen takes every key
         if (introOpen) return introKey(e);               // so does the course preview (Enter starts, Esc cancels)
@@ -9705,6 +10408,23 @@
         $('cmBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('chShop').addEventListener('click', shopClick);
         $('chTiers').addEventListener('click', tierClick);
+        // the home screen
+        $('btnHome').addEventListener('click', (e) => { e.currentTarget.blur(); openHome(); });
+        $('hmRoster').addEventListener('click', (e) => {
+          if (e.target.closest('[data-signin]')) return homeSignIn();
+          if (e.target.closest('.hm-pw')) return;
+          const p = e.target.closest('.hm-p');
+          if (!p || p.dataset.id === homeSel) return;
+          homeSel = p.dataset.id; setText('hmErr', ''); $('home').classList.remove('adding'); renderRoster();
+        });
+        $('hmNewBtn').addEventListener('click', (e) => { e.currentTarget.blur(); homeSel = ''; renderRoster(); $('home').classList.add('adding'); setText('hmErr', ''); setTimeout(() => $('hmNewName').focus(), 0); });
+        $('hmNewCancel').addEventListener('click', (e) => { e.currentTarget.blur(); $('home').classList.remove('adding'); setText('hmErr', ''); });
+        $('hmNewGo').addEventListener('click', (e) => { e.currentTarget.blur(); homeNewProfile(); });
+        $('hmGuest').addEventListener('click', (e) => { e.currentTarget.blur(); homeGuest(); });
+        $('hmSwitch').addEventListener('click', (e) => { e.currentTarget.blur(); switchPlayer(); });
+        $('hmDev').addEventListener('change', (e) => { lsSet('golfDevTools', e.target.checked ? 'on' : 'off'); e.target.blur(); applyDevTools(); });
+        $('hmMenu').querySelector('.hm-tiles').addEventListener('click', (e) => { const b = e.target.closest('button[data-h]'); if (b) { b.blur(); homeGo(b.dataset.h); } });
+        $('hmBoardBtn').addEventListener('click', (e) => { e.currentTarget.blur(); closeHome(); showLeaderboard(); });
         $('frList').addEventListener('click', friendsClick);           // friends and challenges (M3)
         $('frBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('frRefresh').addEventListener('click', (e) => { e.currentTarget.blur(); loadFriends(); });
@@ -10610,7 +11330,7 @@
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
-        npc, npcPlan, npcHoleScore, closeToss, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, holeStrokes, submitPvp, showSharedCard, closeSharedCard, checkNewResults, h2h, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
+        npc, npcPlan, npcHoleScore, closeToss, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, holeStrokes, submitPvp, showSharedCard, closeSharedCard, checkNewResults, h2h, openHome, closeHome, get homeOpen() { return homeOpen; }, devOn, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }
       };
 
@@ -10622,6 +11342,8 @@
 
       startPutt(true); setPin(4); styleLie(); orientFlags(); syncPanel(); renderBag(); resize();
       $('boot').remove();
+      applyDevTools();                                       // the sliders that change the game: admin only
+      if (!/[?&]nohome\b/.test(location.search)) openHome(); // the title screen first (?nohome skips it, for testing)
       requestAnimationFrame(frame);
     </script>
 </body>
