@@ -4201,6 +4201,25 @@
       display: none;
     }
 
+    /* the caddie-tips button lives in the top centre: under the wind dial on the greens, and on a hole in the same row,
+       left of the shot counter (user request) */
+    #topCenter>#btnTips {
+      position: absolute;
+      top: 84px !important;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: auto;
+      white-space: nowrap;
+    }
+
+    body.hole #topCenter>#btnTips {
+      position: relative;
+      top: auto !important;
+      left: auto;
+      transform: none;
+      order: -1;
+    }
+
     #windDial {
       display: flex;
       align-items: center;
@@ -6330,7 +6349,6 @@
     <div class="tb grow"><i id="tbSetupL">Lie read</i><b id="tbSetup">—</b></div>
     <div id="tbPractice">PRACTICE</div>
   </div>
-  <button id="btnTips" title="Caddie tips: how the wind, your shot shape, your lie and the difficulty work (I)">💡 <span id="btnTipsTxt">Caddie tips</span> <kbd>I</kbd></button>
 
   <div id="leftcol">
     <div id="mapCard" class="card">
@@ -6795,6 +6813,8 @@
     <!-- a hole's title card, for a couple of seconds as you step onto the tee; and the shot counter while you play it -->
     <div id="holeTitle"><small id="htCourse"></small><i id="htNum">Hole 1</i><b id="htPar">Par 5</b><span id="htDist"></span><em id="htDesc"></em><small id="htCond"></small></div>
     <div id="topCenter">
+      <!-- caddie tips: on a hole, in the row left of the shot counter; on the greens, under the wind dial -->
+      <button id="btnTips" title="Caddie tips: how the wind, your shot shape, your lie and the difficulty work (I)">💡 <span id="btnTipsTxt">Caddie tips</span> <kbd>I</kbd></button>
       <div id="holeBadge"><span><b id="hbHole">Hole 1</b><i id="hbPar">Par 5</i></span><span class="hb-shot"><i id="hbShotL">Shot</i><b id="hbShot">1</b></span><span><b id="hbDist">—</b><i>to the pin</i></span><span class="hb-npc" id="hbNpc"><i id="hbNpcL">Him</i><b id="hbNpcN">0</b><u id="hbNpcW">on the tee</u></span></div>
       <!-- the wind, front and centre (user request): an arrow for where it blows relative to your aim (up = toward the
            target), the speed, the words, coloured by strength -->
