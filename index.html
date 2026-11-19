@@ -3337,6 +3337,144 @@
       font-weight: 600;
     }
 
+    /* ---- a hole's title card (2.6 s on the tee) and the shot counter ---- */
+    #holeTitle {
+      position: fixed;
+      left: 50%;
+      top: 30%;
+      transform: translateX(-50%);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      pointer-events: none;
+      text-align: center;
+      text-shadow: 0 3px 18px rgba(0, 0, 0, .8);
+      z-index: 4;
+    }
+
+    #holeTitle.on {
+      display: flex;
+      animation: htShow 2.6s ease forwards;
+    }
+
+    @keyframes htShow {
+      0% { opacity: 0; transform: translateX(-50%) scale(.92); }
+      12% { opacity: 1; transform: translateX(-50%) scale(1); }
+      80% { opacity: 1; transform: translateX(-50%) scale(1); }
+      100% { opacity: 0; transform: translateX(-50%) scale(1.03); }
+    }
+
+    #holeTitle small {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: #c9d4e0;
+    }
+
+    #holeTitle small:empty,
+    #holeTitle em:empty {
+      display: none;
+    }
+
+    #holeTitle i {
+      font-style: normal;
+      font-size: 56px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #fff;
+      line-height: 1.05;
+    }
+
+    #holeTitle b {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: #ffe066;
+    }
+
+    #holeTitle span {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    #holeTitle em {
+      font-size: 15px;
+      color: #dfe8f1;
+      margin-top: 4px;
+    }
+
+    #holeBadge {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      align-items: stretch;
+      border-radius: 99px;
+      background: linear-gradient(165deg, rgba(16, 23, 34, .88), rgba(7, 11, 17, .92));
+      border: 1px solid rgba(255, 255, 255, .12);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    body.hole:not(.home-on) #holeBadge {
+      display: flex;
+    }
+
+    #holeBadge>span {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 18px 6px;
+      border-right: 1px solid rgba(255, 255, 255, .1);
+    }
+
+    #holeBadge>span:last-child {
+      border-right: 0;
+    }
+
+    #holeBadge b {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #holeBadge i {
+      font-style: normal;
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #9fb0c3;
+    }
+
+    #holeBadge .hb-shot {
+      background: rgba(255, 224, 102, .14);
+      min-width: 70px;
+    }
+
+    #holeBadge .hb-shot b {
+      font-size: 22px;
+      color: #ffe066;
+      line-height: 1;
+    }
+
+    /* (on a hole the caddie-tips button moves down, under the shot counter, and the messages below that) */
+    body.hole #btnTips {
+      top: 136px;
+    }
+
+    body.hole #toast {
+      top: 21%;
+    }
+
     #toast {
       position: fixed;
       left: 50%;
@@ -5155,6 +5293,9 @@
     </div>
     <div id="hint" class="card"></div>
     <div id="toast"></div>
+    <!-- a hole's title card, for a couple of seconds as you step onto the tee; and the shot counter while you play it -->
+    <div id="holeTitle"><small id="htCourse"></small><i id="htNum">Hole 1</i><b id="htPar">Par 5</b><span id="htDist"></span><em id="htDesc"></em><small id="htCond"></small></div>
+    <div id="holeBadge"><span><b id="hbHole">Hole 1</b><i id="hbPar">Par 5</i></span><span class="hb-shot"><i id="hbShotL">Shot</i><b id="hbShot">1</b></span><span><b id="hbDist">—</b><i>to the pin</i></span></div>
     <div id="boot">Loading Three.js…</div>
     <script>
       window.addEventListener('error', function (e) {
@@ -7942,6 +8083,7 @@
         setupNextShot(); camReady = false;
         npcTurn = false;
         if (round.match) npcHoleStart(); else npc.plan = null;     // a career match: the hustler's hole (and the tee toss)
+        showHoleTitle();                                     // the hole's title card, for a couple of seconds
       }
       function selectHole(idx) {
         if (swing.active) { $('inHole').value = String(hp.holeIdx); return; }
@@ -11186,8 +11328,20 @@
         const w = HOLE.wind || { mph: 0, from: 0 };
         state.windMph = w.mph; state.windDir = w.from;
         $('inWind').value = w.mph; $('inWindDir').value = w.from;
-        orientFlags(); syncPanel();
-        toast(`${HOLE.name} · Par ${HOLE.par} · ${(hole.length / YD).toFixed(0)} yds\nWind ${windText(w.mph, w.from)} · greens Stimp ${holeStimp()}`, 3200);
+        orientFlags(); syncPanel();                          // (the hole's title card shows the wind and greens: showHoleTitle)
+      }
+      // the title card as you step onto a tee: the hole, its par, the yardage, what it looks like, and the conditions
+      let holeTitleTimer = 0;
+      function showHoleTitle() {
+        const el = $('holeTitle'), yds = Math.round(pinDist() / YD), w = round.on ? (HOLE.wind || { mph: 0, from: 0 }) : { mph: state.windMph, from: state.windDir };
+        setText('htCourse', courseV && courseV.course ? courseV.course : '');
+        setText('htNum', HOLE.name || `Hole ${hp.holeIdx + 1}`);
+        setText('htPar', `Par ${HOLE.par}`);
+        setText('htDist', `${yds} yards to the pin`);
+        setText('htDesc', HOLE.desc || '');
+        setText('htCond', `Wind ${windText(w.mph, w.from)}${round.on ? ` · greens Stimp ${holeStimp()}` : ''}`);
+        el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+        clearTimeout(holeTitleTimer); holeTitleTimer = setTimeout(() => el.classList.remove('on'), 2700);
       }
       function hideScorecard() { $('scorecard').classList.remove('on', 'pvp'); if (scMode === 'pvp') scMode = 'round'; }
       function showScorecard(msg = '') {
@@ -11714,6 +11868,13 @@
       // the hole's words around the map: the panel title, the distance tag, the shot count and the round's score
       function holeMapText() {
         setText('mapTitle', `${HOLE.name} · Par ${HOLE.par}`);       // (the range's map may have had the card)
+        setText('hbHole', HOLE.name); setText('hbPar', `Par ${HOLE.par}`);                          // the shot counter
+        {   // in the air: the shot being played and the live distance; stopped (before you go on): the next shot, from where it finished
+          const flying = !!(shot && !shot.done), resting = !!(shot && shot.done && state.view === 'flight');
+          const sp = !isPutt() && !hp.done && (flying || resting) && shot.flight ? shotHolePos() : null;
+          setText('hbShotL', hp.done ? 'Holed in' : 'Shot'); setText('hbShot', String(hp.done || flying ? hp.strokes : hp.strokes + 1));
+          setText('hbDist', hp.done ? '—' : sp ? fmtToPin(Math.hypot(hole.pin.x - sp.x, hole.pin.z - sp.z)) : fmtToPin(pinDist()));
+        }
         setText('tbPinL', isPutt() ? 'Hole' : 'To the pin'); setText('panelTitle', `⛳ ${HOLE.name} · Par ${HOLE.par}`);
         setText('mapTag', hp.done ? `${hp.strokes} strokes` : isPutt() && markRead && !puttRun ? `${fmtBandFt(markRead.cupLo, markRead.cupHi)} ft to the pin`
           : isChip() && chipRead ? `${fmtBandYd(chipRead.pinLo, chipRead.pinHi)} yds to the pin` : `${fmtToPin(pinDist())} to the pin`);
