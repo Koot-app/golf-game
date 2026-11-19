@@ -584,9 +584,10 @@ sits that match out). One at a time; hiring another replaces yours, no refunds; 
 | "Lefty" Doyle | rep 40 | $3,000 | $40 | +1 Composure, +1 Perception |
 | Marisol Vega | Resorts, rep 80 | $8,000 | $90 | +1 Composure, +2 Perception, walks off one level of tilt each hole |
 | "Big Walt" Okafor | Country clubs, rep 120 | $15,000 | $150 | +3 Composure, +1 Perception, every hole starts with no tilt |
-| Eleanor Finch | Country clubs, rep 200 | $40,000 | $400 | +3 Composure, +3 Perception, every hole starts with no tilt |
+| Eleanor Finch | Country clubs, rep 200 | $40,000 | $400 | **+2 Dexterity**, +3 Composure, +3 Perception, every hole starts with no tilt |
+| "Dutch" Van Rijn | Country clubs, rep 200 | $40,000 | $400 | **+2 Power**, +3 Composure, +3 Perception, every hole starts with no tilt |
 
-Code: `CADDIES`, `career.caddie`, `caddieOf()`, `caddieOn()`, `careerStats()` (the career's stats plus the caddie's,
+The top two (user request, 2026-11-19) cost the same and differ only in Power vs Dexterity: a pick-one trade-off.`nCode: `CADDIES`, `caddieBonus(c)`, `career.caddie`, `caddieOf()`, `caddieOn()`, `careerStats()` (the career's stats plus the caddie's,
 never past 10 — Perception's formulas break above 10), `caddieWalkOff(streak)` (in `nextRoundHole()`), the loop fee in
 `startMatch()` (`m.caddieFee` / `m.noCaddie`), `openCaddies()` / `renderCaddies()` / `caddieClick()`. The character
 sheet shows the caddie's help as green pips. Friend rounds use the caddie without a loop fee.

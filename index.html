@@ -3408,11 +3408,160 @@
       margin-top: 4px;
     }
 
-    #holeBadge {
+    /* the top centre: the shot counter (on a hole) and the wind dial, side by side */
+    #topCenter {
       position: fixed;
       top: 80px;
       left: 50%;
       transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    body.home-on #topCenter {
+      display: none;
+    }
+
+    #windDial {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 16px 6px 7px;
+      border-radius: 99px;
+      background: linear-gradient(165deg, rgba(16, 23, 34, .88), rgba(7, 11, 17, .92));
+      border: 1px solid rgba(255, 255, 255, .12);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+      --wc: #8d9aab;
+    }
+
+    body.putt #windDial {
+      display: none;
+    }
+
+    #windDial.light {
+      --wc: #35e0ff;
+    }
+
+    #windDial.moderate {
+      --wc: #ffc24a;
+    }
+
+    #windDial.strong {
+      --wc: #ff8a3d;
+    }
+
+    #windDial.gale {
+      --wc: #ff5d6c;
+    }
+
+    .wd-dial {
+      width: 58px;
+      height: 58px;
+    }
+
+    .wd-dial svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .wd-ring {
+      fill: rgba(255, 255, 255, .04);
+      stroke: var(--wc);
+      stroke-width: 2.5;
+    }
+
+    .wd-ticks {
+      stroke: rgba(255, 255, 255, .35);
+      stroke-width: 2;
+    }
+
+    .wd-n {
+      font-size: 7px;
+      fill: rgba(255, 255, 255, .55);
+      text-anchor: middle;
+    }
+
+    .wd-arrow {
+      transform-box: view-box;
+      transform-origin: 0 0;
+      transition: transform .35s ease;
+    }
+
+    .wd-arrow path {
+      fill: var(--wc);
+      stroke: rgba(0, 0, 0, .4);
+      stroke-width: 1;
+      animation: wdPulse var(--wd-speed, 2.4s) ease-in-out infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    #windDial.calm .wd-arrow path {
+      animation: none;
+      opacity: .25;
+    }
+
+    @keyframes wdPulse {
+      0%, 100% { transform: translateY(2px); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .wd-txt {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .wd-txt b {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--wc);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .wd-txt b small {
+      font-size: 12px;
+      font-weight: 700;
+      margin-left: 3px;
+      color: #c9d4e0;
+    }
+
+    .wd-txt i {
+      font-style: normal;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #e8eef5;
+    }
+
+    .wd-txt em {
+      font-style: normal;
+      font-size: 10px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--wc);
+    }
+
+    /* (the top bar's wind cell isn't needed outside the putting green, where that cell is the distance scale) */
+    body:not(.putt) .tb:has(#tbWind) {
+      display: none !important;
+    }
+
+    /* the caddie-tips button and the messages sit under the top centre */
+    body.hole #btnTips,
+    body.chip #btnTips {
+      top: 162px !important;
+    }
+
+    body.hole #toast,
+    body.chip #toast {
+      top: 24% !important;
+    }
+
+    #holeBadge {
       display: none;
       align-items: stretch;
       border-radius: 99px;
@@ -3471,8 +3620,111 @@
        the greens keep the putter / chip type) */
     #tbHoleCell,
     body.hole .tb:has(#tbPin),
-    body:not(.putt):not(.chip) .tb:has(#tbClub) {
+    .tb:has(#tbClub) {
       display: none !important;
+    }
+
+    /* the putter card (the putting green's bag) */
+    #putterCard {
+      flex: none;
+      padding-bottom: 10px;
+    }
+
+    .pt-row {
+      display: grid;
+      grid-template-columns: 26px 1fr auto;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      border-left: 2px solid transparent;
+    }
+
+    .pt-row:hover {
+      background: rgba(255, 255, 255, .06);
+    }
+
+    .pt-row.on {
+      background: rgba(53, 224, 255, .13);
+      border-left-color: var(--cyan);
+    }
+
+    .pt-row.demo {
+      background: rgba(255, 224, 102, .07);
+    }
+
+    .pt-row.demo.on {
+      background: rgba(255, 224, 102, .2);
+      border-left-color: #ffe066;
+    }
+
+    .pt-row kbd {
+      font: inherit;
+      font-size: 11px;
+      text-align: center;
+      color: var(--dim);
+      background: rgba(255, 255, 255, .08);
+      border-radius: 3px;
+    }
+
+    .pt-row i {
+      font-style: normal;
+      font-size: 10.5px;
+      color: var(--dim);
+    }
+
+    #ptStats {
+      display: grid;
+      gap: 6px;
+      padding: 8px 14px 2px;
+      margin-top: 4px;
+      border-top: 1px solid var(--line);
+    }
+
+    .pt-stat {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      align-items: center;
+      gap: 10px;
+      font-size: 11.5px;
+      color: var(--dim);
+    }
+
+    .pt-stat>div {
+      position: relative;
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .pt-stat>div>i {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #1fa8c9, #35e0ff);
+    }
+
+    .pt-stat>div>i.demo {
+      background: linear-gradient(90deg, #c9a227, #ffe066);
+    }
+
+    .pt-stat>div>u {
+      position: absolute;
+      top: -3px;
+      bottom: -3px;
+      width: 2px;
+      margin-left: -1px;
+      background: #fff;
+      border-radius: 1px;
+    }
+
+    .pt-foot {
+      padding: 6px 14px 0;
+      font-size: 11px;
+      color: var(--dim);
     }
 
     /* (on a hole the caddie-tips button moves down, under the shot counter, and the messages below that) */
@@ -4659,6 +4911,11 @@
       color: #b9f5cb;
     }
 
+    .cd-perks em.big {
+      background: rgba(233, 196, 106, .22);
+      color: #f6dc95;
+    }
+
     .cd-perks s {
       text-decoration: none;
       color: #ffd98a;
@@ -5014,6 +5271,13 @@
     </div>
 
     <div id="rightcol">
+      <!-- the putting green's "bag": your putter(s), and what each does (user request) -->
+      <div id="putterCard" class="card only-putt">
+        <div class="card-h"><span id="ptTitle">Putter</span><span class="tag" id="ptTag"></span></div>
+        <div id="ptList"></div>
+        <div id="ptStats"></div>
+        <div class="pt-foot" id="ptFoot"></div>
+      </div>
       <div id="bag" class="card">
         <div class="card-h"><span id="bagTitle">Bag</span><span class="tag" id="bagTag"
             title="Average full swing from the current lie: 100% backswing, full tempo, centre strike, no wind, at your current Power">full
@@ -5304,7 +5568,20 @@
     <div id="toast"></div>
     <!-- a hole's title card, for a couple of seconds as you step onto the tee; and the shot counter while you play it -->
     <div id="holeTitle"><small id="htCourse"></small><i id="htNum">Hole 1</i><b id="htPar">Par 5</b><span id="htDist"></span><em id="htDesc"></em><small id="htCond"></small></div>
-    <div id="holeBadge"><span><b id="hbHole">Hole 1</b><i id="hbPar">Par 5</i></span><span class="hb-shot"><i id="hbShotL">Shot</i><b id="hbShot">1</b></span><span><b id="hbDist">—</b><i>to the pin</i></span></div>
+    <div id="topCenter">
+      <div id="holeBadge"><span><b id="hbHole">Hole 1</b><i id="hbPar">Par 5</i></span><span class="hb-shot"><i id="hbShotL">Shot</i><b id="hbShot">1</b></span><span><b id="hbDist">—</b><i>to the pin</i></span></div>
+      <!-- the wind, front and centre (user request): an arrow for where it blows relative to your aim (up = toward the
+           target), the speed, the words, coloured by strength -->
+      <div id="windDial" class="calm">
+        <div class="wd-dial"><svg viewBox="-32 -32 64 64">
+            <circle r="28" class="wd-ring" />
+            <path d="M0 -29 V-24 M29 0 H24 M0 29 V24 M-29 0 H-24" class="wd-ticks" />
+            <text y="-19" class="wd-n">▲</text>
+            <g id="wdArrow" class="wd-arrow"><path d="M0 -19 L10 -3 H4 V17 H-4 V-3 H-10 Z" /></g>
+          </svg></div>
+        <div class="wd-txt"><b><span id="wdMph">0</span><small>mph</small></b><i id="wdWords">Calm</i><em id="wdLevel">calm</em></div>
+      </div>
+    </div>
     <div id="boot">Loading Three.js…</div>
     <script>
       window.addEventListener('error', function (e) {
@@ -7837,9 +8114,11 @@
         if (c === 'Space') { state.view = state.view === 'address' ? 'scout' : 'address'; return; }
         if (c === 'KeyC') { clampMarkerToGreen(0, green.distFt * FT); autoSelectPuttScale(); return syncPanel(); }
         if (c === 'Digit1' || c === 'Digit2' || c === 'Digit3') { state.puttScaleAuto = false; state.puttScale = +c[5] - 1; return syncPanel(); }
-        if (c === 'BracketLeft' || c === 'BracketRight') {
-          if (careerOn) return toast(`${PUTTERS[state.putter].name}\nThe only putter in your bag`, 1400);
-          state.putter = state.putter === 'blade' ? 'mallet' : 'blade'; return syncPanel();
+        if (c === 'BracketLeft' || c === 'BracketRight') {   // [ ] step through the putters on the card
+          const list = puttersAvail();
+          if (list.length < 2) return toast(`${PUTTERS[state.putter].name}\n${careerOn ? 'The only putter you own · more in the pro shop' : 'The only putter here'}`, 1400);
+          const i = list.indexOf(state.putter);
+          return pickPutter(list[(i + (c === 'BracketRight' ? 1 : -1) + list.length) % list.length]);
         }
       }
 
@@ -9078,7 +9357,7 @@
           : tourLive() ? `<b>🏆 Resume your invitational</b><i>${tourById(career.tour.id).short} · thru ${career.tour.holes.filter(Boolean).length}</i>` : '<b>⛳ Play a match</b><i>Hustle a local, or enter an invitational</i>';
         $('chStats').innerHTML = CAREER_STATS.map(([k, n, what]) => {
           const v = career.stats[k], cd = caddieOf();                     // the caddie's help: green pips past your own
-          const e = cd ? Math.min(COACH.maxStat, v + (k === 'composure' ? cd.comp : k === 'perception' ? cd.per : 0)) : v;
+          const e = cd ? Math.min(COACH.maxStat, v + caddieBonus(cd)[k]) : v;
           return `<div class="ch-stat" title="${n}: ${what}${e > v ? ` (${v} + ${e - v} from ${cd.short})` : ''}"><span>${n}</span><div class="ch-pips">${Array.from({ length: 10 }, (_, i) => `<i class="${i < v ? 'on' : i < e ? 'cad' : ''}"></i>`).join('')}</div><b>${e}</b></div>`;
         }).join('');
       }
@@ -9526,7 +9805,7 @@
             <!-- the loop sheet -->
             <rect x="60" y="300" width="270" height="200" rx="4" fill="#24302a" stroke="#7a5a2c" stroke-width="10"/>
             <text x="195" y="338" text-anchor="middle" font-family="Segoe Print, Comic Sans MS, cursive" font-size="22" fill="#f4f1e8">LOOPS TODAY</text>
-            ${['7:10  Scooter', '7:40  Lefty', '8:20  Marisol', '9:00  Walt', '9:30  Finch'].map((l, i) => `<text x="85" y="${372 + i * 26}" font-family="Segoe Print, Comic Sans MS, cursive" font-size="17" fill="#e8e3d3" opacity=".85">${l}</text>`).join('')}
+            ${['7:10  Scooter', '7:40  Lefty', '8:20  Marisol', '9:00  Walt', '9:30  Finch', '9:30  Dutch'].map((l, i) => `<text x="85" y="${368 + i * 22}" font-family="Segoe Print, Comic Sans MS, cursive" font-size="17" fill="#e8e3d3" opacity=".85">${l}</text>`).join('')}
             <!-- the bag rack -->
             <rect x="380" y="640" width="520" height="22" fill="#3a2314"/><rect x="380" y="455" width="520" height="14" fill="#3a2314"/>
             ${rackBag(400, '#1d3a6b')}${rackBag(480, '#8a1c22')}${rackBag(560, '#222')}${rackBag(640, '#f2f2f2')}${rackBag(720, '#2f6b3f')}${rackBag(800, '#b8862b')}
@@ -10313,16 +10592,22 @@
           bio: 'Reads the resort greens like a book, and walks off a bad hole with you.', say: 'That hole\'s gone. This one\'s ours.' },
         { id: 'walt', short: 'Big Walt', name: '“Big Walt” Okafor', tier: 3, rep: 120, hire: 15000, loop: 150, comp: 3, per: 1, calm: 2,
           bio: 'Nothing rattles him, so nothing rattles you. Every hole starts fresh.', say: 'Breathe. New hole, new day.' },
-        { id: 'finch', short: 'Finch', name: 'Eleanor Finch', tier: 3, rep: 200, hire: 40000, loop: 400, comp: 3, per: 3, calm: 2,
-          bio: 'Twenty years on tour bags. Her yardages are gospel and her voice is a sedative.', say: 'Forget it. Commit to this one.' },
+        // the top of the shack (user request): two caddies at the same price, the same help with your head, and one extra:
+        // Finch steadies your hands (+2 Dexterity), Dutch gets you swinging out of your shoes (+2 Power). Pick one.
+        { id: 'finch', short: 'Finch', name: 'Eleanor Finch', tier: 3, rep: 200, hire: 40000, loop: 400, comp: 3, per: 3, dex: 2, calm: 2,
+          bio: 'Twenty years on tour bags. Her yardages are gospel and her voice is a sedative. Your hands stop shaking.', say: 'Forget it. Commit to this one.' },
+        { id: 'dutch', short: 'Dutch', name: '“Dutch” Van Rijn', tier: 3, rep: 200, hire: 40000, loop: 400, comp: 3, per: 3, pow: 2, calm: 2,
+          bio: 'A two-time long-drive champion who caddies now. He\'ll have you swinging out of your shoes.', say: 'Let it rip. I\'ll find it.' },
       ];
+      // a caddie's help, stat by stat (the career's stat keys)
+      const caddieBonus = (c) => (c ? { power: c.pow || 0, dex: c.dex || 0, composure: c.comp || 0, perception: c.per || 0 } : { power: 0, dex: 0, composure: 0, perception: 0 });
       const caddieOf = () => (career && career.caddie && CADDIES.find((c) => c.id === career.caddie)) || null;
       // on your bag right now: a career is on, and not a match the caddie is sitting out (unpaid loop fee)
       const caddieOn = () => careerOn && !!caddieOf() && !(round.match && round.match.noCaddie);
       // the career's stats with the caddie's help (never past 10)
       function careerStats() {
-        const s = { ...career.stats }, c = caddieOn() ? caddieOf() : null;
-        if (c) { s.composure = Math.min(COACH.maxStat, s.composure + c.comp); s.perception = Math.min(COACH.maxStat, s.perception + c.per); }
+        const s = { ...career.stats }, b = caddieBonus(caddieOn() ? caddieOf() : null);
+        for (const k of Object.keys(b)) s[k] = Math.min(COACH.maxStat, s[k] + b[k]);
         return s;
       }
       // between holes of a round: a calm caddie walks some (or all) of the tilt off
@@ -10345,15 +10630,19 @@
         const cur = career.caddie, st = career.stats;
         $('cdList').innerHTML = CADDIES.map((c) => {
           const open = (career.tierMax || 1) >= c.tier && (career.rep || 0) >= c.rep, mine = cur === c.id;
-          const gc = Math.min(COACH.maxStat, st.composure + c.comp) - st.composure, gp = Math.min(COACH.maxStat, st.perception + c.per) - st.perception;
-          const perks = [c.comp && `<em>+${c.comp} Composure${gc < c.comp ? ` <s>(+${gc} for you: near the top)</s>` : ''}</em>`,
-            c.per && `<em>+${c.per} Perception${gp < c.per ? ` <s>(+${gp} for you: near the top)</s>` : ''}</em>`,
+          const b = caddieBonus(c), perk = (k, label) => {
+            if (!b[k]) return '';
+            const got = Math.min(COACH.maxStat, st[k] + b[k]) - st[k];
+            return `<em class="${k === 'power' || k === 'dex' ? 'big' : ''}">+${b[k]} ${label}${got < b[k] ? ` <s>(+${got} for you: near the top)</s>` : ''}</em>`;
+          };
+          const perks = [perk('power', 'Power'), perk('dex', 'Dexterity'), perk('composure', 'Composure'), perk('perception', 'Perception'),
             c.calm === 1 ? '<em>walks off one level of tilt each hole</em>' : c.calm === 2 ? '<em>every hole starts with no tilt</em>' : ''].filter(Boolean).join('');
           const reqs = [(career.tierMax || 1) < c.tier ? `${CAREER.tiers[c.tier]} circuit` : '', (career.rep || 0) < c.rep ? `reputation ${c.rep}` : ''].filter(Boolean).join(' · ');
           const btn = mine ? `<span class="cd-on">✓ On your bag</span><button data-release="1" class="no">Let go</button>`
             : open ? `<button data-hire="${c.id}" class="go" ${career.cash < c.hire ? 'disabled' : ''}>Hire · ${money(c.hire)}</button>`
             : `<span class="cd-lock">🔒 Needs ${reqs}</span>`;
-          return `<div class="cd-row${mine ? ' mine' : ''}${open ? '' : ' locked'}"><div class="cd-face">${c.short.replace(/[^A-Za-z ]/g, '').split(' ').map((w) => w[0]).join('').slice(0, 2)}</div>`
+          return (c.id === 'finch' ? '<div class="sh-cat">The best two bags in the business · same price, pick one: hands or power</div>' : '')
+            + `<div class="cd-row${mine ? ' mine' : ''}${open ? '' : ' locked'}"><div class="cd-face">${c.short.replace(/[^A-Za-z ]/g, '').split(' ').map((w) => w[0]).join('').slice(0, 2)}</div>`
             + `<div><b>${c.name}</b><i>${c.bio}</i><div class="cd-perks">${perks}</div></div>`
             + `<div class="cd-buy"><div class="cd-price">${money(c.hire)}<small>+ ${money(c.loop)} a match</small></div>${btn}</div></div>`;
         }).join('');
@@ -10658,6 +10947,43 @@
         state.club = i; refreshShotType(); renderBag();
         const key = CLUB_KEYS[bagOrder().indexOf(i)];
         toast(`Trying the ${modelName(id)} ${CLUBS[i].name}\nFree on the range${demoCanSwap() ? ` · ${key ? `${key} again` : 'Click the bag'} swaps to your own` : ''} · Esc back to the shop`, 3200);
+      }
+      // ---- the PUTTER CARD (user request): the putting green's bag, top right. The putters you can use here (in a career
+      // the ones you own plus a pro-shop demo; otherwise the practice blade and mallet), and bars for what the selected one
+      // does; trying a demo, a white tick shows your own putter on each bar. On the course you putt with the bag's putter.
+      function puttersAvail() {
+        if (!careerOn) return Object.keys(PUTTERS).filter((k) => !PUTTERS[k].model);
+        const own = (career.putters || [career.putter]).filter((k) => PUTTERS[k]);
+        return demo && demo.putter && !own.includes(demo.putter) ? [...own, demo.putter] : own;
+      }
+      const putterIsDemo = (k) => careerOn && !!demo && demo.putter === k && !(career.putters || []).includes(k);
+      function renderPutterCard() {
+        const STATS = [      // [label, 0..1 from the putter's numbers (more = more forgiving), what it means]
+          ['Stroke gate', (p) => (p.gate - 0.025) / 0.03, 'How far your stroke can wander before it catches the rail: wider forgives more'],
+          ['Start line', (p) => (0.45 - p.pathGain) / 0.3, 'How little your stroke\'s path pushes the ball off line: more is steadier'],
+          ['Sweet spot', (p) => (p.sweet - 3) / 9, 'How big the sweet spot is: off-centre strikes lose less pace'],
+          ['Tempo window', (p) => (p.tempoZone - 0.03) / 0.07, 'How wide a tempo still counts as a pure stroke'],
+        ];
+        const list = puttersAvail(), cur = state.putter, mine = careerOn ? career.putter : null;
+        setText('ptTitle', list.length > 1 ? 'Putters' : 'Putter');
+        setText('ptTag', putterIsDemo(cur) ? 'demo' : careerOn ? (cur === mine ? 'in your bag' : 'locker') : 'practice');
+        $('ptList').innerHTML = list.map((k) => {
+          const p = PUTTERS[k], dm = putterIsDemo(k);
+          return `<div class="pt-row${k === cur ? ' on' : ''}${dm ? ' demo' : ''}" data-putter="${k}"><kbd>${dm ? '⇄' : careerOn && k === mine ? '✓' : '·'}</kbd>`
+            + `<span>${p.name}</span><i>${dm ? 'demo' : careerOn ? (k === mine ? 'in your bag' : 'locker') : ''}</i></div>`;
+        }).join('');
+        const P = PUTTERS[cur], Y = putterIsDemo(cur) && mine && PUTTERS[mine] ? PUTTERS[mine] : null, pc = (f, p) => Math.round(clamp(f(p), 0.04, 1) * 100);
+        $('ptStats').innerHTML = P ? STATS.map(([lbl, f, tip]) => `<div class="pt-stat" title="${tip}${Y ? ` · yours (${Y.name}): the white tick` : ''}"><span>${lbl}</span>`
+          + `<div><i class="${Y ? 'demo' : ''}" style="width:${pc(f, P)}%"></i>${Y ? `<u style="left:${pc(f, Y)}%"></u>` : ''}</div></div>`).join('') : '';
+        setText('ptFoot', hp.on && careerOn ? 'On the course: the putter in your bag' : list.length > 1 ? '[ ] or a click switches putter' : careerOn ? 'More putters in the pro shop' : '');
+      }
+      // switch putter (the practice green; on the course a career putts with the one in its bag)
+      function pickPutter(k) {
+        if (!PUTTERS[k] || swing.active || !isPutt()) return;
+        if (hp.on && careerOn) return toast(`${PUTTERS[state.putter].name}\nOn the course you putt with the one in your bag`, 1600);
+        state.putter = k;
+        if (careerOn && !putterIsDemo(k) && career.putter !== k) { career.putter = k; careerSave(); }
+        syncPanel();
       }
       function startPutterDemo(id) {
         demo = { putter: id };
@@ -12306,7 +12632,30 @@
 
       function saveCal() { try { localStorage.setItem('golfSwingCal', JSON.stringify(state.cal)); } catch { /* ignore */ } }
       const windFromWords = (d) => ['head', 'head-right', 'from right', 'tail-right', 'tail', 'tail-left', 'from left', 'head-left'][Math.round(d / 45) % 8];
+      // the wind dial at the top centre: rel = where the wind comes from, relative to your aim (0 = into you). The arrow shows
+      // where it blows (up the screen = toward the target); its colour and the pulse's pace follow the strength.
+      const WIND_LEVELS = [[0, 'calm', 'calm'], [1, 'light', 'light'], [8, 'moderate', 'moderate'], [15, 'strong', 'strong'], [23, 'gale', 'very strong']];
+      const windDialLast = { key: '' };
+      function updateWindDial(rel) {
+        const mph = state.windMph || 0, lv = WIND_LEVELS.filter(([m]) => mph >= m).pop();
+        const key = `${mph}|${Math.round(rel)}`;
+        if (key === windDialLast.key) return;
+        windDialLast.key = key;
+        const el = $('windDial');
+        el.className = lv[1];
+        setText('wdMph', String(mph));
+        const words = ['Into you', 'Into, off the right', 'From the right', 'Helping, off the right', 'Helping', 'Helping, off the left', 'From the left', 'Into, off the left'];
+        setText('wdWords', mph ? words[Math.round((((rel % 360) + 360) % 360) / 45) % 8] : 'No wind');
+        setText('wdLevel', lv[2]);
+        let a = rel + 180;                                   // (always turn the short way round)
+        while (a - (windDialLast.a ?? a) > 180) a -= 360;
+        while (a - (windDialLast.a ?? a) < -180) a += 360;
+        windDialLast.a = a;
+        $('wdArrow').style.transform = `rotate(${a.toFixed(1)}deg)`;
+        el.style.setProperty('--wd-speed', `${clamp(2.6 - mph * 0.07, 0.55, 2.6).toFixed(2)}s`);
+      }
       function syncPanel() {
+        if (isPutt()) renderPutterCard();                    // the putting green's bag
         $('inSwingPx').value = state.cal.swingPx; $('inVTarget').value = state.cal.vTarget;
         $('outWind').textContent = `${state.windMph} mph`;
         $('outWindDir').textContent = `${state.windDir}°`;
@@ -12351,6 +12700,7 @@
         bind('inWind', (v) => { state.windMph = +v; orientFlags(); });
         bind('inWindDir', (v) => { state.windDir = +v; orientFlags(); });
         bind('inPower', (v) => { state.power = +v; renderBag(); });
+        $('ptList').addEventListener('click', (e) => { const r = e.target.closest('.pt-row'); if (r) pickPutter(r.dataset.putter); });
         $('bagList').addEventListener('click', (e) => {
           const row = e.target.closest('.bag-row');
           if (!row) return;
@@ -12702,6 +13052,7 @@
         const rel = state.windDir - frameBeta() - state.aim;          // chipping on a hole: the scene is turned into the green's frame
         const camHeading = Math.atan2(-camera.matrixWorld.elements[8], camera.matrixWorld.elements[10]) * R2D;
         setText('tbWind', state.windMph ? `${state.windMph} mph ${windWords(rel)}` : 'Calm');
+        updateWindDial(rel);
         $('windArrow').style.transform = `rotate(${state.windDir - frameBeta() - camHeading + 180}deg)`;
         $('windArrow').style.opacity = state.windMph ? 1 : 0.25;
         setText('tbLie', `${LIES[state.lie].name.replace(/ \(.*/, '')} · ${SLOPES[state.slope].name}`);
