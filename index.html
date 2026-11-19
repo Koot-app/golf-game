@@ -1616,6 +1616,981 @@
       color: #d9ffe6;
     }
 
+    /* ---- career: the clubhouse (CAMPAIGN_PLAN.md, chunk 1) ---- */
+    body:not(.career) .only-career,
+    body.match .note.only-round {
+      display: none !important;
+    }
+
+    body.career label:has(#inPower),
+    body.career label:has(#inDex),
+    body.career label:has(#inComp),
+    body.career label:has(#inPer),
+    body.career label:has(#inPutter) {
+      display: none !important;
+    }
+
+    .bag-row.snapped span,
+    .bag-row.snapped b,
+    .bag-row.snapped i {
+      text-decoration: line-through;
+      opacity: .45;
+    }
+
+    #btnCareer {
+      font-weight: 600;
+      background: rgba(255, 224, 102, .13);
+      border-color: rgba(255, 224, 102, .5);
+      color: #ffe9a0;
+    }
+
+    body.career #btnCareer {
+      background: rgba(94, 224, 138, .16);
+      border-color: rgba(94, 224, 138, .55);
+      color: #d9ffe6;
+    }
+
+    #clubhouse {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(600px, calc(100vw - 32px));
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      display: none;
+      z-index: 7;
+      background: rgba(9, 13, 19, .96);
+      border-color: rgba(255, 224, 102, .45);
+      padding-bottom: 16px;
+    }
+
+    #clubhouse.on {
+      display: block;
+    }
+
+    #clubhouse .card-h {
+      font-size: 12px;
+      padding: 12px 16px 8px;
+    }
+
+    #clubhouse .card-h>span:first-child {
+      color: #ffe066;
+    }
+
+    #chNew,
+    #chHub,
+    #chMatch {
+      display: none;
+      padding: 0 18px;
+    }
+
+    #clubhouse.new #chNew,
+    #clubhouse.hub #chHub,
+    #clubhouse.match #chMatch,
+    #clubhouse.shop:not(.coach) #chShop,
+    #clubhouse.coach #chCoach {
+      display: block;
+    }
+
+    #chShop,
+    #chCoach {
+      display: none;
+      padding: 0 18px;
+    }
+
+    /* the coach (chunk 6) */
+    .co-row {
+      display: grid;
+      grid-template-columns: 110px 150px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      font-size: 12.5px;
+    }
+
+    .co-row.shot {
+      grid-template-columns: 150px 1fr auto;
+    }
+
+    .co-row i {
+      font-style: normal;
+      color: var(--dim);
+    }
+
+    .co-row.got b {
+      color: #5ee08a;
+    }
+
+    .co-row button {
+      width: auto;
+      margin: 0;
+      padding: 5px 11px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(94, 224, 138, .16);
+      border-color: rgba(94, 224, 138, .55);
+      color: #d9ffe6;
+    }
+
+    .co-row button:disabled {
+      opacity: .45;
+      cursor: default;
+    }
+
+    /* not learned yet (career): a padlock on the telemetry card's pill */
+    .chip-pill.locked,
+    .spin-pip.locked {
+      position: relative;
+      opacity: .4;
+    }
+
+    .chip-pill.locked::after,
+    .spin-pip.locked::after {
+      content: '🔒';
+      position: absolute;
+      top: -2px;
+      right: 1px;
+      font-size: 9px;
+    }
+
+    #clubhouse.shop {
+      width: min(800px, calc(100vw - 32px));
+    }
+
+    /* the pro shop (chunk 5) */
+    .sh-top {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .sh-cash {
+      margin-left: auto;
+      font-size: 17px;
+      font-weight: 700;
+      color: #5ee08a;
+    }
+
+    .sh-tabs {
+      display: flex;
+      gap: 6px;
+      margin: 4px 0 10px;
+      flex-wrap: wrap;
+    }
+
+    .sh-tabs button {
+      width: auto;
+      margin: 0;
+      padding: 6px 12px;
+      font-weight: 600;
+    }
+
+    .sh-tabs button.on {
+      background: rgba(255, 224, 102, .18);
+      border-color: #ffe066;
+      color: #fff3c2;
+    }
+
+    .sh-list {
+      max-height: calc(100vh - 290px);
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .sh-cat {
+      margin: 10px 0 6px;
+      font-size: 10px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+
+    .sh-item {
+      display: grid;
+      grid-template-columns: 1fr 260px;
+      gap: 6px 16px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .04);
+    }
+
+    .sh-item.owned {
+      border-color: rgba(94, 224, 138, .5);
+      background: rgba(94, 224, 138, .06);
+    }
+
+    .sh-name b {
+      font-size: 14.5px;
+    }
+
+    .sh-name span {
+      margin-left: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #5ee08a;
+    }
+
+    .sh-name em {
+      margin-left: 8px;
+      font-style: normal;
+      font-size: 11px;
+      color: #ffe066;
+    }
+
+    .sh-note {
+      font-size: 12px;
+      color: #c9d4e0;
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    .sh-bars {
+      display: grid;
+      gap: 3px;
+      align-content: start;
+    }
+
+    .sh-bar {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--dim);
+    }
+
+    .sh-bar div {
+      height: 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, .08);
+      overflow: hidden;
+    }
+
+    .sh-bar i {
+      display: block;
+      height: 100%;
+      border-radius: 4px;
+      background: #35e0ff;
+    }
+
+    .sh-tag {
+      font-size: 11px;
+      color: #ffc24a;
+    }
+
+    .sh-btns {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .sh-btns button {
+      width: auto;
+      margin: 0;
+      padding: 5px 11px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .sh-btns button.buy {
+      background: rgba(94, 224, 138, .16);
+      border-color: rgba(94, 224, 138, .55);
+      color: #d9ffe6;
+    }
+
+    .sh-btns button:disabled {
+      opacity: .4;
+      cursor: default;
+    }
+
+    .sh-row {
+      display: grid;
+      grid-template-columns: 130px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--line);
+      font-size: 12.5px;
+    }
+
+    .sh-row i {
+      font-style: normal;
+      color: var(--dim);
+    }
+
+    .sh-row button {
+      width: auto;
+      margin: 0;
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    .sh-row.locker b {
+      opacity: .55;
+    }
+
+    .sh-row.snapped b {
+      text-decoration: line-through;
+      opacity: .55;
+    }
+
+    /* the match picker */
+    .cm-npcs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .cm-npc {
+      padding: 9px 11px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .04);
+      cursor: pointer;
+    }
+
+    .cm-npc.on {
+      border-color: #ffe066;
+      background: rgba(255, 224, 102, .1);
+      box-shadow: 0 0 0 2px rgba(255, 224, 102, .2);
+    }
+
+    .cm-npc b {
+      display: block;
+      font-size: 14px;
+    }
+
+    .cm-npc .nick {
+      color: #ffe066;
+    }
+
+    .cm-npc i {
+      display: block;
+      font-style: normal;
+      font-size: 11.5px;
+      color: #c9d4e0;
+      margin-top: 3px;
+    }
+
+    .cm-npc em {
+      display: block;
+      font-style: italic;
+      font-size: 11.5px;
+      color: var(--dim);
+      margin-top: 4px;
+    }
+
+    .cm-npc u {
+      display: block;
+      text-decoration: none;
+      font-size: 11px;
+      color: #5ee08a;
+      margin-top: 4px;
+    }
+
+    .cm-bet {
+      margin-top: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid var(--line);
+    }
+
+    .cm-row {
+      display: grid;
+      grid-template-columns: 80px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 3px 0;
+      font-size: 12.5px;
+    }
+
+    .cm-row span {
+      color: var(--dim);
+    }
+
+    .cm-row>b:only-of-type:nth-child(2) {
+      grid-column: 2 / 4;
+    }
+
+    .cm-fmt {
+      display: flex;
+      gap: 6px;
+    }
+
+    .cm-fmt button {
+      width: auto;
+      margin: 0;
+      padding: 4px 12px;
+      font-weight: 600;
+    }
+
+    .cm-fmt button.on {
+      background: rgba(255, 224, 102, .18);
+      border-color: #ffe066;
+      color: #fff3c2;
+    }
+
+    .cm-fmtnote {
+      font-style: normal;
+      font-size: 11px;
+      color: var(--dim);
+      text-align: right;
+      max-width: 230px;
+    }
+
+    #scPress {
+      display: none;
+      background: rgba(255, 93, 108, .18);
+      border-color: rgba(255, 93, 108, .6);
+      color: #ffe1e4;
+    }
+
+    #scPress.on {
+      display: block;
+    }
+
+    #cmStakeV {
+      font-size: 17px;
+      color: #5ee08a;
+      min-width: 52px;
+      text-align: right;
+    }
+
+    .cm-help {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--dim);
+    }
+
+    /* the stake on credit */
+    .cm-red {
+      color: #ff5d6c;
+      font-weight: 700;
+    }
+
+    #cmCredit {
+      font-weight: 500;
+      font-size: 11.5px;
+      color: var(--dim);
+    }
+
+    /* the loan-shark beating (chunk 4) */
+    #beating {
+      position: fixed;
+      inset: 0;
+      z-index: 9;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at center, rgba(120, 0, 0, .55) 0%, rgba(20, 0, 0, .92) 70%);
+    }
+
+    #beating.on {
+      display: flex;
+    }
+
+    #beating.shake .bt-card {
+      animation: btShake .42s cubic-bezier(.36, .07, .19, .97);
+    }
+
+    @keyframes btShake {
+
+      10%,
+      90% {
+        transform: translate(-3px, 1px) rotate(-.5deg);
+      }
+
+      20%,
+      80% {
+        transform: translate(6px, -2px) rotate(1deg);
+      }
+
+      30%,
+      50%,
+      70% {
+        transform: translate(-10px, 3px) rotate(-1.5deg);
+      }
+
+      40%,
+      60% {
+        transform: translate(10px, -3px) rotate(1.5deg);
+      }
+    }
+
+    .bt-card {
+      width: min(560px, calc(100vw - 32px));
+      text-align: center;
+      padding: 18px 22px 22px;
+      border-radius: 14px;
+      background: rgba(10, 6, 8, .94);
+      border: 2px solid #ff5d6c;
+      box-shadow: 0 0 40px rgba(255, 60, 60, .35);
+    }
+
+    .bt-pow {
+      font: 900 64px/1.1 Impact, "Arial Black", system-ui, sans-serif;
+      letter-spacing: .04em;
+      color: #ffe066;
+      -webkit-text-stroke: 3px #b3001b;
+      text-shadow: 5px 5px 0 #000;
+      margin: 4px 0 10px;
+    }
+
+    .bt-pow.a,
+    .bt-pow.b,
+    .bt-pow.c {
+      animation: btPow .38s cubic-bezier(.2, 1.6, .4, 1);
+    }
+
+    .bt-pow.b {
+      color: #ffffff;
+    }
+
+    .bt-pow.c {
+      color: #ff9a3d;
+    }
+
+    @keyframes btPow {
+      0% {
+        transform: scale(.2) rotate(-14deg);
+        opacity: 0;
+      }
+
+      100% {
+        transform: scale(1) rotate(-4deg);
+        opacity: 1;
+      }
+    }
+
+    .bt-line {
+      font-size: 16px;
+      font-style: italic;
+      color: #ffd0d4;
+      margin-bottom: 10px;
+    }
+
+    .bt-snap {
+      min-height: 26px;
+      font-size: 20px;
+      font-weight: 800;
+      color: #ff5d6c;
+    }
+
+    .bt-sub {
+      min-height: 36px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #c9d4e0;
+      margin: 8px 0 14px;
+    }
+
+    #btGo {
+      width: auto;
+      padding: 9px 22px;
+      font-weight: 700;
+      background: rgba(255, 93, 108, .2);
+      border-color: rgba(255, 93, 108, .7);
+      color: #ffe1e4;
+    }
+
+    /* the tee toss */
+    #teeToss {
+      position: fixed;
+      left: 50%;
+      top: 42%;
+      transform: translate(-50%, -50%);
+      width: min(460px, calc(100vw - 32px));
+      display: none;
+      z-index: 7;
+      background: rgba(9, 13, 19, .96);
+      border-color: rgba(255, 224, 102, .45);
+      padding-bottom: 16px;
+    }
+
+    #teeToss.on {
+      display: block;
+    }
+
+    #teeToss .card-h {
+      font-size: 12px;
+      padding: 12px 16px 6px;
+    }
+
+    #teeToss .card-h>span:first-child {
+      color: #ffe066;
+    }
+
+    .tt-field {
+      display: grid;
+      grid-template-columns: 1fr 200px 1fr;
+      align-items: center;
+      padding: 10px 18px 4px;
+    }
+
+    .tt-side {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+    }
+
+    .tt-side:last-child {
+      justify-content: flex-end;
+    }
+
+    .tt-side i {
+      font-style: normal;
+      color: var(--dim);
+    }
+
+    #ttTee {
+      width: 200px;
+      height: 70px;
+      transform-origin: 50% 50%;
+    }
+
+    .tt-result {
+      min-height: 22px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffe066;
+      margin: 6px 0 4px;
+    }
+
+    /* the match on the scorecard */
+    #scTable tr.npc td:first-child,
+    #scTable tr.mrow td:first-child {
+      color: #ffe066;
+    }
+
+    #scTable .mw {
+      color: #5ee08a;
+      font-weight: 700;
+    }
+
+    #scTable .ml {
+      color: #ff5d6c;
+      font-weight: 700;
+    }
+
+    .ch-lead {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 4px 0 6px;
+    }
+
+    .ch-p {
+      margin: 0 0 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #c9d4e0;
+    }
+
+    .ch-namebox {
+      display: grid;
+      gap: 6px;
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    #chName {
+      font: 700 22px/1.2 "Segoe UI", system-ui, sans-serif;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #fff;
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 224, 102, .5);
+      border-radius: 8px;
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    #siPw {
+      font: 600 17px/1.2 "Segoe UI", system-ui, sans-serif;
+      color: #fff;
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 224, 102, .5);
+      border-radius: 8px;
+      padding: 9px 12px;
+      outline: none;
+    }
+
+    #siPw:focus {
+      border-color: #ffe066;
+      box-shadow: 0 0 0 3px rgba(255, 224, 102, .2);
+    }
+
+    #chNew .ch-namebox {
+      margin-bottom: 10px;
+    }
+
+    #chNew.local #siPwBox,
+    #chNew:not(.new) #siBringBox,
+    #chNew.nobring #siBringBox,
+    #chNew.continue #siNameBox,
+    #chNew.continue #siPwBox {
+      display: none;
+    }
+
+    .si-bring {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #c9d4e0;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+
+    .si-bring input {
+      width: 16px;
+      height: 16px;
+    }
+
+    #chSync.bad {
+      color: #ffb3bb;
+    }
+
+    #chSync.ok {
+      color: #8fe3ad;
+    }
+
+    #chName:focus {
+      border-color: #ffe066;
+      box-shadow: 0 0 0 3px rgba(255, 224, 102, .2);
+    }
+
+    .ch-err {
+      min-height: 18px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--red);
+    }
+
+    .ch-btns,
+    .ch-foot {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .ch-btns button,
+    .ch-foot button {
+      width: auto;
+      margin: 0;
+      padding: 8px 16px;
+      font-weight: 600;
+    }
+
+    #clubhouse button.go {
+      background: rgba(94, 224, 138, .2);
+      border-color: rgba(94, 224, 138, .6);
+      color: #d9ffe6;
+    }
+
+    .ch-prof {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 4px 0 12px;
+    }
+
+    .ch-who {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .ch-kpis {
+      margin-left: auto;
+      display: flex;
+      gap: 18px;
+    }
+
+    .ch-kpis i {
+      display: block;
+      font-style: normal;
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    .ch-kpis b {
+      font-size: 17px;
+    }
+
+    #chCash {
+      color: #5ee08a;
+    }
+
+    .ch-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 18px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid var(--line);
+    }
+
+    .ch-stat {
+      display: grid;
+      grid-template-columns: 86px 1fr 18px;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+    }
+
+    .ch-stat span {
+      color: var(--dim);
+    }
+
+    .ch-pips {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 2px;
+    }
+
+    .ch-pips i {
+      height: 7px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, .1);
+    }
+
+    .ch-pips i.on {
+      background: #35e0ff;
+    }
+
+    .ch-stat b {
+      text-align: right;
+    }
+
+    /* the circuits (chunk 8) */
+    .ch-tiers {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ch-tier {
+      padding: 9px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .03);
+      font-size: 11.5px;
+      color: #c9d4e0;
+    }
+
+    .ch-tier.cur {
+      border-color: #5ee08a;
+      background: rgba(94, 224, 138, .08);
+    }
+
+    .ch-tier.locked {
+      opacity: .75;
+    }
+
+    .ch-tier b {
+      display: block;
+      font-size: 13px;
+      color: #fff;
+    }
+
+    .ch-tier .crs {
+      color: #ffe066;
+      font-weight: 600;
+      margin: 2px 0 4px;
+    }
+
+    .ch-tier ul {
+      margin: 5px 0 0;
+      padding-left: 0;
+      list-style: none;
+    }
+
+    .ch-tier li.ok {
+      color: #5ee08a;
+    }
+
+    .ch-tier li.no {
+      color: #ff9aa4;
+    }
+
+    .ch-tier button {
+      margin: 6px 0 0;
+      padding: 4px 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .ch-tier .here {
+      display: block;
+      margin-top: 6px;
+      color: #5ee08a;
+      font-weight: 700;
+    }
+
+    .ch-menu {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .ch-menu button {
+      margin: 0;
+      padding: 11px 12px;
+      text-align: left;
+      border-radius: 8px;
+    }
+
+    .ch-menu b {
+      display: block;
+      font-size: 14px;
+    }
+
+    .ch-menu i {
+      display: block;
+      font-style: normal;
+      font-size: 11.5px;
+      color: var(--dim);
+      margin-top: 2px;
+    }
+
+    .ch-menu button.soon {
+      opacity: .55;
+    }
+
+    .ch-msg {
+      min-height: 18px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #ffe082;
+    }
+
+    .ch-foot span {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--dim);
+    }
+
+    #chRetire {
+      color: #ffb3bb;
+      border-color: rgba(255, 93, 108, .4);
+    }
+
     /* ---- arcade leaderboard ---- */
     #scorecard {
       max-height: calc(100vh - 40px);
@@ -2112,7 +3087,7 @@
 
   <div id="topbar" class="card">
     <div class="tb only-hole" id="tbHoleCell"><i id="tbHoleL">Hole 1 · Par 5</i><b id="tbHole">Shot 1</b></div>
-    <div class="tb only-round" id="tbRoundCell" title="Test round score (K shows the scorecard)"><i>Test round</i><b id="tbRound">E</b></div>
+    <div class="tb only-round" id="tbRoundCell" title="Round score (K shows the scorecard)"><i id="tbRoundL">Test round</i><b id="tbRound">E</b></div>
     <div class="tb" id="tbView"><i>Camera</i><b id="tbViewV">1 · Scout</b></div>
     <div class="tb"><i id="tbClubL">Club</i><b id="tbClub">—</b></div>
     <div class="tb"><i id="tbPinL">Target pin</i><b id="tbPin">—</b></div>
@@ -2143,6 +3118,7 @@
       </div>
       <div id="panelBody">
         <label class="row wide" style="margin-bottom:4px"><span>Course</span><select id="inHole"></select></label>
+        <button id="btnCareer" style="margin: 0 0 6px" title="Career mode: hustle, upgrade, move up (J)">🏌️ Start a career</button>
         <div class="btn2" style="grid-template-columns: 1fr auto; margin-bottom: 6px">
           <button id="btnRound" style="margin: 0">Test round · holes 1–9</button>
           <button id="btnBoard" style="margin: 0" title="Top 10 test-round scores (L)">🏆 Top 10</button>
@@ -2186,6 +3162,7 @@
         <div>
           <div class="sec">Player (RPG test)</div>
           <div class="note only-round" style="margin: 0 0 4px">Test round: everyone plays standard stats — Power, Dexterity, Composure and Perception all 5. Yours come back after the round.</div>
+          <div class="note only-career" id="careerStatNote" style="margin: 0 0 4px"></div>
           <label class="row"><span>Power</span><input type="range" id="inPower" min="1" max="10" step="1" value="5"><b
               id="outPower"></b></label>
           <label class="row"><span>Dexterity</span><input type="range" id="inDex" min="1" max="10" step="1" value="5"><b
@@ -2242,7 +3219,7 @@
 
     <div id="rightcol">
       <div id="bag" class="card">
-        <div class="card-h"><span>Bag</span><span class="tag" id="bagTag"
+        <div class="card-h"><span id="bagTitle">Bag</span><span class="tag" id="bagTag"
             title="Average full swing from the current lie: 100% backswing, full tempo, centre strike, no wind, at your current Power">full
             swing, yds</span></div>
         <div class="bag-head"><span></span><span>Club</span><span>Carry</span><span>Total</span></div>
@@ -2364,7 +3341,7 @@
         <table id="lbTable"></table>
         <div id="lbNote"></div>
       </div>
-      <div id="scBtns"><button id="scNext">Next hole (N)</button><button id="scClose">Close (K)</button></div>
+      <div id="scBtns"><button id="scPress">Press (P)</button><button id="scNext">Next hole (N)</button><button id="scClose">Close (K)</button></div>
     </div>
     <div id="tipsCard" class="card">
       <div class="card-h"><span>💡 Caddie tips</span><span style="display:flex;align-items:center;gap:8px"><span class="tag" id="tipsPage"></span><button id="tipsClose" title="Close (Esc)">✕</button></span></div>
@@ -2384,6 +3361,90 @@
           stats (all 5). Holes are played in order; your score goes on the Top 10.</div>
         <div id="riBtns"><button id="riStart">Start round (Enter)</button><button id="riCancel">Cancel (Esc)</button></div>
       </div>
+    </div>
+    <div id="clubhouse" class="card">
+      <div class="card-h"><span>🏌️ The Clubhouse</span><span class="tag" id="chTag"></span></div>
+      <div id="chNew">
+        <div class="ch-lead">Who's playing?</div>
+        <div class="sh-tabs" id="siTabs"><button data-si="in">Sign in</button><button data-si="new">New profile</button><button data-si="local">Play on this PC only</button></div>
+        <p class="ch-p" id="siIntro"></p>
+        <label class="ch-namebox" id="siNameBox"><span id="siNameL">Profile name</span><input id="chName" maxlength="12" placeholder="3–12 letters"
+            autocomplete="username" spellcheck="false"></label>
+        <label class="ch-namebox" id="siPwBox"><span>Password</span><input id="siPw" type="password" maxlength="64" placeholder="at least 4 characters"
+            autocomplete="current-password"></label>
+        <label class="si-bring" id="siBringBox"><input type="checkbox" id="siBring" checked> <span id="siBringL"></span></label>
+        <div class="ch-err" id="chErr"></div>
+        <div class="ch-btns"><button id="chCreate" class="go">Sign in (Enter)</button><button id="chCancel">Cancel (Esc)</button></div>
+      </div>
+      <div id="chHub">
+        <div class="ch-prof">
+          <div class="ch-who" id="chWho"></div>
+          <div class="ch-kpis">
+            <div><i>Cash</i><b id="chCash"></b></div>
+            <div><i>Reputation</i><b id="chRep"></b></div>
+            <div><i>Circuit</i><b id="chTier"></b></div>
+          </div>
+        </div>
+        <div class="ch-stats" id="chStats"></div>
+        <div class="ch-tiers" id="chTiers"></div>
+        <div class="ch-menu">
+          <button data-go="match" id="chMatchBtn"><b>⛳ Play a match</b><i>Hustle a local for money</i></button>
+          <button data-go="shop"><b>🛒 Pro shop</b><i>Clubs, repairs and your bag</i></button>
+          <button data-go="coach"><b>🎓 Coach</b><i>Lessons and new shots</i></button>
+          <button data-go="range"><b>🎯 Practice range</b><i>Hit balls with your own game (Esc)</i></button>
+        </div>
+        <div class="ch-msg" id="chMsg"></div>
+        <div class="ch-foot"><button id="chLeave">Leave career</button><button id="chSwitch">Switch player</button><button id="chRetire">Retire (start over)</button><span
+            id="chSync">J opens the clubhouse any time</span></div>
+      </div>
+      <div id="chShop">
+        <div class="sh-top"><div class="ch-lead">Pro shop</div><span class="sh-cash" id="shCash"></span></div>
+        <div class="sh-tabs" id="shTabs"></div>
+        <div class="sh-list" id="shList"></div>
+        <div class="ch-msg" id="shMsg"></div>
+        <div class="ch-btns"><button id="shBack">Back to the clubhouse (Esc)</button><span class="cm-help">1–6 tabs · Try it = hit it free on the range</span></div>
+      </div>
+      <div id="chCoach">
+        <div class="sh-top"><div class="ch-lead">The coach</div><span class="sh-cash" id="coCash"></span></div>
+        <div class="sh-list" id="coList"></div>
+        <div class="ch-msg" id="coMsg"></div>
+        <div class="ch-btns"><button id="coBack">Back to the clubhouse (Esc)</button></div>
+      </div>
+      <div id="chMatch">
+        <div class="ch-lead">Pick a hustler</div>
+        <div class="cm-npcs" id="cmNpcs"></div>
+        <div class="cm-bet">
+          <div class="cm-row"><span>Format</span><div class="cm-fmt" id="cmFmt"><button data-fmt="match">Match play</button><button data-fmt="skins">Skins</button></div><i id="cmFmtNote" class="cm-fmtnote"></i></div>
+          <div class="cm-row"><span id="cmStakeL">Stake</span><input type="range" id="cmStake" min="10" max="40" step="5" value="20"><b id="cmStakeV"></b></div>
+          <div class="cm-row"><span>Credit</span><b id="cmCredit" class="cm-note"></b></div>
+          <div class="cm-row"><span>Green fee</span><b id="cmFee"></b></div>
+        </div>
+        <div class="ch-err" id="cmErr"></div>
+        <div class="ch-btns"><button id="cmGo" class="go">Tee off (Enter)</button><button id="cmBack">Back (Esc)</button><span
+            class="cm-help">↑ ↓ pick a player · F format · ← → stake</span></div>
+      </div>
+    </div>
+    <div id="beating">
+      <div class="bt-card">
+        <div id="btPow" class="bt-pow">WHACK!</div>
+        <div class="bt-line" id="btLine"></div>
+        <div class="bt-snap" id="btSnap"></div>
+        <div class="bt-sub" id="btSub"></div>
+        <button id="btGo" class="go">Pick yourself up (Enter)</button>
+      </div>
+    </div>
+    <div id="teeToss" class="card">
+      <div class="card-h"><span>🏌️ Tee toss</span><span class="tag">who has the honour</span></div>
+      <div class="tt-field">
+        <div class="tt-side"><b>You</b><i>◀</i></div>
+        <svg id="ttTee" viewBox="-60 -20 120 40" aria-hidden="true">
+          <ellipse cx="-38" cy="0" rx="7" ry="13" fill="#f4efe2" stroke="#b9ae93" stroke-width="1.5" />
+          <path d="M-33 -5 L40 -1.6 L52 0 L40 1.6 L-33 5 Z" fill="#f4efe2" stroke="#b9ae93" stroke-width="1.5" />
+        </svg>
+        <div class="tt-side"><i>▶</i><b id="ttNpc"></b></div>
+      </div>
+      <div class="tt-result" id="ttResult"></div>
+      <div class="ch-btns" style="justify-content:center"><button id="ttGo" class="go">Tee off (Enter)</button></div>
     </div>
     <div id="hint" class="card"></div>
     <div id="toast"></div>
@@ -2682,7 +3743,12 @@
         let thM = sw.thetaMouse;
         if (comp === 'tilted') thM *= 1 + Math.min(0.6, tilt * 0.8);
         thM = clamp(thM, -15, 15);
-        const path = stanceDir + thM * club.work + (!env.stock ? TUNE.basePathDeg * dexSpread * bell() : 0);
+        // CAREER CLUBS (all optional, neutral when missing): consist = × the random scatter (worn, mismatched shafts > 1;
+        // forgiving heads < 1), lieBias = a bent lie angle's fixed push (+) / pull (-), offset = a face that sits closed (+,
+        // draw bias) or open (-, fade bias), groove = worn grooves (× spin, again from rough or sand, and more fliers),
+        // flopX = × the flop's difficulty (wide-soled wedges don't like being laid open).
+        const consist = club.consist || 1;
+        const path = stanceDir + thM * club.work + (!env.stock ? (club.lieBias || 0) + TUNE.basePathDeg * dexSpread * consist * bell() : 0);
 
         // 2. Loft the player is asking for.  AUDIT 6: the club's spin floor also limits how far it can be de-lofted.
         //    setup.traj is the HEIGHT level chosen at address: -2 / -1 = lower (de-lofted: less backspin, more run),
@@ -2749,7 +3815,7 @@
           // a bad lie is one more thing to manage; it compounds with everything else asked. A high-bounce wedge skims
           // through sand and thick grass instead of digging, so it takes part of that out.
           lie: (lie.cx || 0) * (1 - bounceK),
-          flop: flop ? CHIP.flopCx : 0,    // sliding a wide-open face under the ball is its own ask
+          flop: flop ? CHIP.flopCx * (club.flopX || 1) : 0,    // sliding a wide-open face under the ball is its own ask
           // a high draw (curving left with backspin) or a low fade (curving right with forward spin) works against the shape
           // (judged on what was set up and swung, not on the random path scatter)
           grain: (ftpIntent < 0 && traj > 0) || (ftpIntent > 0 && traj < 0)
@@ -2775,7 +3841,7 @@
         // 5. Strike centredness: the player's own wobble, plus baseline dexterity & complexity misses.
         const sig = sw.sigma * steady * (1 + TUNE.cxWobble * complexity);
         let strike = (sig * TUNE.strikeMmPerPx + lie.strike * dexRisk + slope.strike + TUNE.decelStrikeMm * decelCost) * side;
-        if (!env.stock) strike += (TUNE.baseStrikeMm * dexSpread * clubSpread + TUNE.cxStrikeMm * complexity) * bell();
+        if (!env.stock) strike += (TUNE.baseStrikeMm * dexSpread * clubSpread * consist + TUNE.cxStrikeMm * complexity) * bell();
         strike *= comp === 'tilted' ? 1 + Math.min(0.6, tilt * 0.8) : 1;
         strike = clamp(strike, -TUNE.strikeMaxMm, TUNE.strikeMaxMm);          // - heel / + toe
         const mm = Math.abs(strike);
@@ -2789,7 +3855,8 @@
         let lieLaunch = lie.launch + (lie.lVar || 0) * varK * bell() * 1.6, vlaMult = 1;
         if (lie.grabs) liePower = 1 - (1 - liePower) * (1 - 0.04 * (env.power - 1));   // power stat muscles it out
         if (lie.rough && club.rescue) liePower = 1 - (1 - liePower) * 0.7;              // a hybrid's sole cuts through grass: 30% less loss
-        if (lie.flier && !env.stock && rnd() < lie.flier) {        // occasionally grass trapped on the face kills the spin: it jumps and runs
+        const groove = club.groove || 1, dirtyLie = !!lie.rough || env.lie === 'bunker' || env.lie === 'fbunker';
+        if (lie.flier && !env.stock && rnd() < lie.flier * (1 + 2 * (1 - groove))) {        // occasionally grass trapped on the face kills the spin: it jumps and runs
           flags.push('FLIER'); liePower = Math.max(liePower, 0.97); lieSpin *= 0.6; lieLaunch += 2;
         }
         const flopSkull = flop && env.lie === 'hardpan' && !env.stock && (mm >= CHIP.flopHardpanMm || rnd() < CHIP.flopBladeChance);
@@ -2799,6 +3866,7 @@
           else { flags.push('CHUNKED'); lieLaunch = 3; }
         }
         if (env.lie === 'bunker') lieSpin = lie.spin * clamp(1 - 0.04 * mm, 0.5, 1);   // clean contact = more spin
+        lieSpin *= dirtyLie ? groove * groove : 1 - (1 - groove) * 0.4;     // worn grooves: a little less spin off a clean lie, much less with grass or sand in the way
         const twist = lie.twist ? lie.twist * dexRisk * (rnd() * 2 - 1) : 0;      // grass grabbing the hosel; a dexterous player fights it
         // 6b. Club fit: too little loft for the lie comes out weak and low, and may not come out at all.
         liePower *= fit.power; vlaMult *= 1 - TUNE.fitLaunch * fit.s;
@@ -2810,8 +3878,8 @@
         }
 
         // 7. Face, launch direction.  Baseline dexterity & complexity spread face timing (amplified on low-spin clubs).
-        const faceErr = !env.stock ? (TUNE.baseFaceDeg * dexSpread * clubSpread + TUNE.cxFaceDeg * complexity) * bell() : 0;
-        const faceDyn = faceDir + twist + strike * TUNE.gearDegPerMm * club.gear + faceErr;
+        const faceErr = !env.stock ? (TUNE.baseFaceDeg * dexSpread * clubSpread * consist + TUNE.cxFaceDeg * complexity) * bell() : 0;
+        const faceDyn = faceDir + twist + strike * TUNE.gearDegPerMm * club.gear + faceErr - (club.offset || 0);
         const hla = 0.75 * faceDyn + 0.25 * path;
         const ftp = faceDyn - path;
 
@@ -4057,8 +5125,45 @@
         }
       }
 
+      // ---- CAREER TIERS (CAMPAIGN_PLAN.md, chunk 8): each circuit plays the same 9 holes as its own course: its green speed and
+      // wind, the resort's holes mirrored left to right, the country club's tighter OB, more trees. courseV = the course being
+      // played (null = the holes as written: the range, free play, the test round).
+      const TIERS = {
+        1: { course: 'Rolling Pines Muni', stimpAdd: -1, windMult: 0.7, mirror: false, obMult: 1, treeMult: 1, rep: 0, entry: 0, desc: 'Public tracks, scruffy slow greens, small-time hustlers' },
+        2: { course: 'Palm Crest Resort', stimpAdd: 1, windMult: 1.0, mirror: true, obMult: 1, treeMult: 1.5, rep: 40, entry: 0, desc: 'Every hole turned the other way, faster greens, more trees, bigger money' },
+        3: { course: 'Hawthorne Country Club', stimpAdd: 2.5, windMult: 1.3, mirror: false, obMult: 0.8, treeMult: 1.3, rep: 120, entry: 500, desc: 'Lightning greens, stronger wind, tight out of bounds, high rollers' },
+      };
+      let courseV = null;
+      function variantDef(def, v = courseV) {
+        if (!v) return def;
+        const mx = v.mirror ? -1 : 1, e = (o) => ({ ...o, x: o.x * mx, rot: (o.rot || 0) * mx });
+        const gs = def.greenSurface;
+        return {
+          ...def,
+          desc: v.mirror ? def.desc.replace(/left|right/g, (w) => (w === 'left' ? 'right' : 'left')) : def.desc,
+          ob: (def.ob || 45) * v.obMult,
+          stimp: Math.round(((def.stimp || 11.5) + v.stimpAdd) * 2) / 2,
+          wind: def.wind ? { mph: Math.round(def.wind.mph * v.windMult), from: v.mirror ? (360 - def.wind.from) % 360 : def.wind.from } : def.wind,
+          path: def.path.map(([x, z]) => [x * mx, z]),
+          green: e(def.green), pin: [def.pin[0] * mx, def.pin[1]],
+          bunkers: def.bunkers.map(e), hardpan: def.hardpan.map(e),
+          greenSurface: {
+            ...gs, tilt: { x: gs.tilt.x * mx, z: gs.tilt.z },
+            bumps: (gs.bumps || []).map((b) => ({ ...b, x: b.x * mx })),
+            tiers: (gs.tiers || []).map((t) => ({ ...t, x: t.x * mx, ang: v.mirror ? Math.PI - (t.ang || 0) : t.ang })),
+          },
+          treeMult: v.treeMult,
+        };
+      }
+      function setCourse(tier) {                             // a career match's course, or back to the plain holes
+        const v = tier ? TIERS[tier] : null;
+        if (v === courseV) return;
+        courseV = v;
+        for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
+        buildHole(hp.holeIdx);
+      }
       function buildHole(idx) {
-        const def = HOLES[idx]; HOLE = def;
+        const def = variantDef(HOLES[idx]); HOLE = def;
         const curve = new THREE.CatmullRomCurve3(def.path.map(([x, z]) => new THREE.Vector3(x * YD, 0, z * YD)), false, 'centripetal');
         const N = 200, cl = curve.getSpacedPoints(N).map((p) => ({ x: p.x, z: p.z, s: 0 }));
         for (let i = 1; i <= N; i++) cl[i].s = cl[i - 1].s + Math.hypot(cl[i].x - cl[i - 1].x, cl[i].z - cl[i - 1].z);
@@ -4131,7 +5236,7 @@
         // trees line the hole and fill the inside of the dogleg. A ball that flies into one hits it (see treeAt / treeDeflect).
         const r = rng32(2026 + idx * 101), cone = new THREE.ConeGeometry(1, 1, 7); cone.translate(0, 0.5, 0);
         treeGrid.clear(); treeClearAt = null;
-        const COUNT = Math.round(clamp(hole.length * 0.85, 220, 440)), trees = new THREE.InstancedMesh(cone, new THREE.MeshLambertMaterial({ color: 0x2c5d2e }), COUNT);
+        const COUNT = Math.round(clamp(hole.length * 0.85, 220, 440) * (def.treeMult || 1)), trees = new THREE.InstancedMesh(cone, new THREE.MeshLambertMaterial({ color: 0x2c5d2e }), COUNT);
         const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), ps = new THREE.Vector3(), col = new THREE.Color();
         const xMin = mapFullBounds.v0 - 110, xSpan = (mapFullBounds.v1 - mapFullBounds.v0) + 220;
         const zMax = -mapFullBounds.u0 + 50, zSpan = (mapFullBounds.u1 - mapFullBounds.u0) + 120;
@@ -4229,7 +5334,7 @@
       const holeGeomCache = [];
       function holeGeom(idx) {
         if (holeGeomCache[idx]) return holeGeomCache[idx];
-        const def = HOLES[idx];
+        const def = variantDef(HOLES[idx]);                  // (the cache is cleared when the course changes: setCourse)
         const curve = new THREE.CatmullRomCurve3(def.path.map(([x, z]) => new THREE.Vector3(x * YD, 0, z * YD)), false, 'centripetal');
         const N = 200, cl = curve.getSpacedPoints(N).map((p) => ({ x: p.x, z: p.z, s: 0 }));
         for (let i = 1; i <= N; i++) cl[i].s = cl[i - 1].s + Math.hypot(cl[i].x - cl[i - 1].x, cl[i].z - cl[i - 1].z);
@@ -4796,20 +5901,26 @@
         applyChipGreen();
       }
       function chipDistYd() { return hp.on ? pinDist() / YD : state.chipCfg.pinYd; }
-      function suggestChipClub() {
-        if (state.lie === 'bunker' || state.lie === 'fbunker' || state.lie === 'heavy') return CI_SW;
-        if (state.chipType === 'flop') return CI_LW;
-        if (state.chipType === 'low') return CI_PW;
-        return chipDistYd() >= 30 ? CI_GW : CI_SW;
+      function suggestChipClub() {          // (in a career: the nearest club it actually has)
+        if (state.lie === 'bunker' || state.lie === 'fbunker' || state.lie === 'heavy') return usableClub(CI_SW, CI_LW, CI_GW);
+        if (state.chipType === 'flop') return usableClub(CI_LW, CI_SW);
+        if (state.chipType === 'low') return usableClub(CI_PW, CI_PW - 1, CI_GW);
+        return chipDistYd() >= 30 ? usableClub(CI_GW, CI_SW, CI_PW) : usableClub(CI_SW, CI_GW, CI_LW);
       }
       // Shot-type preset: sets the address. Tweaks on top (Q/E, A/D, Z/C, W/S) are the player's own, and do steer the ball.
       function applyChipType(k, quiet = false) {
         const t = CHIP_TYPES[k];
         if (!t || swing.active || state.view === 'flight') return;
+        if ((k === 'high' || k === 'flop') && shotLocked(k)) { if (!quiet) lockedToast(k); return; }     // (career: learned from the coach)
         state.chipType = k; state.ballPos = t.ballPos; state.face = t.face; state.stance = t.stance; state.height = t.height; telemetry = null;
         if (t.flop && CLUBS[state.club].loft < CHIP.flopMinLoft) {
-          state.club = CI_LW; renderBag();
-          if (!quiet) toast('Flop shot\nSwitched to the Lob Wedge', 1600);
+          const w = [CI_LW, CI_SW, CI_GW].find((i) => canUseClub(i) && CLUBS[i].loft >= CHIP.flopMinLoft);
+          if (w === undefined) {                             // a career bag may have no 50°+ wedge
+            if (!quiet) toast('A flop needs a 50°+ wedge\nThere isn\'t one in your bag', 1800);
+            return applyChipType('stock', true);
+          }
+          state.club = w; renderBag();
+          if (!quiet) toast(`Flop shot\nSwitched to the ${CLUBS[w].name}`, 1600);
         }
       }
       // where the ball in flight is on the hole (for the map)
@@ -4868,7 +5979,10 @@
         if (c === 'Space') { state.view = state.view === 'address' ? 'scout' : 'address'; return; }
         if (c === 'KeyC') { clampMarkerToGreen(0, green.distFt * FT); autoSelectPuttScale(); return syncPanel(); }
         if (c === 'Digit1' || c === 'Digit2' || c === 'Digit3') { state.puttScaleAuto = false; state.puttScale = +c[5] - 1; return syncPanel(); }
-        if (c === 'BracketLeft' || c === 'BracketRight') { state.putter = state.putter === 'blade' ? 'mallet' : 'blade'; return syncPanel(); }
+        if (c === 'BracketLeft' || c === 'BracketRight') {
+          if (careerOn) return toast(`${PUTTERS[state.putter].name}\nThe only putter in your bag`, 1400);
+          state.putter = state.putter === 'blade' ? 'mallet' : 'blade'; return syncPanel();
+        }
       }
 
       const rayOrigin = new THREE.Vector3(), rayDir = new THREE.Vector3();
@@ -4923,6 +6037,7 @@
 
       canvas.addEventListener('pointerdown', (e) => {
         canvas.focus();
+        if (npcTurn) { npcHurry(); return; }                  // the hustler is playing: a click hurries him up
         if (e.button === 2) { state.peekMouse = true; return; }
         if (e.button === 0 && onGreenView() && state.view === 'overhead' && !swing.active && !(hp.on && hp.done)) {
           markerDragging = true;
@@ -5090,12 +6205,12 @@
       }
 
       function suggestClub() {
-        if (hp.onTee && HOLE.par > 3) return 0;
+        if (hp.onTee && HOLE.par > 3 && canUseClub(0)) return 0;
         // a bad lie rules out the long clubs: nothing longer than a 6 iron from heavy rough, a 4 iron from fairway sand,
         // a 9 iron from a greenside bunker, a hybrid from the first cut
         const d = pinDist() / YD;
-        for (let i = 1; i <= CI_LW; i++) if (clubFit(CLUBS[i], state.lie, false).s <= 0.02 && lieRead(i).carryMid <= d + 4) return i;      // longest club that suits the lie and does not fly the pin
-        return CI_LW;
+        for (let i = 1; i <= CI_LW; i++) if (canUseClub(i) && clubFit(CLUBS[i], state.lie, false).s <= 0.02 && lieRead(i).carryMid <= d + 4) return i;      // longest club that suits the lie and does not fly the pin
+        return usableClub(CI_LW, CI_SW, CI_GW, CI_PW);
       }
       // Where to point: at the pin if this club can get there, otherwise down the fairway to where this club finishes.
       function holeAim(toPin = false) {
@@ -5107,6 +6222,7 @@
 
       function enterHole() {
         if (swing.active) return;
+        if (careerOn && demo) clearDemo();                   // demos are for the range
         hp.on = true; document.body.classList.add('hole');
         Object.assign(hp, { ball: { x: 0, z: 0 }, strokes: 0, putts: 0, pen: 0, lastFrom: null, onTee: true, done: false, history: [], frame: null, aimPin: false, mapZoom: 0 });
         if (round.on) applyRoundConditions();
@@ -5116,6 +6232,8 @@
         $('toast').classList.remove('on'); $('btnHole').textContent = 'Leave the hole (H)';
         if (state.mode !== 'range') setMode('range');
         setupNextShot(); camReady = false;
+        npcTurn = false;
+        if (round.match) npcHoleStart(); else npc.plan = null;     // a career match: the hustler's hole (and the tee toss)
       }
       function selectHole(idx) {
         if (swing.active) { $('inHole').value = String(hp.holeIdx); return; }
@@ -5125,6 +6243,7 @@
       }
       function leaveHole() {
         if (swing.active) return;
+        if (round.match && !confirmForfeit()) return;       // leaving a career match early forfeits it
         if (round.on) endRound();          // leaving the course ends a test round
         hp.on = false; document.body.classList.remove('hole');
         state.badStreak = 0;
@@ -5140,6 +6259,7 @@
       // Read the lie from where the ball finished and set up the next stroke.
       function setupNextShot() {
         shot = null; puttRun = null; telemetry = null;
+        if (round.match && !hp.onTee && !hp.done) setTimeout(() => npcTakeTurns(), 0);     // a match: is the hustler away?
         if (!hp.onTee && hp.mapZoom === 0) hp.mapZoom = 1;    // automatically zoom minimap in on shot 2+
         const surf = surfaceAt(hp.ball.x, hp.ball.z);
         if (surf === 'green') return enterHolePutt();
@@ -5555,6 +6675,7 @@
             '<b>Club ([ ]):</b> less loft runs more · more loft carries more and stops — the landing read updates',
             '<b>B</b> more spin checks it faster — wedges, and not from rough or sand',
             '<span class="pro">Wind</span> barely touches a low chip · high and flop shots feel it more',
+            careerOn && ['high', 'flop', 'spin'].some(shotLocked) && `<span class="con">🔒 Still to learn from the coach:</span> ${['high', 'flop', 'spin'].filter(shotLocked).map((k) => COACH.unlocks[k].name.toLowerCase()).join(', ')}`,
           ], '', tipsChipSvg(ct));
           sec('Views & the read', state.view === 'overhead' ? 'you\'re in Overhead' : state.view === 'address' ? 'you\'re at the ball' : 'you\'re in Green Read', [
             '<b>1 · Green Read</b> (where you start): from behind the ball — the grid and height numbers show the slope · <b>W A S D</b> move the landing spot',
@@ -5604,6 +6725,7 @@
             `${on(sc > 0, 'More spin (B)')} checks up fast — best with wedges</span>`,
             `${on(sc < 0, 'Less spin')} runs out, curves a little more</span>`,
             'Each one adds difficulty — the more you ask, the more it adds',
+            careerOn && ['draw', 'fade', 'stinger', 'high', 'spin'].some(shotLocked) && `<span class="con">🔒 Still to learn from the coach:</span> ${['draw', 'fade', 'stinger', 'high', 'spin'].filter(shotLocked).map((k) => COACH.unlocks[k].name.toLowerCase()).join(', ')}`,
             ((sh === 'draw' && h > 0) || (sh === 'fade' && h < 0)) && '<span class="con">High draw / low fade fight the shape — extra difficulty</span>',
           ]);
         }
@@ -5688,11 +6810,13 @@
       };
       function finishHole() {
         hp.done = true; shot = null;
+        if (round.match && npc.plan && !npc.done) { npcTakeTurns(true, finishHole); return; }    // he plays out first, then the card
         const name = scoreName(hp.strokes, HOLE.par);
         if (round.on) {          // a test round: record it and show the card
           round.scores[hp.holeIdx] = { strokes: hp.strokes, putts: hp.putts, par: HOLE.par, pen: hp.pen };
           $('toast').classList.remove('on');
-          showScorecard(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}`);
+          const vs = round.match ? `\n${matchAfterHole(hp.holeIdx)}` : '';          // a career match: the hustler's score, the match
+          showScorecard(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}${vs}`);
           return;
         }
         toast(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}\nPress R to replay · N for next hole`, 12000);
@@ -5712,6 +6836,7 @@
       const fmtToPar = (d) => d === 0 ? 'E' : d > 0 ? `+${d}` : `${d}`;
       function startRound() {
         if (swing.active) return;
+        if (careerOn) leaveCareer(true);                     // the test round is standard for everyone: never the career's game
         // your own wind and stats come back after the round; in it everyone plays standard stats (all 5)
         if (!round.on) round.saved = { mph: state.windMph, dir: state.windDir, power: state.power, dex: state.dex, composure: state.composure, perception: state.perception };
         setStats(ROUND_STATS);
@@ -5723,6 +6848,15 @@
         $('btnRound').textContent = 'Quit the test round';
       }
       function endRound() {
+        if (round.match) {                                   // a career match: an undecided one is forfeited (confirmed before we get here)
+          if (!round.match.settled) settleMatch('forfeit');
+          if (career && career.match && career.match.settled) career.match = null;
+          careerSave(); updateCareerUI();
+          round.match = null; document.body.classList.remove('match');
+          setCourse(null);                                    // back to the plain holes
+          npc.plan = null; npc.anim = null; npc.busy = false; npcTurn = false;
+          if (tossOpen) { tossOpen = false; $('teeToss').classList.remove('on'); }
+        }
         round.on = false; round.over = false; lbEntry.active = false;
         if (round.saved) { setStats(round.saved); state.windMph = round.saved.mph; state.windDir = round.saved.dir; round.saved = null; $('inWind').value = state.windMph; $('inWindDir').value = state.windDir; orientFlags(); syncPanel(); }
         document.body.classList.remove('round'); hideScorecard();
@@ -5738,24 +6872,37 @@
       }
       function quitRound() {
         if (swing.active) return;
+        const wasMatch = !!round.match;
+        if (wasMatch && !confirmForfeit()) return;
         endRound();
         if (hp.on) leaveHole();
-        toast('Test round ended', 1600);
+        if (!wasMatch) toast('Test round ended', 1600);
       }
       const doneHint = () => lbEntry.active ? 'Type your initials (or <kbd>↑</kbd><kbd>↓</kbd>) · <kbd>←</kbd><kbd>→</kbd> move · <kbd>Enter</kbd> save · <kbd>Esc</kbd> skip'
+        : round.match
+        ? (round.over ? '<kbd>N</kbd> back to the clubhouse · <kbd>K</kbd> scorecard'
+          : round.match.settled ? '<kbd>N</kbd> play on for practice · <kbd>K</kbd> scorecard · <kbd>H</kbd> leave the course'
+          : '<kbd>N</kbd> or <kbd>R</kbd> next hole · <kbd>K</kbd> scorecard · <kbd>H</kbd> forfeit the match')
         : round.on
         ? (round.over ? '<kbd>N</kbd> play the round again · <kbd>K</kbd> scorecard · <kbd>H</kbd> back to the range' : '<kbd>N</kbd> or <kbd>R</kbd> next hole · <kbd>K</kbd> scorecard · <kbd>H</kbd> quit the round')
         : '<kbd>R</kbd> play the hole again · <kbd>N</kbd> next hole · <kbd>H</kbd> back to the range';
       // ---- the course preview shown before a test round: all the holes as maps, with their par, length, wind and greens
       let introOpen = false;
-      function openRoundIntro() {
+      function openRoundIntro(mode = 'test') {
         if (swing.active) return;
+        introMode = mode;
+        const mm = mode === 'match' && career && career.match, nn = mm && npcById(mm.npc);
+        $('roundIntro').querySelector('.card-h span').textContent = mm ? `Match vs ${npcName(nn)} · course preview` : 'Test round · course preview';
+        $('roundIntro').querySelector('.ri-note').textContent = mm
+          ? `${mm.format === 'skins' ? `Skins at ${money(mm.stake)} a hole against ${nn.first} “${nn.nick}”: win a hole outright to take its skin; a halved hole carries it to the next.` : `Match play for ${money(mm.stake)} against ${nn.first} “${nn.nick}”: win the most holes. Whoever is 2 down may press.`} Your own stats and bag; each hole's wind and greens are fixed. Teeing off pays the ${money(MATCH.fee[mm.tier])} green fee. Leaving before it's decided forfeits the stake.`
+          : 'Everyone plays the same course: each hole\'s wind and green speed are fixed, and everyone plays standard stats (all 5). Holes are played in order; your score goes on the Top 10.';
+        $('riStart').textContent = mm ? 'Tee off (Enter)' : 'Start round (Enter)';
         hideScorecard();
         $('roundIntro').classList.add('on'); introOpen = true;        // shown first so each map can be drawn at its real width
         const grid = $('riGrid'), dpr = Math.min(window.devicePixelRatio || 1, 2);
         grid.innerHTML = '';
         let par = 0, yds = 0;
-        HOLES.forEach((def, i) => {
+        HOLES.map((h) => variantDef(h)).forEach((def, i) => {          // (a career match: its circuit's version of the holes)
           const geo = holeGeom(i), w = def.wind || { mph: 0, from: 0 }, len = geo.length / YD;
           par += def.par; yds += len;
           const cell = document.createElement('div');
@@ -5779,8 +6926,8 @@
       function introKey(e) {
         e.preventDefault();
         if (e.repeat) return;
-        if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') { closeRoundIntro(); startRound(); }
-        else if (e.code === 'Escape') closeRoundIntro();
+        if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') introStart();
+        else if (e.code === 'Escape') introCancel();
       }
       // TEST ROUND stats: the same for every player
       const ROUND_STATS = { power: 5, dex: 5, composure: 5, perception: 5 };
@@ -5788,6 +6935,1240 @@
         state.power = s.power; state.dex = s.dex; state.composure = s.composure; state.perception = s.perception;
         $('inPower').value = s.power; $('inDex').value = s.dex; $('inComp').value = s.composure; $('inPer').value = s.perception;
         telemetry = null; syncPanel(); renderBag();
+      }
+      // =====================================================================================================
+      //  CAREER (CAMPAIGN_PLAN.md). Chunk 1: the career shell and its save. One career, kept in this browser. While a
+      //  career is on, the game plays its stats (the sliders are hidden) and the player's own come back on leaving.
+      //  The test round never uses the career: starting one leaves the career first.
+      // =====================================================================================================
+      const CAREER = {
+        key: 'golfCareer_v1',
+        cash: 150, rep: 0, tier: 1,
+        stats: { power: 2, dex: 2, composure: 2, perception: 2 },
+        // the starting bag (CLUBS index -> model id, see the club catalogue); used from chunk 2 on
+        bag: { 0: 'd-xr16', 3: 'h-xr', 5: 'i-ap1', 7: 'i-ap1', 9: 'i-ap1', 10: 'i-ap1', 12: 'w-sm6' },
+        putter: 'p-wh2',
+        tiers: { 1: 'Munis', 2: 'Resorts', 3: 'Country clubs' },
+      };
+      const CAREER_STATS = [['power', 'Power', 'longer shots'], ['dex', 'Dexterity', 'steadier when the shot is hard'],
+        ['composure', 'Composure', 'shrugs off bad shots'], ['perception', 'Perception', 'reads lies and greens']];
+      let career = null, careerOn = false, clubOpen = false, careerOwnStats = null;
+
+      // ---- PROFILES (MULTIPLAYER_PLAN.md, M1). Signed in, the career lives on the server (api/profile.js) and this PC keeps a
+      // copy per profile; on this PC only, it's the old local career. session = { token, id, name }; playMode remembers
+      // that someone chose "this PC only", so the clubhouse doesn't ask who's playing every time.
+      const PROFILE_API = '/api/profile';
+      const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+      const lsSet = (k, v) => { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* storage blocked */ } };
+      let session = null;
+      try { session = JSON.parse(lsGet('golfSession') || 'null'); } catch { session = null; }
+      let playMode = lsGet('golfMode') || (lsGet(CAREER.key) ? 'local' : '');           // (a career from before profiles: on this PC)
+      const careerKey = () => (session ? `golfCareer_p_${session.id}` : CAREER.key);
+      // server sync: the version the server had at the last sync, and that copy (to merge against on a conflict)
+      const sync = { ver: 0, base: null, timer: 0, busy: false, again: false, state: '', dirty: false };
+      function upgradeCareer(c) {
+        if (!(c && c.v === 1 && typeof c.name === 'string' && c.stats)) return null;
+        c.out = c.out || []; c.putters = c.putters || [c.putter || CAREER.putter]; c.tierMax = c.tierMax || c.tier || 1;      // (older saves)
+        c.history = c.history || [];
+        return c;
+      }
+      function readCareer(key) { try { return upgradeCareer(JSON.parse(lsGet(key) || 'null')); } catch { return null; } }
+      // A profile's copy on this PC is stored in ONE key together with its sync state ({ c: career, s: { ver, base, dirty } }),
+      // so the two can never get out of step (a merge relies on `base` being the server copy this career was last synced to).
+      function careerLoad() {
+        if (!session && playMode !== 'local') return null;     // nobody chosen yet: the clubhouse asks who's playing
+        if (!session) return readCareer(careerKey());
+        try {
+          const p = JSON.parse(lsGet(careerKey()) || 'null');
+          if (!p || !p.c) return null;
+          sync.ver = p.s.ver || 0; sync.base = p.s.base || null; sync.dirty = !!p.s.dirty;
+          return upgradeCareer(p.c);
+        } catch { return null; }
+      }
+      function careerSave() {
+        if (!career) return;
+        career.stamp = Date.now();
+        if (session) { sync.dirty = true; saveSyncMeta(); queueSync(); }
+        else lsSet(careerKey(), JSON.stringify(career));
+      }
+      const saveSyncMeta = () => session && career && lsSet(careerKey(), JSON.stringify({ c: career, s: { ver: sync.ver, base: sync.base, dirty: sync.dirty } }));
+      async function profileApi(action, body = {}, keepalive = false) {
+        const r = await fetch(PROFILE_API, {
+          method: 'POST', keepalive,
+          headers: { 'Content-Type': 'application/json', ...(session ? { Authorization: `Bearer ${session.token}` } : {}) },
+          body: JSON.stringify({ action, ...body }),
+        });
+        let data = {};
+        try { data = await r.json(); } catch { /* not JSON */ }
+        return { status: r.status, data };
+      }
+      function setSync(s) {
+        sync.state = s;
+        const el = $('chSync');
+        el.textContent = !session ? 'Playing on this PC only' : `Signed in as ${session.name}${session.admin ? ' 👑 admin' : ''} · ${{ ok: '✓ saved', saving: 'saving…', offline: '⚠ not synced (offline) — will retry', signedout: '⚠ signed out elsewhere — switch player to sign in again', '': '✓' }[s] || ''}`;
+        el.className = s === 'ok' ? 'ok' : s === 'offline' || s === 'signedout' ? 'bad' : '';
+      }
+      function queueSync(delay = 1200) { clearTimeout(sync.timer); sync.timer = setTimeout(() => syncNow(), delay); }
+      // send the career; a newer copy on the server (another PC) is merged in and sent again
+      async function syncNow(keepalive = false) {
+        if (!session || !career) return;
+        if (sync.busy) { sync.again = true; return; }
+        sync.busy = true; setSync('saving');
+        const sent = JSON.stringify(career);
+        try {
+          const r = await profileApi('save', { career: JSON.parse(sent), ver: sync.ver }, keepalive);
+          if (r.status === 200) {
+            sync.ver = r.data.ver; sync.base = JSON.parse(sent); sync.dirty = JSON.stringify(career) !== sent;
+            saveSyncMeta(); setSync('ok');
+          } else if (r.status === 409 && r.data.career) { mergeServer(r.data.career, r.data.ver); sync.again = true; }
+          else if (r.status === 401) setSync('signedout');
+          else setSync('offline');
+        } catch { setSync('offline'); }
+        sync.busy = false;
+        if (sync.again) { sync.again = false; setTimeout(() => syncNow(), 50); }
+      }
+      // the server has a newer copy (another PC played): keep this PC's changes, but take the server's money movements and
+      // history too: cash = the server's cash + what this PC added since the last sync; history = both, by date
+      function mergeServer(srv, ver) {
+        srv = upgradeCareer(srv);
+        if (!srv) return;
+        const base = sync.base || srv;
+        career.cash = srv.cash + (career.cash - (base.cash ?? career.cash));
+        const seen = new Set(), hist = [];
+        for (const h of [...(srv.history || []), ...(career.history || [])]) { const k = `${h.date}|${h.npc || h.friend}|${h.net}`; if (!seen.has(k)) { seen.add(k); hist.push(h); } }
+        career.history = hist.sort((a, b) => a.date - b.date);
+        sync.ver = ver; sync.base = srv; sync.dirty = true;
+        saveSyncMeta();
+      }
+      // fetch the server's copy (opening the clubhouse, signing in): newer than ours → take it (or merge if ours has
+      // unsent changes)
+      async function syncLoad() {
+        if (!session || round.on) return;
+        try {
+          const r = await profileApi('load');
+          if (r.status === 401) return setSync('signedout');
+          if (r.status === 200 && session.admin !== !!r.data.admin) { session.admin = !!r.data.admin; lsSet('golfSession', JSON.stringify(session)); }
+          if (r.status !== 200 || !r.data.career) return setSync(r.status === 200 ? '' : 'offline');
+          if (!career || r.data.ver > sync.ver) {
+            if (career && sync.dirty) mergeServer(r.data.career, r.data.ver);
+            else {
+              const c = upgradeCareer(r.data.career);
+              if (!career) career = c; else { for (const k of Object.keys(career)) delete career[k]; Object.assign(career, c); }
+              sync.ver = r.data.ver; sync.base = JSON.parse(JSON.stringify(c)); sync.dirty = false;
+              saveSyncMeta();
+            }
+            refreshCareerView();
+          }
+          if (sync.dirty) queueSync(100); else setSync('ok');
+        } catch { setSync('offline'); }
+      }
+      // the career changed under us (a sync): re-apply it to the game and the clubhouse
+      function refreshCareerView() {
+        if (careerOn) {
+          applyCareerClubs();
+          state.putter = PUTTERS[career.putter] ? career.putter : 'blade';
+          if (!canUseClub(state.club)) state.club = usableClub(0);
+          setStats(career.stats); refreshShotType(); enforceUnlocks();
+        }
+        updateCareerUI();
+        if (clubOpen && $('clubhouse').classList.contains('new') && career) openClubhouse();
+      }
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && session && sync.dirty) { clearTimeout(sync.timer); syncNow(true); } });
+      function newCareer(name) {
+        return {
+          v: 1, name, seed: (Math.random() * 2 ** 31) >>> 0,
+          cash: CAREER.cash, rep: CAREER.rep, tier: CAREER.tier, stats: { ...CAREER.stats },
+          bag: { ...CAREER.bag }, snapped: [], putter: CAREER.putter, out: [], putters: [CAREER.putter],
+          unlocks: { draw: false, fade: false, stinger: false, high: false, flop: false, spin: false },
+          match: null, history: [], created: Date.now(), stamp: 0, tierMax: 1,
+        };
+      }
+      // switch the game over to the career (its stats), and back to the player's own
+      function enterCareer() {
+        if (careerOn || !career) return;
+        if (round.on) quitRound();
+        careerOwnStats = { power: state.power, dex: state.dex, composure: state.composure, perception: state.perception, putter: state.putter, club: state.club };
+        careerOn = true; document.body.classList.add('career');
+        applyCareerClubs();                                   // the career's own bag (chunk 2)
+        state.putter = PUTTERS[career.putter] ? career.putter : 'blade';
+        if (!canUseClub(state.club)) state.club = usableClub(0);
+        setStats(career.stats);                               // (re-renders the bag)
+        refreshShotType();
+        enforceUnlocks();                                     // only what the coach has taught (chunk 6)
+        updateCareerUI();
+      }
+      function leaveCareer(quiet = false) {
+        if (!careerOn) return;
+        clearDemo();
+        careerSave();
+        careerOn = false; document.body.classList.remove('career');
+        applyCareerClubs();                                   // back to the full-spec clubs
+        if (careerOwnStats) { state.putter = careerOwnStats.putter; state.club = careerOwnStats.club; setStats(careerOwnStats); }
+        careerOwnStats = null;
+        refreshShotType();
+        updateLockUI();
+        closeClubhouse(); updateCareerUI();
+        if (!quiet) toast('Left your career\nYour own stats are back', 1800);
+      }
+      const money = (n) => `${n < 0 ? '−' : ''}$${Math.abs(Math.round(n)).toLocaleString()}`;
+      function updateCareerUI() {
+        $('btnCareer').textContent = careerOn ? `🏠 Clubhouse (J) · ${money(career.cash)}` : career ? `🏌️ Career · ${career.name}` : session ? `🏌️ ${session.name}` : '🏌️ Career · sign in';
+        if (careerOn) {
+          setText('careerStatNote', `Career: ${career.name}'s stats — ${CAREER_STATS.map(([k, n]) => `${n} ${career.stats[k]}`).join(' · ')}. The coach raises them.`);
+        }
+        if (!career) return;
+        setText('chWho', career.name);
+        setText('chCash', money(career.cash));
+        setText('chRep', String(career.rep));
+        setText('chTier', `${career.tier} · ${CAREER.tiers[career.tier]}`);
+        setText('chTag', `Tier ${career.tier} · ${CAREER.tiers[career.tier]}`);
+        renderTiers();
+        // a match left part-way (a reload): resume it from the hole you were on
+        const m = career.match, live = m && !m.settled && m.feePaid;
+        $('chMatchBtn').innerHTML = live
+          ? `<b>⛳ Resume your match</b><i>vs ${npcById(m.npc).nick} · ${matchLine(m)} thru ${matchStatus(m).played} · ${money(m.stake)}${m.format === 'skins' ? ' a hole' : ' on it'}</i>`
+          : '<b>⛳ Play a match</b><i>Hustle a local for money</i>';
+        $('chStats').innerHTML = CAREER_STATS.map(([k, n, what]) => {
+          const v = career.stats[k];
+          return `<div class="ch-stat" title="${n}: ${what}"><span>${n}</span><div class="ch-pips">${Array.from({ length: 10 }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}</div><b>${v}</b></div>`;
+        }).join('');
+      }
+      // ---- the circuits (chunk 8): tier 2 opens at 40 reputation; tier 3 needs 120, players' irons, a newer driver and a
+      // $500 membership. Once open, a circuit stays open; you choose which one to hustle on.
+      function tierReqs(t) {
+        const T = TIERS[t], iron = CLUB_MODELS[career.bag[7] || career.bag[5]], drv = CLUB_MODELS[career.bag[0]];
+        if (t === 1) return [];
+        const reqs = [{ text: `Reputation ${career.rep} / ${T.rep}`, ok: career.rep >= T.rep }];
+        if (t === 3) reqs.push(
+          { text: 'Players\' irons (in-between or blades)', ok: !!iron && (iron.cat === 'In-between' || iron.cat === 'Blade') },
+          { text: 'A driver that isn\'t a used one', ok: !!drv && drv.cat !== 'Used' },
+          { text: `${money(T.entry)} membership`, ok: career.cash >= T.entry });
+        return reqs;
+      }
+      function renderTiers() {
+        if (!career) return;
+        career.tierMax = career.tierMax || 1;
+        if (career.tierMax < 2 && career.rep >= TIERS[2].rep) {         // the resort circuit opens on its own
+          career.tierMax = 2; careerSave();
+          setText('chMsg', `The resort circuit is open to you: ${TIERS[2].course}. Pick it below.`);
+        }
+        const busy = career.match && !career.match.settled && career.match.feePaid;
+        $('chTiers').innerHTML = [1, 2, 3].map((t) => {
+          const T = TIERS[t], open = career.tierMax >= t, cur = career.tier === t, reqs = tierReqs(t);
+          let foot;
+          if (cur) foot = '<span class="here">✓ You play here</span>';
+          else if (open) foot = `<button data-tier="${t}" ${busy ? 'disabled' : ''}>Play here</button>`;
+          else foot = `<ul>${reqs.map((r) => `<li class="${r.ok ? 'ok' : 'no'}">${r.ok ? '✓' : '✗'} ${r.text}</li>`).join('')}</ul>`
+            + (t === 3 && reqs.every((r) => r.ok) ? `<button data-join="3">Join · ${money(T.entry)}</button>` : '');
+          return `<div class="ch-tier${cur ? ' cur' : ''}${open ? '' : ' locked'}"><b>${open ? '' : '🔒 '}Tier ${t} · ${CAREER.tiers[t]}</b><div class="crs">${T.course}</div>${T.desc}${foot}</div>`;
+        }).join('');
+      }
+      function tierClick(e) {
+        const b = e.target.closest('button');
+        if (!b || b.disabled) return;
+        b.blur();
+        if (b.dataset.tier) {
+          const t = +b.dataset.tier;
+          if (career.tierMax < t || (career.match && !career.match.settled && career.match.feePaid)) return;
+          career.tier = t; cmSel = 0;
+          setText('chMsg', `You'll hustle at ${TIERS[t].course} now.`);
+        } else if (b.dataset.join) {
+          if (!tierReqs(3).every((r) => r.ok)) return;
+          career.cash -= TIERS[3].entry; career.tierMax = 3; career.tier = 3; cmSel = 0;
+          setText('chMsg', `Welcome to ${TIERS[3].course}. The members play for real money.`);
+        } else return;
+        careerSave(); updateCareerUI();
+      }
+      // the clubhouse: the new-career form when there's no save, the hub when there is (opening it enters the career)
+      function openClubhouse() {
+        if (swing.active || lbEntry.active) return;
+        if (round.match) { toast(round.match.settled ? 'Finish your round first\nOr H to leave the course' : 'You\'re in a match\nFinish it first — H forfeits', 1800); return; }
+        if (tipsOn) setTips(false);
+        if (introOpen) closeRoundIntro();
+        hideScorecard();
+        if (!career) career = careerLoad();
+        const ch = $('clubhouse');
+        ch.classList.add('on'); clubOpen = true;
+        setText('chMsg', '');
+        ch.classList.remove('match', 'shop', 'coach');
+        if (career && careerOn) clearDemo();                 // back from a free demo
+        if (!career) {                                       // who's playing? (signed in but nothing here yet: fetch it)
+          if (session) { siMode = 'in'; renderSignIn('Loading your profile…'); syncLoad(); }
+          else renderSignIn();
+        } else {
+          ch.classList.add('hub'); ch.classList.remove('new');
+          if (career.match && (career.match.settled || !career.match.feePaid)) { career.match = null; careerSave(); }   // nothing left to resume
+          enterCareer();
+          if (career.snapped.length) setText('chMsg', `Snapped: ${career.snapped.map((i) => CLUBS[i].name).join(', ')}. The pro shop will repair ${career.snapped.length > 1 ? 'them' : 'it'}.`);
+          updateCareerUI();
+          setSync(session ? (sync.dirty ? 'saving' : sync.state || 'ok') : '');
+          if (session) syncLoad();                           // another PC may have played since
+        }
+      }
+      function closeClubhouse() {
+        $('clubhouse').classList.remove('on'); clubOpen = false;
+        $('chName').blur();
+      }
+      function createCareer() {                              // a career on this PC only (no profile)
+        const name = $('chName').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (name.length < 3) { setText('chErr', 'At least 3 letters or numbers'); return; }
+        playMode = 'local'; lsSet('golfMode', 'local');
+        career = newCareer(name.slice(0, 8));
+        careerSave();
+        openClubhouse();                                      // now the hub, with the career on
+        setText('chMsg', `Welcome, ${career.name}. ${money(career.cash)}, a tired bag and a lot to prove.`);
+      }
+      // ---- who's playing: sign in, a new profile, or this PC only
+      let siMode = 'in';
+      function renderSignIn(msg = '') {
+        const ch = $('clubhouse'), local = readCareer(CAREER.key);
+        ch.classList.add('new'); ch.classList.remove('hub', 'match', 'shop', 'coach');
+        setText('chTag', 'Profiles');
+        $('chNew').className = siMode + (siMode === 'local' && local ? ' continue' : '') + (local ? '' : ' nobring');
+        for (const b of $('siTabs').children) b.classList.toggle('on', b.dataset.si === siMode);
+        setText('siIntro', siMode === 'in' ? 'Sign in to your profile: your career follows you to any PC, and you can bet your friends.'
+          : siMode === 'new' ? 'Make a profile: your career is saved online, so you can play it on any PC. No email needed — pick a password you don\'t use anywhere else.'
+          : local ? `Carry on ${local.name}'s career, saved on this PC only (${money(local.cash)}).` : 'Start a career saved on this PC only, without a profile.');
+        setText('siNameL', siMode === 'local' ? 'Your golfer\'s name' : 'Profile name');
+        if (local) setText('siBringL', `Bring ${local.name}'s career from this PC (${money(local.cash)}) into the new profile`);
+        $('chCreate').textContent = siMode === 'in' ? 'Sign in (Enter)' : siMode === 'new' ? 'Create profile (Enter)' : local ? 'Continue (Enter)' : 'Start career (Enter)';
+        setText('chErr', msg);
+        if (!(siMode === 'local' && local)) setTimeout(() => $('chName').focus(), 0);
+      }
+      async function submitSignIn() {
+        if (siMode === 'local') {
+          const local = readCareer(CAREER.key);
+          if (!local) return createCareer();
+          playMode = 'local'; lsSet('golfMode', 'local'); career = local;
+          return openClubhouse();
+        }
+        const name = $('chName').value.trim(), pw = $('siPw').value;
+        if (!/^[A-Za-z0-9 _-]{3,12}$/.test(name)) return setText('chErr', 'Names are 3–12 letters, numbers, spaces, - or _');
+        if (!pw) return setText('chErr', 'Type your password');      // (length rules are the server's: an admin's baked-in password can be short)
+        const local = readCareer(CAREER.key), bring = siMode === 'new' && !!local && $('siBring').checked;
+        setText('chErr', siMode === 'in' ? 'Signing in…' : 'Creating your profile…'); $('chCreate').disabled = true;
+        let r;
+        try { r = await profileApi(siMode === 'in' ? 'login' : 'signup', { name, password: pw, ...(siMode === 'new' ? { career: bring ? local : newCareer(name) } : {}) }); }
+        catch { r = { status: 0, data: { error: 'Can\'t reach the profile server (it runs on the deployed site)' } }; }
+        $('chCreate').disabled = false;
+        if (r.status !== 200) return setText('chErr', r.data.error || `Something went wrong (${r.status})`);
+        session = { token: r.data.token, id: r.data.name.toLowerCase(), name: r.data.name, admin: !!r.data.admin };
+        lsSet('golfSession', JSON.stringify(session)); playMode = 'profile'; lsSet('golfMode', 'profile');
+        career = upgradeCareer(r.data.career) || newCareer(r.data.name);
+        sync.ver = r.data.ver; sync.base = JSON.parse(JSON.stringify(career)); sync.dirty = !r.data.career;     // (a brand-new admin profile: send its fresh career)
+        saveSyncMeta();
+        if (sync.dirty) queueSync(100);
+        if (bring) lsSet(CAREER.key, null);                   // moved into the profile, not copied
+        const was = siMode;
+        $('siPw').value = '';
+        openClubhouse();
+        setText('chMsg', was === 'new' ? `Welcome, ${session.name}. Your career is saved to your profile.` : `Welcome back, ${session.name}.`);
+      }
+      // sign out (or stop playing this PC's career) and ask who's playing
+      async function switchPlayer() {
+        if (round.match) return;
+        if (careerOn) leaveCareer(true);
+        if (session) {
+          if (sync.dirty) await syncNow();
+          profileApi('logout').catch(() => { /* fine */ });
+        }
+        session = null; lsSet('golfSession', null); playMode = ''; lsSet('golfMode', null);
+        career = null; Object.assign(sync, { ver: 0, base: null, dirty: false, state: '' });
+        updateCareerUI(); siMode = 'in';
+        openClubhouse();
+      }
+      // the practice range with the career's game (Esc, or the button)
+      function careerToRange() {
+        closeClubhouse();
+        if (!career) return;
+        if (hp.on) leaveHole();
+        if (state.mode !== 'range') setMode('range');
+        toast(`${career.name} on the range\nJ for the clubhouse`, 1800);
+      }
+      function retireCareer() {
+        if (!career || !confirm(session ? `Start ${career.name}'s career over from scratch? Everything in it is lost.` : `Delete ${career.name}'s career? This can't be undone.`)) return;
+        leaveCareer(true);
+        if (session) {                                       // a profile keeps its name: a fresh career in it
+          career = newCareer(session.name); careerSave();
+          openClubhouse(); toast('Career started over', 1600);
+          return;
+        }
+        lsSet(CAREER.key, null);
+        career = null; playMode = ''; lsSet('golfMode', null);
+        updateCareerUI(); siMode = 'local';
+        openClubhouse();                                      // straight to a new one
+        toast('Career deleted', 1600);
+      }
+      function clubhouseGo(where) {
+        if (where === 'range') return careerToRange();
+        if (where === 'match') return openMatchPicker();
+        if (where === 'shop') return openShop();
+        if (where === 'coach') return openCoach();
+        const soon = { shop: 'The pro shop', coach: 'The coach' }[where];
+        setText('chMsg', `${soon} — coming in the next chunks of the campaign.`);
+      }
+      // while the clubhouse is open it takes the keys (typing a name goes to the box)
+      function clubKey(e) {
+        if ($('clubhouse').classList.contains('coach')) { if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); } return; }
+        if ($('clubhouse').classList.contains('shop')) {       // the pro shop: 1–6 tabs, Esc back
+          const tabs = ['iron', 'driver', 'wood', 'wedge', 'putter', 'bag'], dg = /^Digit([1-6])$/.exec(e.code);
+          if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); }
+          else if (dg) { e.preventDefault(); shopTab = tabs[+dg[1] - 1]; setText('shMsg', ''); renderShop(); }
+          return;
+        }
+        if ($('clubhouse').classList.contains('match')) {      // the match picker: ↑ ↓ pick, ← → stake, Enter tees off, Esc back
+          const c = e.code, list = tierNpcs(), inp = $('cmStake');
+          if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'NumpadEnter', 'Escape'].includes(c)) e.preventDefault();
+          if (c === 'ArrowUp' || c === 'ArrowDown') { cmSel = (cmSel + (c === 'ArrowDown' ? 1 : -1) + list.length) % list.length; renderMatchPicker(); }
+          else if (c === 'KeyF' && !e.repeat) { cmFormat = cmFormat === 'match' ? 'skins' : 'match'; renderMatchPicker(); }
+          else if (c === 'ArrowLeft' || c === 'ArrowRight') { inp.value = clamp(+inp.value + (c === 'ArrowRight' ? 5 : -5), +inp.min, +inp.max); updateStakeLabel(); }
+          else if ((c === 'Enter' || c === 'NumpadEnter') && !e.repeat) teeOffMatch();
+          else if (c === 'Escape') openClubhouse();
+          return;
+        }
+        const typing = e.target === $('chName') || e.target === $('siPw');
+        if (e.code === 'Escape') { e.preventDefault(); if (career) careerToRange(); else closeClubhouse(); return; }
+        if (typing) { if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); submitSignIn(); } return; }
+        if ((e.code === 'Enter' || e.code === 'NumpadEnter') && !career) { e.preventDefault(); submitSignIn(); return; }
+        if (e.code === 'KeyJ' && !e.repeat && career) { e.preventDefault(); careerToRange(); }
+      }
+      career = careerLoad();
+      if (session) setTimeout(() => syncLoad(), 400);         // signed in: pick up anything played on another PC
+
+      // =====================================================================================================
+      //  CAREER CLUBS (CAMPAIGN_PLAN.md, chunk 2 + the club catalogue). Real models, each a set of changes to the base club:
+      //  add = added (degrees), x = multiplied, set = replaced. bias = the most a used club's bent lie angle can push or
+      //  pull (rolled once per club from the career's seed). The numbers map each model's reputation (reviews, specs) onto
+      //  the game; they are not measurements. Lofts marked ≈ in the plan still need checking against the maker's specs.
+      //  kind: iron = 4i–PW (sold as a set), driver, wood (fairway / hybrid), wedge = GW / SW / LW.
+      // =====================================================================================================
+      const BASE_CLUBS = CLUBS.map((c) => ({ ...c }));           // the clubs as the range and the test round play them
+      const CLUB_MODELS = {
+        // ---- irons (7-iron loft change shown; 4i–5i get 80% of it)
+        'i-ap1': { kind: 'iron', cat: 'Used', brand: 'Titleist', name: 'AP1 716 (2015)', price: 0, bias: 1.2, add: { loft: -4, dynLoft: 1.8 }, x: { spin: 1.03, speed: 0.96, sweet: 1.6, gear: 0.67, work: 0.65 }, set: { floor: 0.7, offset: 0.9, consist: 1.8, groove: 0.8 }, note: 'A forgiving 2015 cavity, now tired: worn grooves, mismatched shafts, the odd one pulls or pushes' },
+        'i-m2': { kind: 'iron', cat: 'Used', brand: 'TaylorMade', name: 'M2 (2016)', price: 200, bias: 1.5, add: { loft: -5.5, dynLoft: 1.8 }, x: { spin: 1.02, speed: 0.99, sweet: 1.8, gear: 0.58, work: 0.55 }, set: { floor: 0.8, offset: 1.1, consist: 1.9, groove: 0.75 }, note: 'Famously long and strong-lofted, but this set is beaten up, wild and won\'t stop' },
+        'i-qimax': { kind: 'iron', cat: 'Game improvement', brand: 'TaylorMade', name: 'Qi Max', price: 1100, add: { loft: -5.5, dynLoft: 1.8 }, x: { spin: 0.95, speed: 1.01, sweet: 2.4, gear: 0.42, work: 0.45 }, set: { floor: 0.85, offset: 1.1, consist: 0.85 }, note: 'The most forgiving and highest launching; holds greens best of the GIs' },
+        'i-jpxhm': { kind: 'iron', cat: 'Game improvement', brand: 'Mizuno', name: 'JPX 925 Hot Metal', price: 1050, add: { loft: -6, dynLoft: 1.8 }, x: { spin: 0.92, speed: 1.015, sweet: 2.0, gear: 0.5, work: 0.5 }, set: { floor: 0.85, offset: 0.9, consist: 0.9 }, note: 'The longest; lands flattest and runs' },
+        'i-takomo': { kind: 'iron', cat: 'Game improvement', brand: 'Takomo', name: '101 MKII', price: 580, add: { loft: -5, dynLoft: 1.6 }, x: { spin: 0.94, speed: 1.0, sweet: 2.1, gear: 0.46, work: 0.5 }, set: { floor: 0.85, offset: 0.8, consist: 0.8 }, note: 'The budget pick, and the most accurate GI in testing' },
+        'i-ai200': { kind: 'iron', cat: 'In-between', brand: 'Callaway', name: 'Apex Ai200', price: 1400, add: { loft: -4, dynLoft: 1.8 }, x: { spin: 0.97, speed: 1.01, sweet: 1.8, gear: 0.58, work: 0.7 }, set: { floor: 0.7, offset: 0.6, consist: 0.92 }, note: 'Game-improvement distance in a players\' shape' },
+        'i-zxi7': { kind: 'iron', cat: 'In-between', brand: 'Srixon', name: 'ZXi7', price: 1400, add: { loft: -2, dynLoft: 1.8 }, x: { spin: 0.98, speed: 1.0, sweet: 1.5, gear: 0.71, work: 0.8 }, set: { floor: 0.65, offset: 0.4, consist: 0.92 }, note: 'The most forgiving players\' cavity: the all-rounder' },
+        'i-620cb': { kind: 'iron', cat: 'In-between', brand: 'Titleist', name: '620 CB', price: 1600, add: { loft: 0, dynLoft: 0.6 }, x: { spin: 1.01, speed: 1.0, sweet: 1.3, gear: 0.79, work: 0.92 }, set: { floor: 0.6, offset: 0.3, consist: 0.95 }, note: 'Close to a blade, with a little help' },
+        'i-wmb': { kind: 'iron', cat: 'Blade', brand: 'Wilson', name: 'Staff Model Blade', price: 1400, add: { loft: 0, dynLoft: 0 }, x: { spin: 1.03, speed: 1.0, sweet: 0.8, gear: 1.08, work: 1.15 }, set: { floor: 0.45, offset: 0, consist: 1.0 }, note: 'Compact, minimal offset, a tiny sweet spot; shapes anything, the best stinger' },
+        'i-temb': { kind: 'iron', cat: 'Blade', brand: 'Tour Edge', name: 'MB Forged', price: 1000, add: { loft: 0, dynLoft: 0.2 }, x: { spin: 1.02, speed: 1.0, sweet: 1.0, gear: 0.96, work: 1.05 }, set: { floor: 0.5, offset: 0.1, consist: 1.0 }, note: 'A true muscle back with a bit more forgiveness' },
+        // ---- drivers
+        'd-xr16': { kind: 'driver', cat: 'Used', brand: 'Callaway', name: 'XR 16 (2016)', price: 0, add: { dynLoft: 0.3 }, x: { spin: 1.15, speed: 0.97, sweet: 1.0, gear: 1.125, work: 1 }, set: { offset: 0.3, consist: 1.3 }, note: 'An old warhorse: spins too much, a bit short' },
+        'd-m2': { kind: 'driver', cat: 'Used', brand: 'TaylorMade', name: 'M2 (2016)', price: 90, add: {}, x: { spin: 1.1, speed: 0.98, sweet: 1.05, gear: 1.06, work: 1 }, set: { offset: 0.2, consist: 1.3 }, note: 'Long in its day, now just loose' },
+        'd-g440k': { kind: 'driver', cat: 'Max forgiveness', brand: 'Ping', name: 'G440 K', price: 650, add: { dynLoft: 0.5 }, x: { spin: 1.1, speed: 0.995, sweet: 1.35, gear: 0.75, work: 0.82 }, set: { offset: 0.5, consist: 0.9 }, note: 'The most forgiving driver going; launches high' },
+        'd-maxd': { kind: 'driver', cat: 'Max forgiveness', brand: 'Callaway', name: 'Quantum Max D', price: 600, add: { dynLoft: 0.4 }, x: { spin: 1.07, speed: 1.0, sweet: 1.25, gear: 0.875, work: 0.82 }, set: { offset: 1.5, consist: 0.95 }, note: 'Forgiving, and fights a slice' },
+        'd-qi4d': { kind: 'driver', cat: 'In-between', brand: 'TaylorMade', name: 'Qi4D', price: 630, add: {}, x: { spin: 1.04, speed: 1.0, sweet: 1.1, gear: 1.0, work: 1.0 }, set: { offset: 0, consist: 1.0 }, note: 'The best all-rounder' },
+        'd-qi4dls': { kind: 'driver', cat: 'Low spin', brand: 'TaylorMade', name: 'Qi4D LS', price: 650, add: { dynLoft: 0.5 }, x: { spin: 0.96, speed: 1.012, sweet: 0.9, gear: 1.19, work: 1.12 }, set: { offset: 0, consist: 1.0 }, note: 'The longest when you find the middle' },
+        'd-td': { kind: 'driver', cat: 'Low spin', brand: 'Callaway', name: 'Quantum Triple Diamond', price: 650, add: { dynLoft: 0.4 }, x: { spin: 0.94, speed: 1.012, sweet: 0.85, gear: 1.25, work: 1.18 }, set: { offset: -0.8, consist: 1.0 }, note: 'Very low spin, leans to a fade, unforgiving' },
+        // ---- fairway woods / hybrids (the starter's; the rest follow the driver lines in the shop chunk)
+        'h-xr': { kind: 'wood', cat: 'Used', brand: 'Callaway', name: 'XR hybrid (2015)', price: 0, add: {}, x: { spin: 1.1, speed: 0.97 }, set: { consist: 1.25 }, note: 'A tired old hybrid' },
+        // ---- wedges (GW / SW / LW, one at a time; bounce is the sand wedge's)
+        'w-sm6': { kind: 'wedge', cat: 'Used', brand: 'Titleist', name: 'Vokey SM6 (2016)', price: 0, add: {}, x: { spin: 1.0, sweet: 1.0, gear: 1.05, work: 0.94 }, set: { groove: 0.75, consist: 1.15, bounce: 10 }, note: 'A good wedge once; the grooves are worn smooth' },
+        'w-cb12': { kind: 'wedge', cat: 'Cavity', brand: 'Callaway', name: 'CB 12', price: 150, add: {}, x: { spin: 0.92, sweet: 1.6, gear: 0.7, work: 0.78 }, set: { consist: 0.9, bounce: 14, flopX: 1.2 }, note: 'The easiest wedge to hit; wide sole, hard to open up' },
+        'w-cbx2': { kind: 'wedge', cat: 'Cavity', brand: 'Cleveland', name: 'CBX 2', price: 150, add: {}, x: { spin: 0.96, sweet: 1.4, gear: 0.8, work: 0.89 }, set: { consist: 0.92, bounce: 12, flopX: 1.1 }, note: 'Forgiving, with decent spin' },
+        'w-opus': { kind: 'wedge', cat: 'Tour', brand: 'Callaway', name: 'Opus', price: 180, add: {}, x: { spin: 1.0, sweet: 1.0, gear: 1.0, work: 1.05 }, set: { consist: 1.0, bounce: 12 }, note: 'Tour spin with a forgiving grind' },
+        'w-vokey': { kind: 'wedge', cat: 'Tour', brand: 'Titleist', name: 'Vokey SM11', price: 200, add: {}, x: { spin: 1.02, sweet: 1.0, gear: 1.0, work: 1.1 }, set: { consist: 1.0, bounce: 10, flopX: 0.95 }, note: 'The most spin and the most versatile' },
+      };
+      // putters: added to PUTTERS (the range's own blade / mallet stay as they are)
+      Object.assign(PUTTERS, {
+        'p-wh2': { name: 'Odyssey White Hot Pro 2.0 #1 (2016)', model: true, gate: 0.028, pathGain: 0.42, sweet: 3.5, tempoZone: 0.07 },
+        'p-newport': { name: 'Scotty Cameron Newport 2', model: true, gate: 0.030, pathGain: 0.40, sweet: 4, tempoZone: 0.09 },
+        'p-pldanser': { name: 'Ping PLD Anser', model: true, gate: 0.031, pathGain: 0.38, sweet: 4.5, tempoZone: 0.085 },
+        'p-spider': { name: 'TaylorMade Spider Tour', model: true, gate: 0.050, pathGain: 0.27, sweet: 10, tempoZone: 0.04 },
+        'p-oz1': { name: 'LAB Golf OZ.1', model: true, gate: 0.046, pathGain: 0.18, sweet: 8, tempoZone: 0.045 },
+      });
+      const modelName = (id) => (CLUB_MODELS[id] ? `${CLUB_MODELS[id].brand} ${CLUB_MODELS[id].name}` : '');
+      // what a model does to one club (index i) of the bag
+      function modelMods(m, i) {
+        const b = BASE_CLUBS[i], k = m.kind === 'iron' && i <= 5 ? 0.8 : 1, out = {};
+        for (const [f, v] of Object.entries(m.add || {})) out[f] = b[f] + v * k;
+        for (const [f, v] of Object.entries(m.x || {})) out[f] = b[f] * v;
+        for (const [f, v] of Object.entries(m.set || {})) if (f !== 'bounce' || b.bounce) out[f] = v;
+        if (m.bias && career) out.lieBias = Math.round((rng32((career.seed ^ (i * 2654435761)) >>> 0)() * 2 - 1) * m.bias * 10) / 10;   // bent lie: fixed for the career
+        return out;
+      }
+      // rewrite CLUBS in place: the career's models on the clubs it owns, the base clubs everywhere else (and outside a career)
+      function applyCareerClubs() {
+        CLUBS.forEach((c, i) => {
+          for (const f of Object.keys(c)) if (!(f in BASE_CLUBS[i])) delete c[f];
+          Object.assign(c, BASE_CLUBS[i]);
+          const id = careerOn && (demo && demo.idx === i ? demo.model : career.bag[i]);
+          if (id && CLUB_MODELS[id]) Object.assign(c, modelMods(CLUB_MODELS[id], i), { model: id });
+        });
+        stockCache.clear(); shapeCache.clear(); spreadCache.clear();
+        telemetry = null;
+      }
+      // a shop model tried on the range for free (chunk 5): { idx, model } for a club, or { putter } (never saved)
+      let demo = null;
+      // which clubs can be used: all of them outside a career; in one, the owned clubs in the bag (not the locker) that
+      // aren't snapped, plus a demo club
+      const inBag = (i) => !!career.bag[i] && !career.out.includes(i);
+      const canUseClub = (i) => !careerOn || (demo && demo.idx === i) || (inBag(i) && !career.snapped.includes(i));
+      const bagOrder = () => CLUBS.map((_, i) => i).filter((i) => careerOn ? inBag(i) || (demo && demo.idx === i) : true);
+      const usableOrder = () => bagOrder().filter(canUseClub);
+      // the first usable club from a list of preferences, else the most lofted usable one below a lob wedge's loft
+      function usableClub(...prefs) {
+        for (const i of prefs) if (canUseClub(i)) return i;
+        const u = usableOrder();
+        return u.length ? u.reduce((a, i) => (CLUBS[i].loft > CLUBS[a].loft ? i : a), u[0]) : 0;
+      }
+      // =====================================================================================================
+      //  COACH (CAMPAIGN_PLAN.md, chunk 6): lessons raise a stat by one (price = perLevel × current level²), and shots are
+      //  learned: until then a career can't pick the draw / fade presets, Low 2 (the stinger), High 2 and the High Soft
+      //  chip, the flop, or spin control (B), and hand tweaks to face and stance stay within ±2° so the presets can't be
+      //  rebuilt by hand. The mouse swing line still bends the ball: that's skill, not a lesson.
+      // =====================================================================================================
+      const COACH = {
+        lessonPerLevel: 60, maxStat: 10, tweakMax: 2,
+        unlocks: {
+          draw: { name: 'The draw', price: 250, what: 'F sets up a right-to-left curve that runs out for extra distance' },
+          fade: { name: 'The fade', price: 250, what: 'F sets up a left-to-right curve that lands soft and stops' },
+          stinger: { name: 'The stinger', price: 300, what: 'Low 2 (W twice): a flat bullet under the wind that runs and runs' },
+          high: { name: 'The high ball', price: 300, what: 'High 2 (S twice) and the High Soft chip: drops softly out of the sky' },
+          spin: { name: 'Spin control', price: 350, what: 'B: more spin to check it up, less to let it run' },
+          flop: { name: 'The flop shot', price: 400, what: 'Chip type 4: straight up and stops dead (needs a 50°+ wedge)' },
+        },
+      };
+      const shotLocked = (k) => careerOn && !!career && k in COACH.unlocks && !career.unlocks[k];
+      function lockedToast(k) { toast(`🔒 ${COACH.unlocks[k].name}\nLearn it from the coach in the clubhouse (J)`, 1800); }
+      const lessonPrice = (lv) => COACH.lessonPerLevel * lv * lv;
+      // a career's setup can't keep anything it hasn't learned (on entering the career, e.g. from the range's own setup)
+      function enforceUnlocks() {
+        if (!careerOn) return;
+        if ((state.shotShape === 'draw' || state.shotShape === 'fade') && shotLocked(state.shotShape)) applyShot('straight', true);
+        state.height = clamp(state.height, shotLocked('stinger') ? -1 : -2, shotLocked('high') ? 1 : 2);
+        if (shotLocked('spin')) state.spinCtl = 0;
+        if ((state.chipType === 'high' && shotLocked('high')) || (state.chipType === 'flop' && shotLocked('flop'))) { if (isChip()) applyChipType('stock', true); else state.chipType = 'stock'; }
+        if (!isChip() && shotLocked('draw') && shotLocked('fade')) { state.face = clamp(state.face, -COACH.tweakMax, COACH.tweakMax); state.stance = clamp(state.stance, -COACH.tweakMax, COACH.tweakMax); }
+        updateLockUI(); txtCache.clear();
+      }
+      // padlocks on the telemetry card's pills
+      function updateLockUI() {
+        const set = (el, k) => el && el.classList.toggle('locked', shotLocked(k));
+        for (const p of $('shotTypeRow').children) { if (p.dataset.shape === 'draw' || p.dataset.shape === 'fade') set(p, p.dataset.shape); if (p.dataset.spinctl && p.dataset.spinctl !== '0') set(p, 'spin'); }
+        for (const p of $('spinTrack').children) { if (p.dataset.s === '-2') set(p, 'stinger'); if (p.dataset.s === '2') set(p, 'high'); }
+        for (const p of $('chipTypeRow').children) { if (p.dataset.ct === 'high') set(p, 'high'); if (p.dataset.ct === 'flop') set(p, 'flop'); }
+      }
+      function openCoach() {
+        clearDemo();
+        const ch = $('clubhouse');
+        ch.classList.remove('hub', 'new', 'match'); ch.classList.add('shop', 'coach');
+        setText('coMsg', '');
+        renderCoach();
+      }
+      function renderCoach() {
+        setText('coCash', money(career.cash));
+        let h = '<div class="sh-cat">Lessons: one point at a time</div>';
+        for (const [k, n, what] of CAREER_STATS) {
+          const lv = career.stats[k], p = lessonPrice(lv), maxed = lv >= COACH.maxStat;
+          h += `<div class="co-row"><b>${n}</b><div class="ch-pips">${Array.from({ length: 10 }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('')}</div><i>${what}</i>`
+            + `<button data-lesson="${k}" ${maxed || career.cash < p ? 'disabled' : ''}>${maxed ? 'Maxed' : `${lv} → ${lv + 1} · ${money(p)}`}</button></div>`;
+        }
+        h += '<div class="sh-cat">Shots to learn</div>';
+        for (const [k, u] of Object.entries(COACH.unlocks)) {
+          const got = career.unlocks[k];
+          h += `<div class="co-row shot${got ? ' got' : ''}"><b>${got ? '✓' : '🔒'} ${u.name}</b><i class="wide">${u.what}</i>`
+            + `<button data-learn="${k}" ${got || career.cash < u.price ? 'disabled' : ''}>${got ? 'Learned' : `Learn · ${money(u.price)}`}</button></div>`;
+        }
+        $('coList').innerHTML = h;
+      }
+      function coachClick(e) {
+        const b = e.target.closest('button');
+        if (!b || b.disabled) return;
+        b.blur();
+        const k = b.dataset.lesson, u = b.dataset.learn;
+        if (k) {
+          const lv = career.stats[k], p = lessonPrice(lv);
+          if (lv >= COACH.maxStat || career.cash < p) return;
+          career.cash -= p; career.stats[k] = lv + 1;
+          setStats(career.stats);
+          setText('coMsg', `${CAREER_STATS.find(([s]) => s === k)[1]} ${lv} → ${lv + 1} (${money(p)}).`);
+        } else if (u) {
+          const it = COACH.unlocks[u];
+          if (career.unlocks[u] || career.cash < it.price) return;
+          career.cash -= it.price; career.unlocks[u] = true;
+          setText('coMsg', `You've learned ${it.name.toLowerCase()} (${money(it.price)}). ${it.what}.`);
+        } else return;
+        careerSave(); updateCareerUI(); updateLockUI(); renderBag(); renderCoach();
+      }
+
+      // =====================================================================================================
+      //  PRO SHOP (CAMPAIGN_PLAN.md, chunk 5). Buy the catalogue's models (an iron set replaces your irons; drivers, woods
+      //  and wedges one club at a time), repair snapped clubs, choose what goes in the 14-club bag (the rest wait in your
+      //  locker), and try any model free on the range first. The bars are worked out from the physics, at standard stats.
+      // =====================================================================================================
+      const SHOP = {
+        slots: { iron: [4, 5, 6, 7, 8, 9, 10], driver: [0], wood: [1, 2, 3], wedge: [11, 12, 13] },
+        testClub: { iron: 7, driver: 0, wood: 1, wedge: 12 },
+        bagMax: 14, repairMin: { iron: 25, driver: 40, wood: 35, wedge: 25 },
+        putters: {
+          'p-wh2': { cat: 'Used', price: 0, note: 'A tired blade with a small sweet spot' },
+          'p-newport': { cat: 'Blade', price: 450, note: 'The classic: the best feel for pace' },
+          'p-pldanser': { cat: 'Blade', price: 450, note: 'A blade with a touch more forgiveness' },
+          'p-spider': { cat: 'Mallet', price: 400, note: 'The most stable: the widest gate' },
+          'p-oz1': { cat: 'Zero-torque', price: 600, note: 'The face stays square: the straightest start lines, strictest on rhythm' },
+        },
+      };
+      // fairway woods and hybrids follow each new driver line, at half the driver's differences
+      for (const [id, m] of Object.entries({ ...CLUB_MODELS })) {
+        if (m.kind !== 'driver' || m.cat === 'Used') continue;
+        const half = (o, f) => Object.fromEntries(Object.entries(o || {}).map(([k, v]) => [k, f(v)]));
+        CLUB_MODELS[`f-${id.slice(2)}`] = {
+          kind: 'wood', cat: m.cat, brand: m.brand, name: `${m.name} fairway / hybrid`, price: Math.round(m.price * 0.055) * 10,
+          add: half(m.add, (v) => v / 2), x: half(m.x, (v) => 1 + (v - 1) / 2), set: { offset: (m.set.offset || 0) / 2, consist: 1 + ((m.set.consist || 1) - 1) / 2 },
+          note: `${m.note.split(/[;:]/)[0]}: the fairway wood and hybrid version`,
+        };
+      }
+      const SLOT_NAME = (i) => CLUBS[i].name.replace('Pitching Wedge', 'PW');
+      const carried = () => CLUBS.reduce((n, _, i) => n + (inBag(i) ? 1 : 0), 0) + 1;     // + the putter
+      let shopTab = 'iron';
+      // the model's numbers, from a stock swing at standard stats (so the bars compare clubs, not your game)
+      const shopStatCache = new Map();
+      function shopStats(id) {
+        if (shopStatCache.has(id)) return shopStatCache.get(id);
+        const m = CLUB_MODELS[id], i = SHOP.testClub[m.kind], b = BASE_CLUBS[i], c = { ...b, ...modelMods(m, i) };
+        const r = computeImpact(stockSwing(1), { face: 0, ballPos: 0, stance: 0, traj: 0, spinCtl: 0 }, c,
+          { lie: 'fairway', slope: 'flat', power: 5, dex: 5, composure: 5, badStreak: 0, teed: m.kind === 'driver', stock: true }, () => 0.5);
+        const f = createFlight({ ballSpeed: r.ballSpeed, vla: r.vla, dir: r.hla, spin: r.spin, axis: r.axis, release: r.release }, { x: 0, z: 0 }, m.kind === 'driver' ? 0.04 : 0);
+        let land = 0;
+        const ph = f.phase;
+        for (let n = 0; f.phase !== 'stopped' && n < 30000; n++) { const vy = f.v.y, vh = Math.hypot(f.v.x, f.v.z); stepFlight(f, 1 / 120); if (!land && f.phase !== ph) land = Math.atan2(-vy, vh) * R2D; }
+        const out = {
+          carry: f.carry / YD, land,
+          forgive: (c.sweet / b.sweet) / Math.sqrt((c.gear || 1) / (b.gear || 1)) / (c.consist || 1),
+          shape: (c.work / b.work) * (1.5 - (c.floor ?? b.floor)), offset: c.offset || 0, bias: m.bias || 0,
+        };
+        shopStatCache.set(id, out);
+        return out;
+      }
+      // a bar's length: the model's value among its own kind, 15%–100%
+      function shopBar(kind, key, v, invert = false) {
+        const vals = Object.entries(CLUB_MODELS).filter(([, m]) => m.kind === kind).map(([id]) => shopStats(id)[key]);
+        const lo = Math.min(...vals), hi = Math.max(...vals), u = hi > lo ? (v - lo) / (hi - lo) : 1;
+        return Math.round(15 + 85 * (invert ? 1 - u : u));
+      }
+      const barRow = (label, pct) => `<div class="sh-bar"><span>${label}</span><div><i style="width:${pct}%"></i></div></div>`;
+      function repairPrice(i) {
+        const m = CLUB_MODELS[career.bag[i]], kind = m ? m.kind : 'iron';
+        const base = !m ? 0 : kind === 'iron' ? m.price / 7 * 1.25 : m.price * 0.6;
+        return Math.max(SHOP.repairMin[kind] || 25, Math.round(base / 5) * 5);
+      }
+      function openShop() {
+        clearDemo();
+        const ch = $('clubhouse');
+        ch.classList.remove('hub', 'new', 'match', 'coach'); ch.classList.add('shop');
+        setText('shMsg', '');
+        renderShop();
+      }
+      function renderShop() {
+        const tabs = [['iron', 'Irons'], ['driver', 'Drivers'], ['wood', 'Woods & hybrids'], ['wedge', 'Wedges'], ['putter', 'Putters'], ['bag', `Your bag (${carried()}/${SHOP.bagMax})`]];
+        $('shTabs').innerHTML = tabs.map(([k, n], i) => `<button data-tab="${k}" class="${k === shopTab ? 'on' : ''}">${i + 1} · ${n}</button>`).join('');
+        setText('shCash', money(career.cash));
+        let h = '';
+        // repairs first, whatever the tab
+        if (career.snapped.length) {
+          h += '<div class="sh-cat">Repairs</div>';
+          for (const i of career.snapped) {
+            const p = repairPrice(i);
+            h += `<div class="sh-row snapped"><b>${CLUBS[i].name}</b><i>${modelName(career.bag[i])} · snapped</i><button data-repair="${i}" ${career.cash < p ? 'disabled' : ''}>Repair · ${money(p)}</button></div>`;
+          }
+        }
+        if (shopTab === 'bag') h += shopBagHTML();
+        else if (shopTab === 'putter') h += shopPuttersHTML();
+        else {
+          let cat = '';
+          for (const [id, m] of Object.entries(CLUB_MODELS)) {
+            if (m.kind !== shopTab) continue;
+            if (m.cat !== cat) { cat = m.cat; h += `<div class="sh-cat">${cat}</div>`; }
+            h += shopItemHTML(id, m);
+          }
+        }
+        $('shList').innerHTML = h;
+      }
+      function shopItemHTML(id, m) {
+        const s = shopStats(id), slots = SHOP.slots[m.kind];
+        const ownedAt = slots.filter((i) => career.bag[i] === id), owned = ownedAt.length > 0;
+        const bias = s.bias ? 'some clubs push or pull' : s.offset >= 0.8 ? 'draw bias' : s.offset <= -0.3 ? 'fade bias' : s.offset >= 0.4 ? 'slight draw bias' : 'neutral';
+        const forSale = m.price > 0;
+        let btns = '';
+        if (m.kind === 'iron') btns = owned ? '<button disabled>Your irons</button>' : forSale ? `<button class="buy" data-buy="${id}" data-slots="${slots.join(',')}" ${career.cash < m.price ? 'disabled' : ''}>Buy the set (4–PW) · ${money(m.price)}</button>` : '<button disabled>Not for sale</button>';
+        else if (forSale) {
+          const per = m.price;
+          for (const i of slots) btns += career.bag[i] === id ? `<button disabled>✓ ${SLOT_NAME(i)}</button>` : `<button class="buy" data-buy="${id}" data-slots="${i}" ${career.cash < per ? 'disabled' : ''}>${slots.length > 1 ? `${SLOT_NAME(i)} · ` : 'Buy · '}${money(per)}</button>`;
+        } else btns = '<button disabled>Not for sale</button>';
+        if (!owned || m.kind !== 'iron') btns += `<button data-try="${id}">Try it on the range</button>`;
+        return `<div class="sh-item${owned ? ' owned' : ''}">
+          <div><div class="sh-name"><b>${m.brand} ${m.name}</b>${owned ? `<span>✓ ${m.kind === 'iron' ? 'in your bag' : ownedAt.map(SLOT_NAME).join(', ')}</span>` : forSale ? `<em>${money(m.price)}${m.kind === 'iron' ? ' the set' : m.kind === 'wedge' || m.kind === 'wood' ? ' each' : ''}</em>` : ''}</div>
+            <div class="sh-note">${m.note}</div><div class="sh-tag">${bias}</div></div>
+          <div class="sh-bars">${barRow('Distance', shopBar(m.kind, 'carry', s.carry))}${barRow('Stopping', shopBar(m.kind, 'land', s.land))}${barRow('Forgiveness', shopBar(m.kind, 'forgive', s.forgive))}${barRow('Shaping', shopBar(m.kind, 'shape', s.shape))}</div>
+          <div class="sh-btns">${btns}</div></div>`;
+      }
+      function shopPuttersHTML() {
+        const ids = Object.keys(SHOP.putters), P = (id) => PUTTERS[id];
+        const rng = (f) => { const v = ids.map((id) => f(P(id))); return [Math.min(...v), Math.max(...v)]; };
+        const bar = (f, v) => { const [lo, hi] = rng(f); return Math.round(15 + 85 * (hi > lo ? (f(v) - lo) / (hi - lo) : 1)); };
+        let h = '', cat = '';
+        for (const id of ids) {
+          const sp = SHOP.putters[id], p = P(id), owned = career.putters.includes(id), using = career.putter === id;
+          if (sp.cat !== cat) { cat = sp.cat; h += `<div class="sh-cat">${cat}</div>`; }
+          const btn = using ? '<button disabled>✓ In your bag</button>' : owned ? `<button data-useputter="${id}">Put it in the bag</button>` : sp.price ? `<button class="buy" data-buyputter="${id}" ${career.cash < sp.price ? 'disabled' : ''}>Buy · ${money(sp.price)}</button>` : '<button disabled>Not for sale</button>';
+          h += `<div class="sh-item${owned ? ' owned' : ''}"><div><div class="sh-name"><b>${p.name}</b>${owned ? '<span>✓ yours</span>' : sp.price ? `<em>${money(sp.price)}</em>` : ''}</div><div class="sh-note">${sp.note}</div></div>
+            <div class="sh-bars">${barRow('Stability', bar((q) => q.gate, p))}${barRow('Start line', bar((q) => -q.pathGain, p))}${barRow('Sweet spot', bar((q) => q.sweet, p))}${barRow('Pace feel', bar((q) => q.tempoZone, p))}</div>
+            <div class="sh-btns">${btn}${owned ? '' : `<button data-tryputter="${id}">Try it on the putting green</button>`}</div></div>`;
+        }
+        return h;
+      }
+      function shopBagHTML() {
+        let h = `<div class="sh-cat">In the bag: ${carried()} of ${SHOP.bagMax} (with the putter) · the rest wait in your locker</div>`;
+        for (const [k, id] of Object.entries(career.bag)) {
+          const i = +k, bag = inBag(i), snapped = career.snapped.includes(i);
+          const btn = bag ? `<button data-locker="${i}">Put in the locker</button>` : `<button data-tobag="${i}" ${carried() >= SHOP.bagMax ? 'disabled' : ''}>Put in the bag</button>`;
+          h += `<div class="sh-row${bag ? '' : ' locker'}${snapped ? ' snapped' : ''}"><b>${CLUBS[i].name}</b><i>${modelName(id)}${snapped ? ' · snapped' : bag ? '' : ' · in your locker'}</i>${btn}</div>`;
+        }
+        h += `<div class="sh-row"><b>Putter</b><i>${PUTTERS[career.putter].name}</i><span></span></div>`;
+        return h;
+      }
+      // after any change to the bag
+      function shopChanged(msg) {
+        careerSave(); applyCareerClubs();
+        if (!canUseClub(state.club)) state.club = usableClub(0);
+        refreshShotType(); renderBag(); updateCareerUI(); renderShop();
+        if (msg) setText('shMsg', msg);
+      }
+      function shopBuy(id, slots) {
+        const m = CLUB_MODELS[id], price = m.price;
+        if (career.cash < price) return;
+        career.cash -= price;
+        const toLocker = [];
+        for (const i of slots) {
+          const had = !!career.bag[i];
+          career.bag[i] = id;
+          career.snapped = career.snapped.filter((x) => x !== i);
+          if (!had) { career.out = career.out.filter((x) => x !== i); if (carried() > SHOP.bagMax) { career.out.push(i); toLocker.push(CLUBS[i].name); } }
+        }
+        shopChanged(`Bought: ${modelName(id)}${m.kind === 'iron' ? ' irons (4–PW)' : ` ${slots.map(SLOT_NAME).join(', ')}`} for ${money(price)}.${toLocker.length ? ` Your bag is full, so ${toLocker.join(', ')} went to your locker (Your bag tab).` : ''}`);
+      }
+      function shopClick(e) {
+        const b = e.target.closest('button');
+        if (!b || b.disabled) return;
+        b.blur();
+        const d = b.dataset;
+        if (d.tab) { shopTab = d.tab; setText('shMsg', ''); return renderShop(); }
+        if (d.buy) return shopBuy(d.buy, d.slots.split(',').map(Number));
+        if (d.repair) { const i = +d.repair, p = repairPrice(i); if (career.cash < p) return; career.cash -= p; career.snapped = career.snapped.filter((x) => x !== i); return shopChanged(`Your ${CLUBS[i].name} is repaired (${money(p)}).`); }
+        if (d.locker) { career.out.push(+d.locker); return shopChanged(`${CLUBS[+d.locker].name} went to your locker.`); }
+        if (d.tobag) { if (carried() >= SHOP.bagMax) return; career.out = career.out.filter((x) => x !== +d.tobag); return shopChanged(`${CLUBS[+d.tobag].name} is back in the bag.`); }
+        if (d.buyputter) { const sp = SHOP.putters[d.buyputter]; if (career.cash < sp.price) return; career.cash -= sp.price; career.putters.push(d.buyputter); career.putter = d.buyputter; state.putter = d.buyputter; return shopChanged(`Bought the ${PUTTERS[d.buyputter].name} (${money(sp.price)}). It's your putter now.`); }
+        if (d.useputter) { career.putter = d.useputter; state.putter = d.useputter; return shopChanged(`The ${PUTTERS[d.useputter].name} is in the bag.`); }
+        if (d.try) return startDemo(d.try);
+        if (d.tryputter) return startPutterDemo(d.tryputter);
+      }
+      // ---- try before you buy: one club (or a putter) on the range / putting green, free; gone when you leave
+      function startDemo(id) {
+        const m = CLUB_MODELS[id], i = SHOP.testClub[m.kind];
+        demo = { idx: i, model: id };
+        applyCareerClubs(); careerToRange();
+        state.club = i; refreshShotType(); renderBag();
+        toast(`Trying the ${modelName(id)} ${CLUBS[i].name}\nFree on the range · J back to the shop`, 2600);
+      }
+      function startPutterDemo(id) {
+        demo = { putter: id };
+        careerToRange(); setMode('putt');
+        state.putter = id; syncPanel();
+        toast(`Trying the ${PUTTERS[id].name}\nOn the putting green · J back to the shop`, 2600);
+      }
+      function clearDemo() {
+        if (!demo) return;
+        const p = demo.putter;
+        demo = null;
+        if (p && career) state.putter = career.putter;
+        if (careerOn) { applyCareerClubs(); if (!canUseClub(state.club)) state.club = usableClub(0); renderBag(); }
+      }
+
+      // =====================================================================================================
+      //  CAREER MATCHES (CAMPAIGN_PLAN.md, chunk 3): match play for a stake against a simulated hustler, on the 9 holes with
+      //  their own wind and greens. A match is a round (round.match = career.match) played with the career's stats and bag.
+      //  The hustler's score on each hole is rolled when you hole out, from a seed fixed by the career and the match, so a
+      //  reload can't re-roll it. The match ends as soon as it's decided; the rest can be played for practice. Leaving a
+      //  match that isn't decided forfeits the stake.
+      // =====================================================================================================
+      // credit (chunk 4): you may stake up to base + perRep x reputation more than you have; the green fee is cash only
+      const MATCH = { fee: { 1: 10, 2: 60, 3: 300 }, minStake: 10, minSkin: 5, credit: { base: 100, perRep: 2 }, rep: { win: { 1: 5, 2: 12, 3: 25 }, loss: 2, forfeit: 2, cantPay: 10 } };
+      const creditLine = () => MATCH.credit.base + MATCH.credit.perRep * career.rep;
+      // skill = strokes over par per hole on average; spread = how much that varies hole to hole
+      const NPCS = [
+        { id: 'dale', tier: 1, first: 'Dale', nick: 'Dew Sweeper', last: 'Pruitt', skill: 1.6, spread: 1.0, maxStake: 40, press: 1, desc: 'Out at dawn every day; hacks it round, loves a bet', lines: { hello: 'Early bird gets the cash, kid.', win: 'Pleasure doing business.', lose: 'Ah, nuts. Double or nothing tomorrow?', halve: 'Nobody wins, nobody cries.', cantPay: 'No cash? Then I\'ll take it in clubs.', press: 'Double or nothing on the rest!', pressed: 'Ha! You\'re on.' } },
+        { id: 'terry', tier: 1, first: 'Terry', nick: 'Two-Putt', last: 'Vance', skill: 1.2, spread: 0.8, maxStake: 80, press: 0, desc: 'A steady bogey golfer who never three-putts', lines: { hello: 'Slow and steady, friend. Slow and steady.', win: 'Told you. Never three-putt.', lose: 'Well. That stings.', halve: 'Square. I\'ll take it.', cantPay: 'You bet money you didn\'t have? Steady on. Steady.', press: 'I don\'t press. Never have.', pressed: 'If you must. Steady, though.' } },
+        { id: 'sal', tier: 1, first: 'Sal', nick: 'Sandbag', last: 'Moretti', skill: 0.9, spread: 0.9, maxStake: 150, press: 0.6, desc: 'Says he\'s a 20 handicap. He isn\'t.', lines: { hello: 'Go easy on me, I\'m just a hacker.', win: 'Huh, lucky day I guess. Pay up.', lose: 'Fine. You got me.', halve: 'Even. Rematch?', cantPay: 'Hacker, huh? So am I. Hold still.', press: 'Let\'s make it interesting, shall we?', pressed: 'Sure, sure. Whatever you say.' } },
+        { id: 'gus', tier: 1, first: 'Gus', nick: 'Gravel', last: 'Haney', skill: 0.6, spread: 0.8, maxStake: 250, press: 1, desc: 'The best player at the muni, and he knows it', lines: { hello: 'You sure about this?', win: 'Thought so.', lose: '...Nobody beats me here. Nobody.', halve: 'Not bad. Not good either.', cantPay: 'Nobody stiffs Gravel Haney.', press: 'Press. You got lucky.', pressed: 'Your funeral.' } },
+        // ---- tier 2: the resort circuit (chunk 8)
+        { id: 'chad', tier: 2, first: 'Chad', nick: 'Trust Fund', last: 'Whitmore', skill: 0.55, spread: 0.9, maxStake: 400, press: 1, desc: 'Plays with his father\'s money and presses everything', lines: { hello: 'Let\'s make this worth my time, yeah?', win: 'Put it on my tab. Oh wait — you pay me.', lose: 'Whatever. Dad\'s good for it.', halve: 'Boring. Again tomorrow.', cantPay: 'You don\'t have it? That\'s embarrassing. For you.', press: 'Press. Money\'s no object.', pressed: 'Sure, bro. Love it.' } },
+        { id: 'marco', tier: 2, first: 'Marco', nick: 'Mulligan', last: 'Bellini', skill: 0.5, spread: 1.15, maxStake: 300, press: 0.8, desc: 'Brilliant one hole, a disaster the next', lines: { hello: 'No mulligans today. Probably.', win: 'Bellissimo. Pay the man.', lose: 'Bah! The wind, the greens, everything.', halve: 'A draw. Like football.', cantPay: 'In my family we have a word for this.', press: 'Press! Now it gets fun.', pressed: 'Ah, you have courage. I like it.' } },
+        { id: 'rita', tier: 2, first: 'Rita', nick: 'The Closer', last: 'Delgado', skill: 0.4, spread: 0.7, maxStake: 500, press: 0.5, desc: 'Never misses a short putt when money is on it', lines: { hello: 'Bring your putter. You\'ll need it.', win: 'Closed. As always.', lose: 'Fair. You earned that.', halve: 'Even. Don\'t get used to it.', cantPay: 'Then we settle it another way.', press: 'Let\'s press. I close better than you.', pressed: 'Bold. Fine.' } },
+        { id: 'jim', tier: 2, first: 'Jim', nick: 'Pro-Am', last: 'Kessler', skill: 0.3, spread: 0.6, maxStake: 800, press: 0.3, desc: 'A retired club pro who plays the resort every day', lines: { hello: 'Thirty years teaching this game. Let\'s see.', win: 'Lesson\'s free. The bet isn\'t.', lose: 'Well struck, son. Well struck.', halve: 'A fair contest.', cantPay: 'I taught you better than that.', press: 'Alright. Press.', pressed: 'Accepted.' } },
+        // ---- tier 3: the country club (chunk 8)
+        { id: 'whit', tier: 3, first: 'Whitaker', nick: 'Old Money', last: 'Pell', skill: 0.25, spread: 0.6, maxStake: 1500, press: 0.3, desc: 'Fourth-generation member; never hurried, never rattled', lines: { hello: 'Shall we say a modest wager?', win: 'Splendid. My man will collect.', lose: 'Hm. Most irregular.', halve: 'A gentleman\'s draw.', cantPay: 'One simply does not welch at Hawthorne.', press: 'I believe I shall press.', pressed: 'If you insist.' } },
+        { id: 'ana', tier: 3, first: 'Ana', nick: 'Ice', last: 'Lindqvist', skill: 0.1, spread: 0.5, maxStake: 2500, press: 0, desc: 'A former college star: says nothing, misses nothing', lines: { hello: '...', win: 'Good game.', lose: 'Good game.', halve: 'Good game.', cantPay: 'That was a mistake.', press: '...', pressed: 'Fine.' } },
+        { id: 'duke', tier: 3, first: 'Duke', nick: 'Club Champ', last: 'Harrington', skill: 0.0, spread: 0.5, maxStake: 3000, press: 0.6, desc: 'Eleven-time club champion. It\'s his course', lines: { hello: 'Welcome to my course.', win: 'They don\'t give eleven titles away.', lose: '...Rematch. Tomorrow. Same stakes.', halve: 'You\'ve got game. Not enough, but some.', cantPay: 'Members pay their debts.', press: 'Press. Let\'s see what you\'re made of.', pressed: 'Ha! Gladly.' } },
+        { id: 'vic', tier: 3, first: 'Victor', nick: 'The Shark', last: 'Kane', skill: 0.15, spread: 0.7, maxStake: 5000, press: 1, desc: 'Plays for life-changing money, and collects in person', lines: { hello: 'I hear you like to gamble.', win: 'Nothing personal. Just business.', lose: 'Enjoy it. It won\'t happen twice.', halve: 'Interesting.', cantPay: 'I was hoping you\'d say that.', press: 'Press. Always press.', pressed: 'Now we\'re talking.' } },
+      ];
+      const npcById = (id) => NPCS.find((n) => n.id === id);
+      const npcName = (n) => `${n.first} “${n.nick}” ${n.last}`;
+      let cmSel = 0, introMode = 'test', cmFormat = 'match';
+      const statusText = (d) => (d === 0 ? 'AS' : d > 0 ? `${d} UP` : `${-d} DN`);
+      // a bet so far (the match, or a press that started on hole `from`): holes won minus lost, and whether it's decided
+      function matchStatus(m, from = 0) {
+        let diff = 0, played = 0;
+        m.holes.forEach((h, i) => { if (h && i >= from) { played++; diff += h.me < h.npc ? 1 : h.me > h.npc ? -1 : 0; } });
+        const left = HOLES.length - m.holes.filter(Boolean).length;
+        return { diff, played, left, decided: Math.abs(diff) > left || left === 0 };
+      }
+      // ---- chunk 7: presses and skins
+      // every bet in a match-play game: the match itself, then each press (a new bet of the same stake on the holes left)
+      const matchBets = (m) => [{ label: 'Match', from: 0, stake: m.stake, by: null },
+        ...(m.presses || []).map((p, k) => ({ label: `Press ${k + 1}${p.by === 'npc' ? ' (his)' : ''}`, ...p }))];
+      // a bet as it stood on the hole it was decided (play can go on for the other bets, so read it from that hole)
+      function betFinal(m, b) {
+        for (let L = b.from + 1; L <= m.holes.length; L++) { const s = matchStatus({ holes: m.holes.slice(0, L) }, b.from); if (s.decided) return s; }
+        return matchStatus(m, b.from);
+      }
+      const betResult = (s) => (s.diff === 0 ? 'halved' : s.left ? `${s.diff > 0 ? 'won' : 'lost'} ${Math.abs(s.diff)} & ${s.left}` : `${s.diff > 0 ? 'won' : 'lost'} ${Math.abs(s.diff)} ${s.diff > 0 ? 'up' : 'down'}`);
+      // skins: who took what, hole by hole, and how many skins are riding on the next hole
+      function skinsState(m) {
+        let me = 0, npc = 0, carry = 1;
+        const holes = m.holes.map((h) => {
+          if (!h) return null;
+          const pot = carry * m.stake;
+          if (h.me < h.npc) { me += pot; carry = 1; return { who: 'me', amt: pot }; }
+          if (h.me > h.npc) { npc += pot; carry = 1; return { who: 'npc', amt: pot }; }
+          carry++; return { who: null, amt: 0 };
+        });
+        return { me, npc, carry, holes };
+      }
+      // the money if it all ended now; forfeit = every bet still in play counts as lost (skins: the pot and every hole left)
+      function matchNet(m, forfeit = false) {
+        const left = HOLES.length - m.holes.filter(Boolean).length;
+        if (m.format === 'skins') { const s = skinsState(m); return s.me - s.npc - (forfeit ? (s.carry - 1 + left) * m.stake : 0); }
+        return matchBets(m).reduce((sum, b) => {
+          const s = betFinal(m, b);
+          if (s.decided || left === 0) return sum + Math.sign(s.diff) * b.stake;
+          return sum - (forfeit ? b.stake : 0);
+        }, 0);
+      }
+      const matchOver = (m) => (m.format === 'skins' ? m.holes.filter(Boolean).length >= HOLES.length : matchBets(m).every((b) => matchStatus(m, b.from).decided));
+      // the one-line state of the game (top bar, scorecard tag, clubhouse)
+      function matchLine(m) {
+        if (m.format === 'skins') { const s = skinsState(m), d = s.me - s.npc, left = m.holes.filter(Boolean).length < HOLES.length; return `skins ${d >= 0 ? '+' : '−'}${money(Math.abs(d))}${s.carry > 1 && left ? ` · ${s.carry - 1} carried` : ''}`; }
+        const s = matchStatus(m), np = (m.presses || []).length;
+        return `${statusText(s.diff)}${np ? ` · ${np} press${np > 1 ? 'es' : ''}` : ''}`;
+      }
+      // the latest bet still in play, and whether you (2 down in it) may press: at most 3 presses, at least a hole left
+      function lastLiveBet(m) { const live = matchBets(m).filter((b) => !matchStatus(m, b.from).decided); return live[live.length - 1] || null; }
+      function canPress(m) {
+        if (!m || m.format !== 'match' || m.settled || !hp.done || (m.presses || []).length >= 3) return false;
+        const b = lastLiveBet(m), next = hp.holeIdx + 1;
+        return !!b && next < HOLES.length && matchStatus(m, b.from).diff <= -2;
+      }
+      function playerPress() {
+        const m = round.match;
+        if (!canPress(m)) return;
+        m.presses.push({ from: hp.holeIdx + 1, by: 'me', stake: m.stake });
+        careerSave();
+        const n = npcById(m.npc);
+        showScorecard(`You press: a new ${money(m.stake)} bet on the last ${HOLES.length - hp.holeIdx - 1} holes\n${n.nick}: “${n.lines.pressed}”`);
+      }
+      // the hustler's score on hole i: par + their skill + the hole's conditions + a seeded roll
+      // (user request: more variety) every match has its own salt, rolled at tee off and saved, so no two matches are the
+      // same; the hustler has a form for the day (sharp or rusty, the whole match); and now and then a hole blows up.
+      const gauss = (r) => Math.sqrt(-2 * Math.log(Math.max(1e-6, r()))) * Math.cos(2 * Math.PI * r());
+      const matchSeed = (m, k) => (career.seed ^ Math.imul(m.no, 7919) ^ (m.salt || 0) ^ k) >>> 0;
+      function npcForm(m) { return 0.32 * gauss(rng32(matchSeed(m, 48271))); }       // strokes per hole: − sharp, + rusty
+      function npcHoleScore(m, i) {
+        const n = npcById(m.npc), def = variantDef(HOLES[i], TIERS[m.tier]);
+        const r = rng32(matchSeed(m, Math.imul(i + 1, 104729)));
+        const g = gauss(r);
+        const cond = Math.max(0, (def.stimp || 11.5) - 11.5) * 0.1 + ((def.wind && def.wind.mph) || 0) / 40;
+        let d = n.skill - 0.14 + npcForm(m) + cond + n.spread * 1.05 * g;     // (−0.14: the blow-ups' average, so his average stays his skill)
+        if (r() < 0.09) d += 1 + Math.floor(r() * 2);           // a blow-up hole: a double or worse
+        return def.par + clamp(Math.round(d), -2, 5);
+      }
+      // ---- the picker (in the clubhouse)
+      const tierNpcs = () => NPCS.filter((n) => n.tier === career.tier);
+      function openMatchPicker() {
+        const m = career.match;
+        if (m && !m.settled && m.feePaid) return startMatch();          // a match in progress: back out to the course
+        if (m) career.match = null;
+        const ch = $('clubhouse');
+        ch.classList.remove('hub', 'new'); ch.classList.add('match');
+        cmSel = clamp(cmSel, 0, tierNpcs().length - 1);
+        renderMatchPicker();
+      }
+      function renderMatchPicker() {
+        const list = tierNpcs(), n = list[cmSel], fee = MATCH.fee[career.tier];
+        $('cmNpcs').innerHTML = list.map((p, i) => `<div class="cm-npc${i === cmSel ? ' on' : ''}" data-i="${i}"><b>${p.first} <span class="nick">“${p.nick}”</span> ${p.last}</b><i>${p.desc}</i><em>“${p.lines.hello}”</em><u>Plays for up to ${money(p.maxStake)}</u></div>`).join('');
+        // the format (chunk 7): match play for one stake (presses can add more), or skins for a stake on every hole
+        const skins = cmFormat === 'skins', minS = skins ? MATCH.minSkin : MATCH.minStake;
+        for (const b of $('cmFmt').children) b.classList.toggle('on', b.dataset.fmt === cmFormat);
+        setText('cmFmtNote', skins ? 'A stake on every hole; a halved hole carries the skin to the next' : 'Win the most holes; whoever is 2 down may press');
+        setText('cmStakeL', skins ? 'Per hole' : 'Stake');
+        // the stake can go past your cash, on credit (chunk 4); the green fee can't. A skin is capped lower: nine of them are in play
+        const room = Math.max(0, career.cash - fee) + creditLine();
+        const cap = Math.floor((skins ? Math.min(n.maxStake / 3, room / 4) : Math.min(n.maxStake, room)) / 5) * 5, inp = $('cmStake');
+        inp.min = minS; inp.max = Math.max(minS, cap);
+        inp.value = clamp(+inp.value || 20, minS, Math.max(minS, cap));
+        // broke: the starter lets you rake bunkers to cover the green fee (so a career can't get stuck at $0)
+        setText('cmFee', career.cash < fee ? `${money(fee)}: you're broke, so you'll rake bunkers for the starter to cover it`
+          : `${money(fee)} (paid when you tee off, in cash) · you have ${money(career.cash)}`);
+        updateStakeLabel();
+        const clubs = usableOrder().length;
+        const why = cap < minS ? `You can't cover even a ${money(minS)} ${skins ? 'skin' : 'stake'}`
+          : !clubs ? 'Every club but your putter is snapped: get some repaired at the pro shop first'
+          : '';
+        $('cmGo').disabled = !!why;
+        setText('cmErr', why);
+      }
+      // how much of the stake is on credit, in red
+      function updateStakeLabel() {
+        const skins = cmFormat === 'skins', stake = +$('cmStake').value, fee = MATCH.fee[career.tier];
+        const risk = skins ? stake * HOLES.length : stake, onCredit = Math.max(0, risk - Math.max(0, career.cash - fee));
+        setText('cmStakeV', money(stake));
+        if (skins) { $('cmCredit').innerHTML = onCredit ? `<span class="cm-red">If he takes all nine skins (${money(risk)}), ${money(onCredit)} is on credit</span>` : `If he takes all nine skins you owe ${money(risk)} · credit up to ${money(creditLine())}`; return; }
+        setText('cmStakeV', money(stake));
+        $('cmCredit').innerHTML = onCredit
+          ? `<span class="cm-red">${money(onCredit)} of it on credit</span> · lose, and you can't pay him`
+          : `Up to ${money(creditLine())} more than you have, on credit · lose what you can't cover and he takes it out of your hide`;
+      }
+      function teeOffMatch() {
+        const n = tierNpcs()[cmSel], stake = +$('cmStake').value;
+        if ($('cmGo').disabled || !n) return;
+        career.match = { npc: n.id, format: cmFormat, presses: [], stake, tier: career.tier, no: career.history.length + 1, salt: (Math.random() * 2 ** 31) >>> 0, holes: [], settled: false, feePaid: false };
+        careerSave();
+        closeClubhouse();
+        setCourse(career.tier);                               // the circuit's course (chunk 8)
+        openRoundIntro('match');
+      }
+      // ---- playing it
+      function startMatch() {
+        const m = career && career.match;
+        if (!m || swing.active) return;
+        closeClubhouse();
+        if (!m.feePaid) {                                       // the green fee: cash, or (broke) raking bunkers for it
+          if (career.cash >= MATCH.fee[m.tier]) career.cash -= MATCH.fee[m.tier]; else m.feeWorked = true;
+          m.feePaid = true;
+        }
+        careerSave(); updateCareerUI();
+        round.saved = { mph: state.windMph, dir: state.windDir, power: state.power, dex: state.dex, composure: state.composure, perception: state.perception };
+        round.on = true; round.over = false; round.match = m; round.lbDone = true; lbEntry.active = false;
+        round.scores = m.holes.map((h) => h && { strokes: h.me, putts: h.putts, par: h.par, pen: h.pen });
+        document.body.classList.add('round', 'match'); hideScorecard();
+        hp.holeIdx = Math.min(m.holes.length, HOLES.length - 1); courseV = TIERS[m.tier] || null;
+        for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
+        buildHole(hp.holeIdx); enterHole();
+        $('btnRound').textContent = 'Forfeit the match';
+        m.presses = m.presses || [];
+        const n = npcById(m.npc), s = matchStatus(m);
+        const form = npcForm(m), look = form < -0.18 ? `\n${n.first} looks sharp today` : form > 0.18 ? `\n${n.first} looks a bit rusty today` : '';
+        toast(`${n.nick}: “${m.holes.length ? 'Where were we?' : n.lines.hello}”${look}\n${m.format === 'skins' ? `Skins at ${money(m.stake)} a hole` : `Match play for ${money(m.stake)}`}${s.played ? ` · ${matchLine(m)} thru ${s.played}` : ''} · ${HOLE.name}, par ${HOLE.par}`, 3600);
+      }
+      // after each hole: the hustler's score, who won it, the bets (or the skins), his presses, and the money once it's over
+      function matchAfterHole(i) {
+        const m = round.match, n = npcById(m.npc), npc = npcHoleScore(m, i);
+        m.holes[i] = { me: hp.strokes, npc, putts: hp.putts, pen: hp.pen, par: HOLE.par };
+        let msg = `${n.nick} made ${npc} · ${hp.strokes < npc ? 'you win the hole' : hp.strokes > npc ? `${n.nick} wins the hole` : 'halved'}`;
+        if (!m.settled) {
+          const left = HOLES.length - m.holes.filter(Boolean).length;
+          if (m.format === 'skins') {
+            const s = skinsState(m), h = s.holes[i], k = h.amt / m.stake;
+            msg += h.who === 'me' ? ` · you take ${k > 1 ? `${k} skins` : 'the skin'} (${money(h.amt)})` : h.who === 'npc' ? ` · he takes ${k > 1 ? `${k} skins` : 'the skin'} (${money(h.amt)})`
+              : left ? ` · the skin carries: ${s.carry} riding on the next hole` : ' · the last skin is void';
+            msg += ` · ${matchLine(m)}`;
+          } else {
+            for (const b of matchBets(m)) {
+              const s = matchStatus(m, b.from);
+              if (i < b.from || matchStatus({ holes: m.holes.slice(0, i) }, b.from).decided) continue;     // only bets still live coming into this hole
+              msg += `\n${b.label}: ${s.decided ? betResult(s) : `${statusText(s.diff)}${left ? ` with ${left} to play` : ''}`}`;
+            }
+            // the hustler presses when he's 2 down in the latest bet, if that's his style (seeded, so a reload can't change it)
+            const b = lastLiveBet(m);
+            if (b && left > 0 && m.presses.length < 3 && matchStatus(m, b.from).diff >= 2 && rng32(matchSeed(m, Math.imul(i + 7, 3301)))() < n.press) {
+              m.presses.push({ from: i + 1, by: 'npc', stake: m.stake });
+              msg += `\n${n.nick} presses! A new ${money(m.stake)} bet on the last ${left} holes: “${n.lines.press}”`;
+            }
+          }
+          if (matchOver(m)) msg += `\n\n${settleMatch('end')}`;
+        }
+        careerSave();
+        return msg;
+      }
+      // the money, once: every bet (or the skins) at the end, or everything still in play on a forfeit
+      function settleMatch(kind) {
+        const m = round.match || (career && career.match);
+        if (!m || m.settled) return '';
+        const n = npcById(m.npc);
+        let net = matchNet(m, kind === 'forfeit'), result, line;
+        if (kind === 'forfeit') result = 'forfeited';
+        else if (m.format === 'skins') { const s = skinsState(m); result = `won ${money(s.me)} in skins, he won ${money(s.npc)}`; }
+        else result = matchBets(m).map((b) => `${b.label === 'Match' ? '' : `${b.label}: `}${betResult(betFinal(m, b))}`).join(' · ');
+        if (kind === 'forfeit') { career.rep = Math.max(0, career.rep - MATCH.rep.forfeit); line = n.lines.win; }
+        else if (net > 0) { career.rep += MATCH.rep.win[m.tier]; line = n.lines.lose; }
+        else if (net < 0) { career.rep = Math.max(0, career.rep - MATCH.rep.loss); line = n.lines.win; }
+        else { line = n.lines.halve; if (m.format === 'match' && !m.presses.length) result = 'halved the match: nobody pays'; }
+        // THE LOAN-SHARK RULE (chunk 4): lose more than you have and he takes all your cash, the rest is wiped by a
+        // beating, and he snaps a club (never the putter) that's gone until it's repaired at the pro shop
+        let unpaid = 0, snapped = -1;
+        if (net < 0 && career.cash + net < 0) {
+          unpaid = -(career.cash + net); net = -Math.max(0, career.cash);
+          career.rep = Math.max(0, career.rep - (MATCH.rep.cantPay - MATCH.rep.loss));
+          snapped = snapRandomClub(); line = n.lines.cantPay;
+        }
+        career.cash += net;
+        Object.assign(m, { settled: true, result, net, unpaid });
+        career.history.push({ npc: n.id, format: m.format, stake: m.stake, result, net, unpaid, snapped: snapped >= 0 ? CLUBS[snapped].name : null, date: Date.now() });
+        careerSave(); updateCareerUI();
+        if (unpaid) setTimeout(() => showBeating(n, unpaid, snapped), 250);
+        return `MATCH OVER: you ${result}${net ? ` · ${net > 0 ? '+' : '−'}${money(Math.abs(net))}` : ''}${unpaid ? ` · ${money(unpaid)} you couldn't pay` : ''}\n${n.nick}: “${line}”`;
+      }
+      // a random club you can still use (not the putter) is snapped; -1 if there's none left
+      function snapRandomClub() {
+        const u = usableOrder();
+        if (!u.length) return -1;
+        const i = u[Math.floor(Math.random() * u.length)];
+        career.snapped.push(i);
+        if (state.club === i) state.club = usableClub(0);
+        renderBag();
+        return i;
+      }
+      // ---- the beating: a full-screen comic beat, then the bad news
+      let beatOpen = false, beatReady = false;
+      function showBeating(n, unpaid, snapped) {
+        beatOpen = true; beatReady = false;
+        const el = $('beating'), pow = $('btPow');
+        setText('btLine', `${n.nick}: “${n.lines.cantPay}”`);
+        setText('btSnap', ''); setText('btSub', '');
+        $('btGo').disabled = true;
+        el.classList.add('on');
+        const hit = (word, cls) => { pow.textContent = word; pow.className = ''; void pow.offsetWidth; pow.className = `bt-pow ${cls}`; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); };
+        hit('WHACK!', 'a');
+        setTimeout(() => hit('POW!', 'b'), 550);
+        setTimeout(() => {
+          hit(snapped >= 0 ? 'CRACK!' : 'OOF!', 'c');
+          setText('btSnap', snapped >= 0 ? `He snapped your ${CLUBS[snapped].name} over his knee` : 'He looked for a club to snap. There wasn\'t one left.');
+          setText('btSub', `You couldn't pay ${money(unpaid)}. He took every dollar you had, and the rest out of your hide.${snapped >= 0 ? ' The club is gone from your bag until the pro shop repairs it.' : ''} Reputation −${MATCH.rep.cantPay}.`);
+          beatReady = true; $('btGo').disabled = false; $('btGo').focus();
+        }, 1150);
+      }
+      function closeBeating() {
+        if (!beatOpen || !beatReady) return;
+        beatOpen = false; $('beating').classList.remove('on', 'shake'); $('btGo').blur();
+      }
+      function beatKey(e) {
+        e.preventDefault();
+        if (!e.repeat && ['Enter', 'NumpadEnter', 'Space', 'Escape'].includes(e.code)) closeBeating();
+      }
+      // leaving a match that isn't decided: confirm, then it's a forfeit
+      function confirmForfeit() {
+        const m = round.match;
+        if (!m || m.settled) return true;
+        const owe = -matchNet(m, true), short = Math.max(0, owe - Math.max(0, career.cash));
+        if (!confirm(`Leaving now forfeits the ${m.format === 'skins' ? 'skins game' : 'match'}: ${owe > 0 ? `you pay ${npcById(m.npc).nick} ${money(owe)}` : 'every bet still in play goes to him'}.${short ? ` You can't cover ${money(short)} of it — he'll take that out of your hide and snap a club.` : ''} Leave?`)) return false;
+        toast(settleMatch('forfeit'), 3200);
+        return true;
+      }
+      function matchToClubhouse() {
+        endRound();
+        if (hp.on) leaveHole();
+        openClubhouse();
+      }
+      // =====================================================================================================
+      //  THE HUSTLER ON THE COURSE (chunk 3, user request): his shots are played out, turn by turn. His score on each hole
+      //  is still the seeded npcHoleScore(); npcPlan() lays out strokes that add up to it (drives and approaches along the
+      //  hole, a first putt from a distance that fits his putt count, then the putts), and they are animated with an orange
+      //  ball on the real course. Turn order is golf's: the honour on the tee (a tee toss on hole 1, then whoever won the
+      //  last decided hole), then whoever is farther from the pin. While he plays the camera follows his ball and input waits
+      //  (Space / Enter / a click hurries him up).
+      // =====================================================================================================
+      const npc = { plan: null, k: 0, pos: null, cur: null, done: true, holed: false, anim: null, busy: false, fast: false, trail: [], wait: null };
+      let npcTurn = false;
+      const npcBall = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 20, 14), new THREE.MeshStandardMaterial({ color: 0xffa53d, roughness: 0.4, emissive: 0x7a3d00 }));
+      npcBall.visible = false; scene.add(npcBall);
+      const npcTrailPos = new Float32Array(600 * 3), npcTrailGeo = new THREE.BufferGeometry();
+      npcTrailGeo.setAttribute('position', new THREE.BufferAttribute(npcTrailPos, 3)); npcTrailGeo.setDrawRange(0, 0);
+      const npcTrail = new THREE.Line(npcTrailGeo, new THREE.LineBasicMaterial({ color: 0xffa53d, transparent: true, opacity: 0.9 }));
+      npcTrail.frustumCulled = false; scene.add(npcTrail);
+      let npcTrailN = 0;
+      // a point on the hole -> the world (the ball is the origin; on the green views the green's own frame)
+      function npcWorld(hx, hz, out) {
+        if (onGreenView() && green && hp.frame) {
+          const p = green.fromSurface(hx, hz), onG = isPutt() || inEllipse(hole.green, hx, hz, 1.35) < 1;
+          return out.set(p.x, onG ? green.h(p.x, p.z) : holeG.position.y, p.z);
+        }
+        return out.set(hx - hp.ball.x, 0, hz - hp.ball.z);
+      }
+      const npcClubFor = (yd, tee, par) => (tee && par > 3 && yd > 190 ? 'driver'
+        : [[215, '3 wood'], [195, 'hybrid'], [180, '4 iron'], [170, '5 iron'], [160, '6 iron'], [150, '7 iron'], [140, '8 iron'], [128, '9 iron'], [112, 'pitching wedge'], [95, 'gap wedge'], [0, 'sand wedge']].find(([d]) => yd >= d)[1]);
+      // strokes that add up to score S on hole i: [{ from, to, type: 'full' | 'chip' | 'putt', holed }]
+      function npcPlan(m, i, S) {
+        const n = npcById(m.npc), r = rng32(matchSeed(m, Math.imul(i + 1, 92821) ^ 31337));
+        const par = HOLES[i].par, pin = hole.pin, onGreen = (p) => inEllipse(hole.green, p.x, p.z) < 0.92;
+        let k = S <= 1 ? 0 : S <= par - 1 ? 1 : S >= par + 2 ? (r() < 0.45 ? 3 : 2) : (r() < 0.12 ? 1 : 2);
+        k = Math.min(k, S - 1);
+        const f = S - k;                                       // full shots (and chips), at least one
+        const around = (c, d) => {                             // a spot on the green d metres from c
+          for (let t = 0; t < 30; t++) { const a = r() * Math.PI * 2, p = { x: c.x + Math.cos(a) * d, z: c.z + Math.sin(a) * d }; if (onGreen(p)) return p; d *= 0.85; }
+          return { ...c };
+        };
+        const gp = k === 0 ? { ...pin } : around(pin, k === 1 ? 1 + r() * 4 : k === 2 ? 4 + r() * 9 : 9 + r() * 7);
+        const sG = pathNear(gp.x, gp.z).s, stops = [];
+        const wild = S - par >= 2, drive = (250 - 25 * n.skill) * YD * (0.9 + 0.2 * r()), reach = (200 - 15 * n.skill) * YD, minPitch = 15;
+        let sPrev = 0;
+        for (let j = 1; j < f; j++) {
+          // as far as he can, leaving at least a short pitch for each shot still to come (extra shots end up as chips)
+          const left = f - j;
+          let s = j === 1 && par > 3 ? Math.min(drive, sG - minPitch * left) : sPrev + Math.min(reach * (0.85 + 0.15 * r()), sG - sPrev - minPitch * left);
+          if (j === 1 && par === 3) s = sG - (8 + r() * 22);  // a par 3 tee shot that misses the green
+          s = clamp(s, sPrev + 6, sG - 6);
+          const a = pathPoint(Math.max(0.5, s - 1)), b = pathPoint(s + 1), L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+          const side = (r() * 2 - 1) * hole.halfW * (wild ? 2.2 : 1.1);
+          const c = pathPoint(s), d = clamp(side, -(hole.ob - 8), hole.ob - 8);
+          stops.push({ x: c.x - (b.z - a.z) / L * d, z: c.z + (b.x - a.x) / L * d });
+          sPrev = s;
+        }
+        stops.push(gp);
+        // the putts: to a few feet, then in
+        if (k === 3) stops.push(around(pin, 1.2 + r() * 1.2));
+        if (k >= 2) stops.push(around(pin, 0.3 + r() * 0.6));
+        if (k >= 1) stops.push({ ...pin });
+        const out = [];
+        const t0 = pathPoint(0), t1 = pathPoint(4), tl = Math.hypot(t1.x - t0.x, t1.z - t0.z) || 1;
+        let from = { x: -(t1.z - t0.z) / tl * 2.4, z: (t1.x - t0.x) / tl * 2.4 };          // his own spot on the tee, beside yours
+        stops.forEach((to, j) => {
+          const type = onGreen(from) ? 'putt' : Math.hypot(pin.x - from.x, pin.z - from.z) <= CHIP.maxYd * YD ? 'chip' : 'full';
+          out.push({ from, to, type, holed: j === stops.length - 1, tee: j === 0 });
+          from = to;
+        });
+        return out;
+      }
+      const npcDist = () => Math.hypot(hole.pin.x - npc.pos.x, hole.pin.z - npc.pos.z);
+      const myDist = () => (hp.done ? 0 : Math.hypot(hole.pin.x - hp.ball.x, hole.pin.z - hp.ball.z));
+      // who has the honour on this hole: the tee toss on the first, then the last hole someone won
+      function matchHonor(m) {
+        for (let i = hp.holeIdx - 1; i >= 0; i--) { const h = m.holes[i]; if (h && h.me !== h.npc) return h.me < h.npc ? 'me' : 'npc'; }
+        return m.toss || 'me';
+      }
+      // a new hole in a match: his plan, his ball on the tee, and (if he has the honour) his tee shot
+      function npcHoleStart() {
+        const m = round.match;
+        if (!m) return;
+        const plan = npcPlan(m, hp.holeIdx, npcHoleScore(m, hp.holeIdx));
+        Object.assign(npc, { plan, k: 0, pos: { ...plan[0].from }, cur: { ...plan[0].from }, done: false, holed: false, anim: null, busy: false, fast: false, trail: [] });
+        npcTrailGeo.setDrawRange(0, 0);
+        if (!m.toss) return openToss();                       // the first tee: toss for the honour
+        const nn = npcById(m.npc);
+        if (matchHonor(m) === 'npc') { toast(`${nn.nick} has the honour`, 1500); setTimeout(() => npcTakeTurns(), 900); }
+        else toast(hp.holeIdx === 0 ? 'You have the honour: tee off' : 'Your honour', 1500);
+      }
+      // play his strokes while it's his turn (finish = he plays out after you've holed)
+      function npcTakeTurns(finish = false, cb = null) {
+        if (!round.match || !npc.plan || npc.busy) { if (cb) cb(); return; }
+        const his = !npc.done && (finish || npc.k === 0 || npcDist() > myDist() + 0.01);
+        if (!his) {
+          if (npcTurn && hp.on && !onGreenView()) updateTreeClearance(hp.ball.x, hp.ball.z, state.aim);     // back to your trees
+          npcTurn = false; npc.fast = false; if (cb) cb(); return;
+        }
+        npcTurn = true;
+        npcPlayStroke(() => npcTakeTurns(finish, cb));
+      }
+      function npcPlayStroke(next) {
+        const st = npc.plan[npc.k], nn = npcById(round.match.npc), d = Math.hypot(st.to.x - st.from.x, st.to.z - st.from.z);
+        const yd = Math.round(Math.hypot(hole.pin.x - st.from.x, hole.pin.z - st.from.z) / YD);
+        npc.busy = true;
+        if (!onGreenView()) updateTreeClearance(st.from.x, st.from.z, Math.atan2(st.to.x - st.from.x, -(st.to.z - st.from.z)) * R2D);   // keep the trees out of the camera's way
+        if (st.type === 'putt') toast(`${nn.nick} putts from ${Math.max(1, Math.round(d / FT))} ft`, 1600);
+        else toast(`${nn.nick} · ${st.type === 'chip' ? 'chips with a wedge' : npcClubFor(Math.round(d / YD), st.tee, HOLE.par)} · ${yd} yds to the pin`, 1600);
+        const dur = npc.fast ? 0.25 : st.type === 'putt' ? 1.2 + d * 0.12 : st.type === 'chip' ? 1.6 + d * 0.02 : 1.8 + d / 85;
+        const land = st.type === 'putt' ? 0 : st.type === 'chip' ? 0.5 : 0.88, apex = st.type === 'putt' ? 0 : st.type === 'chip' ? clamp(d * 0.18, 1.5, 7) : clamp(d * 0.11, 8, 34);
+        npc.anim = { st, t: 0, dur, land, apex, delay: npc.fast ? 0 : 0.7, next };
+        npcTrailN = 0; npcTrailGeo.setDrawRange(0, 0);
+      }
+      const npcV = new THREE.Vector3(), npcV2 = new THREE.Vector3(), npcDir = new THREE.Vector3();
+      // each frame: move his ball, draw the trail, end the stroke
+      function updateNpc(dt) {
+        const show = !!round.match && hp.on && !!npc.plan && !npc.holed;
+        npcBall.visible = show; npcTrail.visible = !!round.match && hp.on && npcTurn;
+        if (!round.match || !npc.plan) return;
+        const a = npc.anim;
+        let hx = npc.pos.x, hz = npc.pos.z, y = 0;
+        if (a) {
+          if (a.delay > 0) a.delay -= dt;
+          else a.t += dt;
+          const u = clamp(a.t / a.dur, 0, 1), st = a.st, ease = (x) => 1 - (1 - x) ** 2;
+          let along;
+          if (a.land === 0) along = ease(u);                                       // a putt rolls the whole way
+          else if (u < 0.8) { const q = u / 0.8; along = a.land * q; y = 4 * a.apex * q * (1 - q); }
+          else along = a.land + (1 - a.land) * ease((u - 0.8) / 0.2);           // then it runs out
+          hx = st.from.x + (st.to.x - st.from.x) * along; hz = st.from.z + (st.to.z - st.from.z) * along;
+          if (u >= 1 && a.t >= a.dur + (npc.fast ? 0.1 : 0.9)) {                // landed and held for a moment
+            npc.anim = null; npc.pos = { ...st.to }; npc.k++; npc.trail.push({ a: st.from, b: st.to });
+            const nn = npcById(round.match.npc);
+            if (st.holed) { npc.done = true; npc.holed = true; toast(`${nn.nick} holes out: ${npc.k} on the hole`, 1800); }
+            else if (st.type !== 'putt') toast(`${nn.nick}: ${SURF[surfaceAt(st.to.x, st.to.z)].name.toLowerCase()} · ${Math.round(npcDist() / YD)} yds left`, 1500);
+            else toast(`${nn.nick} leaves it ${Math.max(1, Math.round(npcDist() / FT))} ft away`, 1500);
+            npc.busy = false;
+            a.next();
+            return;
+          }
+        }
+        npc.cur = { x: hx, z: hz };
+        npcWorld(hx, hz, npcV); npcV.y += BALL_R + y;
+        npcBall.position.copy(npcV);
+        const dd = camera.position.distanceTo(npcV), zoom = Math.tan(camera.fov * D2R / 2) / Math.tan(27.5 * D2R);
+        npcBall.scale.setScalar(Math.max(1, dd * 0.0055 * zoom / BALL_R));
+        if (a && a.delay <= 0 && npcTrailN < 600) { npcTrailPos.set([npcV.x, npcV.y, npcV.z], npcTrailN * 3); npcTrailN++; npcTrailGeo.attributes.position.needsUpdate = true; npcTrailGeo.setDrawRange(0, npcTrailN); }
+        if (a) { npcWorld(a.st.from.x, a.st.from.z, npcV2); npcWorld(a.st.to.x, a.st.to.z, npcDir); npcDir.sub(npcV2).setY(0).normalize(); }
+      }
+      // the camera while he plays: behind his ball, following it
+      function npcCameraPose(goalPos, goalLook) {
+        const a = npc.anim, putt = a && a.st.type === 'putt', D = putt ? 3.5 : a && a.st.type === 'chip' ? 6 : 10 + (a ? Math.min(30, npcV.distanceTo(npcV2) * 0.06) : 0);
+        goalPos.copy(npcV).addScaledVector(npcDir, -D); goalPos.y = npcV.y + (putt ? 1.2 : 2.6) + (a && !putt ? D * 0.08 : 0);
+        goalLook.copy(npcV).addScaledVector(npcDir, putt ? 0.5 : 3);
+      }
+      function npcHurry() { if (npcTurn) { npc.fast = true; if (npc.anim) { npc.anim.delay = 0; npc.anim.dur = Math.min(npc.anim.dur, npc.anim.t + 0.2); } } }
+      // ---- the tee toss (first hole): a spinning tee; the point lands toward whoever tees off first
+      let tossOpen = false;
+      function openToss() {
+        const m = round.match, nn = npcById(m.npc), res = Math.random() < 0.5 ? 'me' : 'npc';
+        tossOpen = true;
+        setText('ttNpc', nn.nick); setText('ttResult', ''); $('ttGo').disabled = true;
+        const tee = $('ttTee');
+        tee.style.transition = 'none'; tee.style.transform = 'rotate(0deg)';
+        $('teeToss').classList.add('on');
+        void tee.offsetWidth;                                  // restart the spin
+        const wobble = (Math.random() * 2 - 1) * 14;
+        tee.style.transition = 'transform 2.1s cubic-bezier(.15,.65,.2,1)';
+        tee.style.transform = `rotate(${1440 + (res === 'me' ? 180 : 0) + wobble}deg)`;
+        setTimeout(() => {
+          m.toss = res; careerSave();
+          setText('ttResult', res === 'me' ? 'It points at you: you have the honour' : `It points at ${nn.nick}: he tees off first`);
+          $('ttGo').disabled = false; $('ttGo').focus();
+        }, 2200);
+      }
+      function closeToss() {
+        if (!tossOpen || !round.match || !round.match.toss) return;
+        tossOpen = false; $('teeToss').classList.remove('on'); $('ttGo').blur();
+        npcHoleStart();
+      }
+      function tossKey(e) {
+        e.preventDefault();
+        if (!e.repeat && (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space')) closeToss();
+      }
+      // the course preview's buttons start a test round or the career's match
+      function introStart() { closeRoundIntro(); if (introMode === 'match') startMatch(); else startRound(); }
+      function introCancel() {
+        closeRoundIntro();
+        if (introMode === 'match' && career && career.match && !career.match.feePaid) { career.match = null; careerSave(); setCourse(null); openClubhouse(); openMatchPicker(); }
       }
       // TEST ROUND conditions: the hole's own wind and green speed, the same for every player (the sliders are hidden)
       const holeStimp = () => (round.on && HOLE.stimp) || state.greenCfg.stimp;
@@ -5801,6 +8182,7 @@
       }
       function hideScorecard() { $('scorecard').classList.remove('on'); }
       function showScorecard(msg = '') {
+        $('scPress').classList.remove('on');               // (only a career match shows it, below)
         const n = HOLES.length, t = roundTotals(), final = t.played === n;
         round.over = final;
         const cur = hp.on && !hp.done ? hp.holeIdx : -1;
@@ -5810,7 +8192,7 @@
           const s = round.scores[i], c = i === cur ? ' class="cur"' : '';
           head += `<th${c}>${i + 1}</th>`;
           parRow += `<td${c}>${HOLES[i].par}</td>`;
-          const hw = HOLES[i].wind || { mph: 0, from: 0 };           // arrow = where the wind blows, up = toward the green
+          const hw = variantDef(HOLES[i]).wind || { mph: 0, from: 0 };           // arrow = where the wind blows, up = toward the green
           windRow += `<td${c} title="${windText(hw.mph, hw.from)}">${hw.mph ? `<span style="display:inline-block;transform:rotate(${hw.from + 180}deg)">↑</span> ${hw.mph}` : '–'}</td>`;
           if (s) {
             const d = s.strokes - s.par, cls = d <= -2 ? 'eagle' : d === -1 ? 'birdie' : d === 1 ? 'bogey' : d >= 2 ? 'double' : '';
@@ -5831,7 +8213,42 @@
         ptRow += `<td class="tot">${t.played ? t.putts : ''}</td></tr>`;
         pnRow += `<td class="tot">${t.played ? t.pen : ''}</td></tr>`;
         tpRow += `<td class="tot"><span class="${t.toPar < 0 ? 'under' : t.toPar > 0 ? 'over' : ''}">${t.played ? fmtToPar(t.toPar) : ''}</span></td></tr>`;
-        $('scTable').innerHTML = head + parRow + windRow + scRow + ptRow + pnRow + tpRow;
+        // a career match: the hustler's scores and the match, hole by hole (▲ won, ▼ lost, — halved, then the status)
+        let mRows = '';
+        const m = round.match;
+        if (m) {
+          const nn = npcById(m.npc);
+          let npcRow = `<tr class="npc"><td>${nn.nick}</td>`, npcTot = 0;
+          for (let i = 0; i < n; i++) {
+            const h = m.holes[i], c = i === cur ? ' class="cur"' : '';
+            if (!h) { npcRow += `<td${c}></td>`; continue; }
+            const dd = h.npc - h.par, cls = dd <= -2 ? 'eagle' : dd === -1 ? 'birdie' : dd === 1 ? 'bogey' : dd >= 2 ? 'double' : '';
+            npcRow += `<td${c}><span class="sc ${cls}">${h.npc}</span></td>`; npcTot += h.npc;
+          }
+          mRows = npcRow + `<td class="tot">${npcTot || ''}</td></tr>`;
+          if (m.format === 'skins') {                        // skins: what each hole paid, or that it carried
+            const ss = skinsState(m);
+            let row = '<tr class="mrow"><td>Skins</td>';
+            for (let i = 0; i < n; i++) {
+              const h = ss.holes[i], c = i === cur ? ' class="cur"' : '';
+              row += !h ? `<td${c}></td>` : h.who ? `<td${c}><span class="${h.who === 'me' ? 'mw' : 'ml'}">${h.who === 'me' ? '+' : '−'}${h.amt}</span></td>` : `<td${c} title="carried">→</td>`;
+            }
+            const dn = ss.me - ss.npc;
+            mRows += `${row}<td class="tot"><span class="${dn > 0 ? 'mw' : dn < 0 ? 'ml' : ''}">${dn >= 0 ? '+' : '−'}${money(Math.abs(dn))}</span></td></tr>`;
+          } else {                                           // match play: a row for the match and one for each press
+            for (const b of matchBets(m)) {
+              let row = `<tr class="mrow"><td>${b.label}</td>`, d = 0;
+              for (let i = 0; i < n; i++) {
+                const h = m.holes[i], c = i === cur ? ' class="cur"' : '';
+                if (!h || i < b.from) { row += `<td${c}></td>`; continue; }
+                const w = h.me < h.npc ? 1 : h.me > h.npc ? -1 : 0; d += w;
+                row += `<td${c} title="${statusText(d)}"><span class="${w > 0 ? 'mw' : w < 0 ? 'ml' : ''}">${w > 0 ? '▲' : w < 0 ? '▼' : '—'}</span></td>`;
+              }
+              mRows += `${row}<td class="tot"><span class="${d > 0 ? 'mw' : d < 0 ? 'ml' : ''}">${statusText(d)}</span></td></tr>`;
+            }
+          }
+        }
+        $('scTable').innerHTML = head + parRow + windRow + scRow + (m ? mRows : '') + ptRow + pnRow + tpRow;
         $('scTitle').textContent = final ? 'Final scorecard' : 'Scorecard';
         $('scTag').textContent = final ? `${t.strokes} strokes · ${fmtToPar(t.toPar)}` : t.played ? `${fmtToPar(t.toPar)} thru ${t.played}` : 'Test round';
         $('scMsg').textContent = final
@@ -5839,6 +8256,21 @@
           : msg;
         $('scNext').textContent = final ? 'Play again' : hp.done ? `Next: Hole ${hp.holeIdx + 2} (N)` : 'Back to the hole (K)';
         $('scClose').textContent = final ? 'Back to the range' : 'Close (K)';
+        // a career match: its own title, status and buttons, and no leaderboard
+        if (m) {
+          const s = matchStatus(m), nn = npcById(m.npc);
+          $('scTitle').textContent = `${final ? 'Final · ' : ''}${m.format === 'skins' ? `Skins at ${money(m.stake)} a hole` : 'Match'} vs ${nn.first} “${nn.nick}” ${nn.last}`;
+          $('scTag').textContent = m.settled ? (m.net ? `${m.net > 0 ? 'won' : 'lost'} ${money(Math.abs(m.net))}` : 'all square') : `${matchLine(m)} thru ${s.played}${m.format === 'skins' ? '' : ` · ${money(m.stake)} a bet`}`;
+          $('scPress').classList.toggle('on', canPress(m));       // you're 2 down in the latest bet: press
+          if (final) $('scMsg').textContent = `${msg ? msg + '\n\n' : ''}Round complete: ${t.strokes} strokes (${fmtToPar(t.toPar)}) · you ${m.result}`;
+          $('scNext').textContent = final ? 'Back to the clubhouse (N)' : hp.done ? (m.settled ? `Play on for practice: Hole ${hp.holeIdx + 2} (N)` : `Next: Hole ${hp.holeIdx + 2} (N)`) : 'Back to the hole (K)';
+          $('scClose').textContent = final || m.settled ? 'Back to the clubhouse' : 'Close (K)';
+          const sc = $('scorecard');
+          scMode = 'round';
+          sc.classList.remove('entry', 'board', 'lbonly');
+          sc.classList.add('on');
+          return;
+        }
         // the end of the round: a top-10 score gets the initials screen, then the board
         const sc = $('scorecard');
         scMode = 'round';
@@ -5852,12 +8284,14 @@
       }
       function scorecardNext() {
         if (scMode === 'board') { if (round.on) return hideScorecard(); hideScorecard(); return openRoundIntro(); }
+        if (round.match) { if (round.over) return matchToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
         if (round.over) return startRound();
         if (hp.done) return nextRoundHole();
         hideScorecard();
       }
       function scorecardClose() {
         if (scMode === 'board') return hideScorecard();
+        if (round.match && (round.over || round.match.settled)) return matchToClubhouse();
         if (round.over) return quitRound();
         hideScorecard();
       }
@@ -5985,6 +8419,7 @@
       // the board on its own (button or L), any time
       function showLeaderboard() {
         if (lbEntry.active) return;
+        $('scPress').classList.remove('on');
         renderBoard();
         if (!lbBusy) lbFetch();                              // freshen it from the world board
         const sc = $('scorecard');
@@ -6078,6 +8513,12 @@
           g.beginPath(); g.moveTo(X(h.a.x, h.a.z), Y(h.a.x, h.a.z)); g.lineTo(X(h.b.x, h.b.z), Y(h.b.x, h.b.z)); g.stroke();
         }
         g.setLineDash([]);
+        if (round.match && npc.plan) {                        // a career match: the hustler's shots and his ball, in orange
+          g.strokeStyle = 'rgba(255,165,61,.95)'; g.lineWidth = 1.5;
+          for (const h of npc.trail) { g.beginPath(); g.moveTo(X(h.a.x, h.a.z), Y(h.a.x, h.a.z)); g.lineTo(X(h.b.x, h.b.z), Y(h.b.x, h.b.z)); g.stroke(); }
+          if (npc.anim) { const a = npc.anim.st.from; g.setLineDash([2, 2]); g.beginPath(); g.moveTo(X(a.x, a.z), Y(a.x, a.z)); g.lineTo(X(npc.cur.x, npc.cur.z), Y(npc.cur.x, npc.cur.z)); g.stroke(); g.setLineDash([]); }
+          if (!npc.holed && npc.cur) { g.fillStyle = '#ffa53d'; g.strokeStyle = '#000'; g.lineWidth = 1; g.beginPath(); g.arc(X(npc.cur.x, npc.cur.z), Y(npc.cur.x, npc.cur.z), 3.4, 0, 7); g.fill(); g.stroke(); }
+        }
         if (isChip() && !hp.done && state.view !== 'flight' && green.chip) {                       // chip: line to the landing marker
           const a = heading(state.aim), m = green.toSurface(a.x * state.markDist, a.z * state.markDist);
           // a faint ball -> pin line first: the map is not turned to the shot, so this shows the landing line runs along it
@@ -6144,7 +8585,9 @@
         setText('tbHole', hp.done ? `Holed in ${hp.strokes}` : `Shot ${hp.strokes + 1}${hp.putts ? ` · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}` : ''}`);
         if (round.on) {          // test round: score so far (holes finished) and where you are
           const t = roundTotals();
-          setText('tbRound', t.played ? `${fmtToPar(t.toPar)} thru ${t.played} · Hole ${hp.holeIdx + 1}/${HOLES.length}` : `Hole ${hp.holeIdx + 1}/${HOLES.length}`);
+          setText('tbRoundL', round.match ? (round.match.format === 'skins' ? `Skins · ${money(round.match.stake)} a hole` : `Match · ${money(round.match.stake)}`) : 'Test round');
+          const mt = round.match ? `${round.match.settled ? round.match.result.replace(/:.*/, '') : `${matchLine(round.match)} vs ${npcById(round.match.npc).nick}`} · ` : '';
+          setText('tbRound', mt + (t.played ? `${fmtToPar(t.toPar)} thru ${t.played} · Hole ${hp.holeIdx + 1}/${HOLES.length}` : `Hole ${hp.holeIdx + 1}/${HOLES.length}`));
           $('tbRoundCell').classList.toggle('over', t.toPar > 0);
         }
       }
@@ -6152,9 +8595,19 @@
       // =====================================================================================================
       //  KEYBOARD + PANEL
       // =====================================================================================================
-      function setClub(i) {
+      // i = a club index; dir = ±1 steps through the bag instead (skipping clubs a career doesn't have or has snapped)
+      function setClub(i, dir = 0) {
         if (isPutt() || state.view === 'flight' || swing.active) return;
-        state.club = (i + CLUBS.length) % CLUBS.length;
+        if (dir) {
+          const u = usableOrder();
+          if (!u.length) return;
+          const p = u.indexOf(state.club);
+          i = u[p < 0 ? 0 : (p + dir + u.length) % u.length];
+        } else if (i === undefined || i < 0 || i >= CLUBS.length || !canUseClub(i)) {
+          if (careerOn) toast(career.snapped.includes(i) ? `Your ${CLUBS[i].name} is snapped\nRepair it in the pro shop` : 'Not in your bag', 1200);
+          return;
+        }
+        state.club = i;
         telemetry = null;
         if (isChip() && CHIP_TYPES[state.chipType].flop && CLUBS[state.club].loft < CHIP.flopMinLoft) {     // the flop needs real loft
           applyChipType('stock', true); toast('A flop needs a 50°+ wedge\nBack to a stock chip', 1800);
@@ -6294,6 +8747,7 @@
       function applyShot(shape = null, quiet = false) {
         if (swing.active || (!quiet && state.view === 'flight') || isPutt() || isChip()) return;
         shape = SHOT_SHAPES[shape] ? shape : state.shotShape;
+        if ((shape === 'draw' || shape === 'fade') && shotLocked(shape)) { if (!quiet) lockedToast(shape); shape = 'straight'; }     // (career: learned from the coach)
         const sg = SHOT_SHAPES[shape].sign, s = { ...(sg ? solveShape(state.club, sg) : { face: 0, stance: 0 }), ballPos: 0 };
         state.shotShape = shape;
         state.face = s.face; state.stance = s.stance; state.ballPos = s.ballPos; state.shotSet = s;
@@ -6312,11 +8766,15 @@
       // height (W / S, or the ladder) and spin (B, or the buttons): both are kept across shots and clubs
       function setHeight(h) {
         if (swing.active || state.view === 'flight' || isPutt()) return;
-        state.height = clamp(Math.round(h), -2, 2); telemetry = null;
+        let v = clamp(Math.round(h), -2, 2);
+        if (v <= -2 && shotLocked('stinger')) { v = -1; lockedToast('stinger'); }          // (career: Low 2 and High 2 are learned)
+        if (v >= 2 && shotLocked('high')) { v = 1; lockedToast('high'); }
+        state.height = v; telemetry = null;
         refreshShotType(); renderBag();
       }
       function setSpinCtl(v, quiet = false) {
         if (swing.active || state.view === 'flight' || isPutt()) return;
+        if (Math.round(v) !== 0 && shotLocked('spin')) { if (!quiet) lockedToast('spin'); if (!state.spinCtl) return; v = 0; quiet = true; }     // (career: spin control is learned)
         state.spinCtl = clamp(Math.round(v), -1, 1); telemetry = null;
         refreshShotType(); renderBag();
         if (!quiet) {
@@ -6350,11 +8808,18 @@
       function renderBag() {
         let h = '';
         $('bagTag').textContent = state.lie === 'fairway' ? 'full swing, yds' : `${LIES[state.lie].name.toLowerCase()} · per ${state.perception}, yds`;
-        CLUBS.forEach((c, i) => {
-          const r = lieRead(i);
+        // in a career: only the clubs it owns (snapped ones struck through), keys in the bag's order, the set's name above
+        const irons = careerOn && Object.entries(career.bag).find(([i, id]) => +i >= 4 && +i <= 10 && id);
+        setText('bagTitle', careerOn && demo && demo.model ? `Bag · demo: ${CLUB_MODELS[demo.model].name}`
+          : careerOn ? `Bag${irons && CLUB_MODELS[irons[1]] ? ` · ${CLUB_MODELS[irons[1]].name.replace(/ \(\d{4}\)/, '')} irons` : ''}` : 'Bag');
+        bagOrder().forEach((i, pos) => {
+          const c = CLUBS[i], r = lieRead(i), snapped = careerOn && career.snapped.includes(i);
           const fit = clubFit(c, state.lie, isTeed(c)), risk = fit.s >= 0.5 ? ' risk2' : fit.s > 0.02 ? ' risk1' : '';      // how this club suits the current lie
-          const tip = fit.s > 0.02 ? ` title="From this lie: ${Math.round(fit.mishit * 100)}% chance of a topped or fat shot, about ${Math.round((1 - fit.power) * 100)}% less ball speed, much wider dispersion"` : '';
-          h += `<div class="bag-row${i === state.club ? ' on' : ''}${risk}" data-i="${i}"${tip}><kbd>${CLUB_KEYS[i] || '·'}</kbd><span>${c.name}${fit.s >= 0.5 ? ' ✕' : fit.s > 0.02 ? ' ⚠' : ''}</span><b>${r.carryTxt}</b><i>${r.totalTxt}</i></div>`;
+          const model = careerOn && career.bag[i] ? modelName(career.bag[i]) : '';
+          const tip = snapped ? ' title="Snapped: repair it in the pro shop"'
+            : fit.s > 0.02 ? ` title="${model ? `${model} · ` : ''}From this lie: ${Math.round(fit.mishit * 100)}% chance of a topped or fat shot, about ${Math.round((1 - fit.power) * 100)}% less ball speed, much wider dispersion"`
+            : model ? ` title="${model}: ${CLUB_MODELS[career.bag[i]].note}"` : '';
+          h += `<div class="bag-row${i === state.club ? ' on' : ''}${risk}${snapped ? ' snapped' : ''}" data-i="${i}"${tip}><kbd>${CLUB_KEYS[pos] || '·'}</kbd><span>${c.name}${snapped ? ' ✕ snapped' : fit.s >= 0.5 ? ' ✕' : fit.s > 0.02 ? ' ⚠' : ''}</span><b>${snapped ? '—' : r.carryTxt}</b><i>${snapped ? '—' : r.totalTxt}</i></div>`;
         });
         $('bagList').innerHTML = h;
         // keep the selected club in view when the list is short (on a hole the map shares the column)
@@ -6397,12 +8862,20 @@
 
       window.addEventListener('keydown', (e) => {
         if (e.target instanceof HTMLSelectElement) return;
+        if (beatOpen) return beatKey(e);                 // the loan shark's beating (Enter to get up)
         if (lbEntry.active) return entryKey(e);          // the initials screen takes every key
         if (introOpen) return introKey(e);               // so does the course preview (Enter starts, Esc cancels)
+        if (clubOpen) return clubKey(e);                 // and the clubhouse (Esc / J to the range, typing a name)
         if (dropOpen) return dropKey(e);                 // and the drop card (1-3, Esc)
         if (tipsOn) return tipsKey(e);                   // and the tips window: → / Enter next, ← back, Esc / I close
+        if (tossOpen) return tossKey(e);                 // the tee toss (Enter once it has landed)
+        if (npcTurn && !['KeyK', 'KeyI', 'KeyL'].includes(e.code)) {          // the hustler is playing: Space / Enter hurry him up
+          if (['Space', 'Enter', 'NumpadEnter', 'KeyR'].includes(e.code)) { e.preventDefault(); npcHurry(); }
+          return;
+        }
         if (e.code === 'KeyU' && !e.repeat) return openDrop();       // take a drop (unplayable)
         if (e.code === 'KeyI' && !e.repeat && tipsAvail()) return setTips(true);       // caddie tips
+        if (e.code === 'KeyJ' && !e.repeat && !swing.active) return openClubhouse();   // the career's clubhouse
         const c = e.code;
         if (['Space', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(c)) e.preventDefault();
         if (c === 'ShiftLeft' || c === 'ShiftRight') { state.peekKey = true; return; }
@@ -6413,6 +8886,7 @@
         held.add(c);
         if (c === 'KeyH' && !e.repeat) return hp.on ? leaveHole() : enterHole();
         if (c === 'KeyK' && !e.repeat && round.on) { if ($('scorecard').classList.contains('on')) hideScorecard(); else showScorecard(); return; }   // K only shows / hides
+        if (c === 'KeyP' && !e.repeat && round.match && canPress(round.match)) return playerPress();     // a career match: press when 2 down
         if (c === 'KeyN' && !e.repeat && round.on && !swing.active) {      // a test round goes in order: N only once the hole is finished
           if (hp.done) scorecardNext(); else toast('Finish the hole first\nThe test round plays 1 to 6 in order', 1800);
           return;
@@ -6432,8 +8906,9 @@
         }
         if (swing.active || state.view === 'flight') return;
         if (c === 'KeyF' && !e.repeat) {             // F cycles the shape (Shift+F goes back); in chip mode F is the marker
-          const keys = Object.keys(SHOT_SHAPES), n = keys.length;
-          return applyShot(keys[(keys.indexOf(state.shotShape) + (e.shiftKey ? n - 1 : 1)) % n]);
+          const keys = Object.keys(SHOT_SHAPES).filter((k) => !shotLocked(k)), n = keys.length;
+          if (n < 2) return lockedToast('draw');                  // (career: no shapes learned yet)
+          return applyShot(keys[(keys.indexOf(state.shotShape) + (e.shiftKey ? n - 1 : 1) + n) % n]);
         }
         if (c === 'KeyB' && !e.repeat) {             // B cycles the spin: Normal -> More -> Less (Shift+B goes back); chips too
           const order = [0, 1, -1], i = order.indexOf(state.spinCtl);
@@ -6442,19 +8917,21 @@
 
         if (c === 'Space' && !e.repeat) { state.view = state.view === 'scout' ? 'address' : 'scout'; return; }
         if (c === 'Tab' && !e.repeat) { if (hp.on) { hp.aimPin = !hp.aimPin; state.aim = holeAim(hp.aimPin); return; } return setPin(state.pin + (e.shiftKey ? -1 : 1)); }
-        if (CLUB_CODES.includes(c)) return setClub(CLUB_CODES.indexOf(c));
-        if (c === 'BracketLeft') return setClub(state.club - 1);       // [ ] step through the bag
-        if (c === 'BracketRight') return setClub(state.club + 1);
+        if (CLUB_CODES.includes(c)) return setClub(bagOrder()[CLUB_CODES.indexOf(c)] ?? -1);     // the keys follow the bag's order
+        if (c === 'BracketLeft') return setClub(0, -1);       // [ ] step through the bag
+        if (c === 'BracketRight') return setClub(0, 1);
         if (state.view !== 'address' || isPeeking()) return;
-        if (c === 'KeyQ') { state.face = step(state.face, -0.5, -10, 10, 0.5); telemetry = null; }
-        if (c === 'KeyE') { state.face = step(state.face, 0.5, -10, 10, 0.5); telemetry = null; }
+        const tw = careerOn && !isChip() && shotLocked('draw') && shotLocked('fade') ? COACH.tweakMax : 0;     // (career: ±2° until a shape is learned)
+        if (tw && ['KeyQ', 'KeyE', 'KeyZ', 'KeyC'].includes(c) && !e.repeat && Math.abs(c === 'KeyQ' || c === 'KeyE' ? state.face : state.stance) >= tw) toast('🔒 Bigger face and stance changes\nLearn the draw or the fade from the coach', 1600);
+        if (c === 'KeyQ') { state.face = step(state.face, -0.5, -(tw || 10), tw || 10, 0.5); telemetry = null; }
+        if (c === 'KeyE') { state.face = step(state.face, 0.5, -(tw || 10), tw || 10, 0.5); telemetry = null; }
         if (c === 'KeyA') { state.ballPos = step(state.ballPos, -0.1, -1, 1, 0.1); telemetry = null; }
         if (c === 'KeyD') { state.ballPos = step(state.ballPos, 0.1, -1, 1, 0.1); telemetry = null; }
         // spin level: each W press is one more level of forward spin, each S press one more of backspin (S undoes W)
         if (c === 'KeyW' && !e.repeat) setHeight(state.height - 1);
         if (c === 'KeyS' && !e.repeat) setHeight(state.height + 1);
-        if (c === 'KeyZ') { state.stance = step(state.stance, -0.5, -15, 15, 0.5); telemetry = null; }
-        if (c === 'KeyC') { state.stance = step(state.stance, 0.5, -15, 15, 0.5); telemetry = null; }
+        if (c === 'KeyZ') { state.stance = step(state.stance, -0.5, -(tw || 15), tw || 15, 0.5); telemetry = null; }
+        if (c === 'KeyC') { state.stance = step(state.stance, 0.5, -(tw || 15), tw || 15, 0.5); telemetry = null; }
         if (c === 'KeyX' && !e.repeat) return resetSetup();
       });
       window.addEventListener('keyup', (e) => {
@@ -6518,11 +8995,11 @@
           e.preventDefault();
           if (onGreenView() && state.view === 'overhead') { state.puttZoom = state.puttZoom === 'green' ? 'putt' : 'green'; return; }
           if (isPutt()) return;
-          setClub(state.club + (e.deltaY > 0 ? 1 : -1));
+          setClub(0, e.deltaY > 0 ? 1 : -1);
         }, { passive: false });
         bind('inDex', (v) => { state.dex = +v; });
         // putting
-        fill($('inPutter'), PUTTERS);
+        fill($('inPutter'), Object.fromEntries(Object.entries(PUTTERS).filter(([, p]) => !p.model)));     // the range's two; career models are owned
         $('inPScale').add(new Option('Auto', 'auto'));
         PUTT.scales.forEach((s, i) => $('inPScale').add(new Option(`${s.name} — 100% = ${s.ft} ft`, String(i))));
         const gbind = (id, key) => bind(id, (v) => {
@@ -6552,9 +9029,37 @@
         $('btnChip').addEventListener('click', () => setMode(isChip() ? 'range' : 'chip'));
         $('btnMode').addEventListener('click', () => setMode(isPutt() ? 'range' : 'putt'));
         $('btnHole').addEventListener('click', () => (hp.on ? leaveHole() : enterHole()));
-        $('btnRound').addEventListener('click', (e) => { e.currentTarget.blur(); return round.on ? quitRound() : openRoundIntro(); });     // the course preview first
-        $('riStart').addEventListener('click', (e) => { e.currentTarget.blur(); closeRoundIntro(); startRound(); });
-        $('riCancel').addEventListener('click', (e) => { e.currentTarget.blur(); closeRoundIntro(); });
+        $('btnRound').addEventListener('click', (e) => {          // the course preview first; a test round never plays the career
+          e.currentTarget.blur();
+          if (round.on) return quitRound();
+          if (careerOn) leaveCareer();
+          openRoundIntro();
+        });
+        $('btnCareer').addEventListener('click', (e) => { e.currentTarget.blur(); if (!clubOpen) openClubhouse(); else if (career) careerToRange(); else closeClubhouse(); });
+        $('chCreate').addEventListener('click', (e) => { e.currentTarget.blur(); submitSignIn(); });
+        $('siTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { b.blur(); siMode = b.dataset.si; renderSignIn(); } });
+        $('chSwitch').addEventListener('click', (e) => { e.currentTarget.blur(); switchPlayer(); });
+        $('chCancel').addEventListener('click', (e) => { e.currentTarget.blur(); closeClubhouse(); });
+        $('chLeave').addEventListener('click', (e) => { e.currentTarget.blur(); leaveCareer(); });
+        $('chRetire').addEventListener('click', (e) => { e.currentTarget.blur(); retireCareer(); });
+        $('clubhouse').querySelector('.ch-menu').addEventListener('click', (e) => { const b = e.target.closest('button[data-go]'); if (b) { b.blur(); clubhouseGo(b.dataset.go); } });
+        updateCareerUI();
+        $('riStart').addEventListener('click', (e) => { e.currentTarget.blur(); introStart(); });
+        $('riCancel').addEventListener('click', (e) => { e.currentTarget.blur(); introCancel(); });
+        // the match picker
+        $('cmNpcs').addEventListener('click', (e) => { const c = e.target.closest('.cm-npc'); if (c) { cmSel = +c.dataset.i; renderMatchPicker(); } });
+        $('cmStake').addEventListener('input', () => updateStakeLabel());
+        $('btGo').addEventListener('click', (e) => { e.currentTarget.blur(); closeBeating(); });
+        $('cmFmt').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { b.blur(); cmFormat = b.dataset.fmt; renderMatchPicker(); } });
+        $('scPress').addEventListener('click', (e) => { e.currentTarget.blur(); playerPress(); });
+        $('cmGo').addEventListener('click', (e) => { e.currentTarget.blur(); teeOffMatch(); });
+        $('cmBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
+        $('chShop').addEventListener('click', shopClick);
+        $('chTiers').addEventListener('click', tierClick);
+        $('chCoach').addEventListener('click', coachClick);
+        $('coBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
+        $('shBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
+        $('ttGo').addEventListener('click', (e) => { e.currentTarget.blur(); closeToss(); });
         $('dropOpts').addEventListener('click', (e) => { const o = e.target.closest('.drop-opt'); if (o) takeDrop(+o.dataset.i); });
         $('btnTips').addEventListener('click', (e) => { setTips(!tipsOn); e.currentTarget.blur(); });
         $('tipsNext').addEventListener('click', (e) => { tipsGo(1); e.currentTarget.blur(); });
@@ -6662,7 +9167,9 @@
           goalPos.set(cx, H, cz); goalLook.set(cx, 0, cz);
           kp = 6; kq = 8;
         };
-        if (isPutt()) {
+        if (npcTurn) {                                          // a career match: watching the hustler play
+          npcCameraPose(goalPos, goalLook); fovGoal = 50; kp = 2.6; kq = 6;
+        } else if (isPutt()) {
           // The same three states, lower and closer: crouched behind the ball to read it, face-on over the putter to
           // stroke it, a turn of the head down the start line, then watch it roll from behind.
           const dist = green.distFt * FT;
@@ -6835,7 +9342,8 @@
 
         // hint line
         let hint;
-        if (hp.on && hp.done) hint = doneHint();
+        if (npcTurn) hint = `<b>${npcById(round.match.npc).nick}</b> is playing · <kbd>Space</kbd> or click to hurry him up`;
+        else if (hp.on && hp.done) hint = doneHint();
         else if (chip && state.view === 'overhead') hint = `<kbd>Click</kbd> / drag or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> place the landing spot · <kbd>F</kbd> reset it · <kbd>1</kbd>–<kbd>4</kbd> shot type · <kbd>Wheel</kbd> zoom (${state.puttZoom === 'green' ? 'full green' : 'chip'}) · <kbd>V</kbd> green read · <kbd>Space</kbd> step in`;
         else if (chip && state.view === 'scout') hint = `<kbd>V</kbd> overhead · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move the landing spot · <kbd>F</kbd> reset it · <kbd>1</kbd>–<kbd>4</kbd> shot type · <kbd>[</kbd><kbd>]</kbd> or wheel: club · <kbd>Space</kbd> step in${hp.on ? '' : ' · <kbd>N</kbd> new chip · <kbd>Shift+N</kbd> new green · <kbd>C</kbd> range'}`;
         else if (chip && state.view === 'flight') hint = hp.on ? '<kbd>R</kbd> walk to the ball' : '<kbd>R</kbd> chip it again · <kbd>N</kbd> new chip · <kbd>T</kbd> clear trails';
@@ -6850,8 +9358,8 @@
         }
         else if (peek) hint = 'Looking down the line — swing is locked · <kbd>A</kbd><kbd>D</kbd> adjust aim · Orange = feet, white = target line';
         else hint = 'Hold <kbd>Left-Click</kbd>: pull the ring left, swing it back <b>through the ball</b> · <kbd>F</kbd> shape · <kbd>B</kbd> spin · <kbd>W</kbd> lower / <kbd>S</kbd> higher · <kbd>Q</kbd><kbd>E</kbd> face · <kbd>A</kbd><kbd>D</kbd> ball · <kbd>Z</kbd><kbd>C</kbd> stance · <kbd>X</kbd> back to the shot type · <kbd>Shift</kbd> peek · <kbd>P</kbd> practice · <kbd>Space</kbd> back';
-        if (hp.on && !hp.done && !isPutt() && hint && state.view !== 'flight' && !swing.active) hint += ' · <kbd>U</kbd> take a drop';
-        if (round.on && hint && !hp.done) hint += ' · <kbd>K</kbd> scorecard';
+        if (hp.on && !hp.done && !isPutt() && hint && state.view !== 'flight' && !swing.active && !npcTurn) hint += ' · <kbd>U</kbd> take a drop';
+        if (round.on && hint && !hp.done && !npcTurn) hint += ' · <kbd>K</kbd> scorecard';
         if (txtCache.get('hint') !== hint) { txtCache.set('hint', hint); $('hint').innerHTML = hint; }
 
         // ---- telemetry card
@@ -7003,7 +9511,8 @@
         $('tbSetup').style.color = '';
 
         let hint;
-        if (hp.on && hp.done) hint = doneHint();
+        if (npcTurn) hint = `<b>${npcById(round.match.npc).nick}</b> is playing · <kbd>Space</kbd> or click to hurry him up`;
+        else if (hp.on && hp.done) hint = doneHint();
         else if (state.view === 'overhead') hint = `<kbd>Click</kbd> / drag or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> place target marker · <kbd>C</kbd> reset to cup · <kbd>Wheel</kbd> zoom (${state.puttZoom === 'green' ? 'full green' : 'putt'}) · <kbd>V</kbd> green read · <kbd>Space</kbd> step in`;
         else if (state.view === 'scout' && hp.on) hint = '<kbd>V</kbd> overhead view · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move marker · <kbd>C</kbd> cup · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> scale · <kbd>[</kbd><kbd>]</kbd> putter · <kbd>Space</kbd> step in';
         else if (state.view === 'scout') hint = '<kbd>V</kbd> overhead view · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move marker · <kbd>C</kbd> cup · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> scale · <kbd>[</kbd><kbd>]</kbd> putter · <kbd>N</kbd> new putt · <kbd>Shift+N</kbd> new green · <kbd>Space</kbd> step in · <kbd>G</kbd> range';
@@ -7011,8 +9520,8 @@
         else if (swing.active) hint = swing.phase === 'ready' || swing.phase === 'back' ? 'Draw the putter <b>back</b> into the marker band…' : 'Stroke it <b>through the gate</b> at the same rhythm you took it back';
         else if (peek) hint = 'Looking down your start line — the stroke is locked · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> adjust marker · <kbd>C</kbd> cup';
         else hint = 'Hold <kbd>Left-Click</kbd>: pull back to set the pace, then stroke through the ball at the same rhythm · <kbd>Shift</kbd> peek · <kbd>V</kbd> overhead · <kbd>P</kbd> practice · <kbd>Space</kbd> back';
-        if (hp.on && !hp.done && !isPutt() && hint && state.view !== 'flight' && !swing.active) hint += ' · <kbd>U</kbd> take a drop';
-        if (round.on && hint && !hp.done) hint += ' · <kbd>K</kbd> scorecard';
+        if (hp.on && !hp.done && !isPutt() && hint && state.view !== 'flight' && !swing.active && !npcTurn) hint += ' · <kbd>U</kbd> take a drop';
+        if (round.on && hint && !hp.done && !npcTurn) hint += ' · <kbd>K</kbd> scorecard';
         if (txtCache.get('hint') !== hint) { txtCache.set('hint', hint); $('hint').innerHTML = hint; }
 
         // ---- telemetry card
@@ -7398,6 +9907,7 @@
         else updateShot(dt);
         poseRig(); updateShapeLine();
         pinBeam.position.set(PINS[state.pin].pos.x, 22, PINS[state.pin].pos.z);
+        updateNpc(dt);                                         // a career match: the hustler's ball
         updateCamera(dt, now);
         if (isPutt()) updatePuttHUD(); else updateHUD();
         if (hp.on) drawHoleMap();
@@ -7441,6 +9951,8 @@
       window.__golf = {
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
+        CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
+        npc, npcPlan, npcHoleScore, closeToss, get session() { return session; }, sync, syncNow, careerSave, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }
       };
 
