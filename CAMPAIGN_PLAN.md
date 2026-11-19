@@ -650,3 +650,32 @@ both compare-and-set; refunded if someone else got there first) and writes a his
 (`{ sale: 'bought' | 'sold', key, other, net }`, which don't count as challenges). `showcase` returns the framed cards.
 `mergeServer()` keeps a piece destroyed even if this PC hadn't heard yet. Direction note: the user said "from the
 winners to the losers"; built as the buyer paying the owner (the natural "buy it from them") — flip if asked.
+
+## Luxury clubs (end game) — ✅ built 2026-11-19 (user request)
+
+The user asked for "really high-end clubs, something really extravagant": a money sink, and a way to show off what's in
+your bag. A **Luxury** section at the bottom of every pro-shop tab (`lux: true` on the model, gold card with a sheen,
+a confirm before buying anything over $5,000):
+
+| Kind | Model | Price | Plays like |
+|---|---|---|---|
+| Irons (set) | Majesty Prestigio (gold) | $40,000 | Apex Ai200 |
+| Irons (set) | Honma Beres 5-Star | $60,000 | a game-improvement set (between Qi Max and Hot Metal) |
+| Irons (set) | Hawthorne Atelier Sovereign platinum | $250,000 | between ZXi7 and 620 CB |
+| Driver | Majesty Prestigio (gold) | $12,000 | forgiving, high launch |
+| Driver | Honma Beres 5-Star | $18,000 | about G440 K, slight draw |
+| Driver | Hawthorne Atelier Crown Jewel | $120,000 | Qi4D |
+| Woods | the three drivers' fairway / hybrid versions | 55% of the driver | (generated as usual) |
+| Wedge | Hawthorne Atelier Rose Gold | $8,000 each | Opus |
+| Wedge | Hawthorne Atelier Damascus | $15,000 each | Vokey SM11 |
+| Putter | Scotty Cameron Circle T tour putter | $25,000 | Newport 2 |
+| Putter | Hawthorne Atelier platinum mallet | $90,000 | between Spider and OZ.1 |
+
+**They are never better than the best ordinary club**: the money buys the look, not strokes (so friends' challenges stay
+fair). Hawthorne Atelier is made up (the country club's own clubmaker); the Majesty, Honma and Scotty Cameron names are
+real luxury lines, and their prices here are the game's. Repairs on a luxury club cost a quarter of the usual formula.
+
+Showing off: ✦ and gold names in the range bag list and the bag room (a "✦ n luxury pieces" tile, and the price on each
+model); the golf bag in the trophy room and locker room turns cream and gold with one luxury piece and all gold with
+three, with gold heads and sparkles (friends see it when they visit); and at the first tee the hustler eyes your bag
+(a line per tier). Code: `isLux`, `luxCount`, `bagLook`, `sparkles`, `luxBuyConfirm`, `LUX_CAT`.

@@ -5050,6 +5050,47 @@
       color: #f6dc95;
     }
 
+    /* luxury gear: gold, with a slow sheen */
+    #clubhouse .sh-item.lux,
+    .br-model.lux {
+      border-color: rgba(240, 207, 110, .7);
+      background: linear-gradient(110deg, rgba(201, 162, 83, .16) 0%, rgba(255, 236, 170, .07) 40%, rgba(255, 246, 208, .2) 50%, rgba(255, 236, 170, .07) 60%, rgba(201, 162, 83, .16) 100%);
+      background-size: 300% 100%;
+      animation: luxSheen 6s linear infinite;
+      box-shadow: 0 0 14px rgba(240, 207, 110, .14) inset;
+    }
+
+    #clubhouse .sh-item.lux .sh-name b,
+    .br-model.lux .br-head b,
+    .bag-row.lux span {
+      color: #f6d77a;
+    }
+
+    @keyframes luxSheen {
+      from { background-position: 100% 0; }
+      to { background-position: -200% 0; }
+    }
+
+    #clubhouse .sh-cat.lux {
+      margin-top: 16px;
+      color: #f6d77a;
+      border-top: 1px solid rgba(240, 207, 110, .4);
+      padding-top: 10px;
+    }
+
+    #clubhouse .sh-cat.lux span {
+      margin-left: 8px;
+      letter-spacing: .04em;
+      text-transform: none;
+      font-style: italic;
+      color: #cdb98a;
+    }
+
+    .br-sum div.lux {
+      border-color: rgba(240, 207, 110, .7);
+      background: rgba(201, 162, 83, .18);
+    }
+
     .br-model {
       padding: 10px 12px;
       margin-bottom: 10px;
@@ -10189,13 +10230,16 @@
               : `<text x="550" y="745" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="19" fill="#8a6a40">the rivalry wall — beat a friend to hang something here</text>`);
           // the owner's golf bag, leaning in the corner (click it: their bag in detail — a button sits on it, see #trBagSpot)
           const bagName = C ? String(C.name).slice(0, 8).replace(/[<&>]/g, '') : '';
+          const L = bagLook(trophyView ? trophyView.gear : career);       // luxury gear turns the bag cream and gold, then all gold
           const bag = `<g transform="translate(12 -10) rotate(5 92 880)"><ellipse cx="92" cy="892" rx="58" ry="10" fill="#000" opacity=".35"/>`
             + `<path d="M62 590 l-10 -60 M82 590 l-2 -78 M102 590 l6 -66 M118 590 l14 -52" stroke="#c9ced3" stroke-width="5"/>`
-            + `<path d="M36 532 q-4 -26 16 -30 q20 4 16 30 Z" fill="#111" stroke="#000" stroke-width="2"/><path d="M62 514 q-4 -26 16 -30 q20 4 16 30 Z" fill="#1d3a6b" stroke="#000" stroke-width="2"/>`
-            + `<path d="M98 526 l16 -6 l2 10 l-16 6 Z" fill="#b8c0c8"/><path d="M124 540 l16 -6 l2 10 l-16 6 Z" fill="#b8c0c8"/>`
-            + `<rect x="40" y="582" width="104" height="300" rx="30" fill="#8a1c22" stroke="#2a0c0e" stroke-width="4"/><rect x="46" y="640" width="92" height="18" fill="rgba(255,255,255,.22)"/>`
-            + `<rect x="52" y="690" width="36" height="110" rx="10" fill="#6a1418"/><rect x="40" y="582" width="104" height="22" rx="10" fill="#2a0c0e"/>`
-            + `<text x="92" y="850" text-anchor="middle" font-family="Georgia, serif" font-size="17" font-weight="700" fill="#f3dca0">${bagName}</text></g>`
+            + `<path d="M36 532 q-4 -26 16 -30 q20 4 16 30 Z" fill="${L.head || '#111'}" stroke="#000" stroke-width="2"/><path d="M62 514 q-4 -26 16 -30 q20 4 16 30 Z" fill="#1d3a6b" stroke="#000" stroke-width="2"/>`
+            + `<path d="M98 526 l16 -6 l2 10 l-16 6 Z" fill="${L.irons || '#b8c0c8'}"/><path d="M124 540 l16 -6 l2 10 l-16 6 Z" fill="${L.irons || '#b8c0c8'}"/>`
+            + `<rect x="40" y="582" width="104" height="300" rx="30" fill="${L.body}" stroke="${L.rim}" stroke-width="4"/><rect x="46" y="640" width="92" height="18" fill="${L.band}"/>`
+            + `<rect x="52" y="690" width="36" height="110" rx="10" fill="${L.pocket}"/><rect x="40" y="582" width="104" height="22" rx="10" fill="${L.rim}"/>`
+            + (L.n ? `<rect x="40" y="862" width="104" height="10" rx="4" fill="#c9a253"/><text x="118" y="760" text-anchor="middle" font-size="22" fill="${L.n >= 3 ? '#fff6d0' : '#c9a253'}">✦</text>` : '')
+            + `<text x="92" y="850" text-anchor="middle" font-family="Georgia, serif" font-size="17" font-weight="700" fill="${L.text}">${bagName}</text>`
+            + (L.n ? sparkles([[58, 610, 9], [130, 700, 7], [70, 800, 8], [40, 512, 7]].slice(0, 1 + Math.min(3, L.n))) : '') + '</g>'
             + `<circle cx="92" cy="700" r="110" fill="url(#glow)"/>`;
           return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}
             <rect width="${W}" height="${H}" fill="#1f3a2a"/>${Array.from({ length: 30 }, (_, i) => `<rect x="${i * 56}" width="2" height="${H}" fill="#2a4a36"/>`).join('')}
@@ -10211,8 +10255,9 @@
             + Array.from({ length: 5 }, (_, k) => `<rect x="${x + 30}" y="${140 + k * 10}" width="60" height="4" rx="2" fill="#1d1209"/>`).join('')
             + `<rect x="${x + 38}" y="215" width="44" height="22" rx="3" fill="#c9a253" stroke="#7a5a2c" stroke-width="2"/><text x="${x + 60}" y="231" text-anchor="middle" font-family="Georgia, serif" font-size="14" font-weight="700" fill="#3a2508">${n}</text>`
             + `<rect x="${x + 96}" y="380" width="8" height="40" rx="3" fill="#c9a253"/>`;
-          const head = (x, y, c, wood) => wood ? `<path d="M${x - 16} ${y} q-4 -26 16 -30 q20 4 16 30 Z" fill="${c}" stroke="#111" stroke-width="2"/><path d="M${x - 10} ${y - 18} h20" stroke="rgba(255,255,255,.4)" stroke-width="3"/>`
-            : `<path d="M${x} ${y} l14 -6 l2 10 l-16 6 Z" fill="#b8c0c8" stroke="#555" stroke-width="1.5"/>`;
+          const LB = bagLook(bagView ? bagView.gear : career);
+          const head = (x, y, c, wood) => wood ?`<path d="M${x - 16} ${y} q-4 -26 16 -30 q20 4 16 30 Z" fill="${c}" stroke="#111" stroke-width="2"/><path d="M${x - 10} ${y - 18} h20" stroke="rgba(255,255,255,.4)" stroke-width="3"/>`
+            : `<path d="M${x} ${y} l14 -6 l2 10 l-16 6 Z" fill="${c || '#b8c0c8'}" stroke="#555" stroke-width="1.5"/>`;
           return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}
             <rect width="${W}" height="${H}" fill="#2a2f2a"/>${Array.from({ length: 40 }, (_, i) => `<rect x="${i * 40}" width="2" height="${H}" fill="#232823"/>`).join('')}
             <rect width="${W}" height="40" fill="#1a1d1a"/><rect y="40" width="${W}" height="8" fill="#b08a45"/>
@@ -10224,12 +10269,14 @@
             <rect x="420" y="680" width="120" height="22" rx="6" fill="#f4f1e8"/><rect x="430" y="684" width="100" height="5" fill="#1f4a2c"/>
             <!-- your bag on its stand -->
             <path d="M250 840 L300 640 M370 840 L320 640" stroke="#2a2a2a" stroke-width="6"/>
-            <rect x="255" y="430" width="120" height="330" rx="34" fill="#8a1c22" stroke="#2a0c0e" stroke-width="4" transform="rotate(-6 315 595)"/>
-            <rect x="262" y="500" width="108" height="20" fill="rgba(255,255,255,.25)" transform="rotate(-6 315 595)"/>
-            <rect x="270" y="560" width="40" height="110" rx="10" fill="#6a1418" transform="rotate(-6 315 595)"/>
-            <text x="318" y="728" text-anchor="middle" font-family="Georgia, serif" font-size="18" font-weight="700" fill="#f3dca0" transform="rotate(-6 315 595)">${(bagView || career) ? (bagView || career).name.slice(0, 8) : ''}</text>
-            ${[[262, 300, true, '#111'], [292, 286, true, '#1d3a6b'], [322, 296, true, '#8a1c22']].map(([x, y, w, c]) => `<line x1="${x}" y1="${y}" x2="${x + 12}" y2="440" stroke="#999" stroke-width="3"/>${head(x, y + 30, c, w)}`).join('')}
-            ${[0, 1, 2, 3, 4, 5].map((k) => `<line x1="${298 + k * 12}" y1="${330 + (k % 2) * 14}" x2="${300 + k * 10}" y2="440" stroke="#bbb" stroke-width="3"/>${head(296 + k * 12, 330 + (k % 2) * 14, '', false)}`).join('')}
+            <rect x="255" y="430" width="120" height="330" rx="34" fill="${LB.body}" stroke="${LB.rim}" stroke-width="4" transform="rotate(-6 315 595)"/>
+            <rect x="262" y="500" width="108" height="20" fill="${LB.n ? LB.band : 'rgba(255,255,255,.25)'}" transform="rotate(-6 315 595)"/>
+            <rect x="270" y="560" width="40" height="110" rx="10" fill="${LB.pocket}" transform="rotate(-6 315 595)"/>
+            ${LB.n ? `<rect x="255" y="740" width="120" height="12" rx="5" fill="#c9a253" transform="rotate(-6 315 595)"/><text x="350" y="640" text-anchor="middle" font-size="26" fill="${LB.n >= 3 ? '#fff6d0' : '#c9a253'}" transform="rotate(-6 315 595)">✦</text>` : ''}
+            <text x="318" y="728" text-anchor="middle" font-family="Georgia, serif" font-size="18" font-weight="700" fill="${LB.text}" transform="rotate(-6 315 595)">${(bagView || career) ? (bagView || career).name.slice(0, 8) : ''}</text>
+            ${[[262, 300, true, LB.head || '#111'], [292, 286, true, '#1d3a6b'], [322, 296, true, LB.head || '#8a1c22']].map(([x, y, w, c]) => `<line x1="${x}" y1="${y}" x2="${x + 12}" y2="440" stroke="#999" stroke-width="3"/>${head(x, y + 30, c, w)}`).join('')}
+            ${[0, 1, 2, 3, 4, 5].map((k) => `<line x1="${298 + k * 12}" y1="${330 + (k % 2) * 14}" x2="${300 + k * 10}" y2="440" stroke="#bbb" stroke-width="3"/>${head(296 + k * 12, 330 + (k % 2) * 14, LB.irons, false)}`).join('')}
+            ${LB.n ? sparkles([[280, 470, 12], [360, 560, 9], [290, 700, 10], [330, 330, 9]].slice(0, 1 + Math.min(3, LB.n))) : ''}
             <circle cx="330" cy="420" r="120" fill="url(#glow)"/>
             ${lamp(320, 30)}${lamp(700, 30)}
             <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
@@ -10871,6 +10918,12 @@
         'i-620cb': { kind: 'iron', cat: 'In-between', brand: 'Titleist', name: '620 CB', price: 1600, add: { loft: 0, dynLoft: 0.6 }, x: { spin: 1.01, speed: 1.0, sweet: 1.3, gear: 0.79, work: 0.92 }, set: { floor: 0.6, offset: 0.3, consist: 0.95 }, note: 'Close to a blade, with a little help' },
         'i-wmb': { kind: 'iron', cat: 'Blade', brand: 'Wilson', name: 'Staff Model Blade', price: 1400, add: { loft: 0, dynLoft: 0 }, x: { spin: 1.03, speed: 1.0, sweet: 0.8, gear: 1.08, work: 1.15 }, set: { floor: 0.45, offset: 0, consist: 1.0 }, note: 'Compact, minimal offset, a tiny sweet spot; shapes anything, the best stinger' },
         'i-temb': { kind: 'iron', cat: 'Blade', brand: 'Tour Edge', name: 'MB Forged', price: 1000, add: { loft: 0, dynLoft: 0.2 }, x: { spin: 1.02, speed: 1.0, sweet: 1.0, gear: 0.96, work: 1.05 }, set: { floor: 0.5, offset: 0.1, consist: 1.0 }, note: 'A true muscle back with a bit more forgiveness' },
+        // ---- LUXURY (user request, 2026-11-19): a money sink and something to show off. lux = gold in the shop, the bag
+        //      list, the bag room and the bag graphics (which friends see). They play like the best ordinary models, never
+        //      better: the money buys the look, not strokes. (Hawthorne Atelier is the country club's own clubmaker: made up.)
+        'i-prestigio': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Majesty', name: 'Prestigio (gold)', price: 40000, add: { loft: -4, dynLoft: 1.8 }, x: { spin: 0.97, speed: 1.01, sweet: 1.8, gear: 0.58, work: 0.7 }, set: { floor: 0.7, offset: 0.6, consist: 0.92 }, note: 'Gold-plated heads and hand-painted lettering; under the shine, a forgiving distance iron' },
+        'i-beres5': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Honma', name: 'Beres 5-Star', price: 60000, add: { loft: -5, dynLoft: 1.8 }, x: { spin: 0.95, speed: 1.01, sweet: 2.2, gear: 0.46, work: 0.5 }, set: { floor: 0.85, offset: 0.9, consist: 0.86 }, note: '24-carat gold trim and five-star shafts, hand-finished in Sakata. Plays like a game-improvement iron: built for members who would rather not practise' },
+        'i-atelier': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Sovereign platinum', price: 250000, add: { loft: -1, dynLoft: 1.2 }, x: { spin: 1.0, speed: 1.0, sweet: 1.4, gear: 0.75, work: 0.88 }, set: { floor: 0.62, offset: 0.35, consist: 0.94 }, note: 'One of one: platinum-plated forgings with your initials in the cavity. A players\' cavity at heart' },
         // ---- drivers
         'd-xr16': { kind: 'driver', cat: 'Used', brand: 'Callaway', name: 'XR 16 (2016)', price: 0, add: { dynLoft: 0.3 }, x: { spin: 1.15, speed: 0.97, sweet: 1.0, gear: 1.125, work: 1 }, set: { offset: 0.3, consist: 1.3 }, note: 'An old warhorse: spins too much, a bit short' },
         'd-m2': { kind: 'driver', cat: 'Used', brand: 'TaylorMade', name: 'M2 (2016)', price: 90, add: {}, x: { spin: 1.1, speed: 0.98, sweet: 1.05, gear: 1.06, work: 1 }, set: { offset: 0.2, consist: 1.3 }, note: 'Long in its day, now just loose' },
@@ -10879,6 +10932,9 @@
         'd-qi4d': { kind: 'driver', cat: 'In-between', brand: 'TaylorMade', name: 'Qi4D', price: 630, add: {}, x: { spin: 1.04, speed: 1.0, sweet: 1.1, gear: 1.0, work: 1.0 }, set: { offset: 0, consist: 1.0 }, note: 'The best all-rounder' },
         'd-qi4dls': { kind: 'driver', cat: 'Low spin', brand: 'TaylorMade', name: 'Qi4D LS', price: 650, add: { dynLoft: 0.5 }, x: { spin: 0.96, speed: 1.012, sweet: 0.9, gear: 1.19, work: 1.12 }, set: { offset: 0, consist: 1.0 }, note: 'The longest when you find the middle' },
         'd-td': { kind: 'driver', cat: 'Low spin', brand: 'Callaway', name: 'Quantum Triple Diamond', price: 650, add: { dynLoft: 0.4 }, x: { spin: 0.94, speed: 1.012, sweet: 0.85, gear: 1.25, work: 1.18 }, set: { offset: -0.8, consist: 1.0 }, note: 'Very low spin, leans to a fade, unforgiving' },
+        'd-prestigio': { kind: 'driver', cat: 'Luxury', lux: true, brand: 'Majesty', name: 'Prestigio (gold)', price: 12000, add: { dynLoft: 0.4 }, x: { spin: 1.06, speed: 1.0, sweet: 1.2, gear: 0.9, work: 0.9 }, set: { offset: 0.4, consist: 0.95 }, note: 'A gold crown and a featherweight shaft; forgiving, and it launches high' },
+        'd-beres5': { kind: 'driver', cat: 'Luxury', lux: true, brand: 'Honma', name: 'Beres 5-Star', price: 18000, add: { dynLoft: 0.5 }, x: { spin: 1.08, speed: 0.995, sweet: 1.3, gear: 0.8, work: 0.82 }, set: { offset: 0.8, consist: 0.92 }, note: 'Gold-trimmed and hand-finished; as forgiving as anything going, with a little draw built in' },
+        'd-atelier': { kind: 'driver', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Crown Jewel', price: 120000, add: {}, x: { spin: 1.03, speed: 1.004, sweet: 1.1, gear: 1.0, work: 1.0 }, set: { offset: 0, consist: 0.98 }, note: 'Diamonds set in a black crown, a sapphire in the sole weight. Plays like the best all-rounder; looks like a ransom' },
         // ---- fairway woods / hybrids (the starter's; the rest follow the driver lines in the shop chunk)
         'h-xr': { kind: 'wood', cat: 'Used', brand: 'Callaway', name: 'XR hybrid (2015)', price: 0, add: {}, x: { spin: 1.1, speed: 0.97 }, set: { consist: 1.25 }, note: 'A tired old hybrid' },
         // ---- wedges (GW / SW / LW, one at a time; bounce is the sand wedge's)
@@ -10887,6 +10943,8 @@
         'w-cbx2': { kind: 'wedge', cat: 'Cavity', brand: 'Cleveland', name: 'CBX 2', price: 150, add: {}, x: { spin: 0.96, sweet: 1.4, gear: 0.8, work: 0.89 }, set: { consist: 0.92, bounce: 12, flopX: 1.1 }, note: 'Forgiving, with decent spin' },
         'w-opus': { kind: 'wedge', cat: 'Tour', brand: 'Callaway', name: 'Opus', price: 180, add: {}, x: { spin: 1.0, sweet: 1.0, gear: 1.0, work: 1.05 }, set: { consist: 1.0, bounce: 12 }, note: 'Tour spin with a forgiving grind' },
         'w-vokey': { kind: 'wedge', cat: 'Tour', brand: 'Titleist', name: 'Vokey SM11', price: 200, add: {}, x: { spin: 1.02, sweet: 1.0, gear: 1.0, work: 1.1 }, set: { consist: 1.0, bounce: 10, flopX: 0.95 }, note: 'The most spin and the most versatile' },
+        'w-rosegold': { kind: 'wedge', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Rose Gold', price: 8000, add: {}, x: { spin: 1.0, sweet: 1.0, gear: 1.0, work: 1.05 }, set: { consist: 1.0, bounce: 12 }, note: 'Rose-gold plating over a soft forging. It will scuff in the first bunker, and you\'ll buy another' },
+        'w-damascus': { kind: 'wedge', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Damascus', price: 15000, add: {}, x: { spin: 1.02, sweet: 1.0, gear: 1.0, work: 1.1 }, set: { consist: 1.0, bounce: 10, flopX: 0.95 }, note: 'Hand-folded Damascus steel: no two faces have the same ripples. Spins like a tour wedge' },
       };
       // putters: added to PUTTERS (the range's own blade / mallet stay as they are)
       Object.assign(PUTTERS, {
@@ -10895,6 +10953,8 @@
         'p-pldanser': { name: 'Ping PLD Anser', model: true, gate: 0.031, pathGain: 0.38, sweet: 4.5, tempoZone: 0.085 },
         'p-spider': { name: 'TaylorMade Spider Tour', model: true, gate: 0.050, pathGain: 0.27, sweet: 10, tempoZone: 0.04 },
         'p-oz1': { name: 'LAB Golf OZ.1', model: true, gate: 0.046, pathGain: 0.18, sweet: 8, tempoZone: 0.045 },
+        'p-circlet': { name: 'Scotty Cameron Circle T tour putter', model: true, lux: true, gate: 0.030, pathGain: 0.40, sweet: 4, tempoZone: 0.09 },
+        'p-atelier': { name: 'Hawthorne Atelier platinum mallet', model: true, lux: true, gate: 0.048, pathGain: 0.25, sweet: 9, tempoZone: 0.06 },
       });
       const modelName = (id) => (CLUB_MODELS[id] ? `${CLUB_MODELS[id].brand} ${CLUB_MODELS[id].name}` : '');
       // what a model does to one club (index i) of the bag
@@ -11389,14 +11449,29 @@
           'p-pldanser': { cat: 'Blade', price: 450, note: 'A blade with a touch more forgiveness' },
           'p-spider': { cat: 'Mallet', price: 400, note: 'The most stable: the widest gate' },
           'p-oz1': { cat: 'Zero-torque', price: 600, note: 'The face stays square: the straightest start lines, strictest on rhythm' },
+          'p-circlet': { cat: 'Luxury', price: 25000, note: 'A tour-only blade from the custom shop, the circle-T stamped on the sole. Collectors fight over them; it putts like a Newport' },
+          'p-atelier': { cat: 'Luxury', price: 90000, note: 'Milled from a single billet of platinum, with an emerald sight dot. As stable as the best mallets' },
         },
       };
+      // luxury gear: how many pieces a bag holds (club models, by model, plus putters owned), for the gold bag graphics
+      const isLux = (id) => !!((CLUB_MODELS[id] && CLUB_MODELS[id].lux) || (PUTTERS[id] && PUTTERS[id].lux));
+      const luxCount = (G) => !G ? 0 : new Set(Object.values(G.bag || {}).filter(isLux)).size + (G.putters || []).filter(isLux).length;
+      // the golf bag's colours in the trophy room and the locker room: red; cream and gold with one luxury piece; all gold with three
+      function bagLook(G) {
+        const n = luxCount(G), irons = G && G.bag && isLux(G.bag[7]) ? '#f0cf6e' : '';
+        return n >= 3 ? { n, irons, body: '#d6aa3c', band: 'rgba(255,255,255,.4)', pocket: '#a8801f', rim: '#5a3e0c', text: '#2a1a04', head: '#f0cf6e' }
+          : n ? { n, irons, body: '#f1ead8', band: '#c9a253', pocket: '#e0d2b0', rim: '#7a5a2c', text: '#7a5a1c', head: '#f0cf6e' }
+          : { n, body: '#8a1c22', band: 'rgba(255,255,255,.22)', pocket: '#6a1418', rim: '#2a0c0e', text: '#f3dca0', head: null };
+      }
+      const sparkles = (pts) => pts.map(([x, y, s], i) => `<path d="M${x} ${y - s} L${x + s * 0.25} ${y - s * 0.25} L${x + s} ${y} L${x + s * 0.25} ${y + s * 0.25} L${x} ${y + s} L${x - s * 0.25} ${y + s * 0.25} L${x - s} ${y} L${x - s * 0.25} ${y - s * 0.25} Z" fill="#fff6d0" opacity="0">`
+        + `<animate attributeName="opacity" values="0;1;0" dur="${1.8 + i * 0.5}s" begin="${i * 0.45}s" repeatCount="indefinite"/></path>`).join('');
+      const luxBuyConfirm =(name, price) => price < 5000 || confirm(`Buy the ${name} for ${money(price)}? It plays like the best of the ordinary clubs: you're paying for the shine.`);
       // fairway woods and hybrids follow each new driver line, at half the driver's differences
       for (const [id, m] of Object.entries({ ...CLUB_MODELS })) {
         if (m.kind !== 'driver' || m.cat === 'Used') continue;
         const half = (o, f) => Object.fromEntries(Object.entries(o || {}).map(([k, v]) => [k, f(v)]));
         CLUB_MODELS[`f-${id.slice(2)}`] = {
-          kind: 'wood', cat: m.cat, brand: m.brand, name: `${m.name} fairway / hybrid`, price: Math.round(m.price * 0.055) * 10,
+          kind: 'wood', cat: m.cat, lux: m.lux, brand: m.brand, name: `${m.name} fairway / hybrid`, price: Math.round(m.price * 0.055) * 10,
           add: half(m.add, (v) => v / 2), x: half(m.x, (v) => 1 + (v - 1) / 2), set: { offset: (m.set.offset || 0) / 2, consist: 1 + ((m.set.consist || 1) - 1) / 2 },
           note: `${m.note.split(/[;:]/)[0]}: the fairway wood and hybrid version`,
         };
@@ -11432,7 +11507,7 @@
       const barRow = (label, pct) => `<div class="sh-bar"><span>${label}</span><div><i style="width:${pct}%"></i></div></div>`;
       function repairPrice(i) {
         const m = CLUB_MODELS[career.bag[i]], kind = m ? m.kind : 'iron';
-        const base = !m ? 0 : kind === 'iron' ? m.price / 7 * 1.25 : m.price * 0.6;
+        const base = (!m ? 0 : kind === 'iron' ? m.price / 7 * 1.25 : m.price * 0.6) * (m && m.lux ? 0.25 : 1);     // luxury: still dear, not ruinous
         return Math.max(SHOP.repairMin[kind] || 25, Math.round(base / 5) * 5);
       }
       function openShop() {
@@ -11461,12 +11536,13 @@
           let cat = '';
           for (const [id, m] of Object.entries(CLUB_MODELS)) {
             if (m.kind !== shopTab) continue;
-            if (m.cat !== cat) { cat = m.cat; h += `<div class="sh-cat">${cat}</div>`; }
+            if (m.cat !== cat) { cat = m.cat; h += LUX_CAT(cat); }
             h += shopItemHTML(id, m);
           }
         }
         $('shList').innerHTML = h;
       }
+      const LUX_CAT = (cat) => cat === 'Luxury' ? '<div class="sh-cat lux">✦ Luxury · the members\' cabinet <span>plays like the best of the rest · for showing off</span></div>' : `<div class="sh-cat">${cat}</div>`;
       function shopItemHTML(id, m) {
         const s = shopStats(id), slots = SHOP.slots[m.kind];
         const ownedAt = slots.filter((i) => career.bag[i] === id), owned = ownedAt.length > 0;
@@ -11479,8 +11555,8 @@
           for (const i of slots) btns += career.bag[i] === id ? `<button disabled>✓ ${SLOT_NAME(i)}</button>` : `<button class="buy" data-buy="${id}" data-slots="${i}" ${career.cash < per ? 'disabled' : ''}>${slots.length > 1 ? `${SLOT_NAME(i)} · ` : 'Buy · '}${money(per)}</button>`;
         } else btns = '<button disabled>Not for sale</button>';
         if (!owned || m.kind !== 'iron') btns += `<button data-try="${id}">Try it on the range</button>`;
-        return `<div class="sh-item${owned ? ' owned' : ''}">
-          <div><div class="sh-name"><b>${m.brand} ${m.name}</b>${owned ? `<span>✓ ${m.kind === 'iron' ? 'in your bag' : ownedAt.map(SLOT_NAME).join(', ')}</span>` : forSale ? `<em>${money(m.price)}${m.kind === 'iron' ? ' the set' : m.kind === 'wedge' || m.kind === 'wood' ? ' each' : ''}</em>` : ''}</div>
+        return `<div class="sh-item${owned ? ' owned' : ''}${m.lux ? ' lux' : ''}">
+          <div><div class="sh-name"><b>${m.lux ? '✦ ' : ''}${m.brand} ${m.name}</b>${owned ? `<span>✓ ${m.kind === 'iron' ? 'in your bag' : ownedAt.map(SLOT_NAME).join(', ')}</span>` : forSale ? `<em>${money(m.price)}${m.kind === 'iron' ? ' the set' : m.kind === 'wedge' || m.kind === 'wood' ? ' each' : ''}</em>` : ''}</div>
             <div class="sh-note">${m.note}</div><div class="sh-tag">${bias}</div></div>
           <div class="sh-bars">${barRow('Distance', shopBar(m.kind, 'carry', s.carry))}${barRow('Stopping', shopBar(m.kind, 'land', s.land))}${barRow('Forgiveness', shopBar(m.kind, 'forgive', s.forgive))}${barRow('Shaping', shopBar(m.kind, 'shape', s.shape))}</div>
           <div class="sh-btns">${btns}</div></div>`;
@@ -11492,9 +11568,9 @@
         let h = '', cat = '';
         for (const id of ids) {
           const sp = SHOP.putters[id], p = P(id), owned = career.putters.includes(id), using = career.putter === id;
-          if (sp.cat !== cat) { cat = sp.cat; h += `<div class="sh-cat">${cat}</div>`; }
-          const btn = using ? '<button disabled>✓ In your bag</button>' : owned ? `<button data-useputter="${id}">Put it in the bag</button>` : sp.price ? `<button class="buy" data-buyputter="${id}" ${career.cash < sp.price ? 'disabled' : ''}>Buy · ${money(sp.price)}</button>` : '<button disabled>Not for sale</button>';
-          h += `<div class="sh-item${owned ? ' owned' : ''}"><div><div class="sh-name"><b>${p.name}</b>${owned ? '<span>✓ yours</span>' : sp.price ? `<em>${money(sp.price)}</em>` : ''}</div><div class="sh-note">${sp.note}</div></div>
+          if (sp.cat !== cat) { cat = sp.cat; h += LUX_CAT(cat); }
+          const btn =using ? '<button disabled>✓ In your bag</button>' : owned ? `<button data-useputter="${id}">Put it in the bag</button>` : sp.price ? `<button class="buy" data-buyputter="${id}" ${career.cash < sp.price ? 'disabled' : ''}>Buy · ${money(sp.price)}</button>` : '<button disabled>Not for sale</button>';
+          h += `<div class="sh-item${owned ? ' owned' : ''}${p.lux ? ' lux' : ''}"><div><div class="sh-name"><b>${p.lux ? '✦ ' : ''}${p.name}</b>${owned ? '<span>✓ yours</span>' : sp.price ? `<em>${money(sp.price)}</em>` : ''}</div><div class="sh-note">${sp.note}</div></div>
             <div class="sh-bars">${barRow('Stability', bar((q) => q.gate, p))}${barRow('Start line', bar((q) => -q.pathGain, p))}${barRow('Sweet spot', bar((q) => q.sweet, p))}${barRow('Pace feel', bar((q) => q.tempoZone, p))}</div>
             <div class="sh-btns">${btn}${owned ? '' : `<button data-tryputter="${id}">Try it on the putting green</button>`}</div></div>`;
         }
@@ -11519,7 +11595,7 @@
       }
       function shopBuy(id, slots) {
         const m = CLUB_MODELS[id], price = m.price;
-        if (career.cash < price) return;
+        if (career.cash < price || (m.lux && !luxBuyConfirm(modelName(id), price))) return;
         career.cash -= price;
         const toLocker = [];
         for (const i of slots) {
@@ -11540,7 +11616,7 @@
         if (d.repair) { const i = +d.repair, p = repairPrice(i); if (career.cash < p) return; career.cash -= p; career.snapped = career.snapped.filter((x) => x !== i); return shopChanged(`Your ${CLUBS[i].name} is repaired (${money(p)}).`); }
         if (d.locker) { career.out.push(+d.locker); return shopChanged(`${CLUBS[+d.locker].name} went to your locker.`); }
         if (d.tobag) { if (carried() >= SHOP.bagMax) return; career.out = career.out.filter((x) => x !== +d.tobag); return shopChanged(`${CLUBS[+d.tobag].name} is back in the bag.`); }
-        if (d.buyputter) { const sp = SHOP.putters[d.buyputter]; if (career.cash < sp.price) return; career.cash -= sp.price; career.putters.push(d.buyputter); career.putter = d.buyputter; state.putter = d.buyputter; return shopChanged(`Bought the ${PUTTERS[d.buyputter].name} (${money(sp.price)}). It's your putter now.`); }
+        if (d.buyputter) { const sp = SHOP.putters[d.buyputter]; if (career.cash < sp.price || (PUTTERS[d.buyputter].lux && !luxBuyConfirm(PUTTERS[d.buyputter].name, sp.price))) return; career.cash -= sp.price; career.putters.push(d.buyputter); career.putter = d.buyputter; state.putter = d.buyputter; return shopChanged(`Bought the ${PUTTERS[d.buyputter].name} (${money(sp.price)}). It's your putter now.`); }
         if (d.useputter) { career.putter = d.useputter; state.putter = d.useputter; return shopChanged(`The ${PUTTERS[d.useputter].name} is in the bag.`); }
         if (d.try) return startDemo(d.try);
         if (d.tryputter) return startPutterDemo(d.tryputter);
@@ -11627,7 +11703,8 @@
         setText('brValue', `${money(value)} of gear`);
         $('brSum').innerHTML = `<div><b>${inb} / ${SHOP.bagMax}</b>clubs in the bag</div><div><b>${(G.out || []).length}</b>in the locker</div>`
           + `<div><b>${(G.snapped || []).length}</b>snapped</div><div><b>${cd ? cd.short : '—'}</b>caddie</div>`
-          + `<div><b>${CAREER_STATS.map(([k]) => eff[k]).join(' · ')}</b>Pow · Dex · Com · Per</div>`;
+          + `<div><b>${CAREER_STATS.map(([k]) => eff[k]).join(' · ')}</b>Pow · Dex · Com · Per</div>`
+          + (luxCount(G) ? `<div class="lux"><b>✦ ${luxCount(G)}</b>luxury piece${luxCount(G) > 1 ? 's' : ''}</div>` : '');
         const lr = (v) => (Math.abs(v) < 0.5 ? '<td>straight</td>' : `<td class="${v < 0 ? 'l' : 'r'}">${Math.abs(v).toFixed(0)} ${v < 0 ? 'L' : 'R'}</td>`);
         let h = models.map((id) => {
           const m = CLUB_MODELS[id], st = shopStats(id), slots = slotsOf(id);
@@ -11639,14 +11716,14 @@
               + `<td>${n.loft.toFixed(1)}°</td><td>${n.carry.toFixed(0)}</td><td>${n.total.toFixed(0)}</td><td>${n.speed.toFixed(0)}</td><td>${n.vla.toFixed(1)}°</td>`
               + `<td>${Math.round(n.spin).toLocaleString()}</td><td>${n.apex.toFixed(0)}</td>${lr(n.side)}<td>${n.wide.toFixed(0)} × ${n.deep.toFixed(0)}</td></tr>`;
           }).join('');
-          return `<div class="br-model"><div class="br-head"><div><b>${m.brand} ${m.name}</b><em>${m.cat}</em><em>${KIND[m.kind]}${slots.length > 1 ? ` · ${slots.length} clubs` : ''}</em>`
+          return `<div class="br-model${m.lux ? ' lux' : ''}"><div class="br-head"><div><b>${m.lux ? '✦ ' : ''}${m.brand} ${m.name}</b><em>${m.lux ? `Luxury · ${money(m.price)}` : m.cat}</em><em>${KIND[m.kind]}${slots.length > 1 ? ` · ${slots.length} clubs` : ''}</em>`
             + `<i>${m.note}</i>${m.bias ? `<i>Used: each club's lie angle is bent a little (fixed for ${V ? 'their' : 'your'} career), so some pull and some push — see Curve.</i>` : ''}</div><div class="sh-bars">${bars}</div></div>`
             + `<table class="br-tbl"><tr><th>Club</th><th>Loft</th><th>Carry</th><th>Total</th><th>Ball mph</th><th>Launch</th><th>Spin</th><th>Apex</th><th>Curve</th><th>Spread</th></tr>${rows}</table></div>`;
         }).join('');
         // the putter (and the others in the locker)
         const P = PUTTERS[G.putter] || {}, sp = SHOP.putters[G.putter] || {};
         const pbar = (lbl, v) => barRow(lbl, Math.round(clamp(v, 0.04, 1) * 100));
-        h += `<div class="br-model"><div class="br-head"><div><b>${P.name || '—'}</b><em>${sp.cat || 'Putter'}</em><em>Putter</em><i>${sp.note || ''}</i>`
+        h += `<div class="br-model${P.lux ? ' lux' : ''}"><div class="br-head"><div><b>${P.lux ? '✦ ' : ''}${P.name || '—'}</b><em>${P.lux ? `Luxury · ${money(sp.price)}` : sp.cat || 'Putter'}</em><em>Putter</em><i>${sp.note || ''}</i>`
           + `${(G.putters || []).length > 1 ? `<i>In the locker: ${G.putters.filter((p) => p !== G.putter && PUTTERS[p]).map((p) => PUTTERS[p].name).join(', ')}</i>` : ''}</div>`
           + `<div class="sh-bars">${pbar('Stroke gate', (P.gate - 0.025) / 0.03)}${pbar('Start line', (0.45 - P.pathGain) / 0.3)}${pbar('Sweet spot', (P.sweet - 3) / 9)}${pbar('Tempo', (P.tempoZone - 0.03) / 0.07)}</div></div></div>`;
         if (cd) {
@@ -11983,7 +12060,10 @@
         const n = npcById(m.npc), s = matchStatus(m);
         const form = npcForm(m), look = form < -0.18 ? `\n${n.first} looks sharp today` : form > 0.18 ? `\n${n.first} looks a bit rusty today` : '';
         const cdl = caddieOf(), cdTxt = cdl ? (m.noCaddie ? `\n🧢 ${cdl.short} sits this one out: you couldn't pay the ${money(cdl.loop)} loop fee` : `\n🧢 ${cdl.short} is on your bag`) : '';
-        toast(`${n.nick}: “${m.holes.length ? 'Where were we?' : n.lines.hello}”${look}${cdTxt}\n${m.format === 'skins' ? `Skins at ${money(m.stake)} a hole` : `Match play for ${money(m.stake)}`}${s.played ? ` · ${matchLine(m)} thru ${s.played}` : ''} · ${HOLE.name}, par ${HOLE.par}`, 3600);
+        // carrying luxury gear: the hustler notices (and so does everyone else)
+        const LUX_QUIP = { 1: 'Gold clubs? At the muni? Somebody\'s overcompensating.', 2: 'Ooh, the shiny set. Is that Daddy\'s money too?', 3: 'Ah, the good stuff. Lovely. Pity about the swing.' };
+        const luxTxt = !m.holes.length && luxCount(career) ? `\n✦ ${n.first} eyes your bag: “${LUX_QUIP[career.tier] || LUX_QUIP[3]}”` : '';
+        toast(`${n.nick}: “${m.holes.length ? 'Where were we?' : n.lines.hello}”${look}${luxTxt}${cdTxt}\n${m.format === 'skins' ? `Skins at ${money(m.stake)} a hole` : `Match play for ${money(m.stake)}`}${s.played ? ` · ${matchLine(m)} thru ${s.played}` : ''} · ${HOLE.name}, par ${HOLE.par}`, 3600);
       }
       // after each hole: the hustler's score, who won it, the bets (or the skins), his presses, and the money once it's over
       function matchAfterHole(i) {
@@ -13267,7 +13347,8 @@
           const tip = snapped ? ' title="Snapped: repair it in the pro shop"'
             : fit.s > 0.02 ? ` title="${model ? `${model} · ` : ''}From this lie: ${Math.round(fit.mishit * 100)}% chance of a topped or fat shot, about ${Math.round((1 - fit.power) * 100)}% less ball speed, much wider dispersion"`
             : model ? ` title="${model}: ${CLUB_MODELS[career.bag[i]].note}"` : '';
-          h += `<div class="bag-row${i === state.club ? ' on' : ''}${risk}${snapped ? ' snapped' : ''}" data-i="${i}"${tip}><kbd>${CLUB_KEYS[pos] || '·'}</kbd><span>${c.name}${snapped ? ' ✕ snapped' : fit.s >= 0.5 ? ' ✕' : fit.s > 0.02 ? ' ⚠' : ''}</span><b>${snapped ? '—' : r.carryTxt}</b><i>${snapped ? '—' : r.totalTxt}</i></div>`;
+          const lux = careerOn && isLux(career.bag[i]) && !(demo && demo.idx === i && demo.on);
+          h += `<div class="bag-row${i === state.club ? ' on' : ''}${risk}${snapped ? ' snapped' : ''}${lux ? ' lux' : ''}" data-i="${i}"${tip}><kbd>${CLUB_KEYS[pos] || '·'}</kbd><span>${lux ? '✦ ' : ''}${c.name}${snapped ? ' ✕ snapped' : fit.s >= 0.5 ? ' ✕' : fit.s > 0.02 ? ' ⚠' : ''}</span><b>${snapped ? '—' : r.carryTxt}</b><i>${snapped ? '—' : r.totalTxt}</i></div>`;
         });
         $('bagList').innerHTML = h;
         // keep the selected club in view when the list is short (on a hole the map shares the column)
