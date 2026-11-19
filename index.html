@@ -925,6 +925,25 @@
       display: block;
     }
 
+    /* the shared card of a settled friend challenge (M4): over the clubhouse */
+    #scorecard.pvp {
+      z-index: 8;
+      border-color: rgba(255, 224, 102, .45);
+    }
+
+    #scTable .rcv {
+      color: #ffe066;
+      font-size: 11px;
+      margin-left: 1px;
+      vertical-align: super;
+      font-style: normal;
+    }
+
+    #scTable .nocard {
+      color: var(--dim);
+      font-style: italic;
+    }
+
     #scorecard .card-h {
       font-size: 12px;
       padding: 12px 16px 6px;
@@ -1748,11 +1767,13 @@
       margin-top: 2px;
     }
 
+    .fr-pl .won,
     .fr-ch .won {
       color: #5ee08a;
       font-weight: 700;
     }
 
+    .fr-pl .lost,
     .fr-ch .lost {
       color: #ff5d6c;
       font-weight: 700;
@@ -7142,7 +7163,7 @@
       function upgradeCareer(c) {
         if (!(c && c.v === 1 && typeof c.name === 'string' && c.stats)) return null;
         c.out = c.out || []; c.putters = c.putters || [c.putter || CAREER.putter]; c.tierMax = c.tierMax || c.tier || 1;      // (older saves)
-        c.history = c.history || []; c.rounds = c.rounds || [];
+        c.history = c.history || []; c.rounds = c.rounds || []; c.pvpSeen = c.pvpSeen || [];
         return c;
       }
       function readCareer(key) { try { return upgradeCareer(JSON.parse(lsGet(key) || 'null')); } catch { return null; } }
@@ -7273,6 +7294,7 @@
         }
         updateCareerUI();
         if (clubOpen && $('clubhouse').classList.contains('new') && career) openClubhouse();
+        if (clubOpen && session && $('clubhouse').classList.contains('friends')) renderFriends();     // (cash, records vs friends)
       }
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && session && sync.dirty) { clearTimeout(sync.timer); syncNow(true); } });
       function newCareer(name) {
@@ -7281,7 +7303,7 @@
           cash: CAREER.cash, rep: CAREER.rep, tier: CAREER.tier, stats: { ...CAREER.stats },
           bag: { ...CAREER.bag }, snapped: [], putter: CAREER.putter, out: [], putters: [CAREER.putter],
           unlocks: { draw: false, fade: false, stinger: false, high: false, flop: false, spin: false },
-          match: null, history: [], rounds: [], created: Date.now(), stamp: 0, tierMax: 1,
+          match: null, history: [], rounds: [], pvpSeen: [], created: Date.now(), stamp: 0, tierMax: 1,
         };
       }
       // switch the game over to the career (its stats), and back to the player's own
@@ -7524,6 +7546,10 @@
       }
       // while the clubhouse is open it takes the keys (typing a name goes to the box)
       function clubKey(e) {
+        if ($('scorecard').classList.contains('pvp') && $('scorecard').classList.contains('on')) {      // a friend result over the clubhouse
+          if (['Escape', 'Enter', 'NumpadEnter', 'Space', 'KeyN', 'KeyK'].includes(e.code)) { e.preventDefault(); if (!e.repeat) closeSharedCard(); }
+          return;
+        }
         if ($('clubhouse').classList.contains('friends')) { if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); } return; }
         if ($('clubhouse').classList.contains('chal')) {      // the challenge form: Enter sends, Esc back to Friends
           if (e.code === 'Escape') { e.preventDefault(); openFriends(); }
@@ -7595,6 +7621,7 @@
         fr.busy = false;
         updateFriendsTile();
         if ($('clubhouse').classList.contains('friends')) renderFriends();
+        checkNewResults();
       }
       function updateFriendsTile() {
         const b = $('chFriendsBtn');
@@ -7638,14 +7665,21 @@
           ['Finished', L.filter((c) => c.status === 'done' || c.status === 'closed').slice(0, 8).map((c) => {
             const net = c.result && c.result.net ? c.result.net[me] : 0;
             const money_ = c.status === 'done' ? ` · <span class="${net > 0 ? 'won' : net < 0 ? 'lost' : ''}">${net > 0 ? '+' : net < 0 ? '−' : '±'}${money(Math.abs(net))}</span>` : '';
-            return row(c, '', `${(c.result && c.result.line) || c.status}${money_} · ${frDate(c.finished || c.created)}`, '');
+            return row(c, c.status === 'done' && !pvpSeen(c.id) ? 'hot' : '', `${(c.result && c.result.line) || c.status}${money_} · ${frDate(c.finished || c.created)}`,
+              c.status === 'done' ? B('view', c.id, 'View card') : '');
           })],
         ];
-        const pl = fr.players.filter((p) => p.name.toLowerCase() !== me).sort((a, b) => a.name.localeCompare(b.name));
-        const players = pl.map((p) => `<div class="fr-pl"><div><b>${p.name}</b><i>Handicap ${p.handicap === null || p.handicap === undefined ? `— (${p.rounds || 0} / ${HCP.min} rounds)` : fmtHcp(p.handicap)} · ${CAREER.tiers[p.tierMax || 1]} · ${money(p.cash)}</i></div>`
+        // each friend's record against you (from your history, so it outlasts the list), the ones you've played first
+        const pl = fr.players.filter((p) => p.name.toLowerCase() !== me)
+          .map((p) => ({ ...p, rec: h2h(p.name.toLowerCase()) }))
+          .sort((a, b) => b.rec.n - a.rec.n || a.name.localeCompare(b.name));
+        const recText = (r) => `${r.w}–${r.l}–${r.h}`;
+        const players = pl.map((p) => `<div class="fr-pl"><div><b>${p.name}</b><i>Handicap ${p.handicap === null || p.handicap === undefined ? `— (${p.rounds || 0} / ${HCP.min} rounds)` : fmtHcp(p.handicap)} · ${CAREER.tiers[p.tierMax || 1]} · ${money(p.cash)}</i>`
+          + `${p.rec.n ? `<i>You vs ${p.name}: ${recText(p.rec)} (won–lost–halved) · <span class="${p.rec.money > 0 ? 'won' : p.rec.money < 0 ? 'lost' : ''}">${p.rec.money > 0 ? '+' : p.rec.money < 0 ? '−' : '±'}${money(Math.abs(p.rec.money))}</span></i>` : ''}</div>`
           + `<div class="fr-btns"><button data-act="challenge" data-to="${p.name.toLowerCase()}" class="go">Challenge</button></div></div>`).join('');
+        const all = h2h(null);
         $('frList').innerHTML = groups.filter(([, items]) => items.length).map(([t, items]) => `<div class="sh-cat">${t}</div>${items.join('')}`).join('')
-          + `<div class="sh-cat">Players</div>${players || `<div class="fr-empty">${fr.loaded ? 'Nobody else has a profile yet. Get a friend to make one (Switch player → New profile on their PC).' : '…'}</div>`}`;
+          + `<div class="sh-cat">Players${all.n ? ` · your record vs friends ${recText(all)}, ${all.money >= 0 ? '+' : '−'}${money(Math.abs(all.money))}` : ''}</div>${players ||`<div class="fr-empty">${fr.loaded ? 'Nobody else has a profile yet. Get a friend to make one (Switch player → New profile on their PC).' : '…'}</div>`}`;
       }
       async function friendsClick(e) {
         const b = e.target.closest('button[data-act]');
@@ -7655,6 +7689,7 @@
         if (act === 'challenge') return openChalForm(b.dataset.to);
         if (act === 'play') return playFriend(id);
         if (act === 'send') return submitPvp();
+        if (act === 'view') return showSharedCard(c);
         if (act === 'forfeit' && !confirm(`Forfeit against ${c.names[chOther(c)]}? They win the ${money(2 * escrowOf(c.format, c.stake))} pot.`)) return;
         if (act === 'decline' && !confirm(`Decline ${c.names[c.from]}'s challenge?`)) return;
         b.disabled = true; setText('frMsg', '…');
@@ -7662,7 +7697,7 @@
         try { r = await chApi(act, { id }); } catch { r = { status: 0, data: { error: 'Can\'t reach the server' } }; }
         if (r.status !== 200) { b.disabled = false; setText('frMsg', r.data.error || `Something went wrong (${r.status})`); return; }
         const ch = r.data.challenge, o = chOther(ch);
-        if (act === 'forfeit' && career.pvpCard && career.pvpCard.id === id) { career.pvpCard = null; careerSave(); }
+        if (act === 'forfeit') { if (career.pvpCard && career.pvpCard.id === id) career.pvpCard = null; markSeen(id); careerSave(); }   // (your own forfeit isn't news)
         const msg = act === 'accept' ? `Game on: ${money(escrowOf(ch.format, ch.stake))} each is held until it settles. Play by ${frDate(ch.deadline)}.`
           : act === 'decline' ? 'Declined.' : act === 'cancel' ? 'Challenge called off.' : `You forfeited: ${ch.names[o]} takes the pot.`;
         await syncLoad();                                    // the server moved money: pick up the new cash
@@ -7788,7 +7823,10 @@
           const ch = r.data.challenge;
           if (ch) { const i = fr.list.findIndex((c) => c.id === ch.id); if (i >= 0) fr.list[i] = ch; else fr.list.unshift(ch); }
           if (!ch) note(r.data.error || 'That challenge is over');
-          else if (ch.status === 'done') { const net = ch.result.net[session.id]; note(`Both cards are in: ${ch.result.line} · ${net > 0 ? `you win ${money(net)}` : net < 0 ? `you lose ${money(-net)}` : 'nobody pays'}`); }
+          else if (ch.status === 'done') {                 // the second card in: straight to the shared card (M4)
+            if (round.pvp && round.pvp.id === ch.id && $('scorecard').classList.contains('on')) showSharedCard(ch, headlineFor(ch));
+            else { note(`Both cards are in: ${ch.result.line}`); checkNewResults(); }
+          }
           else note(`Card sent. Waiting for ${pc.vsName}'s card (they have until ${frDate(pc.deadline)}).`);
           if (!round.on) { await syncLoad(); if ($('clubhouse').classList.contains('friends')) renderFriends(); }
         } else note(`Couldn't send your card (${(r.data && r.data.error) || 'offline'}). It's kept: send it from Friends in the clubhouse.`);
@@ -7804,6 +7842,111 @@
         openClubhouse();
         openFriends();
       }
+
+      // ---- RESULTS (MULTIPLAYER_PLAN.md, M4): the shared final scorecard (both cards, the strokes, the nets, the match or
+      // the skins hole by hole, and the money), shown once by itself when a result comes in (career.pvpSeen), and any time
+      // from Finished; each friend's record against you; and while you wait for a card, a look every 20 s.
+      const pvpSeen = (id) => (career && career.pvpSeen || []).includes(id);
+      function markSeen(id) {
+        if (!career || pvpSeen(id)) return;
+        career.pvpSeen = [...(career.pvpSeen || []), id].slice(-40); careerSave();
+      }
+      // won–lost–halved and money against one friend (or all of them, id = null), from the career's history
+      function h2h(id) {
+        const r = { w: 0, l: 0, h: 0, n: 0, money: 0 };
+        for (const x of (career && career.history) || []) {
+          if (!x.friend || (id && x.friend !== id) || /^refunded/.test(x.result || '')) continue;
+          r.n++; r.money += x.net || 0;
+          if (/^won/.test(x.result)) r.w++; else if (/^lost/.test(x.result)) r.l++; else r.h++;
+        }
+        return r;
+      }
+      function headlineFor(ch) {
+        const me = session.id, o = chOther(ch), res = ch.result, net = res.net[me];
+        const how = res.kind === 'forfeit' ? `${ch.names[res.loser]} forfeited` : res.kind === 'expired' ? `${ch.names[res.loser]} ran out of time`
+          : (ch.submitted && ch.submitted[o] > (ch.submitted[me] || 0)) ? `${ch.names[o]}'s card is in` : 'Both cards are in';
+        return `${how}: ${net > 0 ? `you won ${money(net)}` : net < 0 ? `you lost ${money(-net)}` : 'nobody pays'}`;
+      }
+      function showSharedCard(ch, headline = '') {
+        if (!ch || !ch.result) return;
+        const me = session.id, o = chOther(ch), n = HOLES.length, rcv = ch.strokes && ch.strokes.player;
+        const give = holeStrokes(rcv ? ch.strokes.n : 0), cards = ch.cards || {};
+        const card = (p) => (Array.isArray(cards[p]) ? cards[p] : null);
+        const net = (p, i) => card(p)[i].strokes - (p === rcv ? give[i] : 0);
+        const cls = (d) => (d <= -2 ? 'eagle' : d === -1 ? 'birdie' : d === 1 ? 'bogey' : d >= 2 ? 'double' : '');
+        const sum = (f) => HOLES.reduce((s, _, i) => s + f(i), 0);
+        let html = `<tr><th>Hole</th>${HOLES.map((_, i) => `<th>${i + 1}</th>`).join('')}<th class="tot">Total</th></tr>`
+          + `<tr><td>Par</td>${HOLES.map((h) => `<td>${h.par}</td>`).join('')}<td class="tot">${sum((i) => HOLES[i].par)}</td></tr>`;
+        for (const p of [me, o]) {                           // each player's card (• = a stroke received there), then their net
+          const c = card(p), lab = p === me ? `${ch.names[p]} (you)` : ch.names[p];
+          if (!c) { html += `<tr${p === o ? ' class="npc"' : ''}><td>${lab}</td><td colspan="${n}" class="nocard">no card</td><td class="tot"></td></tr>`; continue; }
+          html += `<tr${p === o ? ' class="npc"' : ''}><td>${lab}</td>${c.map((h, i) => `<td><span class="sc ${cls(h.strokes - HOLES[i].par)}">${h.strokes}</span>${p === rcv && give[i] ? `<i class="rcv">${'•'.repeat(give[i])}</i>` : ''}</td>`).join('')}`
+            + `<td class="tot">${sum((i) => c[i].strokes)}</td></tr>`;
+          if (p === rcv && ch.strokes.n) html += `<tr class="mrow"><td>${ch.names[p]} net</td>${HOLES.map((_, i) => `<td>${net(p, i)}</td>`).join('')}<td class="tot">${sum((i) => net(p, i))}</td></tr>`;
+        }
+        if (card(me) && card(o)) {                           // the bet, hole by hole, from your side
+          const w = HOLES.map((_, i) => Math.sign(net(o, i) - net(me, i)));          // +1 you won the hole (net)
+          if (ch.format === 'skins') {
+            let carry = 0, row = '<tr class="mrow"><td>Skins</td>', tot = 0;
+            w.forEach((x) => {
+              carry++;
+              if (!x) { row += '<td title="carried">→</td>'; return; }
+              const amt = carry * ch.stake; tot += x * amt; carry = 0;
+              row += `<td><span class="${x > 0 ? 'mw' : 'ml'}">${x > 0 ? '+' : '−'}${amt}</span></td>`;
+            });
+            html += `${row}<td class="tot"><span class="${tot > 0 ? 'mw' : tot < 0 ? 'ml' : ''}">${tot >= 0 ? '+' : '−'}${money(Math.abs(tot))}</span></td></tr>`;
+          } else if (ch.format === 'match') {
+            let d = 0;
+            html += `<tr class="mrow"><td>Match</td>${w.map((x) => { d += x; return `<td title="${statusText(d)}"><span class="${x > 0 ? 'mw' : x < 0 ? 'ml' : ''}">${x > 0 ? '▲' : x < 0 ? '▼' : '—'}</span></td>`; }).join('')}`
+              + `<td class="tot"><span class="${d > 0 ? 'mw' : d < 0 ? 'ml' : ''}">${statusText(d)}</span></td></tr>`;
+          } else {                                           // stroke play: the running net difference (− = you're ahead)
+            let d = 0;
+            html += `<tr class="mrow"><td>Net vs</td>${w.map((_, i) => { d += net(me, i) - net(o, i); return `<td><span class="${d < 0 ? 'mw' : d > 0 ? 'ml' : ''}">${d === 0 ? 'E' : d > 0 ? `+${d}` : d}</span></td>`; }).join('')}`
+              + `<td class="tot"><span class="${d < 0 ? 'mw' : d > 0 ? 'ml' : ''}">${d === 0 ? 'tied' : d < 0 ? `won by ${-d}` : `lost by ${d}`}</span></td></tr>`;
+          }
+        }
+        $('scTable').innerHTML = html;
+        $('scTitle').textContent = `Final · ${ch.names[me]} vs ${ch.names[o]} · ${FR_FMT[ch.format]}, ${money(ch.stake)}${ch.format === 'skins' ? ' a skin' : ''}`;
+        $('scTag').textContent = `${TIERS[ch.tier].course}${rcv && ch.strokes.n ? ` · ${ch.names[rcv]} got ${ch.strokes.n} stroke${ch.strokes.n === 1 ? '' : 's'}` : ' · no strokes'}`;
+        const nm = ch.result.net[me];
+        $('scMsg').textContent = `${headline ? headline + '\n' : ''}${ch.result.line}\n`
+          + (nm > 0 ? `+${money(nm)}: your ${money(escrowOf(ch.format, ch.stake))} back and ${money(nm)} of ${ch.names[o]}'s` : nm < 0 ? `−${money(-nm)}: ${ch.names[o]} takes it from your held stake` : 'Nobody pays: your stake is back');
+        const inRound = !!round.pvp;
+        $('scNext').textContent = inRound ? 'Back to the clubhouse (N)' : 'OK (Enter)';
+        $('scClose').textContent = inRound ? 'Back to the clubhouse' : 'Close (Esc)';
+        $('scPress').classList.remove('on');
+        const sc = $('scorecard');
+        scMode = 'pvp';
+        sc.classList.remove('entry', 'board', 'lbonly');
+        sc.classList.add('on', 'pvp');
+        markSeen(ch.id);
+        if (!round.on) syncLoad();                           // the server paid out: pick up the new cash
+      }
+      function closeSharedCard() {
+        $('scorecard').classList.remove('on', 'pvp'); scMode = 'round';
+        if (round.pvp) return pvpToClubhouse();
+        if (clubOpen && $('clubhouse').classList.contains('friends')) renderFriends();
+        updateFriendsTile();
+        setTimeout(checkNewResults, 200);                    // another result waiting? one at a time
+      }
+      // a result you haven't seen: open it by itself, in the clubhouse (hub or Friends)
+      function checkNewResults() {
+        if (!session || !career || !clubOpen || $('scorecard').classList.contains('on')) return;
+        const v = $('clubhouse').classList;
+        if (!(v.contains('hub') || v.contains('friends'))) return;
+        const c = fr.list.find((x) => x.status === 'done' && x.result && x.result.net && !pvpSeen(x.id));
+        if (c) showSharedCard(c, headlineFor(c));
+      }
+      // waiting for a friend's card (your round's final card, or Friends open, with your card in): look every 20 s
+      setInterval(async () => {
+        if (!session || fr.busy || document.hidden) return;
+        const onCard = round.pvp && round.over && scMode !== 'pvp' && $('scorecard').classList.contains('on');
+        const onFriends = clubOpen && $('clubhouse').classList.contains('friends');
+        if (!(onCard || onFriends) || !fr.list.some((c) => c.status === 'open' && c.cards[session.id])) return;
+        await loadFriends(true);
+        const c = round.pvp && round.over && fr.list.find((x) => x.id === round.pvp.id && x.status === 'done');
+        if (c && scMode !== 'pvp') showSharedCard(c, headlineFor(c));
+      }, 20000);
 
       // =====================================================================================================
       //  CAREER CLUBS (CAMPAIGN_PLAN.md, chunk 2 + the club catalogue). Real models, each a set of changes to the base club:
@@ -8655,9 +8798,10 @@
         orientFlags(); syncPanel();
         toast(`${HOLE.name} · Par ${HOLE.par} · ${(hole.length / YD).toFixed(0)} yds\nWind ${windText(w.mph, w.from)} · greens Stimp ${holeStimp()}`, 3200);
       }
-      function hideScorecard() { $('scorecard').classList.remove('on'); }
+      function hideScorecard() { $('scorecard').classList.remove('on', 'pvp'); if (scMode === 'pvp') scMode = 'round'; }
       function showScorecard(msg = '') {
         $('scPress').classList.remove('on');               // (only a career match shows it, below)
+        $('scorecard').classList.remove('pvp');            // (the shared friend card is its own mode)
         const n = HOLES.length, t = roundTotals(), final = t.played === n;
         round.over = final;
         const cur = hp.on && !hp.done ? hp.holeIdx : -1;
@@ -8782,6 +8926,7 @@
         sc.classList.add('on');
       }
       function scorecardNext() {
+        if (scMode === 'pvp') return closeSharedCard();
         if (scMode === 'board') { if (round.on) return hideScorecard(); hideScorecard(); return openRoundIntro(); }
         if (round.match) { if (round.over) return matchToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
         if (round.pvp) { if (round.over) return pvpToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
@@ -8790,6 +8935,7 @@
         hideScorecard();
       }
       function scorecardClose() {
+        if (scMode === 'pvp') return closeSharedCard();
         if (scMode === 'board') return hideScorecard();
         if (round.match && (round.over || round.match.settled)) return matchToClubhouse();
         if (round.pvp && round.over) return pvpToClubhouse();
@@ -8925,7 +9071,7 @@
         if (!lbBusy) lbFetch();                              // freshen it from the world board
         const sc = $('scorecard');
         scMode = 'board';
-        sc.classList.remove('entry');
+        sc.classList.remove('entry', 'pvp');
         sc.classList.add('board', 'lbonly', 'on');
         $('scTitle').textContent = 'Top 10 · test round';
         $('scTag').textContent = `holes 1–${HOLES.length} · par ${HOLES.reduce((s, h) => s + h.par, 0)}`;
@@ -10464,7 +10610,7 @@
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
-        npc, npcPlan, npcHoleScore, closeToss, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, holeStrokes, submitPvp, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
+        npc, npcPlan, npcHoleScore, closeToss, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, holeStrokes, submitPvp, showSharedCard, closeSharedCard, checkNewResults, h2h, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }
       };
 

@@ -270,7 +270,21 @@ forfeits, decline / cancel and refusals through the API.
 **Done when:** A challenges B for $50 match play; B accepts and both careers drop $50; each plays on their own PC; when
 the second card is in, the winner's career gets $100 and both see the same result.
 
-### M4 — Results and history (M)
+### M4 — Results and history (M) — ✅ built 2026-11-18
+
+As built (client only; the server already returned both cards once settled): `showSharedCard(ch, headline)` puts
+`#scorecard` in a `.pvp` mode (`scMode = 'pvp'`, z-index above the clubhouse): par, both players' gross (• on the
+holes where strokes were received), the receiver's net, then a Match row (▲ ▼ —, the status), a Skins row (+/− per
+hole, → carried) or a stroke-play "Net vs" row, and the money. `closeSharedCard()` (Enter / Esc / N / its buttons; in
+a round it goes back to the clubhouse). `career.pvpSeen` (last 40 ids) — `checkNewResults()` opens an unseen result by
+itself, one at a time, when the clubhouse hub or Friends is open (after every `loadFriends()`); the second player to
+send a card sees it straight away in the round; your own forfeit isn't shown as news. `headlineFor(ch)` ("Ben's card
+is in: you won $40"). Finished rows have **View card**. `h2h(id)` — won–lost–halved and money per friend from
+`career.history` (so it outlasts the challenge list); shown on each player row and as a total. Waiting: every 20 s,
+while your round's final card or Friends is open and one of your cards is waiting, `loadFriends()` runs again.
+Tested with two browsers: skins (in-round shared card for the second player, the pop-up for the first on the next
+clubhouse visit, shown once), View, and a match where the waiting player's Friends screen picked up the result within
+20 s; records 1–1–0 / −$5 and 1–1–0 / +$5 on the two sides.
 
 - **Shared final scorecard** (`#scorecard` in a `.pvp` mode): both players' gross scores, the strokes received (dots on
   those holes), net scores, the match / skins row as in hustler matches, and the money. Opened from *Finished*, and
