@@ -5265,6 +5265,58 @@
       display: block;
     }
 
+    /* the hustlers on the first tee (click to pick), and their portraits on the cards */
+    #teeSpots {
+      display: none;
+    }
+
+    #clubhouse.match #teeSpots {
+      display: block;
+    }
+
+    .tee-spot {
+      position: absolute;
+      margin: 0;
+      padding: 0;
+      pointer-events: auto;
+      cursor: pointer;
+      border: 0 !important;
+      border-radius: 40px;
+      background: transparent !important;
+    }
+
+    .tee-spot:hover {
+      background: radial-gradient(ellipse at 50% 70%, rgba(255, 224, 140, .2), transparent 70%) !important;
+    }
+
+    #clubhouse .cm-npc {
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .cm-pic svg {
+      width: 58px;
+      height: 86px;
+      display: block;
+      border-radius: 8px;
+      background: radial-gradient(ellipse at 50% 30%, rgba(120, 190, 110, .35), rgba(20, 40, 20, .2));
+    }
+
+    .cm-pips {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #fff;
+      margin-top: 1px;
+    }
+
+    .cm-pips s {
+      text-decoration: none;
+      color: rgba(255, 255, 255, .22);
+    }
+
     #trBagSpot:hover {
       background: radial-gradient(ellipse at 50% 60%, rgba(255, 224, 140, .22), transparent 70%) !important;
     }
@@ -5714,6 +5766,8 @@
       <div class="ch-scene ch-spots" id="chSpots">
         <!-- the trophy room's golf bag: click it for that player's bag in detail -->
         <button id="trBagSpot" title="Look in the bag"><span id="trBagTag">🎒 Your bag</span></button>
+        <!-- the first tee's hustlers: click one to pick him -->
+        <div id="teeSpots"></div>
       </div>
       <div class="ch-room" id="chRoom"><span id="chRoomName">The Clubhouse</span></div>
       <div class="ch-panel card" id="chPanel">
@@ -10225,10 +10279,8 @@
           <rect x="1010" y="610" width="10" height="110" fill="#333"/><rect x="996" y="590" width="38" height="30" rx="6" fill="#1d3a6b"/>
           <rect x="1090" y="600" width="230" height="110" rx="18" fill="#f2f2f2" stroke="#999" stroke-width="3"/><rect x="1100" y="530" width="210" height="14" fill="#2b5c3a"/><path d="M1110 544 v60 M1300 544 v60" stroke="#666" stroke-width="5"/>
           <circle cx="1140" cy="718" r="26" fill="#222"/><circle cx="1280" cy="718" r="26" fill="#222"/><rect x="1240" y="560" width="50" height="60" rx="8" fill="#8a1c22"/>
-          <!-- someone waiting with a driver -->
-          <circle cx="760" cy="560" r="17" fill="#c58c5c"/><path d="M742 550 h36 l-4 -12 h-28 Z" fill="#fff"/><path d="M742 578 h36 l6 80 h-48 Z" fill="#c23b3b"/><path d="M746 658 l-6 70 M774 658 l6 70" stroke="#2c2c2c" stroke-width="12"/>
-          <line x1="790" y1="600" x2="830" y2="730" stroke="#ccc" stroke-width="3"/><path d="M826 728 q12 8 24 0" stroke="#111" stroke-width="8" fill="none"/>
-          <rect width="${W}" height="${H}" fill="url(#vig)" opacity=".7"/></svg>`;
+          <rect width="${W}" height="${H}" fill="url(#vig)" opacity=".7"/>
+          ${room === 'tee' && career ? teeHustlers() : ''}</svg>`;
       }
 
       // ---- FRIENDS (MULTIPLAYER_PLAN.md, M3). Challenges live on the server (api/challenge.js): it holds both stakes
@@ -11697,6 +11749,79 @@
       ];
       const npcById = (id) => NPCS.find((n) => n.id === id);
       const npcName = (n) => `${n.first} “${n.nick}” ${n.last}`;
+      // ---- the hustlers drawn (user request, 2026-11-19): on the first tee and on their cards. How good they are shows on
+      // them: 1–5 golf-ball pips, and the better ones dress sharper and carry more bag (1: untucked tee, backwards cap,
+      // sneakers, a pencil bag … 5: crisp polo and belt, a glove, a tour staff bag).
+      const npcRating = (n) => clamp(Math.round((1.8 - n.skill) / 0.33), 1, 5);     // Dale 1 · Terry 2 · Sal 3 · Gus 4 · the resort 4–5 · the country club 5
+      const LOOKS = {
+        dale: { shirt: '#c96a2b', pants: '#3b5b8a', hat: '#2f6b3f', skin: '#e0ac7e' },
+        terry: { shirt: '#7aa6c9', pants: '#c8b48a', hat: '#ffffff', skin: '#c58c5c', prop: 'putter' },
+        sal: { shirt: '#6b2f6b', pants: '#2c2c2c', hat: '#111111', skin: '#d29a6a', prop: 'shades' },
+        gus: { shirt: '#3d5a3d', pants: '#5b4630', hat: '#8a6a2c', skin: '#b97d55', prop: 'cigar' },
+        chad: { shirt: '#f2a7c2', pants: '#f2f2f2', hat: '#1d3a6b', skin: '#f0c4a0', prop: 'shades' },
+        marco: { shirt: '#ffcf33', pants: '#1d3a6b', hat: '#c23b3b', skin: '#c99366' },
+        rita: { shirt: '#2a9d8f', pants: '#f2f2f2', hat: '#ffffff', skin: '#a8714a', hair: '#2a1a12' },
+        jim: { shirt: '#ffffff', pants: '#4a4a4a', hat: '#1f4a2c', skin: '#e3b08a' },
+        whit: { shirt: '#f4f1e8', pants: '#3a3f55', hat: '#7a5a2c', skin: '#f2d0b0', prop: 'vest' },
+        ana: { shirt: '#1c2a44', pants: '#ffffff', hat: '#ffffff', skin: '#f3d7c0', hair: '#e8c46a' },
+        duke: { shirt: '#8a1c22', pants: '#2b2b2b', hat: '#ffffff', skin: '#d8a57c' },
+        vic: { shirt: '#151515', pants: '#151515', hat: '#151515', skin: '#c9946a', prop: 'chain' },
+      };
+      // a hustler standing at (x, y) = their feet, s = scale; lit = the one you've picked (a spotlight on them)
+      function hustlerFig(n, x, y, s = 1, lit = false, card = false) {     // (card: a portrait — no spotlight, full colour)
+        const L = LOOKS[n.id] || { shirt: '#888', pants: '#444', hat: '#fff', skin: '#c58c5c' }, r = npcRating(n);
+        const shoe = r <= 2 ? '#f2f2f2' : '#222', tucked = r >= 3;
+        // the bag beside them: a pencil bag (1–2), a carry bag (3), a cart bag (4), a tour staff bag (5)
+        const bw = [0, 16, 18, 26, 32, 40][r], bh = [0, 92, 96, 112, 124, 136][r], bc = r >= 5 ? '#111' : r >= 4 ? '#8a1c22' : r >= 3 ? '#1d3a6b' : '#7a6a50';
+        const nClubs = [0, 3, 4, 6, 7, 9][r];
+        const bag = `<g transform="translate(34 0) rotate(8)"><rect x="${-bw / 2}" y="${-bh}" width="${bw}" height="${bh}" rx="${bw / 3}" fill="${bc}" stroke="#000" stroke-width="1.5"/>`
+          + (r >= 5 ? `<rect x="${-bw / 2}" y="${-bh + 26}" width="${bw}" height="12" fill="#f3dca0"/>` : r >= 3 ? `<rect x="${-bw / 2}" y="${-bh + 20}" width="${bw}" height="6" fill="rgba(255,255,255,.35)"/>` : '')
+          + Array.from({ length: nClubs }, (_, k) => { const cx = -bw / 2 + 4 + (k * (bw - 8)) / Math.max(1, nClubs - 1); return `<line x1="${cx}" y1="${-bh}" x2="${cx + (k % 2 ? 2 : -2)}" y2="${-bh - 18 - (k % 3) * 4}" stroke="#bbb" stroke-width="2"/><circle cx="${cx + (k % 2 ? 2 : -2)}" cy="${-bh - 20 - (k % 3) * 4}" r="${k < 3 && r >= 3 ? 5 : 3}" fill="${k < 3 && r >= 3 ? '#222' : '#ccc'}"/>`; }).join('') + '</g>';
+        const legs = `<rect x="-14" y="-98" width="12" height="96" rx="4" fill="${L.pants}"/><rect x="2" y="-98" width="12" height="96" rx="4" fill="${L.pants}"/>`
+          + `<path d="M-17 -4 h17 v6 h-19 Z M1 -4 h17 l2 6 h-19 Z" fill="${shoe}" stroke="#000" stroke-width="1"/>`;
+        const torso = `<path d="M-20 -170 h40 l4 ${tucked ? 72 : 84} h-48 Z" fill="${L.shirt}" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>`
+          + (L.prop === 'vest' ? '<path d="M-17 -166 h34 l3 66 h-40 Z" fill="#2f4a6b" opacity=".9"/><path d="M0 -166 l-8 18 M0 -166 l8 18" stroke="#f4f1e8" stroke-width="3"/>' : `<path d="M-8 -170 l8 10 l8 -10" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="2"/>`)
+          + (tucked ? `<rect x="-22" y="-100" width="44" height="6" fill="${r >= 5 ? '#111' : '#5a3820'}"/><rect x="-3" y="-100" width="6" height="6" fill="#c9a253"/>` : '')
+          + (L.prop === 'chain' ? '<path d="M-9 -168 q9 14 18 0" fill="none" stroke="#f2c94c" stroke-width="2.5"/>' : '');
+        const arms = `<path d="M-20 -166 l-12 56" stroke="${L.shirt}" stroke-width="11" stroke-linecap="round"/><path d="M20 -166 l10 54" stroke="${L.shirt}" stroke-width="11" stroke-linecap="round"/>`
+          + `<circle cx="-33" cy="-106" r="6" fill="${r >= 4 ? '#f4f4f4' : L.skin}"/><circle cx="31" cy="-108" r="6" fill="${L.skin}"/>`;
+        const club = L.prop === 'putter' ? '<path d="M-33 -106 l6 100" stroke="#bbb" stroke-width="3"/><rect x="-34" y="-8" width="16" height="6" fill="#555"/>'
+          : '<path d="M-33 -106 l14 98" stroke="#bbb" stroke-width="3"/><ellipse cx="-16" cy="-6" rx="9" ry="6" fill="#222"/>';
+        const hair = L.hair ? `<path d="M-16 -194 q16 -14 32 0 q4 26 -4 30 q16 10 6 34" fill="none" stroke="${L.hair}" stroke-width="8" stroke-linecap="round"/>` : '';
+        const head = `<rect x="-6" y="-180" width="12" height="12" fill="${L.skin}"/><circle cx="0" cy="-192" r="17" fill="${L.skin}"/>${hair}`
+          + `<circle cx="-6" cy="-193" r="1.8" fill="#222"/><circle cx="6" cy="-193" r="1.8" fill="#222"/><path d="M-5 -184 q5 ${r >= 4 ? 3 : 2} 10 0" fill="none" stroke="#7a3a2a" stroke-width="1.6"/>`
+          + (L.prop === 'shades' ? '<rect x="-12" y="-197" width="24" height="7" rx="3" fill="#111"/>' : '')
+          + (L.prop === 'cigar' ? '<rect x="4" y="-185" width="16" height="4" rx="2" fill="#6b3a1c"/><circle cx="20" cy="-183" r="2" fill="#ff7a2a"/>' : '');
+        // the hat: a backwards cap (rating 1), a cap (2–3), a visor (4–5), a flat cap for the old-money member
+        const hat = n.id === 'whit' ? `<path d="M-18 -200 q18 -16 36 0 l6 6 h-46 Z" fill="${L.hat}"/>`
+          : r >= 4 ? `<rect x="-18" y="-204" width="36" height="6" rx="3" fill="${L.hat}"/><path d="M-18 -200 q-12 4 -14 8 h18 Z" fill="${L.hat}"/>`
+          : `<path d="M-17 -199 q17 -22 34 0 Z" fill="${L.hat}"/><path d="${r === 1 ? 'M17 -200 l16 4 l-16 2 Z' : 'M-17 -200 l-16 4 l16 2 Z'}" fill="${L.hat}"/>`;
+        const glow = lit ? `<ellipse cx="0" cy="2" rx="62" ry="14" fill="#ffe066" opacity=".55"/><path d="M-30 -330 L-95 6 H95 L30 -330 Z" fill="#fff6c8" opacity=".14"/>` : `<ellipse cx="0" cy="2" rx="40" ry="9" fill="#000" opacity=".25"/>`;
+        return `<g transform="translate(${x} ${y}) scale(${s})" opacity="${lit || card ? 1 : 0.82}">${card ? '' : glow}${bag}${legs}${torso}${arms}${club}${head}${hat}</g>`;
+      }
+      // the circuit's four hustlers on the first tee (the match picker's scene): the one you've picked in a spotlight, with
+      // his name and skill over his head; click one to pick him (#teeSpots)
+      const TEE_SPOTS = [[150, 804], [368, 816], [588, 804], [806, 816]];
+      function teeHustlers() {
+        return tierNpcs().map((n, i) => {
+          const [x, y] = TEE_SPOTS[i] || [150 + i * 220, 810], lit = i === cmSel, top = y - 320;
+          const tag = lit
+            ? `<g><animateTransform attributeName="transform" type="translate" values="0 0; 0 -6; 0 0" dur="1.4s" repeatCount="indefinite"/>`
+              + `<rect x="${x - 96}" y="${top - 62}" width="192" height="50" rx="8" fill="#2e1c0d" stroke="#e9c46a" stroke-width="3"/>`
+              + `<text x="${x}" y="${top - 40}" text-anchor="middle" font-family="Georgia, serif" font-size="17" font-weight="700" fill="#f6dc95">${n.first} “${n.nick}”</text>`
+              + `${ratingPips(n, x, top - 22, 5)}<path d="M${x - 10} ${top - 10} h20 l-10 12 Z" fill="#e9c46a"/></g>`
+            : `<rect x="${x - 58}" y="${top - 24}" width="116" height="22" rx="6" fill="rgba(20,14,8,.7)"/><text x="${x}" y="${top - 8}" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#f3e6c8">${n.nick}</text>`;
+          return hustlerFig(n, x, y, 1.45, lit) + tag;
+        }).join('');
+      }
+      function renderTeeSpots() {
+        $('teeSpots').innerHTML = tierNpcs().map((_, i) => {
+          const [x, y] = TEE_SPOTS[i] || [150 + i * 220, 810];
+          return `<button class="tee-spot" data-i="${i}" title="Pick ${tierNpcs()[i].first}" style="left:${((x - 70) / 1600) * 100}%;top:${((y - 360) / 900) * 100}%;width:${(140 / 1600) * 100}%;height:${(370 / 900) * 100}%"></button>`;
+        }).join('');
+      }
+      // the 1–5 golf-ball pips (SVG, centred at x, y) and the same as text for the cards
+      const ratingPips = (n, x, y, size = 7) => Array.from({ length: 5 }, (_, k) => `<circle cx="${x + (k - 2) * size * 2.4}" cy="${y}" r="${size}" fill="${k < npcRating(n) ? '#fff' : 'rgba(255,255,255,.18)'}" stroke="rgba(0,0,0,.4)" stroke-width="1"/>`).join('');
       let cmSel = 0, introMode = 'test', cmFormat = 'match';
       const statusText = (d) => (d === 0 ? 'AS' : d > 0 ? `${d} UP` : `${-d} DN`);
       // a bet so far (the match, or a press that started on hole `from`): holes won minus lost, and whether it's decided
@@ -11788,7 +11913,10 @@
       }
       function renderMatchPicker() {
         const list = tierNpcs(), n = list[cmSel], fee = MATCH.fee[career.tier];
-        $('cmNpcs').innerHTML = list.map((p, i) => `<div class="cm-npc${i === cmSel ? ' on' : ''}" data-i="${i}"><b>${p.first} <span class="nick">“${p.nick}”</span> ${p.last}</b><i>${p.desc}</i><em>“${p.lines.hello}”</em><u>Plays for up to ${money(p.maxStake)}</u></div>`).join('');
+        $('cmNpcs').innerHTML = list.map((p, i) => `<div class="cm-npc${i === cmSel ? ' on' : ''}" data-i="${i}"><div class="cm-pic"><svg viewBox="-50 -232 100 150">${hustlerFig(p, 0, 0, 1, false, true)}</svg></div>`
+          + `<div><b>${p.first} <span class="nick">“${p.nick}”</span> ${p.last}</b><span class="cm-pips" title="Skill ${npcRating(p)} of 5">${'●'.repeat(npcRating(p))}<s>${'●'.repeat(5 - npcRating(p))}</s></span>`
+          + `<i>${p.desc}</i><em>“${p.lines.hello}”</em><u>Plays for up to ${money(p.maxStake)}</u></div></div>`).join('');
+        if ($('clubhouse').classList.contains('match')) { $('chScene').innerHTML = chScene('tee'); renderTeeSpots(); }     // the scene: who's picked lights up
         // the format (chunk 7): match play for one stake (presses can add more), or skins for a stake on every hole
         const skins = cmFormat === 'skins', minS = skins ? MATCH.minSkin : MATCH.minStake;
         for (const b of $('cmFmt').children) b.classList.toggle('on', b.dataset.fmt === cmFormat);
@@ -13446,6 +13574,7 @@
         $('riCancel').addEventListener('click', (e) => { e.currentTarget.blur(); introCancel(); });
         // the match picker
         $('cmNpcs').addEventListener('click', (e) => { const c = e.target.closest('.cm-npc'); if (c) { cmSel = +c.dataset.i; renderMatchPicker(); } });
+        $('teeSpots').addEventListener('click', (e) => { const b = e.target.closest('.tee-spot'); if (b) { b.blur(); cmSel = +b.dataset.i; renderMatchPicker(); } });     // click a hustler on the tee
         $('cmStake').addEventListener('input', () => updateStakeLabel());
         $('btGo').addEventListener('click', (e) => { e.currentTarget.blur(); closeBeating(); });
         $('cmFmt').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { b.blur(); cmFormat = b.dataset.fmt; renderMatchPicker(); } });
