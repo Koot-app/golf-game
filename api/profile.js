@@ -19,20 +19,13 @@
 // people reuse passwords. Saves are compare-and-set on `ver`, so a copy that's out of date never overwrites a newer one.
 
 const crypto = require('crypto');
-const { redis, readBody, clientIp, rateLimit } = require('./_redis');
+const { redis, readBody, clientIp, rateLimit, sessionId, CAS } = require('./_redis');
 const { ADMINS, isAdmin } = require('./_admins');
 
 const NAME_RE = /^[A-Za-z0-9 _-]{3,12}$/;
 const SESSION_S = 30 * 24 * 3600;
 const MAX_CAREER = 250000;                 // bytes of career JSON
-// write `data` only if the stored version is still the one the client started from; returns the new version, or -1
-const CAS = `local v = redis.call('HGET', KEYS[1], 'ver')
-if (v or '0') == ARGV[1] then
-  local n = tonumber(ARGV[1]) + 1
-  redis.call('HSET', KEYS[1], 'data', ARGV[2], 'ver', n)
-  return n
-end
-return -1`;
+// (the compare-and-set script CAS lives in _redis.js)
 
 const idOf = (name) => String(name).trim().toLowerCase();
 // a career's handicap (M2) — the same as handicapOf() in index.html: keep both alike
@@ -46,12 +39,7 @@ function handicapOf(c) {
 const hashPw = (pw, salt) => new Promise((resolve, reject) => crypto.scrypt(String(pw), salt, 32, (e, k) => (e ? reject(e) : resolve(k.toString('hex')))));
 const parse = (s) => { try { return JSON.parse(s); } catch { return null; } };
 
-async function sessionId(req) {
-  const m = /^Bearer ([a-f0-9]{64})$/.exec((req.headers && req.headers.authorization) || '');
-  if (!m) return null;
-  const [id] = await redis([['GET', `golf:sess:${m[1]}`]]);
-  return id || null;
-}
+// (sessionId lives in _redis.js)
 async function newSession(id) {
   const token = crypto.randomBytes(32).toString('hex');
   await redis([['SET', `golf:sess:${token}`, id, 'EX', SESSION_S]]);

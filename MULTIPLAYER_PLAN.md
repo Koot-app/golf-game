@@ -233,7 +233,27 @@ hover); the scorecard after hole 9 says "Round recorded… Handicap 9.4 → 9.1"
 **Done when:** after 3 completed matches the clubhouse shows a handicap that moves sensibly (lower after good
 rounds); harder circuits count for more.
 
-### M3 — Challenges (L)
+### M3 — Challenges (L) — ✅ built 2026-11-18
+
+As built: `api/challenge.js` (create / list / accept / decline / cancel / submit / forfeit). Shared helpers moved to
+`api/_redis.js`: `sessionId`, `CAS`, `updateCareer(id, fn)` (read, change, compare-and-set, retry). Each change to a
+challenge holds a short lock (`golf:chlock:<cid>`, `SET NX EX 20`); escrow and payouts are marked per player in
+`held` / `paid`, so a retry never takes or pays twice (`list` finishes any unpaid payout). Differences from the spec
+above: the **server doesn't add a `rounds` entry** — each client records its own handicap round after hole 9 (as in
+hustler matches), so it isn't counted twice; the other player's card stays **hidden until settled** (`list` shows
+only that it's in); a **forfeit** gives the other player the whole pot (all 9 skins in skins); an unanswered challenge
+closes after 7 days; finished ones drop off the list after 60. History entries:
+`{ friend, friendName, ch, format, stake, result, net, date }`. Client: `fr` (players + challenges), `loadFriends()`
+(also quietly on opening the clubhouse, for the tile's "1 challenge waiting for you"), `openFriends()` /
+`renderFriends()` / `friendsClick()`, the form `openChalForm()` / `renderChalForm()` / `sendChallenge()` (stake capped
+by both players' cash; circuits both have open; Auto / Agreed / Off with the strokes spelled out), `playFriend()` →
+course preview (`openRoundIntro('pvp')`) → `startFriendRound()`; `round.pvp` = `career.pvpCard`
+`{ id, tier, format, stake, vs, vsName, deadline, n, mine, holes }`; `pvpAfterHole()`, `submitPvp()` (kept and
+offered as "Send your card" if it can't be sent), `confirmLeavePvp()`, `pvpToClubhouse()`; `holeStrokes(n)` (same as
+the server's). The scorecard shows your strokes (●) and your net. Tested with two browsers on the local dev server:
+A challenged B for $50 match play, B accepted (both dropped $50), B played and sent, A left after 4 holes, resumed and
+finished; the server settled "Ann wins 3 & 2", A's career +$100, both lists agree; also all three formats, ties,
+forfeits, decline / cancel and refusals through the API.
 
 - `api/challenge.js` (the table above), with escrow and settlement.
 - Clubhouse menu: **🤝 Friends** → the players list (name, handicap, circuit) with **Challenge**, and the challenges

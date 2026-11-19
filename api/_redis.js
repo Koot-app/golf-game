@@ -57,4 +57,35 @@ async function rateLimit(key, max, windowS) {
   return count <= max;
 }
 
-module.exports = { findCreds, redis, readBody, clientIp, rateLimit };
+// the profile id of a request's session (Authorization: Bearer <token>), or null
+async function sessionId(req) {
+  const m = /^Bearer ([a-f0-9]{64})$/.exec((req.headers && req.headers.authorization) || '');
+  if (!m) return null;
+  const [id] = await redis([['GET', `golf:sess:${m[1]}`]]);
+  return id || null;
+}
+
+// A career is golf:career:<id> = { data (JSON), ver }. Writes are compare-and-set on ver (this Lua script), so a copy
+// that's out of date never overwrites a newer one; it returns the new version, or -1.
+const CAS = `local v = redis.call('HGET', KEYS[1], 'ver')
+if (v or '0') == ARGV[1] then
+  local n = tonumber(ARGV[1]) + 1
+  redis.call('HSET', KEYS[1], 'data', ARGV[2], 'ver', n)
+  return n
+end
+return -1`;
+// change a player's career on the server (escrow, payouts): read it, let fn change it (fn may throw to refuse), write it
+// back with compare-and-set, retrying if the player's own PC saved in between. Returns the changed career.
+async function updateCareer(id, fn) {
+  for (let tries = 0; tries < 6; tries++) {
+    const [[data, ver]] = await redis([['HMGET', `golf:career:${id}`, 'data', 'ver']]);
+    if (!data) throw Object.assign(new Error('That player has no career'), { status: 404 });
+    const c = JSON.parse(data);
+    fn(c);
+    const [n] = await redis([['EVAL', CAS, 1, `golf:career:${id}`, String(+ver || 0), JSON.stringify(c)]]);
+    if (n !== -1) return c;
+  }
+  throw new Error('Busy — try again');
+}
+
+module.exports = { findCreds, redis, readBody, clientIp, rateLimit, sessionId, CAS, updateCareer };

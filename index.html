@@ -1689,14 +1689,137 @@
     #clubhouse.hub #chHub,
     #clubhouse.match #chMatch,
     #clubhouse.shop:not(.coach) #chShop,
-    #clubhouse.coach #chCoach {
+    #clubhouse.coach #chCoach,
+    #clubhouse.friends #chFriends,
+    #clubhouse.chal #chChal {
       display: block;
     }
 
     #chShop,
-    #chCoach {
+    #chCoach,
+    #chFriends,
+    #chChal {
       display: none;
       padding: 0 18px;
+    }
+
+    #clubhouse.friends {
+      width: min(680px, calc(100vw - 32px));
+    }
+
+    /* friends and challenges (MULTIPLAYER_PLAN.md, M3) */
+    .fr-held {
+      font-size: 12px;
+      color: #ffe082;
+      margin: -2px 0 6px;
+      min-height: 4px;
+    }
+
+    .fr-ch,
+    .fr-pl {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 4px 12px;
+      padding: 9px 12px;
+      margin-bottom: 7px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .04);
+      font-size: 12.5px;
+    }
+
+    .fr-ch.hot {
+      border-color: rgba(255, 224, 102, .55);
+      background: rgba(255, 224, 102, .07);
+    }
+
+    .fr-ch b,
+    .fr-pl b {
+      font-size: 14px;
+    }
+
+    .fr-ch i,
+    .fr-pl i {
+      display: block;
+      font-style: normal;
+      font-size: 11.5px;
+      color: var(--dim);
+      margin-top: 2px;
+    }
+
+    .fr-ch .won {
+      color: #5ee08a;
+      font-weight: 700;
+    }
+
+    .fr-ch .lost {
+      color: #ff5d6c;
+      font-weight: 700;
+    }
+
+    .fr-btns {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .fr-btns button {
+      width: auto;
+      margin: 0;
+      padding: 5px 11px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .fr-btns button.go {
+      background: rgba(94, 224, 138, .16);
+      border-color: rgba(94, 224, 138, .55);
+      color: #d9ffe6;
+    }
+
+    .fr-btns button.no {
+      color: #ffb3bb;
+      border-color: rgba(255, 93, 108, .4);
+    }
+
+    .fr-empty {
+      font-size: 12px;
+      color: var(--dim);
+      padding: 2px 2px 8px;
+    }
+
+    .cc-agreed {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--dim);
+    }
+
+    .cc-agreed input,
+    .cc-agreed select {
+      width: auto;
+      margin: 0;
+      padding: 3px 6px;
+    }
+
+    #ccAgreedRow {
+      display: none;
+    }
+
+    #chChal.agreed #ccAgreedRow {
+      display: grid;
+    }
+
+    .cm-fmt button:disabled {
+      opacity: .4;
+      cursor: default;
+    }
+
+    .ch-menu button.wide {
+      grid-column: 1 / -1;
     }
 
     /* the coach (chunk 6) */
@@ -3392,7 +3515,8 @@
           <button data-go="match" id="chMatchBtn"><b>⛳ Play a match</b><i>Hustle a local for money</i></button>
           <button data-go="shop"><b>🛒 Pro shop</b><i>Clubs, repairs and your bag</i></button>
           <button data-go="coach"><b>🎓 Coach</b><i>Lessons and new shots</i></button>
-          <button data-go="range"><b>🎯 Practice range</b><i>Hit balls with your own game (Esc)</i></button>
+          <button data-go="friends" id="chFriendsBtn"><b>🤝 Friends</b><i>Bet a friend on a round</i></button>
+          <button data-go="range" class="wide"><b>🎯 Practice range</b><i>Hit balls with your own game (Esc)</i></button>
         </div>
         <div class="ch-msg" id="chMsg"></div>
         <div class="ch-foot"><button id="chLeave">Leave career</button><button id="chSwitch">Switch player</button><button id="chRetire">Retire (start over)</button><span
@@ -3410,6 +3534,31 @@
         <div class="sh-list" id="coList"></div>
         <div class="ch-msg" id="coMsg"></div>
         <div class="ch-btns"><button id="coBack">Back to the clubhouse (Esc)</button></div>
+      </div>
+      <div id="chFriends">
+        <div class="sh-top"><div class="ch-lead">Friends</div><span class="sh-cash" id="frCash"></span></div>
+        <div class="fr-held" id="frHeld"></div>
+        <div class="sh-list" id="frList"></div>
+        <div class="ch-msg" id="frMsg"></div>
+        <div class="ch-btns"><button id="frBack">Back (Esc)</button><button id="frRefresh">Refresh</button><span
+            class="cm-help">You each play the round on your own PC · the bet settles when both cards are in</span></div>
+      </div>
+      <div id="chChal">
+        <div class="ch-lead" id="ccTitle">Challenge</div>
+        <div class="cm-bet">
+          <div class="cm-row"><span>Format</span><div class="cm-fmt" id="ccFmt"><button data-fmt="match">Match play</button><button data-fmt="stroke">Stroke play</button><button
+                data-fmt="skins">Skins</button></div><i class="cm-fmtnote" id="ccFmtNote"></i></div>
+          <div class="cm-row"><span id="ccStakeL">Stake</span><input type="range" id="ccStake" min="5" max="100" step="5" value="20"><b id="ccStakeV"></b></div>
+          <div class="cm-row"><span>Held</span><b id="ccEscrow" class="cm-note"></b></div>
+          <div class="cm-row"><span>Circuit</span><div class="cm-fmt" id="ccTier"></div></div>
+          <div class="cm-row"><span>Handicap</span><div class="cm-fmt" id="ccHcp"><button data-h="auto">Auto</button><button data-h="agreed">Agreed</button><button
+                data-h="off">Off</button></div></div>
+          <div class="cm-row" id="ccAgreedRow"><span>Strokes</span><div class="cc-agreed"><input type="number" id="ccN" min="0" max="18" value="0"> strokes to <select
+                id="ccWho"></select></div></div>
+          <div class="cm-row"><span></span><b id="ccStrokes" class="cm-note"></b></div>
+        </div>
+        <div class="ch-err" id="ccErr"></div>
+        <div class="ch-btns"><button id="ccGo" class="go">Send the challenge (Enter)</button><button id="ccBack">Back (Esc)</button></div>
       </div>
       <div id="chMatch">
         <div class="ch-lead">Pick a hustler</div>
@@ -6245,6 +6394,8 @@
       function leaveHole() {
         if (swing.active) return;
         if (round.match && !confirmForfeit()) return;       // leaving a career match early forfeits it
+        if (round.pvp && !confirmLeavePvp()) return;         // a friend round can be resumed
+        const leftPvp = !!round.pvp && !round.over;
         if (round.on) endRound();          // leaving the course ends a test round
         hp.on = false; document.body.classList.remove('hole');
         state.badStreak = 0;
@@ -6255,6 +6406,7 @@
         state.lie = 'fairway'; state.lieSeed = (state.lieSeed * 1664525 + 1013904223) >>> 0; $('inLie').value = 'fairway'; state.aim = PINS[state.pin].brg; state.view = 'scout'; camReady = false;
         layoutWorld(); syncPanel(); renderBag(); txtCache.clear();
         $('tbPinL').textContent = 'Target pin'; $('panelTitle').textContent = 'Range Sandbox';
+        if (leftPvp) toast('Left the round\nResume it from 🤝 Friends in the clubhouse (J)', 2400);
       }
 
       // Read the lie from where the ball finished and set up the next stroke.
@@ -6816,9 +6968,12 @@
         if (round.on) {          // a test round: record it and show the card
           round.scores[hp.holeIdx] = { strokes: hp.strokes, putts: hp.putts, par: HOLE.par, pen: hp.pen };
           $('toast').classList.remove('on');
-          const vs = round.match ? `\n${matchAfterHole(hp.holeIdx)}` : '';          // a career match: the hustler's score, the match
-          const hc = round.match && careerOn ? recordCareerRound(round.match) : '';   // all 9 played: it counts for your handicap (M2)
+          const pv = round.pvp && pvpAfterHole(hp.holeIdx);                         // a friend round: the card so far (M3)
+          const vs = round.match ? `\n${matchAfterHole(hp.holeIdx)}` : pv ? `\n${pv}` : '';   // a career match: the hustler's score, the match
+          const cr = round.match || round.pvp;
+          const hc = cr && careerOn ? recordCareerRound(cr) : '';                     // all 9 played: it counts for your handicap (M2)
           showScorecard(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}${vs}${hc}`);
+          if (round.pvp && round.over) submitPvp();                                  // the last hole of a friend round: send the card
           return;
         }
         toast(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}\nPress R to replay · N for next hole`, 12000);
@@ -6859,6 +7014,11 @@
           npc.plan = null; npc.anim = null; npc.busy = false; npcTurn = false;
           if (tossOpen) { tossOpen = false; $('teeToss').classList.remove('on'); }
         }
+        if (round.pvp) {                                     // a friend round: its card stays in career.pvpCard to resume
+          round.pvp = null; document.body.classList.remove('match');
+          setCourse(null);
+          careerSave(); updateCareerUI();
+        }
         round.on = false; round.over = false; lbEntry.active = false;
         if (round.saved) { setStats(round.saved); state.windMph = round.saved.mph; state.windDir = round.saved.dir; round.saved = null; $('inWind').value = state.windMph; $('inWindDir').value = state.windDir; orientFlags(); syncPanel(); }
         document.body.classList.remove('round'); hideScorecard();
@@ -6874,13 +7034,17 @@
       }
       function quitRound() {
         if (swing.active) return;
-        const wasMatch = !!round.match;
+        const wasMatch = !!round.match, wasPvp = !!round.pvp;
         if (wasMatch && !confirmForfeit()) return;
+        if (wasPvp && !confirmLeavePvp()) return;
         endRound();
         if (hp.on) leaveHole();
-        if (!wasMatch) toast('Test round ended', 1600);
+        if (wasPvp) toast('Left the round\nResume it from 🤝 Friends in the clubhouse (J)', 2400);
+        else if (!wasMatch) toast('Test round ended', 1600);
       }
       const doneHint = () => lbEntry.active ? 'Type your initials (or <kbd>↑</kbd><kbd>↓</kbd>) · <kbd>←</kbd><kbd>→</kbd> move · <kbd>Enter</kbd> save · <kbd>Esc</kbd> skip'
+        : round.pvp
+        ? (round.over ? '<kbd>N</kbd> back to the clubhouse · <kbd>K</kbd> scorecard' : '<kbd>N</kbd> or <kbd>R</kbd> next hole · <kbd>K</kbd> scorecard · <kbd>H</kbd> leave (you can resume)')
         : round.match
         ? (round.over ? '<kbd>N</kbd> back to the clubhouse · <kbd>K</kbd> scorecard'
           : round.match.settled ? '<kbd>N</kbd> play on for practice · <kbd>K</kbd> scorecard · <kbd>H</kbd> leave the course'
@@ -6898,7 +7062,14 @@
         $('roundIntro').querySelector('.ri-note').textContent = mm
           ? `${mm.format === 'skins' ? `Skins at ${money(mm.stake)} a hole against ${nn.first} “${nn.nick}”: win a hole outright to take its skin; a halved hole carries it to the next.` : `Match play for ${money(mm.stake)} against ${nn.first} “${nn.nick}”: win the most holes. Whoever is 2 down may press.`} Your own stats and bag; each hole's wind and greens are fixed. Teeing off pays the ${money(MATCH.fee[mm.tier])} green fee. Leaving before it's decided forfeits the stake.`
           : 'Everyone plays the same course: each hole\'s wind and green speed are fixed, and everyone plays standard stats (all 5). Holes are played in order; your score goes on the Top 10.';
-        $('riStart').textContent = mm ? 'Tee off (Enter)' : 'Start round (Enter)';
+        const pv = mode === 'pvp' && career && career.pvpCard;            // a friend round (M3)
+        if (pv) {
+          $('roundIntro').querySelector('.card-h span').textContent = `vs ${pv.vsName} · ${FR_FMT[pv.format]} · course preview`;
+          $('roundIntro').querySelector('.ri-note').textContent = `${FR_FMT[pv.format]} for ${money(pv.stake)}${pv.format === 'skins' ? ' a skin' : ''} against ${pv.vsName} at ${TIERS[pv.tier].course}. `
+            + `${strokesText({ player: pv.n ? (pv.mine ? session.id : pv.vs) : null, n: pv.n }, { [pv.vs]: pv.vsName })}. ${pv.vsName} plays the same holes, wind and greens on their own PC; `
+            + `the bet settles when both cards are in. You can leave and resume until ${frDate(pv.deadline)}.`;
+        }
+        $('riStart').textContent = mm || pv ? (pv && pv.holes.length ? `Resume on hole ${pv.holes.length + 1} (Enter)` : 'Tee off (Enter)') : 'Start round (Enter)';
         hideScorecard();
         $('roundIntro').classList.add('on'); introOpen = true;        // shown first so each map can be drawn at its real width
         const grid = $('riGrid'), dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -6994,8 +7165,9 @@
         else lsSet(careerKey(), JSON.stringify(career));
       }
       const saveSyncMeta = () => session && career && lsSet(careerKey(), JSON.stringify({ c: career, s: { ver: sync.ver, base: sync.base, dirty: sync.dirty } }));
-      async function profileApi(action, body = {}, keepalive = false) {
-        const r = await fetch(PROFILE_API, {
+      const profileApi = (action, body = {}, keepalive = false) => apiPost(PROFILE_API, action, body, keepalive);
+      async function apiPost(url, action, body = {}, keepalive = false) {
+        const r = await fetch(url, {
           method: 'POST', keepalive,
           headers: { 'Content-Type': 'application/json', ...(session ? { Authorization: `Bearer ${session.token}` } : {}) },
           body: JSON.stringify({ action, ...body }),
@@ -7084,7 +7256,7 @@
         if (m.roundRecorded || s.filter(Boolean).length < HOLES.length || !s[HOLES.length - 1]) return '';
         const gross = s.reduce((a, x) => a + x.strokes, 0), par = s.reduce((a, x) => a + x.par, 0);
         const before = handicapOf(career);
-        career.rounds = [...(career.rounds || []), { date: Date.now(), gross, par, tier: m.tier, vs: m.npc }].slice(-HCP.keep);
+        career.rounds = [...(career.rounds || []), { date: Date.now(), gross, par, tier: m.tier, vs: m.npc || m.vs }].slice(-HCP.keep);
         m.roundRecorded = true;
         careerSave();
         const h = handicapOf(career), n = career.rounds.length;
@@ -7158,6 +7330,7 @@
         }
         setText('chTag', `Tier ${career.tier} · ${CAREER.tiers[career.tier]}`);
         renderTiers();
+        updateFriendsTile();
         // a match left part-way (a reload): resume it from the hole you were on
         const m = career.match, live = m && !m.settled && m.feePaid;
         $('chMatchBtn').innerHTML = live
@@ -7218,6 +7391,7 @@
       function openClubhouse() {
         if (swing.active || lbEntry.active) return;
         if (round.match) { toast(round.match.settled ? 'Finish your round first\nOr H to leave the course' : 'You\'re in a match\nFinish it first — H forfeits', 1800); return; }
+        if (round.pvp) { if (round.over) return pvpToClubhouse(); toast(`You're playing ${round.pvp.vsName}\nFinish the round, or H to leave (you can resume it)`, 2000); return; }
         if (tipsOn) setTips(false);
         if (introOpen) closeRoundIntro();
         hideScorecard();
@@ -7225,7 +7399,7 @@
         const ch = $('clubhouse');
         ch.classList.add('on'); clubOpen = true;
         setText('chMsg', '');
-        ch.classList.remove('match', 'shop', 'coach');
+        ch.classList.remove('match', 'shop', 'coach', 'friends', 'chal');
         if (career && careerOn) clearDemo();                 // back from a free demo
         if (!career) {                                       // who's playing? (signed in but nothing here yet: fetch it)
           if (session) { siMode = 'in'; renderSignIn('Loading your profile…'); syncLoad(); }
@@ -7237,7 +7411,7 @@
           if (career.snapped.length) setText('chMsg', `Snapped: ${career.snapped.map((i) => CLUBS[i].name).join(', ')}. The pro shop will repair ${career.snapped.length > 1 ? 'them' : 'it'}.`);
           updateCareerUI();
           setSync(session ? (sync.dirty ? 'saving' : sync.state || 'ok') : '');
-          if (session) syncLoad();                           // another PC may have played since
+          if (session) { syncLoad(); loadFriends(true); }    // another PC may have played since; any challenges waiting?
         }
       }
       function closeClubhouse() {
@@ -7257,7 +7431,7 @@
       let siMode = 'in';
       function renderSignIn(msg = '') {
         const ch = $('clubhouse'), local = readCareer(CAREER.key);
-        ch.classList.add('new'); ch.classList.remove('hub', 'match', 'shop', 'coach');
+        ch.classList.add('new'); ch.classList.remove('hub', 'match', 'shop', 'coach', 'friends', 'chal');
         setText('chTag', 'Profiles');
         $('chNew').className = siMode + (siMode === 'local' && local ? ' continue' : '') + (local ? '' : ' nobring');
         for (const b of $('siTabs').children) b.classList.toggle('on', b.dataset.si === siMode);
@@ -7301,7 +7475,8 @@
       }
       // sign out (or stop playing this PC's career) and ask who's playing
       async function switchPlayer() {
-        if (round.match) return;
+        if (round.match || round.pvp) return;
+        fr.list = []; fr.players = []; fr.loaded = 0;        // (the next player's friends and challenges are their own)
         if (careerOn) leaveCareer(true);
         if (session) {
           if (sync.dirty) await syncNow();
@@ -7336,7 +7511,12 @@
       }
       function clubhouseGo(where) {
         if (where === 'range') return careerToRange();
-        if (where === 'match') return openMatchPicker();
+        if (where === 'match') {                             // one round at a time: a friend round left part-way comes first
+          const pc = career.pvpCard;
+          if (pc && pc.holes.length) return setText('chMsg', `Finish your round against ${pc.vsName} first (🤝 Friends → Resume).`);
+          return openMatchPicker();
+        }
+        if (where === 'friends') return openFriends();
         if (where === 'shop') return openShop();
         if (where === 'coach') return openCoach();
         const soon = { shop: 'The pro shop', coach: 'The coach' }[where];
@@ -7344,6 +7524,12 @@
       }
       // while the clubhouse is open it takes the keys (typing a name goes to the box)
       function clubKey(e) {
+        if ($('clubhouse').classList.contains('friends')) { if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); } return; }
+        if ($('clubhouse').classList.contains('chal')) {      // the challenge form: Enter sends, Esc back to Friends
+          if (e.code === 'Escape') { e.preventDefault(); openFriends(); }
+          else if ((e.code === 'Enter' || e.code === 'NumpadEnter') && !e.repeat) { e.preventDefault(); sendChallenge(); }
+          return;
+        }
         if ($('clubhouse').classList.contains('coach')) { if (e.code === 'Escape') { e.preventDefault(); openClubhouse(); } return; }
         if ($('clubhouse').classList.contains('shop')) {       // the pro shop: 1–6 tabs, Esc back
           const tabs = ['iron', 'driver', 'wood', 'wedge', 'putter', 'bag'], dg = /^Digit([1-6])$/.exec(e.code);
@@ -7369,6 +7555,255 @@
       }
       career = careerLoad();
       if (session) setTimeout(() => syncLoad(), 400);         // signed in: pick up anything played on another PC
+
+      // ---- FRIENDS (MULTIPLAYER_PLAN.md, M3). Challenges live on the server (api/challenge.js): it holds both stakes
+      // (escrow) once a challenge is accepted and settles the bet when both cards are in, so both players see the same
+      // result. Each player plays the round on their own PC; the card in progress is career.pvpCard, so leaving and coming
+      // back resumes it. One round at a time: a hustler match and a friend round can't both be in progress.
+      const CH_API = '/api/challenge';
+      const FR_FMT = { match: 'Match play', stroke: 'Stroke play', skins: 'Skins' };
+      const fr = { list: [], players: [], loaded: 0, busy: false, form: null, sending: false };
+      const chApi = (action, body = {}) => apiPost(CH_API, action, body);
+      // strokes received on each hole: one on every hole whose stroke index is ≤ n, two on the hardest past 9 (= api/challenge.js)
+      const holeStrokes = (n) => HOLES.map((h) => (h.si <= n ? 1 : 0) + (h.si <= n - HOLES.length ? 1 : 0));
+      const escrowOf = (format, stake) => stake * (format === 'skins' ? HOLES.length : 1);
+      const frDate = (t) => new Date(t).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      const chOther = (ch) => (ch.from === session.id ? ch.to : ch.from);
+      // "Gus gets 3 strokes (holes 4, 6 and 9)", from this player's side
+      function strokesText(st, names) {
+        if (!st || !st.n || !st.player) return st && st.why === 'nohcp' ? 'No strokes: one of you has no handicap yet' : 'No strokes';
+        const holes = holeStrokes(st.n).map((k, i) => (k ? i + 1 : 0)).filter(Boolean);
+        const list = holes.length > 1 ? `${holes.slice(0, -1).join(', ')} and ${holes[holes.length - 1]}` : `${holes[0]}`;
+        const who = st.player === session.id ? 'You get' : `${names[st.player] || st.player} gets`;
+        return `${who} ${st.n} stroke${st.n === 1 ? '' : 's'} (${holes.length === 1 ? 'hole' : 'holes'} ${list}${st.n > HOLES.length ? `; two on the hardest ${st.n - HOLES.length}` : ''})`;
+      }
+      // the stakes this player has held in challenges that aren't settled
+      const heldCash = () => fr.list.filter((c) => c.status === 'open' && c.held && c.held[session.id]).reduce((s, c) => s + escrowOf(c.format, c.stake), 0);
+      async function loadFriends(quiet = false) {
+        if (!session || fr.busy) return;
+        fr.busy = true;
+        if (!quiet) setText('frMsg', fr.loaded ? '' : 'Loading…');
+        try {
+          const [p, l] = await Promise.all([profileApi('players'), chApi('list')]);
+          if (p.status === 401 || l.status === 401) { setSync('signedout'); if (!quiet) setText('frMsg', 'Signed out — switch player to sign in again'); }
+          else if (p.status !== 200 || l.status !== 200) { if (!quiet) setText('frMsg', (l.data && l.data.error) || 'Can\'t reach the server (it runs on the deployed site)'); }
+          else {
+            fr.players = p.data.players || []; fr.list = l.data.challenges || []; fr.loaded = Date.now();
+            if (!quiet) setText('frMsg', '');
+          }
+        } catch { if (!quiet) setText('frMsg', 'Can\'t reach the server (it runs on the deployed site)'); }
+        fr.busy = false;
+        updateFriendsTile();
+        if ($('clubhouse').classList.contains('friends')) renderFriends();
+      }
+      function updateFriendsTile() {
+        const b = $('chFriendsBtn');
+        if (!session) { b.innerHTML = '<b>🤝 Friends</b><i>Sign in to a profile to bet your friends</i>'; return; }
+        const me = session.id, wait = fr.list.filter((c) => c.status === 'pending' && c.to === me).length;
+        const play = fr.list.filter((c) => c.status === 'open' && !c.cards[me]).length, pc = career && career.pvpCard;
+        b.innerHTML = `<b>🤝 Friends</b><i>${pc && pc.holes.length ? `Resume your round vs ${pc.vsName} (thru ${pc.holes.filter(Boolean).length})`
+          : wait ? `${wait} challenge${wait > 1 ? 's' : ''} waiting for you` : play ? `${play} round${play > 1 ? 's' : ''} to play` : 'Bet a friend on a round'}</i>`;
+      }
+      function openFriends(msg = '') {
+        if (!career) return;
+        const ch = $('clubhouse');
+        if (!session) { setText('chMsg', 'Friends need a profile: Switch player → New profile (you can bring this career into it).'); return; }
+        ch.classList.remove('hub', 'new', 'match', 'shop', 'coach', 'chal'); ch.classList.add('friends');
+        renderFriends();
+        setText('frMsg', msg);
+        loadFriends(!!msg);
+      }
+      function renderFriends() {
+        const me = session.id, L = fr.list, pc = career.pvpCard;
+        setText('frCash', money(career.cash));
+        const held = heldCash(), nOpen = L.filter((c) => c.status === 'open' && c.held && c.held[me]).length;
+        setText('frHeld', held ? `${money(held)} of your stakes held in ${nOpen} challenge${nOpen > 1 ? 's' : ''} until ${nOpen > 1 ? 'they settle' : 'it settles'} (already out of your cash)` : '');
+        const row = (c, cls, status, btns) => {
+          const o = chOther(c), sk = c.format === 'skins';
+          return `<div class="fr-ch ${cls}"><div><b>vs ${c.names[o]}</b> · ${FR_FMT[c.format]} · ${money(c.stake)}${sk ? ' a skin' : ''} · ${TIERS[c.tier].course}`
+            + `<i>${strokesText(c.strokes, c.names)}</i><i>${status}</i></div><div class="fr-btns">${btns}</div></div>`;
+        };
+        const B = (act, id, label, cls = '') => `<button data-act="${act}" data-id="${id}" class="${cls}">${label}</button>`;
+        const groups = [
+          ['Waiting for you', L.filter((c) => c.status === 'pending' && c.to === me).map((c) => row(c, 'hot', `${c.names[c.from]} challenged you ${frDate(c.created)} · accepting takes ${money(escrowOf(c.format, c.stake))} from each of you until it settles`,
+            B('accept', c.id, `Accept · ${money(escrowOf(c.format, c.stake))}`, 'go') + B('decline', c.id, 'Decline', 'no')))],
+          ['Waiting for them', L.filter((c) => c.status === 'pending' && c.from === me).map((c) => row(c, '', `Sent ${frDate(c.created)} · waiting for ${c.names[c.to]} to accept`, B('cancel', c.id, 'Cancel', 'no')))],
+          ['To play', L.filter((c) => c.status === 'open').map((c) => {
+            const o = chOther(c), mine = c.cards[me], theirs = c.cards[o], mp = pc && pc.id === c.id ? pc : null;
+            const done = mp && mp.holes.filter(Boolean).length === HOLES.length;
+            if (mine) return row(c, '', `Your card is in (${mine.reduce((s, h) => s + h.strokes, 0)}) · waiting for ${c.names[o]}'s, until ${frDate(c.deadline)}`, '');
+            const st = `${theirs ? `${c.names[o]}'s card is in · ` : ''}Play by ${frDate(c.deadline)}${mp && mp.holes.length ? ` · you're thru ${mp.holes.filter(Boolean).length}` : ''}`;
+            return row(c, 'hot', st, (done ? B('send', c.id, 'Send your card', 'go') : B('play', c.id, mp && mp.holes.length ? 'Resume' : 'Play', 'go')) + B('forfeit', c.id, 'Forfeit', 'no'));
+          })],
+          ['Finished', L.filter((c) => c.status === 'done' || c.status === 'closed').slice(0, 8).map((c) => {
+            const net = c.result && c.result.net ? c.result.net[me] : 0;
+            const money_ = c.status === 'done' ? ` · <span class="${net > 0 ? 'won' : net < 0 ? 'lost' : ''}">${net > 0 ? '+' : net < 0 ? '−' : '±'}${money(Math.abs(net))}</span>` : '';
+            return row(c, '', `${(c.result && c.result.line) || c.status}${money_} · ${frDate(c.finished || c.created)}`, '');
+          })],
+        ];
+        const pl = fr.players.filter((p) => p.name.toLowerCase() !== me).sort((a, b) => a.name.localeCompare(b.name));
+        const players = pl.map((p) => `<div class="fr-pl"><div><b>${p.name}</b><i>Handicap ${p.handicap === null || p.handicap === undefined ? `— (${p.rounds || 0} / ${HCP.min} rounds)` : fmtHcp(p.handicap)} · ${CAREER.tiers[p.tierMax || 1]} · ${money(p.cash)}</i></div>`
+          + `<div class="fr-btns"><button data-act="challenge" data-to="${p.name.toLowerCase()}" class="go">Challenge</button></div></div>`).join('');
+        $('frList').innerHTML = groups.filter(([, items]) => items.length).map(([t, items]) => `<div class="sh-cat">${t}</div>${items.join('')}`).join('')
+          + `<div class="sh-cat">Players</div>${players || `<div class="fr-empty">${fr.loaded ? 'Nobody else has a profile yet. Get a friend to make one (Switch player → New profile on their PC).' : '…'}</div>`}`;
+      }
+      async function friendsClick(e) {
+        const b = e.target.closest('button[data-act]');
+        if (!b || b.disabled) return;
+        b.blur();
+        const act = b.dataset.act, id = b.dataset.id, c = fr.list.find((x) => x.id === id);
+        if (act === 'challenge') return openChalForm(b.dataset.to);
+        if (act === 'play') return playFriend(id);
+        if (act === 'send') return submitPvp();
+        if (act === 'forfeit' && !confirm(`Forfeit against ${c.names[chOther(c)]}? They win the ${money(2 * escrowOf(c.format, c.stake))} pot.`)) return;
+        if (act === 'decline' && !confirm(`Decline ${c.names[c.from]}'s challenge?`)) return;
+        b.disabled = true; setText('frMsg', '…');
+        let r;
+        try { r = await chApi(act, { id }); } catch { r = { status: 0, data: { error: 'Can\'t reach the server' } }; }
+        if (r.status !== 200) { b.disabled = false; setText('frMsg', r.data.error || `Something went wrong (${r.status})`); return; }
+        const ch = r.data.challenge, o = chOther(ch);
+        if (act === 'forfeit' && career.pvpCard && career.pvpCard.id === id) { career.pvpCard = null; careerSave(); }
+        const msg = act === 'accept' ? `Game on: ${money(escrowOf(ch.format, ch.stake))} each is held until it settles. Play by ${frDate(ch.deadline)}.`
+          : act === 'decline' ? 'Declined.' : act === 'cancel' ? 'Challenge called off.' : `You forfeited: ${ch.names[o]} takes the pot.`;
+        await syncLoad();                                    // the server moved money: pick up the new cash
+        openFriends(msg);
+      }
+      // ---- the challenge form: format, stake (no more than both of you have), a circuit you both have open, handicap strokes
+      function openChalForm(to) {
+        const p = fr.players.find((x) => x.name.toLowerCase() === to);
+        if (!p) return;
+        const ok = [1, 2, 3].filter((t) => t <= (career.tierMax || 1) && t <= (p.tierMax || 1));
+        fr.form = { to, name: p.name, p, format: 'match', stake: 20, tier: ok.includes(career.tier) ? career.tier : ok[ok.length - 1], hcp: 'auto', n: 0, who: to, tiers: ok };
+        const ch = $('clubhouse');
+        ch.classList.remove('friends'); ch.classList.add('chal');
+        setText('ccErr', '');
+        renderChalForm();
+      }
+      function chalStrokes(f) {
+        if (f.hcp === 'off') return { player: null, n: 0, why: 'off' };
+        if (f.hcp === 'agreed') return { player: f.n ? f.who : null, n: f.n, why: 'agreed' };
+        const hm = handicapOf(career), ht = f.p.handicap ?? null;
+        if (hm === null || ht === null) return { player: null, n: 0, why: 'nohcp' };
+        const n = Math.min(18, Math.round(Math.abs(hm - ht)));
+        return { player: n ? (hm > ht ? session.id : f.to) : null, n, why: 'auto' };
+      }
+      function renderChalForm() {
+        const f = fr.form, sk = f.format === 'skins', per = sk ? HOLES.length : 1;
+        setText('ccTitle', `Challenge ${f.name}`);
+        for (const b of $('ccFmt').children) b.classList.toggle('on', b.dataset.fmt === f.format);
+        setText('ccFmtNote', { match: 'Most holes won (net)', stroke: 'Lowest net total', skins: 'A stake per hole; a halved hole carries' }[f.format]);
+        const cap = Math.floor(Math.min(career.cash, f.p.cash ?? 0) / per / 5) * 5, inp = $('ccStake');
+        inp.min = 5; inp.max = Math.max(5, Math.min(cap, 2000)); f.stake = clamp(f.stake, 5, +inp.max); inp.value = f.stake;
+        setText('ccStakeL', sk ? 'Per skin' : 'Stake');
+        setText('ccStakeV', money(f.stake));
+        setText('ccEscrow', `${money(f.stake * per)} from each of you, held from when ${f.name} accepts until it settles · the winner takes ${sk ? 'what the skins pay' : money(2 * f.stake)}`);
+        $('ccTier').innerHTML = [1, 2, 3].map((t) => `<button data-t="${t}" class="${f.tier === t ? 'on' : ''}" ${f.tiers.includes(t) ? '' : 'disabled title="Not open to both of you"'}>${TIERS[t].course}</button>`).join('');
+        for (const b of $('ccHcp').children) b.classList.toggle('on', b.dataset.h === f.hcp);
+        $('chChal').classList.toggle('agreed', f.hcp === 'agreed');
+        $('ccWho').innerHTML = `<option value="${f.to}">${f.name}</option><option value="${session.id}">me (${session.name})</option>`;
+        $('ccWho').value = f.who; $('ccN').value = f.n;
+        const st = chalStrokes(f), hm = handicapOf(career), ht = f.p.handicap ?? null;
+        setText('ccStrokes', (f.hcp === 'auto' ? `Handicaps: you ${fmtHcp(hm)}, ${f.name} ${fmtHcp(ht)} · ` : '') + strokesText(st, { [f.to]: f.name, [session.id]: session.name }) + (f.hcp === 'auto' ? ' (fixed when accepted)' : ''));
+        const why = cap < 5 ? `${career.cash < f.p.cash ? 'You don\'t' : `${f.name} doesn't`} have ${money(5 * per)} to put up` : '';
+        $('ccGo').disabled = !!why; if (why) setText('ccErr', why);
+      }
+      function chalFormClick(e) {
+        const b = e.target.closest('button');
+        if (!b || b.disabled || !fr.form) return;
+        b.blur();
+        const f = fr.form;
+        if (b.dataset.fmt) f.format = b.dataset.fmt;
+        else if (b.dataset.t) f.tier = +b.dataset.t;
+        else if (b.dataset.h) f.hcp = b.dataset.h;
+        else return;
+        setText('ccErr', ''); renderChalForm();
+      }
+      async function sendChallenge() {
+        const f = fr.form;
+        if (!f || $('ccGo').disabled) return;
+        $('ccGo').disabled = true; setText('ccErr', 'Sending…');
+        const hcp = f.hcp === 'agreed' ? { strokes: f.n, to: f.who } : f.hcp;
+        let r;
+        try { r = await chApi('create', { to: f.to, format: f.format, stake: f.stake, tier: f.tier, hcp }); } catch { r = { status: 0, data: { error: 'Can\'t reach the server' } }; }
+        $('ccGo').disabled = false;
+        if (r.status !== 200) return setText('ccErr', r.data.error || `Something went wrong (${r.status})`);
+        fr.form = null;
+        openFriends(`Challenge sent to ${f.name}. Nothing is taken until they accept.`);
+      }
+      // ---- playing it: the same course and conditions as the friend (the circuit's holes, each hole's fixed wind and
+      // greens), the career's own stats and bag; no hustler, no tee toss, no presses
+      function playFriend(id) {
+        const ch = fr.list.find((c) => c.id === id), me = session.id;
+        if (!ch || ch.status !== 'open' || ch.cards[me]) return;
+        const m = career.match;
+        if (m && !m.settled && m.feePaid) return setText('frMsg', 'Finish (or forfeit) your hustler match first');
+        const pc = career.pvpCard;
+        if (pc && pc.id !== id && pc.holes.length) return setText('frMsg', `Finish your round against ${pc.vsName} first`);
+        if (!pc || pc.id !== id) {
+          const o = chOther(ch);
+          career.pvpCard = { id, tier: ch.tier, format: ch.format, stake: ch.stake, vs: o, vsName: ch.names[o], deadline: ch.deadline, n: ch.strokes.player ? ch.strokes.n : 0, mine: ch.strokes.player === me, holes: [] };
+          careerSave();
+        }
+        closeClubhouse();
+        setCourse(ch.tier);
+        openRoundIntro('pvp');
+      }
+      function startFriendRound() {
+        const pc = career && career.pvpCard;
+        if (!pc || swing.active) return;
+        closeClubhouse();
+        if (!careerOn) enterCareer();
+        round.saved = { mph: state.windMph, dir: state.windDir, power: state.power, dex: state.dex, composure: state.composure, perception: state.perception };
+        round.on = true; round.over = false; round.match = null; round.pvp = pc; round.lbDone = true; lbEntry.active = false;
+        round.scores = pc.holes.map((h) => h && { strokes: h.strokes, putts: h.putts, par: h.par, pen: h.pen });
+        document.body.classList.add('round', 'match'); hideScorecard();
+        hp.holeIdx = Math.min(pc.holes.length, HOLES.length - 1); courseV = TIERS[pc.tier] || null;
+        for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
+        buildHole(hp.holeIdx); enterHole();
+        $('btnRound').textContent = 'Leave the round';
+        const give = holeStrokes(pc.n)[hp.holeIdx];
+        toast(`vs ${pc.vsName} · ${FR_FMT[pc.format]}, ${money(pc.stake)}${pc.format === 'skins' ? ' a skin' : ''}\n${pc.holes.length ? `Resuming on hole ${hp.holeIdx + 1}` : strokesText({ player: pc.n ? (pc.mine ? session.id : pc.vs) : null, n: pc.n }, { [pc.vs]: pc.vsName })}`
+          + `${give ? `\n${pc.mine ? 'You get' : `${pc.vsName} gets`} a stroke on this hole` : ''} · ${HOLE.name}, par ${HOLE.par}`, 3600);
+      }
+      // after each hole of a friend round: the card in progress (saved), and the stroke on this hole if there is one
+      function pvpAfterHole(i) {
+        const pc = round.pvp, k = holeStrokes(pc.n)[i];
+        pc.holes[i] = { strokes: hp.strokes, putts: hp.putts, pen: hp.pen, par: HOLE.par };
+        careerSave();
+        if (!k) return '';
+        return pc.mine ? `You get ${k > 1 ? `${k} strokes` : 'a stroke'} here: net ${hp.strokes - k}` : `${pc.vsName} gets ${k > 1 ? `${k} strokes` : 'a stroke'} on this hole`;
+      }
+      // all 9 holes played: send the card. If it can't be sent now it's kept, and Friends offers "Send your card".
+      async function submitPvp() {
+        const pc = career && career.pvpCard;
+        if (!pc || fr.sending || pc.holes.filter(Boolean).length < HOLES.length) return;
+        fr.sending = true;
+        const note = (t) => { if ($('scorecard').classList.contains('on') && round.pvp) $('scMsg').textContent = `${$('scMsg').textContent.replace(/\n\n(Sending your card|Card sent|Both cards|Couldn't send)[\s\S]*$/, '')}\n\n${t}`; setText('frMsg', t); };
+        note('Sending your card…');
+        let r;
+        try { r = await chApi('submit', { id: pc.id, card: pc.holes.map((h) => ({ strokes: h.strokes, putts: h.putts, pen: h.pen || 0 })) }); } catch { r = { status: 0, data: {} }; }
+        fr.sending = false;
+        if (r.status === 200 || r.status === 400 || r.status === 404) {        // in (or the challenge is over): the card is done with
+          career.pvpCard = null; careerSave();
+          const ch = r.data.challenge;
+          if (ch) { const i = fr.list.findIndex((c) => c.id === ch.id); if (i >= 0) fr.list[i] = ch; else fr.list.unshift(ch); }
+          if (!ch) note(r.data.error || 'That challenge is over');
+          else if (ch.status === 'done') { const net = ch.result.net[session.id]; note(`Both cards are in: ${ch.result.line} · ${net > 0 ? `you win ${money(net)}` : net < 0 ? `you lose ${money(-net)}` : 'nobody pays'}`); }
+          else note(`Card sent. Waiting for ${pc.vsName}'s card (they have until ${frDate(pc.deadline)}).`);
+          if (!round.on) { await syncLoad(); if ($('clubhouse').classList.contains('friends')) renderFriends(); }
+        } else note(`Couldn't send your card (${(r.data && r.data.error) || 'offline'}). It's kept: send it from Friends in the clubhouse.`);
+        updateFriendsTile();
+      }
+      function confirmLeavePvp() {
+        const pc = round.pvp;
+        return !pc || round.over || confirm(`Leave now? You can resume the round against ${pc.vsName} from Friends until ${frDate(pc.deadline)} (the hole you're on starts again).`);
+      }
+      function pvpToClubhouse() {
+        endRound();
+        if (hp.on) leaveHole();
+        openClubhouse();
+        openFriends();
+      }
 
       // =====================================================================================================
       //  CAREER CLUBS (CAMPAIGN_PLAN.md, chunk 2 + the club catalogue). Real models, each a set of changes to the base club:
@@ -8200,9 +8635,14 @@
         if (!e.repeat && (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space')) closeToss();
       }
       // the course preview's buttons start a test round or the career's match
-      function introStart() { closeRoundIntro(); if (introMode === 'match') startMatch(); else startRound(); }
+      function introStart() { closeRoundIntro(); if (introMode === 'match') startMatch(); else if (introMode === 'pvp') startFriendRound(); else startRound(); }
       function introCancel() {
         closeRoundIntro();
+        if (introMode === 'pvp') {                           // back to Friends; a round not started yet isn't kept
+          if (career && career.pvpCard && !career.pvpCard.holes.length) { career.pvpCard = null; careerSave(); }
+          setCourse(null); openClubhouse(); openFriends();
+          return;
+        }
         if (introMode === 'match' && career && career.match && !career.match.feePaid) { career.match = null; careerSave(); setCourse(null); openClubhouse(); openMatchPicker(); }
       }
       // TEST ROUND conditions: the hole's own wind and green speed, the same for every player (the sliders are hidden)
@@ -8283,7 +8723,19 @@
             }
           }
         }
-        $('scTable').innerHTML = head + parRow + windRow + scRow + (m ? mRows : '') + ptRow + pnRow + tpRow;
+        const pv = round.pvp;
+        if (pv) {                                            // a friend round: only your own card, with the strokes (dots) and your net
+          const give = holeStrokes(pv.n);
+          let row = `<tr class="mrow"><td>${pv.mine ? 'Your strokes' : `${pv.vsName}'s strokes`}</td>`, netRow = '<tr class="mrow"><td>Your net</td>', nt = 0;
+          for (let i = 0; i < n; i++) {
+            const s = round.scores[i], c = i === cur ? ' class="cur"' : '';
+            row += `<td${c} title="stroke index ${HOLES[i].si}">${give[i] ? '●'.repeat(give[i]) : ''}</td>`;
+            if (s) nt += s.strokes - (pv.mine ? give[i] : 0);
+            netRow += `<td${c}>${s ? s.strokes - (pv.mine ? give[i] : 0) : ''}</td>`;
+          }
+          mRows = `${row}<td class="tot">${pv.n || ''}</td></tr>${pv.mine && pv.n ? `${netRow}<td class="tot">${t.played ? nt : ''}</td></tr>` : ''}`;
+        }
+        $('scTable').innerHTML = head + parRow + windRow + scRow + (m || pv ? mRows : '') + ptRow + pnRow + tpRow;
         $('scTitle').textContent = final ? 'Final scorecard' : 'Scorecard';
         $('scTag').textContent = final ? `${t.strokes} strokes · ${fmtToPar(t.toPar)}` : t.played ? `${fmtToPar(t.toPar)} thru ${t.played}` : 'Test round';
         $('scMsg').textContent = final
@@ -8306,6 +8758,18 @@
           sc.classList.add('on');
           return;
         }
+        if (pv) {
+          $('scTitle').textContent = `${final ? 'Final · ' : ''}vs ${pv.vsName} · ${FR_FMT[pv.format]}, ${money(pv.stake)}${pv.format === 'skins' ? ' a skin' : ''}`;
+          $('scTag').textContent = pv.n ? `${pv.mine ? 'you get' : `${pv.vsName} gets`} ${pv.n} stroke${pv.n === 1 ? '' : 's'}` : 'no strokes';
+          if (final) $('scMsg').textContent = `${msg ? msg + '\n\n' : ''}Round complete: ${t.strokes} strokes (${fmtToPar(t.toPar)})`;
+          $('scNext').textContent = final ? 'Back to the clubhouse (N)' : hp.done ? `Next: Hole ${hp.holeIdx + 2} (N)` : 'Back to the hole (K)';
+          $('scClose').textContent = final ? 'Back to the clubhouse' : 'Close (K)';
+          const sc = $('scorecard');
+          scMode = 'round';
+          sc.classList.remove('entry', 'board', 'lbonly');
+          sc.classList.add('on');
+          return;
+        }
         // the end of the round: a top-10 score gets the initials screen, then the board
         const sc = $('scorecard');
         scMode = 'round';
@@ -8320,6 +8784,7 @@
       function scorecardNext() {
         if (scMode === 'board') { if (round.on) return hideScorecard(); hideScorecard(); return openRoundIntro(); }
         if (round.match) { if (round.over) return matchToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
+        if (round.pvp) { if (round.over) return pvpToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
         if (round.over) return startRound();
         if (hp.done) return nextRoundHole();
         hideScorecard();
@@ -8327,6 +8792,7 @@
       function scorecardClose() {
         if (scMode === 'board') return hideScorecard();
         if (round.match && (round.over || round.match.settled)) return matchToClubhouse();
+        if (round.pvp && round.over) return pvpToClubhouse();
         if (round.over) return quitRound();
         hideScorecard();
       }
@@ -8620,8 +9086,10 @@
         setText('tbHole', hp.done ? `Holed in ${hp.strokes}` : `Shot ${hp.strokes + 1}${hp.putts ? ` · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}` : ''}`);
         if (round.on) {          // test round: score so far (holes finished) and where you are
           const t = roundTotals();
-          setText('tbRoundL', round.match ? (round.match.format === 'skins' ? `Skins · ${money(round.match.stake)} a hole` : `Match · ${money(round.match.stake)}`) : 'Test round');
-          const mt = round.match ? `${round.match.settled ? round.match.result.replace(/:.*/, '') : `${matchLine(round.match)} vs ${npcById(round.match.npc).nick}`} · ` : '';
+          const pv = round.pvp;
+          setText('tbRoundL', round.match ? (round.match.format === 'skins' ? `Skins · ${money(round.match.stake)} a hole` : `Match · ${money(round.match.stake)}`)
+            : pv ? `${FR_FMT[pv.format]} · ${money(pv.stake)}` : 'Test round');
+          const mt = round.match ? `${round.match.settled ? round.match.result.replace(/:.*/, '') : `${matchLine(round.match)} vs ${npcById(round.match.npc).nick}`} · ` : pv ? `vs ${pv.vsName} · ` : '';
           setText('tbRound', mt + (t.played ? `${fmtToPar(t.toPar)} thru ${t.played} · Hole ${hp.holeIdx + 1}/${HOLES.length}` : `Hole ${hp.holeIdx + 1}/${HOLES.length}`));
           $('tbRoundCell').classList.toggle('over', t.toPar > 0);
         }
@@ -9091,6 +9559,15 @@
         $('cmBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('chShop').addEventListener('click', shopClick);
         $('chTiers').addEventListener('click', tierClick);
+        $('frList').addEventListener('click', friendsClick);           // friends and challenges (M3)
+        $('frBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
+        $('frRefresh').addEventListener('click', (e) => { e.currentTarget.blur(); loadFriends(); });
+        $('chChal').addEventListener('click', chalFormClick);
+        $('ccStake').addEventListener('input', (e) => { fr.form.stake = +e.target.value; renderChalForm(); });
+        $('ccN').addEventListener('input', (e) => { fr.form.n = clamp(Math.round(+e.target.value || 0), 0, 18); renderChalForm(); });
+        $('ccWho').addEventListener('change', (e) => { fr.form.who = e.target.value; e.target.blur(); renderChalForm(); });
+        $('ccGo').addEventListener('click', (e) => { e.currentTarget.blur(); sendChallenge(); });
+        $('ccBack').addEventListener('click', (e) => { e.currentTarget.blur(); openFriends(); });
         $('chCoach').addEventListener('click', coachClick);
         $('coBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('shBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
@@ -9987,7 +10464,7 @@
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
-        npc, npcPlan, npcHoleScore, closeToss, get session() { return session; }, sync, syncNow, careerSave, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
+        npc, npcPlan, npcHoleScore, closeToss, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, holeStrokes, submitPvp, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }
       };
 

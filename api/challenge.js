@@ -1,0 +1,293 @@
+// Challenges between friends (MULTIPLAYER_PLAN.md, M3): one player challenges another to a 9-hole round for money; each
+// plays it on their own PC whenever they like, and when both cards are in this file settles the bet, so both players
+// always see the same result.
+//
+//   POST /api/challenge  { action, ... }   (Authorization: Bearer <session token>, as api/profile.js)
+//     create  { to, format, stake, tier, hcp }  -> { challenge }      hcp: 'auto' | 'off' | { strokes, to }
+//     list                                      -> { challenges: [...newest first], me }
+//     accept  { id }   (the one challenged)     -> { challenge }      takes the stake from both careers (escrow)
+//     decline { id }   (the one challenged) / cancel { id } (the challenger): a pending challenge is closed
+//     submit  { id, card: [{ strokes, putts, pen }] x 9 }  -> { challenge }   settles when both cards are in
+//     forfeit { id }                            -> { challenge }      the other player wins
+//
+// A challenge (golf:ch:<cid>, JSON): { id, from, to, names, format, stake, tier, hcp, strokes: { player, n }, status:
+// 'pending' | 'open' | 'done' | 'closed', created, accepted, deadline, held: { [id]: true }, cards: { [id]: [...] },
+// result: { kind, winner, net: { [id]: n }, line, holes }, paid: { [id]: true } }. golf:chs:<id> = the set of a
+// player's challenge ids. Changes to one challenge take a short lock (golf:chlock:<cid>), and money moves through
+// updateCareer() (compare-and-set on the career), each step marked in `held` / `paid` so nothing is taken or paid twice.
+
+const crypto = require('crypto');
+const { redis, readBody, sessionId, updateCareer, rateLimit } = require('./_redis');
+
+const FORMATS = ['match', 'stroke', 'skins'];
+const HOLES = 9;
+const SI = [5, 9, 4, 2, 7, 3, 6, 8, 1];          // each hole's stroke index (1 = hardest) — the `si` in index.html's HOLES
+const DAYS = 7 * 24 * 3600 * 1000;               // to play it, once accepted (and how long an unanswered one waits)
+const KEEP = 60 * 24 * 3600 * 1000;              // finished challenges drop off the list after this
+const MAX_ACTIVE = 12;                           // pending + open challenges a player can be in
+const MAX_STAKE = 100000;
+
+// a career's handicap — the same as handicapOf() in index.html and api/profile.js: keep all three alike
+const HCP = { rating: { 1: 0, 2: 1.5, 3: 3 }, recent: 10, best: 4, factor: 0.96, min: 3 };
+function handicapOf(c) {
+  const r = ((c && c.rounds) || []).slice(-HCP.recent);
+  if (r.length < HCP.min) return null;
+  const d = r.map((x) => x.gross - x.par - (HCP.rating[x.tier] || 0)).sort((a, b) => a - b).slice(0, HCP.best);
+  return Math.round((d.reduce((a, b) => a + b, 0) / d.length) * HCP.factor * 10) / 10;
+}
+// strokes received on each hole: one on every hole whose stroke index is ≤ n, two on the hardest past 9 (same in index.html)
+const holeStrokes = (n) => SI.map((si) => (si <= n ? 1 : 0) + (si <= n - HOLES ? 1 : 0));
+const escrowOf = (ch) => ch.stake * (ch.format === 'skins' ? HOLES : 1);
+const other = (ch, id) => (ch.from === id ? ch.to : ch.from);
+const parse = (s) => { try { return JSON.parse(s); } catch { return null; } };
+const fail = (status, message) => Object.assign(new Error(message), { status });
+
+async function getCareer(id) {
+  const [d] = await redis([['HGET', `golf:career:${id}`, 'data']]);
+  return parse(d);
+}
+async function getCh(cid) {
+  if (!/^[a-f0-9]{16}$/.test(String(cid))) return null;
+  const [s] = await redis([['GET', `golf:ch:${cid}`]]);
+  return parse(s);
+}
+const putCh = (ch) => redis([['SET', `golf:ch:${ch.id}`, JSON.stringify(ch)]]);
+// do fn(challenge) while holding its lock (another request on the same challenge waits its turn or is told to retry)
+async function withLock(cid, fn) {
+  const key = `golf:chlock:${cid}`;
+  let got = null;
+  for (let i = 0; i < 8 && !got; i++) {
+    [got] = await redis([['SET', key, '1', 'NX', 'EX', 20]]);
+    if (!got) await new Promise((r) => setTimeout(r, 150));
+  }
+  if (!got) throw fail(409, 'Busy — try again');
+  try {
+    const ch = await getCh(cid);
+    if (!ch) throw fail(404, 'No such challenge');
+    return await fn(ch);
+  } finally { await redis([['DEL', key]]); }
+}
+
+// who gets strokes in this challenge: auto = the difference of the two handicaps, rounded, to the higher one
+function strokesFor(ch, cFrom, cTo) {
+  if (ch.hcp === 'off') return { player: null, n: 0, why: 'off' };
+  if (ch.hcp && typeof ch.hcp === 'object') return { player: ch.hcp.n ? ch.hcp.to : null, n: ch.hcp.n, why: 'agreed' };
+  const hf = handicapOf(cFrom), ht = handicapOf(cTo);
+  if (hf === null || ht === null) return { player: null, n: 0, why: 'nohcp' };
+  const n = Math.min(18, Math.round(Math.abs(hf - ht)));
+  return { player: n ? (hf > ht ? ch.from : ch.to) : null, n, why: 'auto', hcps: { [ch.from]: hf, [ch.to]: ht } };
+}
+
+// ---- settlement: net scores per hole after the strokes, then by format
+function score(ch) {
+  const a = ch.from, b = ch.to, give = holeStrokes(ch.strokes.n);
+  const net = (p, i) => ch.cards[p][i].strokes - (p === ch.strokes.player ? give[i] : 0);
+  const holes = [];
+  for (let i = 0; i < HOLES; i++) holes.push({ [a]: net(a, i), [b]: net(b, i) });
+  const E = escrowOf(ch);
+  let won = { [a]: 0, [b]: 0 }, line, winner = null;
+  const nameOf = (p) => ch.names[p];
+  if (ch.format === 'match') {
+    let d = 0, dec = '';
+    holes.forEach((h, i) => {
+      d += h[a] < h[b] ? 1 : h[a] > h[b] ? -1 : 0;
+      const left = HOLES - 1 - i;
+      if (!dec && Math.abs(d) > left) dec = left ? `${Math.abs(d)} & ${left}` : `${Math.abs(d)} up`;
+    });
+    winner = d > 0 ? a : d < 0 ? b : null;
+    line = winner ? `${nameOf(winner)} wins ${dec}` : 'All square: stakes returned';
+    if (winner) { won[winner] = 2 * E; } else { won[a] = E; won[b] = E; }
+  } else if (ch.format === 'stroke') {
+    const ta = holes.reduce((s, h) => s + h[a], 0), tb = holes.reduce((s, h) => s + h[b], 0);
+    winner = ta < tb ? a : tb < ta ? b : null;
+    line = winner ? `${nameOf(winner)} wins by ${Math.abs(ta - tb)} (net ${Math.min(ta, tb)} to ${Math.max(ta, tb)})` : `Tied on net ${ta}: stakes returned`;
+    if (winner) won[winner] = 2 * E; else { won[a] = E; won[b] = E; }
+  } else {                                                    // skins: each hole a skin from each; a halved hole carries
+    let carry = 0, sa = 0, sb = 0;
+    for (const h of holes) {
+      carry++;
+      if (h[a] < h[b]) { sa += carry; carry = 0; } else if (h[b] < h[a]) { sb += carry; carry = 0; }
+    }
+    const diff = (sa - sb) * ch.stake;                        // unclaimed skins at the end go back to both
+    won[a] = E + diff; won[b] = E - diff;
+    winner = sa > sb ? a : sb > sa ? b : null;
+    line = `Skins ${nameOf(a)} ${sa}, ${nameOf(b)} ${sb}${carry ? ` · ${carry} unclaimed, returned` : ''}${winner ? ` · ${nameOf(winner)} +$${Math.abs(diff)}` : ''}`;
+  }
+  return { kind: 'played', winner, line, holes, payout: won, net: { [a]: won[a] - E, [b]: won[b] - E } };
+}
+// someone forfeits (or ran out of time): the other takes the pot
+function forfeitResult(ch, loser, why) {
+  const w = other(ch, loser), E = escrowOf(ch);
+  return { kind: why, winner: w, loser, line: `${ch.names[loser]} ${why === 'expired' ? 'ran out of time' : 'forfeited'}: ${ch.names[w]} wins`, payout: { [w]: 2 * E, [loser]: 0 }, net: { [w]: E, [loser]: -E } };
+}
+// move the money (once per player) and write each player's history entry
+async function payOut(ch) {
+  if (!ch.result || !ch.result.payout) return ch;
+  ch.paid = ch.paid || {};
+  for (const p of [ch.from, ch.to]) {
+    if (ch.paid[p] || !(ch.held && ch.held[p])) continue;
+    const res = ch.result, net = res.net[p];
+    const outcome = res.kind === 'refund' ? 'refunded' : !res.winner ? 'halved' : res.winner === p ? 'won' : res.kind === 'played' ? 'lost' : res.kind === 'expired' ? 'lost (out of time)' : 'lost (forfeit)';
+    await updateCareer(p, (c) => {
+      c.cash = (c.cash || 0) + (res.payout[p] || 0);
+      c.history = c.history || [];
+      c.history.push({ friend: other(ch, p), friendName: ch.names[other(ch, p)], ch: ch.id, format: ch.format, stake: ch.stake, result: `${outcome} · ${res.line}`, net, date: Date.now() });
+    });
+    ch.paid[p] = true;
+    await putCh(ch);
+  }
+  return ch;
+}
+async function finish(ch, result) {
+  ch.status = result.kind === 'refund' ? 'closed' : 'done';
+  ch.result = result; ch.finished = Date.now();
+  await putCh(ch);
+  return payOut(ch);
+}
+// past the deadline: whoever hasn't sent a card forfeits; if neither has, both get their stakes back
+async function expire(ch) {
+  if (ch.status !== 'open' || Date.now() <= ch.deadline) return ch;
+  const inA = !!ch.cards[ch.from], inB = !!ch.cards[ch.to];
+  if (inA && inB) return finish(ch, score(ch));
+  if (inA || inB) return finish(ch, forfeitResult(ch, inA ? ch.to : ch.from, 'expired'));
+  const E = escrowOf(ch);
+  return finish(ch, { kind: 'refund', winner: null, line: 'Nobody played it in time: stakes returned', payout: { [ch.from]: E, [ch.to]: E }, net: { [ch.from]: 0, [ch.to]: 0 } });
+}
+// what a player sees: the other player's card stays hidden until the challenge is settled
+function view(ch, me) {
+  const v = { ...ch, cards: { ...ch.cards } };
+  if (ch.status === 'open') { const o = other(ch, me); if (v.cards[o]) v.cards[o] = true; }
+  if (v.result) { v.result = { ...v.result }; delete v.result.payout; }
+  delete v.paid;
+  return v;
+}
+function cleanCard(card) {
+  if (!Array.isArray(card) || card.length !== HOLES) return null;
+  const out = [];
+  for (const h of card) {
+    const s = h && h.strokes, p = h && h.putts, pen = (h && h.pen) || 0;
+    if (!Number.isInteger(s) || s < 1 || s > 30 || !Number.isInteger(p) || p < 0 || p > s || !Number.isInteger(pen) || pen < 0 || pen > s) return null;
+    out.push({ strokes: s, putts: p, pen });
+  }
+  return out;
+}
+
+module.exports = async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const send = (code, obj) => res.status(code).json(obj);
+  if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return send(405, { error: 'Method not allowed' }); }
+  try {
+    const b = await readBody(req, 20000);
+    const me = await sessionId(req);
+    if (!me) return send(401, { error: 'Not signed in' });
+    const action = b && b.action;
+
+    if (action === 'create') {
+      if (!(await rateLimit(`golf:rl:ch:${me}`, 20, 3600))) return send(429, { error: 'Too many challenges this hour' });
+      const to = String(b.to || '').trim().toLowerCase(), format = b.format, stake = b.stake, tier = b.tier;
+      if (!to || to === me) return send(400, { error: 'Pick a friend to challenge' });
+      if (!FORMATS.includes(format)) return send(400, { error: 'Unknown format' });
+      if (!Number.isInteger(stake) || stake < 5 || stake > MAX_STAKE) return send(400, { error: 'Stakes are $5 or more, in whole dollars' });
+      if (![1, 2, 3].includes(tier)) return send(400, { error: 'Unknown circuit' });
+      let hcp = 'auto';
+      if (b.hcp === 'off') hcp = 'off';
+      else if (b.hcp && typeof b.hcp === 'object') {
+        const n = b.hcp.strokes, who = String(b.hcp.to || '').toLowerCase();
+        if (!Number.isInteger(n) || n < 0 || n > 18 || (n && who !== me && who !== to)) return send(400, { error: 'Agreed strokes are 0–18, to one of you' });
+        hcp = { n, to: n ? who : null };
+      }
+      const [cMe, cTo] = await Promise.all([getCareer(me), getCareer(to)]);
+      if (!cTo) return send(404, { error: 'No player with that name' });
+      if (!cMe) return send(400, { error: 'Your career isn\'t on the server yet — open the clubhouse and try again' });
+      if ((cMe.tierMax || 1) < tier || (cTo.tierMax || 1) < tier) return send(400, { error: 'Pick a circuit you both have open' });
+      const E = stake * (format === 'skins' ? HOLES : 1);
+      if ((cMe.cash || 0) < E) return send(400, { error: `You need $${E} to put that up` });
+      if ((cTo.cash || 0) < E) return send(400, { error: `${cTo.name} can't cover $${E}` });
+      const [mine] = await redis([['SMEMBERS', `golf:chs:${me}`]]);
+      const list = (await Promise.all((mine || []).map(getCh))).filter(Boolean);
+      if (list.filter((c) => c.status === 'pending' || c.status === 'open').length >= MAX_ACTIVE) return send(400, { error: `You're in ${MAX_ACTIVE} challenges already — finish some first` });
+      const ch = { id: crypto.randomBytes(8).toString('hex'), from: me, to, names: { [me]: cMe.name, [to]: cTo.name }, format, stake, tier, hcp, status: 'pending', created: Date.now(), cards: {}, held: {} };
+      ch.strokes = strokesFor(ch, cMe, cTo);                  // a preview: fixed for good when it's accepted
+      await redis([['SET', `golf:ch:${ch.id}`, JSON.stringify(ch)], ['SADD', `golf:chs:${me}`, ch.id], ['SADD', `golf:chs:${to}`, ch.id]]);
+      return send(200, { challenge: view(ch, me) });
+    }
+
+    if (action === 'list') {
+      const [ids] = await redis([['SMEMBERS', `golf:chs:${me}`]]);
+      const out = [], drop = [];
+      for (const cid of ids || []) {
+        let ch = await getCh(cid);
+        if (!ch) { drop.push(cid); continue; }
+        const stale = ch.status === 'pending' && Date.now() > ch.created + DAYS;
+        const due = (ch.status === 'open' && Date.now() > ch.deadline) || (ch.status === 'done' && ch.result && [ch.from, ch.to].some((p) => ch.held[p] && !(ch.paid || {})[p]));
+        if (stale || due) {
+          try {
+            ch = await withLock(cid, async (c) => {
+              if (c.status === 'pending' && Date.now() > c.created + DAYS) { c.status = 'closed'; c.result = { kind: 'unanswered', line: 'Not answered in time' }; c.finished = Date.now(); await putCh(c); return c; }
+              if (c.status === 'open') return expire(c);
+              return payOut(c);
+            });
+          } catch { /* busy: next time */ }
+        }
+        if ((ch.status === 'done' || ch.status === 'closed') && Date.now() > (ch.finished || ch.created) + KEEP) { drop.push(cid); continue; }
+        out.push(view(ch, me));
+      }
+      if (drop.length) await redis(drop.map((cid) => ['SREM', `golf:chs:${me}`, cid]));
+      out.sort((x, y) => (y.accepted || y.created) - (x.accepted || x.created));
+      return send(200, { challenges: out.slice(0, 60), me });
+    }
+
+    const cid = String(b.id || '');
+    if (!['accept', 'decline', 'cancel', 'submit', 'forfeit'].includes(action)) return send(400, { error: 'Unknown action' });
+    const ch = await withLock(cid, async (ch) => {
+      if (ch.from !== me && ch.to !== me) throw fail(404, 'No such challenge');
+      if (action === 'decline' || action === 'cancel') {
+        if (ch.status !== 'pending') throw fail(400, 'It isn\'t waiting for an answer any more');
+        if ((action === 'decline') !== (ch.to === me)) throw fail(400, action === 'decline' ? 'Only the one challenged can decline' : 'Only the challenger can cancel');
+        ch.status = 'closed'; ch.finished = Date.now();
+        ch.result = { kind: action === 'decline' ? 'declined' : 'cancelled', line: action === 'decline' ? `${ch.names[me]} declined` : `${ch.names[me]} called it off` };
+        await putCh(ch);
+        return ch;
+      }
+      if (action === 'accept') {
+        if (ch.to !== me) throw fail(400, 'Only the one challenged can accept');
+        if (ch.status !== 'pending') throw fail(400, 'It isn\'t waiting for an answer any more');
+        const [cFrom, cTo] = await Promise.all([getCareer(ch.from), getCareer(ch.to)]);
+        if (!cFrom || !cTo) throw fail(404, 'That player has no career');
+        if ((cFrom.tierMax || 1) < ch.tier || (cTo.tierMax || 1) < ch.tier) throw fail(400, 'You both need that circuit open');
+        ch.strokes = strokesFor(ch, cFrom, cTo);               // the strokes as of now, fixed for the round
+        const E = escrowOf(ch), take = (p) => updateCareer(p, (c) => {
+          if ((c.cash || 0) < E) throw fail(400, p === me ? `You need $${E} to accept` : `${ch.names[p]} doesn't have $${E} any more`);
+          c.cash -= E;
+        });
+        for (const p of [ch.to, ch.from]) {
+          if (ch.held[p]) continue;
+          try { await take(p); } catch (e) {
+            for (const q of [ch.to, ch.from]) if (ch.held[q]) { await updateCareer(q, (c) => { c.cash = (c.cash || 0) + E; }); delete ch.held[q]; }    // give back what was taken
+            await putCh(ch);
+            throw e;
+          }
+          ch.held[p] = true; await putCh(ch);
+        }
+        ch.status = 'open'; ch.accepted = Date.now(); ch.deadline = ch.accepted + DAYS;
+        await putCh(ch);
+        return ch;
+      }
+      if (ch.status !== 'open') throw fail(400, ch.status === 'pending' ? 'It hasn\'t been accepted yet' : 'That challenge is over');
+      if (Date.now() > ch.deadline) return expire(ch);
+      if (action === 'submit') {
+        if (ch.cards[me]) throw fail(400, 'Your card is already in');
+        const card = cleanCard(b.card);
+        if (!card) throw fail(400, 'That card doesn\'t look right');
+        ch.cards[me] = card; ch.submitted = { ...(ch.submitted || {}), [me]: Date.now() };
+        if (ch.cards[ch.from] && ch.cards[ch.to]) return finish(ch, score(ch));
+        await putCh(ch);
+        return ch;
+      }
+      return finish(ch, forfeitResult(ch, me, 'forfeit'));     // forfeit
+    });
+    return send(200, { challenge: view(ch, me) });
+  } catch (e) {
+    return send(e.status || 500, { error: e.status ? e.message : 'Challenges unavailable' });
+  }
+};
