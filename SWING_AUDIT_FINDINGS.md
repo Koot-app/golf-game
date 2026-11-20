@@ -863,6 +863,27 @@ either way.
   else reads index 14. Check that the bag list's keys and the [ ] cycling still line up.
 
 ### S4.2 [Medium, realism] The short end is stretched: PW 8 yds short, 7 iron to PW 48 yds, wedge gaps 15–19
+- **✅ Fixed 2026-11-20** (after S3.1's refit): new club speeds 8 iron 89, 9 iron 87, PW 85, GW 82.7, SW 80.8, LW 76.7
+  (were 88, 85, 82, 78.3, 75.2, 67). The lob wedge's 8 mph drop is gone. Stock carry / total (apex, landing angle):
+
+  | Club | Before | After | Gap to the next club |
+  |---|---|---|---|
+  | 7 Iron | 176 | 176 / 181 | 13 |
+  | 8 Iron | 161 | 163 / 167 (33, 52°) | 13 |
+  | 9 Iron | 145 | 150 / 153 (32, 52°) | 14 |
+  | PW | 129 | **136** / 138 (33, 54°), the tour's number | 14 |
+  | Gap Wedge | 113 | 122 / 124 (32, 54°) | 15 |
+  | Sand Wedge | 97 | 107 / 108 (30, 55°) | 14 |
+  | Lob Wedge | 77 | 93 / 94 (29, 56°) | — |
+
+  The scoring clubs now cover 40 yds from the 7 iron to the PW (was 48; tour 36). The wedges carry about what the
+  rules of thumb give (50° 120–125, 55° 100–115, 60° 90–100). The PW's club speed (85) sits 2 mph above the tour
+  average, to make up the flight model's remaining 4% shortfall for it (S3.1).
+  **What it moved:**
+  - chips gain a little per % of backswing (the chip read follows, since its table is computed live);
+  - wedge spread at Dexterity 2 is ±6.6 for the sand wedge (was ±5.7);
+  - a sand wedge off hardpan carries 90 at Dexterity 5.
+  S5.6 (the GI sets' PW to gap wedge hole) is unchanged and still open.
 - **Where:** `CLUBS` speeds for the 9 iron to the lob wedge (about lines 7103–7108): 84, 80, 76.5, 73, 65 mph.
 - **Measured:** carry gaps, longest to shortest (Power 5):
 
@@ -1140,6 +1161,25 @@ the ZXi7 and the 620 CB. The full rows, with spin and landing angle, are the scr
   instead. After S5.2 the true order would also be the intended one.
 
 ### S5.4 [Medium, feel / balance] The low-spin drivers are shorter than the forgiving ones, even from the middle
+- **✅ Fixed 2026-11-20:** S3.1's refit did most of it. Under the new flight a drive's total hardly changes with spin
+  between 2,300 and 3,200 rpm (283–284 yds at the stock launch), so the base driver is no longer under-spun. The
+  models' speeds then set the trade-off: low-spin heads ×1.018 (were ×1.012), the G440 K ×0.99 (×0.995), the Max D
+  ×0.995 (×1.0). The luxury heads follow the lines they copy: Prestigio ×0.995, Beres ×0.99, and Crown Jewel now the
+  Qi4D exactly. Centred carry / total, then carry at 14 mm toe and heel:
+
+  | Driver | Centred | Toe 14 | Heel 14 |
+  |---|---|---|---|
+  | Qi4D LS (low spin) | **272 / 289** | 250 | 250 |
+  | Triple Diamond (low spin, fade) | **272 / 286** | 249 | 248 |
+  | Qi4D (all-rounder) / Crown Jewel | 267 / 283 | 252 | 255 |
+  | G440 K (max forgiveness) | 265 / 281 | **261** | **264** |
+  | Quantum Max D | 265 / 285 | 257 | 261 |
+  | Prestigio / Beres 5-Star (luxury) | 266 / 283 · 265 / 282 | 256 · 258 | 259 · 262 |
+  | Base driver (the test round) | 266 / 283 | 247 | 250 |
+
+  The low-spin heads now beat the all-rounder by 5 yds of carry from the middle and lose more off-centre. The
+  forgiving heads give up 2 yds centred and keep 9–10 more at 14 mm. No luxury head beats the best ordinary one on any
+  number. S5.5 (a forgiving head's toe hit hooks) is still open.
 - **Measured** (teed; carry and side in yds; side + = right):
 
   | Driver | Centred: carry / total, spin | Toe 8 mm | Toe 14 mm | Heel 14 mm | Dex 2: mean side, 2σ wide, in a 30-yd fairway | Dex 5 |

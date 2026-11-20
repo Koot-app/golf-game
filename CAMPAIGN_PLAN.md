@@ -239,7 +239,10 @@ low-spin drivers go further when struck well but punish mishits more, and the Tr
 | `d-qi4dls` | TaylorMade Qi4D LS | Low spin | ≈$650 | −0.6 | 0.87 | 1.005 | 0.9 | 0.95 | 0.95 | 0 | 1.0 |
 | `d-td` | Callaway Quantum Triple Diamond | Low spin (fade) | ≈$650 | −0.8 | 0.85 | 1.005 | 0.85 | 1.0 | 1.0 | −0.8 | 1.0 |
 
-(A negative `offset` opens the face: a fade bias.) Characters: **XR 16**: an old warhorse, spins too much, a bit
+(The code's values have since moved on from this table: see `CLUB_MODELS`. Swing audit S5.4, 2026-11-20: speed × is now
+1.018 for the two low-spin heads, 0.99 for the G440 K and 0.995 for the Max D, so the low-spin heads are about 5 yds
+longer from the middle and the forgiving ones keep the most off-centre.) (A negative `offset` opens the face: a fade
+bias.) Characters: **XR 16**: an old warhorse, spins too much, a bit
 short · **M2 (2016)**: was long in its day, now just loose · **G440 K**: the most forgiving driver going, launches high
 · **Quantum Max D**: forgiving and fights a slice · **Qi4D**: the best all-rounder · **Qi4D LS**: the longest when you
 find the middle · **Triple Diamond**: very low spin, leans to a fade, unforgiving.
