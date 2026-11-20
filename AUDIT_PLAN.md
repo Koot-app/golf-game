@@ -344,6 +344,6 @@ For each item, give the evidence that it's unused (a search with zero hits outsi
 | 4 | Match and hustler logic | ✅ 2026-11-19 | 7 (3 medium, 4 low) | 4.2–4.6 |
 | 5 | Screens, overlays and keys | ✅ 2026-11-19 | 4 (2 medium, 2 low) | 5.1, 5.2, 5.3 |
 | 6 | Shot mechanics and tuning | ✅ 2026-11-19 | 2 (low) | 6.1, 6.2 |
-| 7 | Economy balance | ✅ 2026-11-19 | 4 (2 high, 1 medium, 1 low: design) | 7.1, 7.2 |
-| 8 | Performance | ✅ 2026-11-19 | 1 (low) | |
+| 7 | Economy balance | ✅ 2026-11-19 | 4 (2 high, 1 medium, 1 low: design) | 7.1, 7.2, 7.3 |
+| 8 | Performance | ✅ 2026-11-19 | 1 (low) | 8.1 |
 | 9 | Dead code and cleanup | ✅ 2026-11-19 | 3 (low) | 9.1, 9.2, 9.3 |

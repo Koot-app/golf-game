@@ -1166,6 +1166,15 @@ What an invitational entry is worth (the field's median winning score in bracket
   matches for the irons. Player skill grows with practice, so the real number is lower, but the first hours are slow.
 - **Fix (S):** raise the bottom stakes (Dale $80, Terry $150), take the green fee off at the muni, or make the first
   lessons cheaper (for example $60 × level, not level², up to level 4).
+- **✅ Fixed 2026-11-19:** two of these.
+  - The muni's top stakes are raised: Dale $40 → $80, Terry $80 → $150, Sal $150 → $200 (Gus stays $250).
+  - The first two lessons in each stat cost less: 2→3 is $80 (was $240), 3→4 is $360 (was $540). From 4→5 ($960) on,
+    the price is unchanged, so the cost of maxing a stat drops only by $340.
+  - The green fee stays.
+
+  `econ-sim.js` now: a beginner (μ +1.4) makes **+$24 a match** against Dale (was +$6); at μ +1.0, +$48 against
+  Dale and +$57 against Terry. The first lesson is about 4 matches (was 40), and game-improvement irons about 25 (was
+  about 100). Sal still beats a beginner (−$97 at $200), so stepping up is still a choice.
 
 ### 7.4 [Low] The end-game money sinks are sized for invitational money
 - **The sinks:**
@@ -1193,6 +1202,17 @@ What an invitational entry is worth (the field's median winning score in bracket
   the 64 KB and 250,000 limits (2.5, 2.6).
 - **Fix (S):** debounce the storage write like the sync (a few hundred ms), and trim history (2.6). Sending only what
   changed is a bigger change and not needed yet.
+- **✅ Fixed 2026-11-19 (the storage write):** `careerSave` now writes the career once, 0.4 s after the last change,
+  instead of on every call.
+  - Reading that key (`lsGet`, so `careerLoad` and `readCareer`) flushes a pending write first.
+  - Writing or clearing the key (`saveSyncMeta` after a sync, a deleted career) replaces it.
+  - Hiding or closing the page flushes it.
+  - A save for another profile flushes the old one first.
+
+  `perf-saves.js`, a 9-hole match with 200 matches of history: **11 writes, 278k characters** (it was 24 writes,
+  608k). In real play the gaps are longer, so more of a hole's saves fall into one write. The upload was already
+  debounced (1.2 s) and is unchanged; trimming the history is still 2.6. The reload, lost-save and sync probes give
+  the same results as before.
 
 ### Checked and fine
 - **The course:** over 36 holes built back to back, about 821 geometries were made and `dispose()` ran 858 times, so

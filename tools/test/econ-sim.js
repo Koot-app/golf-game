@@ -12,7 +12,7 @@
   const pars = g.HOLES.map((h) => h.par), PAR = pars.reduce((a, b) => a + b, 0), rnd = () => (Math.random() * 2 ** 31) >>> 0;
   const gauss = () => Math.sqrt(-2 * Math.log(Math.max(1e-9, Math.random()))) * Math.cos(2 * Math.PI * Math.random());
   const player = (mu) => { const form = 0.2 * gauss(); return pars.map((p) => p + Math.max(-1, Math.min(5, Math.round(mu + form + 0.9 * gauss())))); };
-  const HU = [['dale', 1, 40], ['terry', 1, 80], ['sal', 1, 150], ['gus', 1, 250], ['chad', 2, 400], ['marco', 2, 300], ['rita', 2, 500], ['jim', 2, 800], ['whit', 3, 1500], ['ana', 3, 2500], ['duke', 3, 3000], ['vic', 3, 5000]];
+  const HU = [['dale', 1, 80], ['terry', 1, 150], ['sal', 1, 200], ['gus', 1, 250], ['chad', 2, 400], ['marco', 2, 300], ['rita', 2, 500], ['jim', 2, 800], ['whit', 3, 1500], ['ana', 3, 2500], ['duke', 3, 3000], ['vic', 3, 5000]];
   const FEE = { 1: 10, 2: 60, 3: 300 }, MUS = [1.4, 1.0, 0.7, 0.4, 0.1];
   out.push('Win chance and value of a match at the top stake (after the green fee), by the player\'s average over par per hole:');
   out.push('hustler  stake    ' + MUS.map((m) => `μ +${m.toFixed(1)}`.padStart(16)).join(''));

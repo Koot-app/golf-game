@@ -107,7 +107,7 @@ match = {
 | Starter bag | 7 used clubs + a used blade putter, all from around 2015–16 (chunk 2) |
 | Club prices | by model, in the club catalogue (iron sets up to $1,600, plus luxury sets up to $250,000; one iron to replace a snapped one = set ÷ 7 × 1.25) |
 | Drivers, wedges, putters | by model, in the club catalogue |
-| Lesson (+1 to a stat) | $60 × current level² (2→3: $240, 5→6: $1,500) |
+| Lesson (+1 to a stat) | $60 × current level² (5→6: $1,500); the first two cheaper (2→3: $80, 3→4: $360; audit 7.3) |
 | Shot unlocks | draw $250 · fade $250 · stinger (Low 2) $300 · high (High 2) $300 · spin control $350 · flop $400 |
 | Green fee | tier 1 $10 · tier 2 $60 · tier 3 $300 |
 | Credit (bet above bankroll) | max stake = cash + 100 + 2 × rep, and never above the NPC's own limit |
@@ -359,8 +359,8 @@ targets. The test round still has every club at full spec.
 
 ### Chunk 3 — The first hustle: match play for a stake (L) — ✅ built 2026-11-18
 
-As built: `MATCH` (fees, min stake, reputation), `NPCS` (tier 1: Dale "Dew Sweeper" Pruitt skill 1.6 / $40, Terry
-"Two-Putt" Vance 1.2 / $80, Sal "Sandbag" Moretti 0.9 / $150, Gus "Gravel" Haney 0.6 / $250), `matchStatus()`,
+As built: `MATCH` (fees, min stake, reputation), `NPCS` (tier 1: Dale "Dew Sweeper" Pruitt skill 1.6 / $80, Terry
+"Two-Putt" Vance 1.2 / $150, Sal "Sandbag" Moretti 0.9 / $200 (raised in audit 7.3), Gus "Gravel" Haney 0.6 / $250), `matchStatus()`,
 `npcHoleScore()` (seed = career seed ^ match no ^ hole), picker `openMatchPicker()` / `renderMatchPicker()` /
 `teeOffMatch()` (overlay view `#chMatch`), `startMatch()` (also resumes from `career.match` after a reload),
 `matchAfterHole()` (called from `finishHole()`), `settleMatch(kind)`, `confirmForfeit()` (in `leaveHole()` and

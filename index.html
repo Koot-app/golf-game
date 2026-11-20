@@ -10436,8 +10436,20 @@
       // copy per profile; on this PC only, it's the old local career. session = { token, id, name }; playMode remembers
       // that someone chose "this PC only", so the clubhouse doesn't ask who's playing every time.
       const PROFILE_API = '/api/profile';
-      const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
-      const lsSet = (k, v) => { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* storage blocked */ } };
+      // Audit 8.1: careerSave runs several times a hole, and each call wrote the whole career (with a profile, twice over:
+      // the career and its last-synced copy) to this PC's storage. Now a save is written once, 0.4 s after the last change
+      // (disk.write, for disk.key). Anything that reads that key first gets the pending write flushed; anything that
+      // writes or clears it replaces the pending one; the page being hidden or closed flushes it.
+      const disk = { timer: 0, key: '', write: null };
+      function flushCareer() { clearTimeout(disk.timer); const w = disk.write; disk.write = null; if (w) w(); }
+      const lsGet = (k) => { if (disk.write && k === disk.key) flushCareer(); try { return localStorage.getItem(k); } catch { return null; } };
+      const lsSet = (k, v) => {
+        if (disk.write && k === disk.key) { clearTimeout(disk.timer); disk.write = null; }     // this write replaces the pending one
+        try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* storage blocked */ }
+      };
+      window.addEventListener('pagehide', flushCareer);
+      window.addEventListener('beforeunload', flushCareer);
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushCareer(); });
       let session = null;
       // admin (the developer tools): only what the SERVER said in this visit (sign-in or load), never the copy saved in the
       // browser, which anyone could edit. Only the profile Keeto is an admin (api/_admins.js).
@@ -10474,8 +10486,15 @@
       function careerSave() {
         if (!career) return;
         career.stamp = Date.now();
-        if (session) { sync.dirty = true; saveSyncMeta(); queueSync(); }
-        else lsSet(careerKey(), JSON.stringify(career));
+        if (session) sync.dirty = true;
+        // written in a moment, once (audit 8.1): this career, under this profile's key, with the sync state as it is now
+        // (a sync reply or a merge in between writes at once with saveSyncMeta, which replaces this pending write)
+        const key = careerKey(), c = career, s = session ? { ver: sync.ver, base: sync.base, dirty: true, pend: sync.pend } : null;
+        if (disk.write && disk.key !== key) flushCareer();   // another profile's save still pending: it goes first
+        disk.key = key;
+        disk.write = () => lsSet(key, JSON.stringify(s ? { c, s } : c));
+        clearTimeout(disk.timer); disk.timer = setTimeout(flushCareer, 400);
+        if (session) queueSync();
       }
       const saveSyncMeta = () => session && career && lsSet(careerKey(), JSON.stringify({ c: career, s: { ver: sync.ver, base: sync.base, dirty: sync.dirty, pend: sync.pend } }));
       const profileApi = (action, body = {}, keepalive = false) => apiPost(PROFILE_API, action, body, keepalive);
@@ -11980,7 +11999,9 @@
       };
       const shotLocked = (k) => careerOn && !!career && k in COACH.unlocks && !career.unlocks[k];
       function lockedToast(k) { toast(`🔒 ${COACH.unlocks[k].name}\nLearn it from the coach in the clubhouse (J)`, 1800); }
-      const lessonPrice = (lv) => COACH.lessonPerLevel * lv * lv;
+      // $60 × level² (5→6: $1,500), but the first two lessons cost less (audit 7.3: the start was a long grind):
+      // 2→3 $80 and 3→4 $360 (they were $240 and $540); from 4→5 ($960) on, the full price
+      const lessonPrice = (lv) => Math.round(COACH.lessonPerLevel * lv * lv * Math.min(1, (lv - 1) / 3));
       // a career's setup can't keep anything it hasn't learned (on entering the career, e.g. from the range's own setup)
       function enforceUnlocks() {
         if (!careerOn) return;
@@ -12851,11 +12872,12 @@
         return take;
       }
       const markerText = (took) => (took ? `\nYour marker: ${money(took)} of it went to pay what you owed${career.debt ? ` (${money(career.debt)} still owed)` : '. Paid off.'}` : '');
-      // skill = strokes over par per hole on average; spread = how much that varies hole to hole
+      // skill = strokes over par per hole on average; spread = how much that varies hole to hole. The muni's top stakes
+      // were raised for a quicker start (audit 7.3): Dale $40 → $80, Terry $80 → $150, Sal $150 → $200
       const NPCS = [
-        { id: 'dale', tier: 1, first: 'Dale', nick: 'Dew Sweeper', last: 'Pruitt', skill: 1.6, spread: 1.0, maxStake: 40, press: 1, desc: 'Out at dawn every day; hacks it round, loves a bet', lines: { hello: 'Early bird gets the cash, kid.', win: 'Pleasure doing business.', lose: 'Ah, nuts. Double or nothing tomorrow?', halve: 'Nobody wins, nobody cries.', cantPay: 'No cash? Then I\'ll take it in clubs.', press: 'Double or nothing on the rest!', pressed: 'Ha! You\'re on.' } },
-        { id: 'terry', tier: 1, first: 'Terry', nick: 'Two-Putt', last: 'Vance', skill: 1.2, spread: 0.8, maxStake: 80, press: 0, desc: 'A steady bogey golfer who never three-putts', lines: { hello: 'Slow and steady, friend. Slow and steady.', win: 'Told you. Never three-putt.', lose: 'Well. That stings.', halve: 'Square. I\'ll take it.', cantPay: 'You bet money you didn\'t have? Steady on. Steady.', press: 'I don\'t press. Never have.', pressed: 'If you must. Steady, though.' } },
-        { id: 'sal', tier: 1, first: 'Sal', nick: 'Sandbag', last: 'Moretti', skill: 0.9, spread: 0.9, maxStake: 150, press: 0.6, desc: 'Says he\'s a 20 handicap. He isn\'t.', lines: { hello: 'Go easy on me, I\'m just a hacker.', win: 'Huh, lucky day I guess. Pay up.', lose: 'Fine. You got me.', halve: 'Even. Rematch?', cantPay: 'Hacker, huh? So am I. Hold still.', press: 'Let\'s make it interesting, shall we?', pressed: 'Sure, sure. Whatever you say.' } },
+        { id: 'dale', tier: 1, first: 'Dale', nick: 'Dew Sweeper', last: 'Pruitt', skill: 1.6, spread: 1.0, maxStake: 80, press: 1, desc: 'Out at dawn every day; hacks it round, loves a bet', lines: { hello: 'Early bird gets the cash, kid.', win: 'Pleasure doing business.', lose: 'Ah, nuts. Double or nothing tomorrow?', halve: 'Nobody wins, nobody cries.', cantPay: 'No cash? Then I\'ll take it in clubs.', press: 'Double or nothing on the rest!', pressed: 'Ha! You\'re on.' } },
+        { id: 'terry', tier: 1, first: 'Terry', nick: 'Two-Putt', last: 'Vance', skill: 1.2, spread: 0.8, maxStake: 150, press: 0, desc: 'A steady bogey golfer who never three-putts', lines: { hello: 'Slow and steady, friend. Slow and steady.', win: 'Told you. Never three-putt.', lose: 'Well. That stings.', halve: 'Square. I\'ll take it.', cantPay: 'You bet money you didn\'t have? Steady on. Steady.', press: 'I don\'t press. Never have.', pressed: 'If you must. Steady, though.' } },
+        { id: 'sal', tier: 1, first: 'Sal', nick: 'Sandbag', last: 'Moretti', skill: 0.9, spread: 0.9, maxStake: 200, press: 0.6, desc: 'Says he\'s a 20 handicap. He isn\'t.', lines: { hello: 'Go easy on me, I\'m just a hacker.', win: 'Huh, lucky day I guess. Pay up.', lose: 'Fine. You got me.', halve: 'Even. Rematch?', cantPay: 'Hacker, huh? So am I. Hold still.', press: 'Let\'s make it interesting, shall we?', pressed: 'Sure, sure. Whatever you say.' } },
         { id: 'gus', tier: 1, first: 'Gus', nick: 'Gravel', last: 'Haney', skill: 0.6, spread: 0.8, maxStake: 250, press: 1, desc: 'The best player at the muni, and he knows it', lines: { hello: 'You sure about this?', win: 'Thought so.', lose: '...Nobody beats me here. Nobody.', halve: 'Not bad. Not good either.', cantPay: 'Nobody stiffs Gravel Haney.', press: 'Press. You got lucky.', pressed: 'Your funeral.' } },
         // ---- tier 2: the resort circuit (chunk 8)
         { id: 'chad', tier: 2, first: 'Chad', nick: 'Trust Fund', last: 'Whitmore', skill: 0.55, spread: 0.9, maxStake: 400, press: 1, desc: 'Plays with his father\'s money and presses everything', lines: { hello: 'Let\'s make this worth my time, yeah?', win: 'Put it on my tab. Oh wait — you pay me.', lose: 'Whatever. Dad\'s good for it.', halve: 'Boring. Again tomorrow.', cantPay: 'You don\'t have it? That\'s embarrassing. For you.', press: 'Press. Money\'s no object.', pressed: 'Sure, bro. Love it.' } },
