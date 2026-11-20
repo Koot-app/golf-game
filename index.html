@@ -7142,7 +7142,8 @@
         //     for a fade"), spin ~100-200 rpm less with woods and ~900-1700 less with irons and wedges, launch ~0.5-1.5 deg lower.
         shapeFullDeg: 8, shapeFullPerLoft: 0.45, shapeLaunchDeg: 1.0, shapeSpin: 0.10, shapeKeep: 0.10, shapeRoll: 0.35,
         shapeLoftLo: 10.5, shapeLoftHi: 20, shapeAirMin: 0.4,    // in-air launch/spin part fades out below shapeLoftHi of delivered loft
-        shapeRollLow: 1.7,      // swing audit S7.3: ...and the ground part (the release) grows to this many times as much
+        chipRelease: 0.3, chipKickMs: 5.0, chipKickRpm: 6000,   // chips (user request, 2026-11-20): the shape's roll-out, and the landing kick
+        shapeRollLow: 1.7,     // swing audit S7.3: ...and the ground part (the release) grows to this many times as much
         trajLoftDeg: 3,         // degrees of loft per spin level: W takes it off (forward spin, lower), S adds it (backspin, higher)
         lowWoodLoft: 16, lowWoodDeg: 1.5,   // ...but a club under 16° of loft is only lowered 1.5° a level (swing audit S7.2)
         // Deceleration only counts when the club is clearly quitting on the shot, and the penalty scales with how badly.
@@ -7640,7 +7641,9 @@
           // swing audit S7.3: a low-lofted club gets less of the in-air part (shapeAir), so it gets more of the ground part:
           // up to shapeRollLow x the release below shapeLoftLo, fading to 1x at shapeLoftHi. A driver's draw runs ~15 yds
           // past its fade and finishes ~10 past it, as the tuning comment says (was 4-6).
-          release: -shape * lerp(TUNE.shapeRollLow, 1, clamp((dynLoft - TUNE.shapeLoftLo) / (TUNE.shapeLoftHi - TUNE.shapeLoftLo), 0, 1)),
+          // (user request, 2026-11-20) a chip (a chip preset: setup.align) gets chipRelease of it: a 5° mouse path made a low
+          // runner run 54% further, since a chip's spin axis tilts a long way for little path; its curve kicks on landing instead
+          release: -shape * lerp(TUNE.shapeRollLow, 1, clamp((dynLoft - TUNE.shapeLoftLo) / (TUNE.shapeLoftHi - TUNE.shapeLoftLo), 0, 1)) * (align ? TUNE.chipRelease : 1),
         };
       }
 
@@ -7785,6 +7788,7 @@
       function createChip(g, L, wind) {
         const f = createFlight(L, wind, 0);
         f.g = g; f.q = null; f.holed = false; f.landSurf = null;
+        f.chip = true; f.axisDeg = L.axis || 0;              // (the landing kick of a cut or hook-spin chip: chipBounce)
         return f;
       }
       function stepChip(f, dt) {
@@ -7821,6 +7825,14 @@
         // (swing audit S3.4: a ball that bites back stays down and spins back; the backspin that reversed it doesn't then
         // brake it as it rolls back, the check decel below being for a ball still going forward)
         const backing = keep < 0;
+        // (user request, 2026-11-20) a chip's tilted spin kicks it on its first landing: cut spin (a fade axis) to the right,
+        // hook spin to the left. The grip of the spin on the ground pushes it sideways by up to chipKickMs, scaled by the tilt
+        // (full at 20°) and by the spin left on it (full at chipKickRpm): a spinning wedge kicks, a low-spin runner (which also
+        // rolls fast, so the push turns it less) or a ball out of rough barely
+        if (f.chip && f.bounces === 0 && f.axisDeg) {
+          const dv = TUNE.chipKickMs * clamp(f.axisDeg / 20, -1, 1) * Math.min(1.2, (Math.max(0, f.rpm) / TUNE.chipKickRpm) ** 2), vh0 = Math.hypot(v.x, v.z);     // (spin squared: a runner's ~1,500 rpm barely kicks)
+          if (vh0 > 1e-3) { const rx = -v.z / vh0, rz = v.x / vh0; v.x += rx * dv; v.z += rz * dv; }      // (rx, rz): to the right of the travel
+        }
         v.x *= keep; v.z *= keep; v.y = backing ? 0 : e * vy;
         f.rpm *= 0.35; f.bounces++;
         if (v.y < 0.7 || key === 'bunker') {
@@ -10571,6 +10583,7 @@
             `${mark('flop', '4 · Flop')} pops straight up and stops dead — needs a 50°+ wedge, the hardest strike, risky off bare ground</span>`,
             '<b>Club ([ ]):</b> less loft runs more · more loft carries more and stops — the landing read updates',
             '<b>B</b> more spin checks it faster — wedges, and not from rough or sand',
+            '<b>Side spin by hand:</b> swing <b style="color:#ffc24a">up-right</b> (out-to-in) for a cut: it checks and kicks right when it lands · <b style="color:#35e0ff">down-right</b> (in-to-out) for hook spin: it releases and runs left · up to a yard or two with a spinning wedge, next to nothing with a low runner · the read assumes a straight swing',
             '<span class="pro">Wind</span> barely touches a low chip · high and flop shots feel it more',
             careerOn && ['high', 'flop', 'spin'].some(shotLocked) && `<span class="con">🔒 Still to learn from the coach:</span> ${['high', 'flop', 'spin'].filter(shotLocked).map((k) => COACH.unlocks[k].name.toLowerCase()).join(', ')}`,
           ], '', tipsChipSvg(ct));
