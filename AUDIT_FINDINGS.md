@@ -879,7 +879,10 @@ fixed before this section was first pushed.)
   hash, and no plain password.
 - **Fix (S):** this is your decision, and the file stays where you put it. If the password is under about 12
   characters, make a new, longer one with `node tools/admin-hash.js` and paste the new salt and hash in.
-- **Prepared 2026-11-20; one step left that only the user can do.** The hash already in the repo's history can't be
+- **✅ Closed 2026-11-20: risk accepted by the user.** The password isn't used anywhere else, and admin rights only
+  reach the Keeto career, the browser's developer tools and removing Top 10 entries; no other player's data or money.
+  The password stays as it is. The tool below is there if that ever changes.
+- **Prepared 2026-11-20 (for later, if wanted):** The hash already in the repo's history can't be
   taken back, so the fix is a new password.
   - `node tools/admin-hash.js` now makes a strong random password (24 characters, about 138 bits), shown once in your
     own terminal and in no file, with its salt and hash to paste into `api/_admins.js`, or as a `GOLF_ADMIN_KEETO`
