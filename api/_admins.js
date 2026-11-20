@@ -3,8 +3,9 @@
 // against the admin credential below, never a stored one.
 //
 // The credential is baked in here as a scrypt salt + hash (no plain-text password), as the user chose (2026-11-19).
-// The repo is public, so a short password's hash here can be cracked by someone determined: a longer password is safer
-// (make a new salt + hash with `node tools/admin-hash.js` and paste them below). Optionally, the Vercel environment
+// The repo is public, so anyone can try to guess the password against this hash on their own computer (audit 3.8): a
+// long random password is out of reach, a short one isn't. `node tools/admin-hash.js` makes a strong random password
+// and prints its salt + hash to paste below (the old hash stays in the repo's history, so it has to be a new password). Optionally, the Vercel environment
 // variable GOLF_ADMIN_KEETO = "<salt>:<hash>" overrides the baked-in one. Each admin session remembers which credential
 // it came from (sessionId() in _redis.js), so changing the password signs out every old admin session.
 

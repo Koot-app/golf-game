@@ -141,6 +141,27 @@ async function summaries(ids) {
   }
   return out;
 }
+// ---- AUDIT 1.6: wall purchases that didn't finish. refundBuy gives a pending purchase's money back (and takes its
+// "bought" line out), once: it does nothing if the record is gone. settleBuys runs on the buyer's load: a purchase
+// pending for more than a minute is cleared if the owner's side went through, and refunded if it didn't.
+const refundBuy = (id, key, when) => updateCareer(id, (c) => {
+  const p = (c.pendingBuys || []).find((x) => x && x.key === key && x.when === when);
+  if (!p) return false;
+  c.cash = (c.cash || 0) + num(p.price);
+  c.pendingBuys = c.pendingBuys.filter((x) => x !== p);
+  c.history = (c.history || []).filter((h) => !(h && h.sale === 'bought' && h.key === key && h.date === when));
+});
+async function settleBuys(id, c) {
+  for (const p of arr(c && c.pendingBuys)) {
+    if (!p || Date.now() - num(p.when) < 60000) continue;
+    try {
+      const [od] = await redis([['HGET', `golf:career:${idOf(p.owner || '')}`, 'data']]);
+      const oc = parse(od), sold = !!oc && arr(oc.history).some((h) => h && h.sale === 'sold' && h.key === p.key && h.date === p.when);
+      if (sold) await updateCareer(id, (x) => { const left = (x.pendingBuys || []).filter((q) => !(q && q.key === p.key && q.when === p.when)); if (left.length === (x.pendingBuys || []).length) return false; x.pendingBuys = left; });
+      else await refundBuy(id, p.key, p.when);
+    } catch { /* next load */ }
+  }
+}
 // a career the client sent: an object of a sensible size, named after the profile, with its fields repaired to the
 // right types (normCareer, audit 3.2)
 function cleanCareer(c, name) {
@@ -240,7 +261,12 @@ module.exports = async (req, res) => {
       return send(200, { ok: true });
     }
     if (action === 'load') {
-      const [[data, ver]] = await redis([['HMGET', `golf:career:${id}`, 'data', 'ver']]);
+      let [[data, ver]] = await redis([['HMGET', `golf:career:${id}`, 'data', 'ver']]);
+      const pc = parse(data);
+      if (pc && arr(pc.pendingBuys).length) {                // a wall purchase left half-done: settle it first (audit 1.6)
+        await settleBuys(id, pc);
+        [[data, ver]] = await redis([['HMGET', `golf:career:${id}`, 'data', 'ver']]);
+      }
       return send(200, { career: parse(data), ver: +ver || 0, admin: isAdmin(id) });
     }
     if (action === 'save') {
@@ -306,13 +332,18 @@ module.exports = async (req, res) => {
       const price = it.price, ownerName = oc.name, when = Date.now();
       // the price the buyer agreed to (audit 1.7): if it isn't the server's, nothing is bought
       if (b.price !== price) return send(409, { error: `The price has changed: it's $${price} now. Have another look.`, price });
+      // (audit 1.6: the buyer's payment and a record of the purchase (pendingBuys) are one write; then the owner is paid
+      // (one write, which does nothing if their "sold" line is there already); then the record is cleared. A request
+      // that dies part-way is settled on the buyer's next load: done on the owner's side → cleared, not → money back.)
       const buyer = await updateCareer(id, (c) => {
         if ((c.cash || 0) < price) throw Object.assign(new Error(`You need ${'$' + price} to buy it`), { status: 400 });
         c.cash -= price;
+        c.pendingBuys = [...(c.pendingBuys || []), { key, owner, price, when }];
         c.history = [...(c.history || []), { sale: 'bought', key, other: owner, otherName: ownerName, net: -price, result: `bought and destroyed ${ownerName}'s ${it.label}`, date: when }];
       });
       try {
         await updateCareer(owner, (c) => {
+          if ((c.history || []).some((h) => h && h.sale === 'sold' && h.key === key && h.date === when)) return false;     // done already
           if (!onWall(c, key)) throw Object.assign(new Error('Someone just bought it'), { status: 409 });     // (or it was just taken down)
           const s = c.showcase || {};
           c.showcase = { ...s, destroyed: [...(s.destroyed || []), key], cards: (s.cards || []).filter((x) => `s-${x}` !== key) };
@@ -320,10 +351,15 @@ module.exports = async (req, res) => {
           c.history = [...(c.history || []), { sale: 'sold', key, other: id, otherName: buyer.name, net: price, result: `${buyer.name} bought and destroyed your ${it.label}`, date: when }];
         });
       } catch (e) {                                          // give the buyer their money back
-        await updateCareer(id, (c) => { c.cash = (c.cash || 0) + price; c.history = (c.history || []).filter((h) => !(h.sale === 'bought' && h.key === key && h.date === when)); });
+        await refundBuy(id, key, when);
         throw e;
       }
-      return send(200, { ok: true, price, cash: buyer.cash });
+      const done = await updateCareer(id, (c) => {           // the purchase went through: its record is cleared
+        const left = (c.pendingBuys || []).filter((p) => !(p.key === key && p.when === when));
+        if (left.length === (c.pendingBuys || []).length) return false;
+        c.pendingBuys = left;
+      });
+      return send(200, { ok: true, price, cash: done.cash });
     }
     if (action === 'players') {
       const [ids] = await redis([['SMEMBERS', 'golf:players']]);

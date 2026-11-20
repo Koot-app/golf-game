@@ -142,6 +142,19 @@ looks like, so they double as regression tests once the fixes are in.
 - **Fix (M):** save the hole in progress after every stroke (hole, strokes, putts, penalties, ball position) on the
   match, the invitational entry and the friend card, and resume from it. A cheaper version saves only the stroke and
   penalty counts and resumes from the tee "playing N+1".
+- **✅ Fixed 2026-11-20 (the full version).**
+  - **What's saved:** the hole in progress (`cr.cur`) on the match, the invitational entry and the friend card. That's
+    the hole, strokes, putts, penalties, where the ball lies, where the last shot was played from (for a
+    stroke-and-distance drop), the map's shot lines, your tilt, and in a match how far the hustler has got.
+  - **When:** as each stroke is hit (`saveHoleProgress` in the shot, chip and putt launches) and again when the ball
+    stops (`setupNextShot`). A shot still in the air when the game closes counts, and you play again from where you
+    hit it, so reloading can't undo a bad swing.
+  - **Resuming:** puts you back where your ball lies, with the toast "Back on hole N, where you left it · Playing X".
+    The hustler's plan is seeded, so he carries on from the same stroke.
+  - **Cleared** when the hole is finished.
+
+  `money-reload-a.js` / `-b.js`: hole 5 left with 4 strokes, 2 penalties and the ball halfway to the pin (the hustler
+  1 stroke in); after reopening: `strokesThisHole 4 · penalties 2 · ball the same · onTee false · hisStrokes 1`.
 
 ### 1.5 [Medium] With two devices, a purchase made on one can be paid for and then lost
 - **Where:** `mergeServer` (about line 10489). It merges cash, history, scorecards, handicap rounds and destroyed wall
@@ -156,6 +169,9 @@ looks like, so they double as regression tests once the fixes are in.
 - **Fix (M–L):** this is Section 2's subject (the merge rule for every field); decide it there. The minimum is to
   take the server's copy of any field this PC hasn't changed since its last sync.
 - **Now covered by 2.2**, which has the field-by-field table and the fix design. Fixing 2.2 fixes this.
+- **✅ Fixed 2026-11-20, by 2.2's three-way merge.** `money-merge.js` part 1 now gives `driverHere d-prestigio` (it
+  was `d-xr16`). `sync-conflicts.js` shows a match settled on the other device is no longer "in progress" here, and
+  its result is in the history.
 
 ### 1.6 [Medium] Server payouts and escrow are two steps; a failure between them pays twice or loses the stake
 - **Where:** `api/challenge.js`: `payOut` (about lines 124–140), `accept` (about lines 259–271); `api/profile.js`
@@ -174,6 +190,28 @@ looks like, so they double as regression tests once the fixes are in.
   payout writes its history line (which already carries the challenge id) and skips if a line for that challenge is
   already there; the escrow does the same with a "held" line. The lock is also released without checking who holds it
   (a slow request can release a newer request's lock); worth tightening at the same time.
+- **✅ Fixed 2026-11-20.** Every money move is now one write to the career, carrying its own record, so running it
+  again after a failure does nothing twice.
+  - **Stakes:** a career lists the challenges holding a stake of its (`escrow`). Taking a stake adds the id, and does
+    nothing if it's there; giving it back or paying out removes it, and does nothing if it isn't.
+  - **Payouts:** the payout and its history line (which carries the challenge id) are one write; a line already there
+    means it was paid. The challenge's `held` / `paid` marks only save work now.
+  - **Creating a challenge:** the challenge is written first and the stake taken after, so a request that dies in
+    between leaves a challenge that can give the stake back.
+  - **Older challenges:** ones made before this (no `esc`) go by `held` as before.
+  - **Wall purchases:** the buyer's payment and a pending record (`pendingBuys`) are one write; the owner's side does
+    nothing if their "sold" line is there; then the record is cleared. A purchase left half-done is settled on the
+    buyer's next load, a minute on: done → cleared, not → money back.
+  - **Locks:** a challenge's lock holds the request's own token and is released only by its holder (a Redis script).
+  - **The test:** the dev server can now make a chosen storage write fail on demand (`POST /__fail`), so
+    `money-steps.js` breaks each move half-way:
+
+    | Broken half-way | After the retry |
+    |---|---|
+    | Creating a challenge | Called off → the stake is back (1000) |
+    | Accepting | Accepted again → $100 taken once (900, not 800) |
+    | The payout's "paid" mark | More lists → winner 1100, loser 900, one history line |
+    | A purchase, with its refund failing too | The buyer's next load refunds them; the owner isn't paid |
 
 ### 1.7 [Low] A wall purchase charges the server's price, not the price you confirmed
 - **Where:** `api/profile.js` `buyshow` (about line 207); the confirm dialog in `trophyClick` (about line 12345).
@@ -195,6 +233,14 @@ looks like, so they double as regression tests once the fixes are in.
   wording isn't. Fix (S): say "4th (lost a tie for 3rd on the last three holes)".
 - **Invitational payoff screen:** the big number is prize minus entry fee, while "Cash before → after" shows only the
   prize, because the fee was paid at the first tee. The rows underneath explain it, so this is only a note.
+- **✅ Fixed 2026-11-20:**
+  - **The green fee:** short of it, you pay what you have and rake bunkers for the rest. The picker says so ("$10:
+    you have $5, so you'll pay that and rake bunkers…"); checked in the game: cash 5 → 0.
+  - **The caddie's loop fee is left as it is:** short of it, the caddie sits out and you pay nothing, which is fair
+    (taking part of it with no caddie wouldn't be).
+  - **Countback:** "You finish 4th of 13 (tied for 3rd on 40, lost on the last three holes): out of the money", and the
+    same note on the payoff screen.
+  - **The payoff screen's cash line:** says "(the entry was paid at the first tee)".
 
 ### Checked and fine
 - **Amounts:** `money-amounts.js` played 24 random matches to the 9th hole (12 match play, 12 skins; 4 presses by the
@@ -833,6 +879,13 @@ fixed before this section was first pushed.)
   hash, and no plain password.
 - **Fix (S):** this is your decision, and the file stays where you put it. If the password is under about 12
   characters, make a new, longer one with `node tools/admin-hash.js` and paste the new salt and hash in.
+- **Prepared 2026-11-20; one step left that only the user can do.** The hash already in the repo's history can't be
+  taken back, so the fix is a new password.
+  - `node tools/admin-hash.js` now makes a strong random password (24 characters, about 138 bits), shown once in your
+    own terminal and in no file, with its salt and hash to paste into `api/_admins.js`, or as a `GOLF_ADMIN_KEETO`
+    environment variable. `--type` still lets you type your own.
+  - Checked with a throwaway profile id: the printed hash matches the password, and the environment line is right.
+  - Old admin sessions are signed out by the change already.
 
 ### 3.9 [Low] Smaller gaps
 - **Flooding a player with challenges.** One profile can have 12 open challenges, but there is no limit on how many
@@ -1409,6 +1462,16 @@ What an invitational entry is worth (the field's median winning score in bracket
   slowly. Worth deciding which pace you want before changing either.
 - **Related:** Composure 10 removes 85% of tilt, and the top caddies erase it between holes, so late in a career tilt
   barely matters (see the ladder in section 6). That may be intended.
+- **✅ Rebalanced 2026-11-20.** Since 7.2 and 4.1, the top of the game pays less.
+  - **Income now:** a player about 0.1 over par a hole makes roughly $3,000 a match at the country club, invitationals
+    included (the best matches $200–$430, the Hawthorne and the Classic about $6,500 each, once every 5 matches).
+  - **What changed:** the pure money sinks are halved: the trophy room's ten pieces ($444,000 → $222,000) and the
+    luxury irons, drivers, wedges and putters (e.g. the Atelier irons $250,000 → $125,000, the Crown Jewel driver
+    $120,000 → $60,000). Each takes about 70 matches at that level, not 150. Neither changes how anything plays.
+  - **Unchanged, as core progression:** lessons (every stat to 10 is still $68,160, about 23 matches at the top) and
+    caddies. A top caddie's $400 loop is about what a country-club match makes, which the caddie's bonuses roughly pay
+    back. Worth watching when you play.
+  - `CAMPAIGN_PLAN.md`'s price tables are updated.
 
 ## Section 8 — Performance (2026-11-19, Opus 5.5)
 

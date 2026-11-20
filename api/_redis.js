@@ -102,7 +102,7 @@ async function updateCareer(id, fn) {
     const [[data, ver]] = await redis([['HMGET', `golf:career:${id}`, 'data', 'ver']]);
     if (!data) throw Object.assign(new Error('That player has no career'), { status: 404 });
     const c = normCareer(JSON.parse(data));         // (the right types first: a bad save can't block a payout, audit 3.2)
-    fn(c);
+    if (fn(c) === false) return c;                  // (nothing to change: done already, audit 1.6)
     const [n] = await redis([['EVAL', CAS, 1, `golf:career:${id}`, String(+ver || 0), JSON.stringify(c)]]);
     if (n !== -1) {
       try { await redis([['SET', `golf:sum:${id}`, JSON.stringify(summaryOf(c, id))]]); } catch { /* the lists catch up on the next save */ }

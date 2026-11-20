@@ -35,6 +35,9 @@ function normCareer(c) {
   for (const k of ['power', 'dex', 'composure', 'perception']) c.stats[k] = Number.isFinite(c.stats[k]) ? c.stats[k] : 1;
   if (!obj(c.bag)) c.bag = {};
   for (const k of ['out', 'putters', 'snapped', 'pvpSeen', 'saveIds']) c[k] = arr(c[k]);
+  // (audit 1.6: the server's own records in a career: the challenges holding a stake, and wall purchases not yet done)
+  c.escrow = arr(c.escrow).filter((x) => typeof x === 'string').slice(-50);
+  c.pendingBuys = arr(c.pendingBuys).filter(obj).slice(-20);
   c.history = arr(c.history).filter(obj);
   c.rounds = goodRounds(c);
   c.cards = arr(c.cards).filter((x) => obj(x) && typeof x.id === 'string' && Array.isArray(x.sc) && Array.isArray(x.pars));

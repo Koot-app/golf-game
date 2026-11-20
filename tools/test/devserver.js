@@ -13,7 +13,21 @@ const kv = new Map(), hashes = new Map(), sets = new Map(), exp = new Map();
 const alive = (k) => { if (exp.has(k) && exp.get(k) < Date.now()) { kv.delete(k); exp.delete(k); } return kv.has(k); };
 const H = (k) => { if (!hashes.has(k)) hashes.set(k, new Map()); return hashes.get(k); };
 const zsets = new Map(), zs = (k) => { if (!zsets.has(k)) zsets.set(k, []); return zsets.get(k); };
-function run([cmd, ...a]) {
+// failure injection for the tests (audit 1.6): POST /__fail { cmd, key, skip } makes the (skip+1)th matching command
+// fail once, as a storage hiccup between two writes would. key matches the start of the command's key. Each POST adds
+// one; { clear: true } drops them all.
+let failPlans = [];
+function run(c) {
+  const [cmd, ...a] = c, key = String(cmd.toUpperCase() === 'EVAL' ? a[2] : a[0]);
+  for (const p of failPlans) {
+    if (cmd.toUpperCase() !== p.cmd || !key.startsWith(p.key)) continue;
+    if (p.skip > 0) { p.skip--; continue; }
+    failPlans = failPlans.filter((x) => x !== p);
+    return { error: 'injected failure' };
+  }
+  return run0(c);
+}
+function run0([cmd, ...a]) {
   switch (cmd.toUpperCase()) {
     case 'SET': { const k = a[0]; if (a.includes('NX') && alive(k)) return null; kv.set(k, String(a[1])); const ei = a.indexOf('EX'); if (ei > 0) exp.set(k, Date.now() + a[ei + 1] * 1000); return 'OK'; }
     case 'GET': return alive(a[0]) ? kv.get(a[0]) : null;
@@ -36,7 +50,8 @@ function run([cmd, ...a]) {
     case 'ZREM': { const z = zs(a[0]), i = z.findIndex((x) => x[1] === String(a[1])); if (i < 0) return 0; z.splice(i, 1); return 1; }
     case 'ZRANGE': { const z = zs(a[0]), e = +a[2] < 0 ? z.length + +a[2] : +a[2]; return z.slice(+a[1], e + 1).map((x) => x[1]); }
     case 'ZREMRANGEBYRANK': { const z = zs(a[0]); if (+a[1] < z.length) z.splice(+a[1]); return 0; }
-    case 'EVAL': {   // the profile scripts: the sign-up (name and password at once) and the CAS save
+    case 'EVAL': {   // the scripts: a lock's release (only by its holder), the sign-up (name and password at once), the CAS save
+      if (/'DEL'/.test(a[0])) { const [, , key, token] = a; if (alive(key) && kv.get(key) === String(token)) { kv.delete(key); return 1; } return 0; }
       if (/'hash'/.test(a[0])) {
         const [, , key, name, salt, hash, created] = a, h = H(key);
         if (h.has('name') && h.has('hash')) return 0;
@@ -62,6 +77,12 @@ try { SITE_HEADERS = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 
 http.createServer(async (req, res) => {
   for (const h of SITE_HEADERS) res.setHeader(h.key, h.value);
   const u = new URL(req.url, 'http://x');
+  if (u.pathname === '/__fail' && req.method === 'POST') {          // (tests only: see failPlan)
+    let body = ''; for await (const c of req) body += c;
+    const p = JSON.parse(body || '{}');
+    if (p.clear) failPlans = []; else if (p.cmd) failPlans.push({ cmd: String(p.cmd).toUpperCase(), key: String(p.key || ''), skip: +p.skip || 0 });
+    res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}'); return;
+  }
   if (u.pathname.startsWith('/api/')) {
     const name = u.pathname.slice(5).replace(/[^a-z_]/g, '');
     let body = '';

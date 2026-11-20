@@ -17,7 +17,10 @@
   $('cmGo').click(); await sleep(600); $('riStart').click(); await sleep(800);
   const m = g.career.match; m.toss = 'me'; if (g.tossOpen) g.closeToss();
   for (let i = 0; i < 4; i++) { g.npc.done = true; g.hp.strokes = g.HOLES[i].par + 4; g.hp.putts = 2; g.finishHole(); await sleep(50); g.scorecardNext(); await sleep(150); }
-  g.hp.strokes = 4; g.hp.pen = 2;                                                    // hole 5: two balls out of bounds already
+  await sleep(1500);                                                                  // (his tee shot, if he has the honour)
+  // hole 5: two balls out of bounds already, and the ball now halfway to the pin (as a real stroke ends: setupNextShot)
+  const pin = g.hole.pin;
+  g.hp.strokes = 4; g.hp.pen = 2; g.hp.onTee = false; g.hp.ball = { x: pin.x * 0.5, z: pin.z * 0.5 }; g.setupNextShot();
   await sleep(6000);                                 // (the probe kills Chrome: give localStorage time to reach the disk first)
-  return JSON.stringify({ npc: m.npc, stake: m.stake, holesPlayed: m.holes.length, settled: m.settled, cash: g.career.cash, stats: g.career.stats, onHole: g.hp.holeIdx + 1, strokesThisHole: g.hp.strokes });
+  return JSON.stringify({ npc: m.npc, stake: m.stake, holesPlayed: m.holes.length, settled: m.settled, cash: g.career.cash, stats: g.career.stats, onHole: g.hp.holeIdx + 1, strokesThisHole: g.hp.strokes, pen: g.hp.pen, ball: { x: +g.hp.ball.x.toFixed(1), z: +g.hp.ball.z.toFixed(1) }, hisStrokes: g.npc.k });
 })()

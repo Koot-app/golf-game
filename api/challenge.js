@@ -57,12 +57,16 @@ async function getChs(cids) {
 }
 const isActive = (c) => c && (c.status === 'pending' || c.status === 'open');
 const putCh = (ch) => redis([['SET', `golf:ch:${ch.id}`, JSON.stringify(ch)]]);
-// do fn(challenge) while holding its lock (another request on the same challenge waits its turn or is told to retry)
+// do fn(challenge) while holding its lock (another request on the same challenge waits its turn or is told to retry).
+// The lock holds this request's own token, and is released only if it still does (audit 1.6: a slow request used to
+// delete a lock that had run out and been taken by the next one).
+const UNLOCK = `if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) end
+return 0`;
 async function withLock(cid, fn) {
-  const key = `golf:chlock:${cid}`;
+  const key = `golf:chlock:${cid}`, token = crypto.randomBytes(8).toString('hex');
   let got = null;
   for (let i = 0; i < 8 && !got; i++) {
-    [got] = await redis([['SET', key, '1', 'NX', 'EX', 20]]);
+    [got] = await redis([['SET', key, token, 'NX', 'EX', 20]]);
     if (!got) await new Promise((r) => setTimeout(r, 150));
   }
   if (!got) throw fail(409, 'Busy — try again');
@@ -70,8 +74,28 @@ async function withLock(cid, fn) {
     const ch = await getCh(cid);
     if (!ch) throw fail(404, 'No such challenge');
     return await fn(ch);
-  } finally { await redis([['DEL', key]]); }
+  } finally { await redis([['EVAL', UNLOCK, 1, key, token]]); }
 }
+
+// ---- AUDIT 1.6: every stake moves in ONE write to the player's career, together with its own record of that move,
+// so a request that dies half-way (or a write to the challenge that fails after the money moved) can be run again
+// without paying twice or losing the stake:
+//   - c.escrow lists the challenges holding a stake of this player's. Taking a stake adds the id (and does nothing if it's
+//     already there); giving it back or paying out removes it (and does nothing if it isn't).
+//   - a payout writes the history line that carries the challenge id; a line already there means it was paid.
+// The challenge's own `held` / `paid` marks are kept, but only to save work: the career's record decides. (A challenge
+// made before this has ch.esc unset: its stakes aren't in anyone's escrow, so it goes by `held` as before.)
+const escOf = (c) => (Array.isArray(c.escrow) ? c.escrow : []);
+const takeStake = (p, ch, E, short) => updateCareer(p, (c) => {
+  if (escOf(c).includes(ch.id)) return false;               // taken already
+  if ((c.cash || 0) < E) throw fail(400, short);
+  c.cash -= E; c.escrow = [...escOf(c), ch.id];
+});
+const giveBack = (p, ch, E) => updateCareer(p, (c) => {
+  if (escOf(c).includes(ch.id)) { c.cash = (c.cash || 0) + E; c.escrow = escOf(c).filter((x) => x !== ch.id); return; }
+  if (ch.esc || !(ch.held && ch.held[p])) return false;     // nothing of theirs held (never taken, or given back already)
+  c.cash = (c.cash || 0) + E;                               // (an older challenge: as before)
+});
 
 // who gets strokes in this challenge: auto = the difference of the two handicaps, rounded, to the higher one
 function strokesFor(ch, cFrom, cTo) {
@@ -130,14 +154,19 @@ async function payOut(ch) {
   if (!ch.result || !ch.result.payout) return ch;
   ch.paid = ch.paid || {};
   for (const p of [ch.from, ch.to]) {
-    if (ch.paid[p] || !(ch.held && ch.held[p])) continue;
+    if (ch.paid[p] || (!ch.esc && !(ch.held && ch.held[p]))) continue;
     const res = ch.result, net = res.net[p];
     const outcome = outcomeFor(res, p);
     // each player on their own (audit 3.2): a failure paying one never stops the other; the unpaid one is retried by
-    // `list` (held but not paid)
+    // `list`. Paid once (audit 1.6): the payout, its history line and the end of the escrow are one write, and a line
+    // for this challenge already in the history means it was paid.
     try {
       await updateCareer(p, (c) => {
+        const line = (c.history || []).some((h) => h && h.friend && h.ch === ch.id), esc = escOf(c).includes(ch.id);
+        if (line) { if (!esc) return false; c.escrow = escOf(c).filter((x) => x !== ch.id); return; }      // paid already
+        if (ch.esc && !esc) return false;                   // nothing of theirs was held (shouldn't happen)
         c.cash = (c.cash || 0) + (res.payout[p] || 0);
+        c.escrow = escOf(c).filter((x) => x !== ch.id);
         c.history.push({ friend: other(ch, p), friendName: ch.names[other(ch, p)], ch: ch.id, format: ch.format, stake: ch.stake, result: `${outcome} · ${res.line}`, net, date: Date.now() });
       });
     } catch { continue; }
@@ -146,21 +175,22 @@ async function payOut(ch) {
   }
   return ch;
 }
-// a challenge closed without being played (declined, called off, not answered in time): any stake already held goes
-// back to its owner, once (marked in `paid`), with no history line (nothing happened)
+// a challenge closed without being played (declined, called off, not answered in time): any stake held goes back to
+// its owner, once, with no history line (nothing happened). Once (audit 1.6): giveBack only returns a stake the career
+// still lists as held.
 async function refundHeld(ch) {
   const E = escrowOf(ch);
   ch.paid = ch.paid || {};
   for (const p of [ch.from, ch.to]) {
-    if (!(ch.held && ch.held[p]) || ch.paid[p]) continue;
-    await updateCareer(p, (c) => { c.cash = (c.cash || 0) + E; });
+    if (ch.paid[p] || (!ch.esc && !(ch.held && ch.held[p]))) continue;
+    await giveBack(p, ch, E);
     ch.paid[p] = true;
     await putCh(ch);
   }
   return ch;
 }
-// a stake held but not yet paid back or out
-const owed = (ch) => [ch.from, ch.to].some((p) => ch.held && ch.held[p] && !(ch.paid || {})[p]);
+// a stake held but not yet paid back or out (with escrow records, either player may have one, whatever `held` says)
+const owed = (ch) => [ch.from, ch.to].some((p) => (ch.esc || (ch.held && ch.held[p])) && !(ch.paid || {})[p]);
 async function finish(ch, result) {
   ch.status = result.kind === 'refund' ? 'closed' : 'done';
   ch.result = result; ch.finished = Date.now();
@@ -245,17 +275,17 @@ module.exports = async (req, res) => {
       if ((await getChs(mine || [])).filter(isActive).length >= MAX_ACTIVE) return send(400, { error: `You're in ${MAX_ACTIVE} challenges already — finish some first` });
       // (audit 3.9: and a cap on the other side too, so nobody can be flooded with challenges)
       if ((await getChs(theirs || [])).filter(isActive).length >= MAX_ACTIVE) return send(400, { error: `${cTo.name} has ${MAX_ACTIVE} challenges on already — try again later` });
-      const ch = { id: crypto.randomBytes(8).toString('hex'), from: me, to, names: { [me]: cMe.name, [to]: cTo.name }, format, stake, tier, hcp, status: 'pending', created: Date.now(), cards: {}, held: {} };
+      const ch = { id: crypto.randomBytes(8).toString('hex'), from: me, to, names: { [me]: cMe.name, [to]: cTo.name }, format, stake, tier, hcp, status: 'pending', created: Date.now(), cards: {}, held: {}, esc: true };
       ch.strokes = strokesFor(ch, cMe, cTo);                  // a preview: fixed for good when it's accepted
       // the challenger's stake is held from now, not from the accept: otherwise their own PC, which doesn't hear about
-      // the accept until it next syncs, could spend it in the meantime and go below zero (audit 1.3)
-      await updateCareer(me, (c) => {
-        if ((c.cash || 0) < E) throw fail(400, `You need $${E} to put that up`);
-        c.cash -= E;
-      });
+      // the accept until it next syncs, could spend it in the meantime and go below zero (audit 1.3). The challenge is
+      // written first and the stake taken after (audit 1.6): if the request dies in between, the challenge is there to
+      // give the stake back (refundHeld goes by the escrow record, not by `held`)
+      await redis([['SET', `golf:ch:${ch.id}`, JSON.stringify(ch)], ['SADD', `golf:chs:${me}`, ch.id], ['SADD', `golf:chs:${to}`, ch.id]]);
+      try { await takeStake(me, ch, E, `You need $${E} to put that up`); }
+      catch (e) { await redis([['DEL', `golf:ch:${ch.id}`], ['SREM', `golf:chs:${me}`, ch.id], ['SREM', `golf:chs:${to}`, ch.id]]); throw e; }
       ch.held[me] = true;
-      try { await redis([['SET', `golf:ch:${ch.id}`, JSON.stringify(ch)], ['SADD', `golf:chs:${me}`, ch.id], ['SADD', `golf:chs:${to}`, ch.id]]); }
-      catch (e) { await updateCareer(me, (c) => { c.cash = (c.cash || 0) + E; }); throw e; }
+      await putCh(ch);
       return send(200, { challenge: view(ch, me) });
     }
 
@@ -305,16 +335,16 @@ module.exports = async (req, res) => {
         if (!cFrom || !cTo) throw fail(404, 'That player has no career');
         if ((cFrom.tierMax || 1) < ch.tier || (cTo.tierMax || 1) < ch.tier) throw fail(400, 'You both need that circuit open');
         ch.strokes = strokesFor(ch, cFrom, cTo);               // the strokes as of now, fixed for the round
-        const E = escrowOf(ch), take = (p) => updateCareer(p, (c) => {
-          if ((c.cash || 0) < E) throw fail(400, p === me ? `You need $${E} to accept` : `${ch.names[p]} doesn't have $${E} any more`);
-          c.cash -= E;
-        });
+        const E = escrowOf(ch), short = (p) => (p === me ? `You need $${E} to accept` : `${ch.names[p]} doesn't have $${E} any more`);
+        // (audit 1.6: with escrow records a retry after a lost write takes nothing twice; an older challenge as before)
+        const take = (p) => (ch.esc ? takeStake(p, ch, E, short(p)) : updateCareer(p, (c) => { if ((c.cash || 0) < E) throw fail(400, short(p)); c.cash -= E; }));
+        const back = (q) => (ch.esc ? giveBack(q, ch, E) : updateCareer(q, (c) => { c.cash = (c.cash || 0) + E; }));
         // (the challenger's stake is normally held since the challenge was made; one made before that rule is taken now)
         const taken = [];
         for (const p of [ch.to, ch.from]) {
           if (ch.held[p]) continue;
           try { await take(p); } catch (e) {
-            for (const q of taken) { await updateCareer(q, (c) => { c.cash = (c.cash || 0) + E; }); delete ch.held[q]; }    // give back what this accept took
+            for (const q of taken) { await back(q); delete ch.held[q]; }    // give back what this accept took
             await putCh(ch);
             throw e;
           }

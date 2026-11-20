@@ -9075,7 +9075,7 @@
         puttTel = { sw, res, practice: state.practice };
         clubPhiTarget = 0.45;
         if (state.practice) { clubReturnAt = performance.now() + 900; return; }
-        if (hp.on) { hp.strokes++; hp.putts++; }
+        if (hp.on) { hp.strokes++; hp.putts++; saveHoleProgress(); }
         rollTrailN = 0; rollTrail.geometry.setDrawRange(0, 0);
         puttRun = { sim: createPutt(green, res.v0, state.aim + res.start, res.skidFt), res, markFlatFt: markRead ? markRead.flatFt : state.markDist / FT, age: 0, acc: 0, done: false, aim: state.aim, summary: null };
         state.view = 'flight';
@@ -9527,7 +9527,7 @@
           flight, tracer, res, badAtImpact, age: 0, acc: 0, done: false, dir, aim: state.aim, pin: state.pin, summary: null, marked: false,
           pinRel: hb ? { x: hole.pin.x - hb.x, z: hole.pin.z - hb.z } : null, holed: false
         };
-        if (hb) hp.strokes++;
+        if (hb) { hp.strokes++; saveHoleProgress(); }       // (saved as it's hit: audit 1.4)
         state.view = 'flight';
       }
 
@@ -9544,7 +9544,7 @@
           pinRel: { x: green.hole.x, z: green.hole.z }, holed: false, chip: true, markM: state.markDist,
           readTxt: chipRead ? `${fmtBandBs(chipRead.bsLo, chipRead.bsHi)}` : '',
         };
-        if (hp.on) hp.strokes++;
+        if (hp.on) { hp.strokes++; saveHoleProgress(); }
         state.view = 'flight';
       }
       function updateChipShot(dt) {
@@ -9714,6 +9714,7 @@
       // Read the lie from where the ball finished and set up the next stroke.
       function setupNextShot() {
         shot = null; puttRun = null; telemetry = null;
+        saveHoleProgress();                                    // where the ball lies now, and the strokes so far (audit 1.4)
         if (round.match && !hp.onTee && !hp.done) setTimeout(() => npcTakeTurns(), 0);     // a match: is the hustler away?
         if (!hp.onTee && hp.mapZoom === 0) hp.mapZoom = 1;    // automatically zoom minimap in on shot 2+
         const surf = surfaceAt(hp.ball.x, hp.ball.z);
@@ -10288,7 +10289,7 @@
         if (round.on) {          // a test round: record it and show the card
           round.scores[hp.holeIdx] = { strokes: hp.strokes, putts: hp.putts, par: HOLE.par, pen: hp.pen };
           const crT = round.match || round.tour || round.pvp;
-          if (crT) crT.tilt = state.badStreak;                                        // saved with the hole just below (audit 6.2)
+          if (crT) { crT.tilt = state.badStreak; crT.cur = null; }                   // saved with the hole just below (audit 6.2); the hole is done (1.4)
           $('toast').classList.remove('on');
           const pv = round.pvp && pvpAfterHole(hp.holeIdx);                         // a friend round: the card so far (M3)
           const vs = round.match ? `\n${matchAfterHole(hp.holeIdx)}` : pv ? `\n${pv}` : round.tour ? `\n\n${tourAfterHole(hp.holeIdx)}` : '';   // a career match: the hustler's score, the match; an invitational: the board
@@ -10359,6 +10360,39 @@
       // off: the same as walking to the next tee. (It used to be calm again on a fresh tee.)
       function resumeRoundTilt(cr) {
         if (cr && cr.holes.some(Boolean) && cr.tilt > 0) setBadStreak(caddieWalkOff(cr.tilt));
+      }
+      // AUDIT 1.4: the hole in progress is saved with the round (cr.cur), after every stroke, so reopening the game puts you
+      // back where your ball lies, with the strokes, putts and penalties you've taken, your tilt, and (in a match) how far
+      // the hustler has got. It used to restart the hole from the tee with nothing on the card: in a money match the
+      // hustler's score is fixed in advance, so a bad hole could be replayed until it beat him. A stroke is saved as it's
+      // hit, before the ball lands: a shot still in the air when the game closed counts, and you play again from where
+      // you hit it.
+      const liveRound = () => (round.on && careerOn && hp.on && !hp.done ? round.match || round.tour || round.pvp : null);
+      function saveHoleProgress() {
+        const cr = liveRound();
+        if (!cr) return;
+        if (!hp.strokes) return;                               // nothing played yet (and a hole being set up must not wipe what's saved)
+        cr.cur = {
+          i: hp.holeIdx, strokes: hp.strokes, putts: hp.putts, pen: hp.pen, ball: { x: hp.ball.x, z: hp.ball.z }, onTee: !!hp.onTee,
+          lastFrom: hp.lastFrom ? { ...hp.lastFrom } : null, hist: hp.history.slice(-30), tilt: state.badStreak,
+          npc: round.match && npc.plan ? { k: npc.k, pos: npc.pos ? { ...npc.pos } : null, done: !!npc.done, holed: !!npc.holed } : null,
+        };
+        careerSave();
+      }
+      // after enterHole() on a resumed round: back to where the hole was left (if it was the hole now being played)
+      function resumeHoleProgress(cr) {
+        const c = cr && cr.cur;
+        if (!c || c.i !== hp.holeIdx || !c.strokes) return;
+        Object.assign(hp, { strokes: c.strokes, putts: c.putts || 0, pen: c.pen || 0, ball: { ...c.ball }, onTee: !!c.onTee, lastFrom: c.lastFrom || null, history: Array.isArray(c.hist) ? c.hist : [] });
+        setBadStreak(c.tilt || 0);
+        if (round.match && npc.plan && c.npc) {
+          const k = clamp(c.npc.k | 0, 0, npc.plan.length);
+          Object.assign(npc, { k, pos: c.npc.pos ? { ...c.npc.pos } : { ...npc.plan[0].from }, done: k >= npc.plan.length || !!c.npc.done, holed: !!c.npc.holed, starting: false });
+          npc.cur = { ...npc.pos };
+        }
+        setupNextShot();
+        const msg = `Back on hole ${hp.holeIdx + 1}, where you left it\nPlaying ${hp.strokes + 1}${hp.pen ? ` (${hp.pen} penalt${hp.pen === 1 ? 'y' : 'ies'})` : ''}`;
+        setTimeout(() => { if (round.on && hp.on && !hp.done) toast(msg, 3000); }, 3800);     // (after the round's own "where were we?")
       }
       function nextRoundHole() {
         if (!round.on || swing.active) return;
@@ -11735,7 +11769,7 @@
         document.body.classList.add('round', 'match'); hideScorecard();
         hp.holeIdx = Math.min(pc.holes.length, HOLES.length - 1); courseV = TIERS[pc.tier] || null;
         for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
-        buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(pc);
+        buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(pc); resumeHoleProgress(pc);
         $('btnRound').textContent = 'Leave the round';
         const give = holeStrokes(pc.n)[hp.holeIdx];
         toast(`vs ${pc.vsName} · ${FR_FMT[pc.format]}, ${money(pc.stake)}${pc.format === 'skins' ? ' a skin' : ''}\n${pc.holes.length ? `Resuming on hole ${hp.holeIdx + 1}` : strokesText({ player: pc.n ? (pc.mine ? session.id : pc.vs) : null, n: pc.n }, { [pc.vs]: pc.vsName })}`
@@ -12134,9 +12168,9 @@
         // ---- LUXURY (user request, 2026-11-19): a money sink and something to show off. lux = gold in the shop, the bag
         //      list, the bag room and the bag graphics (which friends see). They play like the best ordinary models, never
         //      better: the money buys the look, not strokes. (Hawthorne Atelier is the country club's own clubmaker: made up.)
-        'i-prestigio': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Majesty', name: 'Prestigio (gold)', price: 40000, add: { loft: -4, dynLoft: 1.8 }, x: { spin: 0.97, speed: 1.01, sweet: 1.8, gear: 0.58, work: 0.7 }, set: { floor: 0.7, offset: 0.6, consist: 0.92 }, note: 'Gold-plated heads and hand-painted lettering; under the shine, a forgiving distance iron' },
-        'i-beres5': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Honma', name: 'Beres 5-Star', price: 60000, add: { loft: -5, dynLoft: 1.8 }, x: { spin: 0.95, speed: 1.01, sweet: 2.2, gear: 0.46, work: 0.5 }, set: { floor: 0.85, offset: 0.9, consist: 0.86 }, note: '24-carat gold trim and five-star shafts, hand-finished in Sakata. Plays like a game-improvement iron: built for members who would rather not practise' },
-        'i-atelier': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Sovereign platinum', price: 250000, add: { loft: -1, dynLoft: 1.2 }, x: { spin: 1.0, speed: 1.0, sweet: 1.4, gear: 0.75, work: 0.88 }, set: { floor: 0.62, offset: 0.35, consist: 0.94 }, note: 'One of one: platinum-plated forgings with your initials in the cavity. A players\' cavity at heart' },
+        'i-prestigio': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Majesty', name: 'Prestigio (gold)', price: 20000, add: { loft: -4, dynLoft: 1.8 }, x: { spin: 0.97, speed: 1.01, sweet: 1.8, gear: 0.58, work: 0.7 }, set: { floor: 0.7, offset: 0.6, consist: 0.92 }, note: 'Gold-plated heads and hand-painted lettering; under the shine, a forgiving distance iron' },
+        'i-beres5': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Honma', name: 'Beres 5-Star', price: 30000, add: { loft: -5, dynLoft: 1.8 }, x: { spin: 0.95, speed: 1.01, sweet: 2.2, gear: 0.46, work: 0.5 }, set: { floor: 0.85, offset: 0.9, consist: 0.86 }, note: '24-carat gold trim and five-star shafts, hand-finished in Sakata. Plays like a game-improvement iron: built for members who would rather not practise' },
+        'i-atelier': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Sovereign platinum', price: 125000, add: { loft: -1, dynLoft: 1.2 }, x: { spin: 1.0, speed: 1.0, sweet: 1.4, gear: 0.75, work: 0.88 }, set: { floor: 0.62, offset: 0.35, consist: 0.94 }, note: 'One of one: platinum-plated forgings with your initials in the cavity. A players\' cavity at heart' },
         // ---- drivers
         'd-xr16': { kind: 'driver', cat: 'Used', brand: 'Callaway', name: 'XR 16 (2016)', price: 0, add: { dynLoft: 0.3 }, x: { spin: 1.15, speed: 0.97, sweet: 1.0, gear: 1.125, work: 1 }, set: { offset: 0.3, consist: 1.3 }, note: 'An old warhorse: spins too much, a bit short' },
         'd-m2': { kind: 'driver', cat: 'Used', brand: 'TaylorMade', name: 'M2 (2016)', price: 90, add: {}, x: { spin: 1.1, speed: 0.98, sweet: 1.05, gear: 1.06, work: 1 }, set: { offset: 0.2, consist: 1.3 }, note: 'Long in its day, now just loose' },
@@ -12145,9 +12179,9 @@
         'd-qi4d': { kind: 'driver', cat: 'In-between', brand: 'TaylorMade', name: 'Qi4D', price: 630, add: {}, x: { spin: 1.04, speed: 1.0, sweet: 1.1, gear: 1.0, work: 1.0 }, set: { offset: 0, consist: 1.0 }, note: 'The best all-rounder' },
         'd-qi4dls': { kind: 'driver', cat: 'Low spin', brand: 'TaylorMade', name: 'Qi4D LS', price: 650, add: { dynLoft: 0.5 }, x: { spin: 0.96, speed: 1.012, sweet: 0.9, gear: 1.19, work: 1.12 }, set: { offset: 0, consist: 1.0 }, note: 'The longest when you find the middle' },
         'd-td': { kind: 'driver', cat: 'Low spin', brand: 'Callaway', name: 'Quantum Triple Diamond', price: 650, add: { dynLoft: 0.4 }, x: { spin: 0.94, speed: 1.012, sweet: 0.85, gear: 1.25, work: 1.18 }, set: { offset: -0.8, consist: 1.0 }, note: 'Very low spin, leans to a fade, unforgiving' },
-        'd-prestigio': { kind: 'driver', cat: 'Luxury', lux: true, brand: 'Majesty', name: 'Prestigio (gold)', price: 12000, add: { dynLoft: 0.4 }, x: { spin: 1.06, speed: 1.0, sweet: 1.2, gear: 0.9, work: 0.9 }, set: { offset: 0.4, consist: 0.95 }, note: 'A gold crown and a featherweight shaft; forgiving, and it launches high' },
-        'd-beres5': { kind: 'driver', cat: 'Luxury', lux: true, brand: 'Honma', name: 'Beres 5-Star', price: 18000, add: { dynLoft: 0.5 }, x: { spin: 1.08, speed: 0.995, sweet: 1.3, gear: 0.8, work: 0.82 }, set: { offset: 0.8, consist: 0.92 }, note: 'Gold-trimmed and hand-finished; as forgiving as anything going, with a little draw built in' },
-        'd-atelier': { kind: 'driver', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Crown Jewel', price: 120000, add: {}, x: { spin: 1.03, speed: 1.004, sweet: 1.1, gear: 1.0, work: 1.0 }, set: { offset: 0, consist: 0.98 }, note: 'Diamonds set in a black crown, a sapphire in the sole weight. Plays like the best all-rounder; looks like a ransom' },
+        'd-prestigio': { kind: 'driver', cat: 'Luxury', lux: true, brand: 'Majesty', name: 'Prestigio (gold)', price: 6000, add: { dynLoft: 0.4 }, x: { spin: 1.06, speed: 1.0, sweet: 1.2, gear: 0.9, work: 0.9 }, set: { offset: 0.4, consist: 0.95 }, note: 'A gold crown and a featherweight shaft; forgiving, and it launches high' },
+        'd-beres5': { kind: 'driver', cat: 'Luxury', lux: true, brand: 'Honma', name: 'Beres 5-Star', price: 9000, add: { dynLoft: 0.5 }, x: { spin: 1.08, speed: 0.995, sweet: 1.3, gear: 0.8, work: 0.82 }, set: { offset: 0.8, consist: 0.92 }, note: 'Gold-trimmed and hand-finished; as forgiving as anything going, with a little draw built in' },
+        'd-atelier': { kind: 'driver', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Crown Jewel', price: 60000, add: {}, x: { spin: 1.03, speed: 1.004, sweet: 1.1, gear: 1.0, work: 1.0 }, set: { offset: 0, consist: 0.98 }, note: 'Diamonds set in a black crown, a sapphire in the sole weight. Plays like the best all-rounder; looks like a ransom' },
         // ---- fairway woods / hybrids (the starter's; the rest follow the driver lines in the shop chunk)
         'h-xr': { kind: 'wood', cat: 'Used', brand: 'Callaway', name: 'XR hybrid (2015)', price: 0, add: {}, x: { spin: 1.1, speed: 0.97 }, set: { consist: 1.25 }, note: 'A tired old hybrid' },
         // ---- wedges (GW / SW / LW, one at a time; bounce is the sand wedge's)
@@ -12156,8 +12190,8 @@
         'w-cbx2': { kind: 'wedge', cat: 'Cavity', brand: 'Cleveland', name: 'CBX 2', price: 150, add: {}, x: { spin: 0.96, sweet: 1.4, gear: 0.8, work: 0.89 }, set: { consist: 0.92, bounce: 12, flopX: 1.1 }, note: 'Forgiving, with decent spin' },
         'w-opus': { kind: 'wedge', cat: 'Tour', brand: 'Callaway', name: 'Opus', price: 180, add: {}, x: { spin: 1.0, sweet: 1.0, gear: 1.0, work: 1.05 }, set: { consist: 1.0, bounce: 12 }, note: 'Tour spin with a forgiving grind' },
         'w-vokey': { kind: 'wedge', cat: 'Tour', brand: 'Titleist', name: 'Vokey SM11', price: 200, add: {}, x: { spin: 1.02, sweet: 1.0, gear: 1.0, work: 1.1 }, set: { consist: 1.0, bounce: 10, flopX: 0.95 }, note: 'The most spin and the most versatile' },
-        'w-rosegold': { kind: 'wedge', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Rose Gold', price: 8000, add: {}, x: { spin: 1.0, sweet: 1.0, gear: 1.0, work: 1.05 }, set: { consist: 1.0, bounce: 12 }, note: 'Rose-gold plating over a soft forging. It will scuff in the first bunker, and you\'ll buy another' },
-        'w-damascus': { kind: 'wedge', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Damascus', price: 15000, add: {}, x: { spin: 1.02, sweet: 1.0, gear: 1.0, work: 1.1 }, set: { consist: 1.0, bounce: 10, flopX: 0.95 }, note: 'Hand-folded Damascus steel: no two faces have the same ripples. Spins like a tour wedge' },
+        'w-rosegold': { kind: 'wedge', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Rose Gold', price: 4000, add: {}, x: { spin: 1.0, sweet: 1.0, gear: 1.0, work: 1.05 }, set: { consist: 1.0, bounce: 12 }, note: 'Rose-gold plating over a soft forging. It will scuff in the first bunker, and you\'ll buy another' },
+        'w-damascus': { kind: 'wedge', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Damascus', price: 7500, add: {}, x: { spin: 1.02, sweet: 1.0, gear: 1.0, work: 1.1 }, set: { consist: 1.0, bounce: 10, flopX: 0.95 }, note: 'Hand-folded Damascus steel: no two faces have the same ripples. Spins like a tour wedge' },
       };
       // putters: added to PUTTERS (the range's own blade / mallet stay as they are)
       Object.assign(PUTTERS, {
@@ -12401,16 +12435,16 @@
       //  The top shelf holds trophies that are earned, not bought (worked out from the career, nothing stored).
       // =====================================================================================================
       const TROPHIES = [
-        { tag: 'THE LEDGER', id: 'ledger', name: 'Gus “Gravel” Haney\'s betting ledger', era: 'the muni, last summer', price: 2500, art: 'ledger', note: 'Every bet he ever won at Rolling Pines. Your name is in it. Twice.' },
-        { tag: '1870s', id: 'gutta', name: 'Gutta-percha ball', era: '1870s', price: 4000, art: 'gutta', note: 'Hand-hammered rubber: the ball that put the featherie out of business.' },
-        { tag: '1910s', id: 'mashie', name: 'Hickory-shafted mashie', era: '1910s', price: 7500, art: 'mashie', note: 'A hand-forged mid-iron on a hickory shaft. Still swings sweet.' },
-        { tag: '1960s', id: 'persimmon', name: 'Persimmon driver', era: '1960s', price: 12000, art: 'persimmon', note: 'Oil-hardened persimmon with a fibre insert, and the click you can\'t buy any more.' },
-        { tag: '1880s', id: 'longnose', name: 'Long-nose wooden putter', era: '1880s', price: 18000, art: 'longnose', note: 'A beech-headed long-nose from a links clubmaker\'s shop.' },
-        { tag: '1840s', id: 'featherie', name: 'Featherie ball', era: '1840s', price: 30000, art: 'featherie', note: 'A top hat of boiled goose feathers stuffed into stitched leather. Few survive.' },
-        { tag: 'THE 18TH', id: 'flag', name: 'Signed 18th-hole flag', era: 'a famous final round', price: 45000, art: 'flag', note: 'Signed by the champion on the green, grass stains and all.' },
-        { tag: 'STERLING', id: 'jug', name: 'Silver claret jug', era: 'a full-size replica', price: 75000, art: 'jug', note: 'Sterling silver, hallmarked, and heavier than it looks.' },
-        { tag: 'ONE OF ONE', id: 'blazer', name: 'Champion\'s tartan blazer', era: 'one of one', price: 100000, art: 'blazer', note: 'From a members\' invitational, long ago. It almost fits.' },
-        { tag: '24 CARAT', id: 'goldputter', name: 'The golden putter', era: 'commissioned', price: 150000, art: 'goldputter', note: 'Solid gold head, hand-milled face. It has never missed, because nobody dares putt with it.' },
+        { tag: 'THE LEDGER', id: 'ledger', name: 'Gus “Gravel” Haney\'s betting ledger', era: 'the muni, last summer', price: 1250, art: 'ledger', note: 'Every bet he ever won at Rolling Pines. Your name is in it. Twice.' },
+        { tag: '1870s', id: 'gutta', name: 'Gutta-percha ball', era: '1870s', price: 2000, art: 'gutta', note: 'Hand-hammered rubber: the ball that put the featherie out of business.' },
+        { tag: '1910s', id: 'mashie', name: 'Hickory-shafted mashie', era: '1910s', price: 3750, art: 'mashie', note: 'A hand-forged mid-iron on a hickory shaft. Still swings sweet.' },
+        { tag: '1960s', id: 'persimmon', name: 'Persimmon driver', era: '1960s', price: 6000, art: 'persimmon', note: 'Oil-hardened persimmon with a fibre insert, and the click you can\'t buy any more.' },
+        { tag: '1880s', id: 'longnose', name: 'Long-nose wooden putter', era: '1880s', price: 9000, art: 'longnose', note: 'A beech-headed long-nose from a links clubmaker\'s shop.' },
+        { tag: '1840s', id: 'featherie', name: 'Featherie ball', era: '1840s', price: 15000, art: 'featherie', note: 'A top hat of boiled goose feathers stuffed into stitched leather. Few survive.' },
+        { tag: 'THE 18TH', id: 'flag', name: 'Signed 18th-hole flag', era: 'a famous final round', price: 22500, art: 'flag', note: 'Signed by the champion on the green, grass stains and all.' },
+        { tag: 'STERLING', id: 'jug', name: 'Silver claret jug', era: 'a full-size replica', price: 37500, art: 'jug', note: 'Sterling silver, hallmarked, and heavier than it looks.' },
+        { tag: 'ONE OF ONE', id: 'blazer', name: 'Champion\'s tartan blazer', era: 'one of one', price: 50000, art: 'blazer', note: 'From a members\' invitational, long ago. It almost fits.' },
+        { tag: '24 CARAT', id: 'goldputter', name: 'The golden putter', era: 'commissioned', price: 75000, art: 'goldputter', note: 'Solid gold head, hand-milled face. It has never missed, because nobody dares putt with it.' },
       ];
       const EARNED = [
         { id: 'firstwin', name: 'First hustle won', art: 'cup-bronze', how: 'Win a match against a hustler', got: (c) => (c.history || []).some((h) => h.npc && h.net > 0) },
@@ -12745,8 +12779,8 @@
           'p-pldanser': { cat: 'Blade', price: 450, note: 'A blade with a touch more forgiveness' },
           'p-spider': { cat: 'Mallet', price: 400, note: 'The most stable: the widest gate' },
           'p-oz1': { cat: 'Zero-torque', price: 600, note: 'The face stays square: the straightest start lines, strictest on rhythm' },
-          'p-circlet': { cat: 'Luxury', price: 25000, note: 'A tour-only blade from the custom shop, the circle-T stamped on the sole. Collectors fight over them; it putts like a Newport' },
-          'p-atelier': { cat: 'Luxury', price: 90000, note: 'Milled from a single billet of platinum, with an emerald sight dot. As stable as the best mallets' },
+          'p-circlet': { cat: 'Luxury', price: 12500, note: 'A tour-only blade from the custom shop, the circle-T stamped on the sole. Collectors fight over them; it putts like a Newport' },
+          'p-atelier': { cat: 'Luxury', price: 45000, note: 'Milled from a single billet of platinum, with an emerald sight dot. As stable as the best mallets' },
         },
       };
       // luxury gear: how many pieces a bag holds (club models, by model, plus putters owned), for the gold bag graphics
@@ -13401,7 +13435,9 @@
         inp.min = minS; inp.max = Math.max(minS, cap);
         inp.value = clamp(+inp.value || 20, minS, Math.max(minS, cap));
         // broke: the starter lets you rake bunkers to cover the green fee (so a career can't get stuck at $0)
-        setText('cmFee', career.cash < fee ? `${money(fee)}: you're broke, so you'll rake bunkers for the starter to cover it`
+        // (audit 1.8: short of it, you pay what you have and rake for the rest; $1 short used to waive the whole fee)
+        setText('cmFee', career.cash < fee ? (career.cash > 0 ? `${money(fee)}: you have ${money(career.cash)}, so you'll pay that and rake bunkers for the starter to cover the rest`
+          : `${money(fee)}: you're broke, so you'll rake bunkers for the starter to cover it`)
           : `${money(fee)}${caddieOf() ? ` + ${caddieOf().short}'s ${money(caddieOf().loop)} loop fee` : ''} (paid when you tee off, in cash) · you have ${money(career.cash)}`);
         updateStakeLabel();
         const clubs = usableOrder().length;
@@ -13438,7 +13474,8 @@
         if (!m || swing.active) return;
         closeClubhouse();
         if (!m.feePaid) {                                       // the green fee: cash, or (broke) raking bunkers for it
-          if (career.cash >= MATCH.fee[m.tier]) career.cash -= MATCH.fee[m.tier]; else m.feeWorked = true;
+          if (career.cash >= MATCH.fee[m.tier]) career.cash -= MATCH.fee[m.tier];
+          else { m.feePart = Math.max(0, career.cash); career.cash -= m.feePart; m.feeWorked = true; }      // what you have, and rake for the rest (audit 1.8)
           const cd = caddieOf();                                // the caddie's loop fee: can't pay it, they sit this one out
           if (cd) { if (career.cash >= cd.loop) { career.cash -= cd.loop; m.caddieFee = cd.loop; } else m.noCaddie = true; }
           m.feePaid = true;
@@ -13451,7 +13488,7 @@
         document.body.classList.add('round', 'match'); hideScorecard();
         hp.holeIdx = Math.min(m.holes.length, HOLES.length - 1); courseV = TIERS[m.tier] || null;
         for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
-        buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(m);
+        buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(m); resumeHoleProgress(m);
         $('btnRound').textContent = 'Forfeit the match';
         m.presses = m.presses || [];
         const n = npcById(m.npc), s = matchStatus(m);
@@ -13609,7 +13646,7 @@
           net = (t.prize || 0) - T.entry;
           mood = t.place === 1 ? 'win' : t.prize ? 'place' : 'loss';
           big = t.place === 1 ? 'Champion!' : t.prize ? `${ord} place` : 'Out of the money';
-          sub = `${T.name} · ${o.total} (${fmtToPar(o.toPar)}) · ${ord} of ${o.field}`;
+          sub = `${T.name} · ${o.total} (${fmtToPar(o.toPar)}) · ${ord} of ${o.field}${t.countback || ''}`;
           who = `<div class="oc-who tour"><svg viewBox="0 0 120 120">${trophyArt(T.art, 60, 60, 110)}</svg><div class="oc-say">${t.place === 1 ? 'Your name goes on the trophy, and the trophy goes in your trophy room.' : t.prize ? 'A cheque from the committee, and your name on the board.' : 'The field was too good today. The entry fee stays with the committee.'}</div></div>`;
           rows = `<tr><td>Prize money</td><td>${ord} place</td><td class="${t.prize ? 'mw' : ''}">+${money(t.prize || 0)}</td></tr><tr><td>Entry fee</td><td>paid at the first tee</td><td class="ml">−${money(T.entry)}</td></tr>`;
         }
@@ -13620,7 +13657,7 @@
         $('ocCard').innerHTML = `<div class="oc-kick">${ctx.kind === 'match' ? 'Match over' : 'Final round'}</div><div class="oc-big">${big}</div><div class="oc-sub">${sub}</div>${who}`
           + `<div class="oc-money"><span id="ocNet" class="${net > 0 ? 'mw' : net < 0 ? 'ml' : ''}">${sgn(0)}</span><i>${net > 0 ? 'in your pocket' : net < 0 ? 'out of your pocket' : 'nobody pays'}</i></div>`
           + `<table class="oc-rows">${rows}</table>`
-          + `<div class="oc-foot"><div><b>Cash</b>${money(o.cashBefore)} → <span class="${o.cashAfter > o.cashBefore ? 'mw' : o.cashAfter < o.cashBefore ? 'ml' : ''}">${money(o.cashAfter)}</span></div>`
+          + `<div class="oc-foot"><div><b>Cash${ctx.kind === 'tour' ? ' <small>(the entry was paid at the first tee)</small>' : ''}</b>${money(o.cashBefore)} → <span class="${o.cashAfter > o.cashBefore ? 'mw' : o.cashAfter < o.cashBefore ? 'ml' : ''}">${money(o.cashAfter)}</span></div>`
           + `<div><b>Reputation</b><span class="${o.rep > 0 ? 'mw' : o.rep < 0 ? 'ml' : ''}">${o.rep > 0 ? '+' : o.rep < 0 ? '−' : '±'}${Math.abs(o.rep)}</span></div>`
           + `${left > 0 ? `<div><b>Holes left</b>${left} (decided early)</div>` : ''}</div>`
           + `<div class="oc-btns"><button id="ocCard_card">See the scorecard (K)</button>${playOn ? '<button id="ocCard_on">Play on for practice (N)</button>' : ''}<button id="ocCard_home" class="go">Back to the clubhouse (Enter)</button></div>`;
@@ -13798,7 +13835,7 @@
         document.body.classList.add('round', 'match'); hideScorecard();
         hp.holeIdx = Math.min(t.holes.length, HOLES.length - 1); courseV = TIERS[t.tier] || null;
         for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
-        buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(t);
+        buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(t); resumeHoleProgress(t);
         $('btnRound').textContent = 'Withdraw';
         toast(`🏆 ${T.name}\n${t.holes.length ? `Resuming on hole ${hp.holeIdx + 1}` : `Twelve hustlers in the field · ${money(T.purse[0])} to the winner`} · ${HOLE.name}, par ${HOLE.par}`, 3600);
       }
@@ -13820,12 +13857,15 @@
         const marker = collectMarker();                     // money owed on your marker comes out of the prize (audit 7.1)
         t.outcome = { cashBefore, cashAfter: career.cash, rep, total: me.total, toPar: me.toPar, field: st.length, marker, owed: career.debt || 0, shown: false };
         if (place === 1) career.titles = [...(career.titles || []), { id: T.id, date: Date.now(), score: me.total }];
-        const ord = place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : `${place}th`;
+        const ordOf = (n) => (n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`), ord = ordOf(place);
+        // tied on total but placed lower on the tie-break: say so (audit 1.8: the card said "T3, out of the money" while
+        // the payoff screen said "4th")
+        const countback = me.tied && place > me.pos ? ` (tied for ${ordOf(me.pos)} on ${me.total}, lost on the last three holes)` : '';
         career.history.push({ tour: T.id, format: 'stroke', stake: T.entry, place, result: `${ord} in the ${T.short} (${me.total}, ${fmtToPar(me.toPar)})`, net: prize - T.entry, date: Date.now() });
-        Object.assign(t, { settled: true, place, prize });
+        Object.assign(t, { settled: true, place, prize, countback });
         careerSave(); updateCareerUI();
         return (place === 1 ? `🏆 YOU WIN THE ${T.short.toUpperCase()}! +${money(prize)} · reputation +${rep}\nThe trophy is in your trophy room.`
-          : prize ? `You finish ${ord}: +${money(prize)} · reputation +${rep}` : `You finish ${posText(me)} of ${st.length}: out of the money (${money(T.entry)} entry).`) + markerText(marker);
+          : prize ? `You finish ${ord}${countback}: +${money(prize)} · reputation +${rep}` : `You finish ${ord} of ${st.length}${countback}: out of the money (${money(T.entry)} entry).`) + markerText(marker);
       }
       // leaving part-way is a withdrawal (the entry fee is gone)
       function confirmWithdraw() {
@@ -14013,6 +14053,8 @@
           hx = st.from.x + (st.to.x - st.from.x) * along; hz = st.from.z + (st.to.z - st.from.z) * along;
           if (u >= 1 && a.t >= a.dur + (npc.fast ? 0.1 : 0.9)) {                // landed and held for a moment
             npc.anim = null; npc.pos = { ...st.to }; npc.k++; npc.trail.push({ a: st.from, b: st.to });
+            if (st.holed) { npc.done = true; npc.holed = true; }
+            saveHoleProgress();                                // (his progress on the hole too: audit 1.4)
             const nn = npcById(round.match.npc);
             if (st.holed) { npc.done = true; npc.holed = true; toast(`${nn.nick} holes out: ${npc.k} on the hole`, 1800); }
             else if (st.type === 'pen') { /* (its toast was shown as it began) */ }

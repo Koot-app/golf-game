@@ -105,7 +105,7 @@ match = {
 |---|---|
 | Start | $150 cash, rep 0, all stats 2, tier 1 |
 | Starter bag | 7 used clubs + a used blade putter, all from around 2015–16 (chunk 2) |
-| Club prices | by model, in the club catalogue (iron sets up to $1,600, plus luxury sets up to $250,000; one iron to replace a snapped one = set ÷ 7 × 1.25) |
+| Club prices | by model, in the club catalogue (iron sets up to $1,600, plus luxury sets up to $125,000; one iron to replace a snapped one = set ÷ 7 × 1.25) |
 | Drivers, wedges, putters | by model, in the club catalogue |
 | Lesson (+1 to a stat) | $60 × current level² (5→6: $1,500); the first two cheaper (2→3: $80, 3→4: $360; audit 7.3) |
 | Shot unlocks | draw $250 · fade $250 · stinger (Low 2) $300 · high (High 2) $300 · spin control $350 · flop $400 |
@@ -605,10 +605,10 @@ cases where each piece bought sits in its own place (so the room fills up), and 
 **earned** (worked out from the career, nothing stored): first hustle won, resort card, country-club member, friendly
 fire (beat a friend), the big score ($1,000+ in one match), single figures, scratch golfer.
 
-For sale (`TROPHIES`, `career.trophies` = ids): Gus Haney's betting ledger $2,500 · gutta-percha ball $4,000 ·
-hickory mashie $7,500 · persimmon driver $12,000 · long-nose putter $18,000 · featherie ball $30,000 · signed 18th
-flag $45,000 · silver claret jug (replica) $75,000 · champion's tartan blazer $100,000 · the golden putter $150,000
-(all ten: $444,000). No selling back.
+For sale (`TROPHIES`, `career.trophies` = ids; prices halved in audit 7.4): Gus Haney's betting ledger $1,250 · gutta-percha ball $2,000 ·
+hickory mashie $3,750 · persimmon driver $6,000 · long-nose putter $9,000 · featherie ball $15,000 · signed 18th
+flag $22,500 · silver claret jug (replica) $37,500 · champion's tartan blazer $50,000 · the golden putter $75,000
+(all ten: $222,000; it was $444,000). No selling back.
 
 Bragging: `collectionOf(ids)` → pieces and value, shown on the character sheet, the home card, the profile list on the
 sign-in screen and the Friends list (`api/profile.js` `roster` / `players` return each career's `trophies`).
@@ -667,19 +667,19 @@ The user asked for "really high-end clubs, something really extravagant": a mone
 your bag. A **Luxury** section at the bottom of every pro-shop tab (`lux: true` on the model, gold card with a sheen,
 a confirm before buying anything over $5,000):
 
-| Kind | Model | Price | Plays like |
+| Kind | Model | Price (halved in audit 7.4) | Plays like |
 |---|---|---|---|
-| Irons (set) | Majesty Prestigio (gold) | $40,000 | Apex Ai200 |
-| Irons (set) | Honma Beres 5-Star | $60,000 | a game-improvement set (between Qi Max and Hot Metal) |
-| Irons (set) | Hawthorne Atelier Sovereign platinum | $250,000 | between ZXi7 and 620 CB |
-| Driver | Majesty Prestigio (gold) | $12,000 | forgiving, high launch |
-| Driver | Honma Beres 5-Star | $18,000 | about G440 K, slight draw |
-| Driver | Hawthorne Atelier Crown Jewel | $120,000 | Qi4D |
+| Irons (set) | Majesty Prestigio (gold) | $20,000 | Apex Ai200 |
+| Irons (set) | Honma Beres 5-Star | $30,000 | a game-improvement set (between Qi Max and Hot Metal) |
+| Irons (set) | Hawthorne Atelier Sovereign platinum | $125,000 | between ZXi7 and 620 CB |
+| Driver | Majesty Prestigio (gold) | $6,000 | forgiving, high launch |
+| Driver | Honma Beres 5-Star | $9,000 | about G440 K, slight draw |
+| Driver | Hawthorne Atelier Crown Jewel | $60,000 | Qi4D |
 | Woods | the three drivers' fairway / hybrid versions | 55% of the driver | (generated as usual) |
-| Wedge | Hawthorne Atelier Rose Gold | $8,000 each | Opus |
-| Wedge | Hawthorne Atelier Damascus | $15,000 each | Vokey SM11 |
-| Putter | Scotty Cameron Circle T tour putter | $25,000 | Newport 2 |
-| Putter | Hawthorne Atelier platinum mallet | $90,000 | between Spider and OZ.1 |
+| Wedge | Hawthorne Atelier Rose Gold | $4,000 each | Opus |
+| Wedge | Hawthorne Atelier Damascus | $7,500 each | Vokey SM11 |
+| Putter | Scotty Cameron Circle T tour putter | $12,500 | Newport 2 |
+| Putter | Hawthorne Atelier platinum mallet | $45,000 | between Spider and OZ.1 |
 
 **They are never better than the best ordinary club**: the money buys the look, not strokes (so friends' challenges stay
 fair). Hawthorne Atelier is made up (the country club's own clubmaker); the Majesty, Honma and Scotty Cameron names are

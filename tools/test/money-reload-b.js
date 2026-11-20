@@ -16,7 +16,8 @@
   window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape', key: 'Escape', bubbles: true })); await sleep(200);
   $('chMatchBtn').click(); await sleep(900);
   const m = g.career.match; if (g.tossOpen) g.closeToss();
-  out.resumed = { onHole: g.hp.holeIdx + 1, strokesThisHole: g.hp.strokes, penalties: g.hp.pen };
+  // (since audit 1.4: back where the ball was, with the 4 strokes and 2 penalties, and the hustler's strokes so far)
+  out.resumed = { onHole: g.hp.holeIdx + 1, strokesThisHole: g.hp.strokes, penalties: g.hp.pen, ball: { x: +g.hp.ball.x.toFixed(1), z: +g.hp.ball.z.toFixed(1) }, onTee: g.hp.onTee, hisStrokes: g.npc.k, toast: document.getElementById('toast').textContent.replace(/\n/g, ' / ') };
   for (let i = m.holes.length; i < 9 && !m.settled; i++) { g.npc.done = true; g.hp.strokes = g.HOLES[i].par + 4; g.hp.putts = 2; g.finishHole(); await sleep(50); if (!m.settled) { g.scorecardNext(); await sleep(150); } }
   await sleep(300);
   out.settled = { result: m.result, owed: 5000, paid: -m.net, unpaid: m.unpaid, cash: g.career.cash, stats: { ...g.career.stats }, snapped: g.career.snapped.length };
