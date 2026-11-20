@@ -1218,6 +1218,15 @@ either way.
 - **Fix (S), with S3.1:** after the lift refit, set the driver to about 114 mph (or raise its `dynLoft` about 1°) and
   the 3 wood to its tour 107. Re-measure the driver's High 1 against Mid. **What else it would move:** tee-shot
   totals on every hole, the driver models (S5), and the shop's driver bars.
+- **✅ Fixed 2026-11-20:** the base driver is 114.5 mph (was 113) with `dynLoft` 13.3 (12.8). Both options were
+  measured; this middle one keeps the low-spin heads' edge.
+  - **The stock drive** (`tools/test/swing-fix17.js`): 169 mph ball, 11.2°, 2,600 rpm, 271 / 287 (was 266 / 283). The
+    tour row's own launch flies 271 in the game (S3.1), so this is as far as the flight model takes the tour's numbers.
+  - **The 3 wood:** unchanged at 243 (its tour carry), so the gap is 28 (was 23; tour 32).
+  - **High 1:** 275 / 287, the same total as Mid.
+  - **Driver models, centred:** the Qi4D LS and Triple Diamond 277 / 292–293, the Qi4D 272 / 288, the G440 K 270 /
+    286, the used XR 16 264 / 279. The low-spin heads keep S5.4's +5 yds centred.
+  - **Unchanged:** the solver sweep has 0 failures, and the driver's draw finishes 9.6 yds past its fade (S7.3).
 
 ### S4.4 [Low, feel / balance] Power 1 hits like a scratch amateur, not a beginner
 - **Measured** (stock shots, carry / total):
@@ -1557,6 +1566,33 @@ the ZXi7 and the 620 CB. The full rows, with spin and landing angle, are the scr
   sets of this kind leave the same gap, which is why they're sold with an approach wedge (about 48°). If the game
   should close it, a model option for the gap wedge's loft (48° with a GI set) is the next step. A stronger taper was
   tried: it gained about 2 yds and pushed the PW lofts past the real ones.
+- **✅ Fixed 2026-11-20 (the user's choice: automatic):**
+  - **The rule:** with an iron set whose PW is 44.5° or less, the gap wedge's slot becomes the set's Approach Wedge
+    (`fitApproachWedge`, run by `applyCareerClubs`), at the PW's loft + 5.5° to the nearest half degree, as real sets
+    of this kind are sold (Qi Max 43.5° / 49°, Takomo 43° / 48°).
+  - **When:** only when that comes out under 50° and the slot holds a wedge. The AP1, Ai200 and Prestigio (PW 44.4°)
+    keep their gap wedge, and a new career, which has no gap wedge, is untouched.
+  - **The club:** its base numbers are the base PW's and GW's, interpolated by loft. The wedge model in the slot is
+    applied on top as on any club, so a Vokey stays a Vokey. A friend's locker view builds it from their irons, and the
+    locker room names it with a note.
+
+  Stock carries with the starter's wedge in the slot (PW → approach wedge → sand wedge; the gaps; and the old PW →
+  GW gap):
+
+  | Set | PW | Approach wedge | Gaps | Before |
+  |---|---|---|---|---|
+  | Qi Max | 43.8°, 144 | 49.5°, 125 | 19 / 17 | 20 |
+  | JPX 925 Hot Metal | 43.6°, 144 | 49.0°, 127 | 17 / 19 | 21 |
+  | 101 MKII | 44.0°, 142 | 49.5°, 125 | 17 / 17 | 19 |
+  | Beres 5-Star | 44.0°, 143 | 49.5°, 125 | 18 / 17 | 20 |
+  | M2 | 43.8°, 140 | 49.5°, 125 | 16 / 17 | 17 |
+
+  The base set is 13 / 15 for comparison.
+  - **Why the gaps are still 17–19:** a strong-lofted PW carries 140–144 and the sand wedge 108. With three wedge
+    slots that 36-yd span splits into two gaps of about 18 at best, which the approach wedge now does (it was 20–21 on
+    one side and 15 on the other).
+  - **What would close them further:** stronger-lofted sand and lob wedges for these sets as well (about 54° / 58°,
+    as such sets' matching wedges are), or a fourth wedge. Neither was done.
 - **Measured** (carry gaps; base gap wedge 113, 3 hybrid 223):
 
   | Set | 3 hybrid → 4 iron | 9 iron → PW | PW → GW |

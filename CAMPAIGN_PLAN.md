@@ -177,6 +177,10 @@ and range don't change):
 
 loft Δ = the model's real 7-iron loft − 34° (the base 7 iron).
 
+Approach wedge (swing audit S5.6, automatic): with a set whose PW is 44.5° or less, the gap wedge's slot plays as
+that set's approach wedge, at the PW's loft + 5.5° (when that is under 50°), with the slot's own wedge model applied on top
+(`fitApproachWedge`).
+
 | Id | Model | Category | 7i loft | Price (set) | loft Δ | dynLoft Δ | spin × | speed × | sweet × | gear | work | floor | offset | consist | groove | lieBias |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `i-ap1` | Titleist AP1 716 (2015, hand-me-down) | Used | ≈30° | starter | −4 | −0.3 | 0.95 | 0.96 | 1.6 | 0.8 | 0.65 | 0.7 | 0.9 | 2.2 | 0.8 | ±2° |

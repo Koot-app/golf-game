@@ -7122,7 +7122,9 @@
       // speed: re-tuned 2026-11-20 with the flight's refit (swing audit S3.1: the old carries kept) and to even out the short
       // end (S4.2: 7 iron 176, 8 iron 163, 9 iron 150, PW 136, GW 122, SW 107, LW 93; gaps of 13–15 yds).
       const CLUBS = [
-        { name: 'Driver', head: 'wood', headScale: 1.00, tee: true, speed: 113, loft: 10.5, dynLoft: 12.8, aoa: -1.0, spin: 2600, work: 0.85, sweet: 10, floor: 0.70, gear: 0.8, bulge: -0.7, stand: 0.95, curve: 0.83 },
+        // (swing audit S4.3: speed 114.5 (was 113) and dynLoft 13.3 (12.8): the drive carries 271 / 287 (was 266 / 283), the
+        // tour's 275 less the flight model's own 4 yds short on the tour row (S3.1); 28 yds past the 3 wood, tour 32)
+        { name: 'Driver', head: 'wood', headScale: 1.00, tee: true, speed: 114.5, loft: 10.5, dynLoft: 13.3, aoa: -1.0, spin: 2600, work: 0.85, sweet: 10, floor: 0.70, gear: 0.8, bulge: -0.7, stand: 0.95, curve: 0.83 },
         { name: '3 Wood', head: 'wood', headScale: 0.80, speed: 105, loft: 15.0, dynLoft: 12.0, aoa: -2.9, spin: 3650, work: 0.85, sweet: 9, floor: 0.65, gear: 0.8, bulge: -0.6, stand: 0.90, curve: 1.02 },
         { name: '2 Hybrid', head: 'wood', headScale: 0.64, speed: 101.5, loft: 17.0, dynLoft: 13.5, aoa: -3.5, spin: 4300, work: 0.70, sweet: 10, floor: 0.75, gear: 0.7, bulge: -0.6, stand: 0.85, rescue: 5, curve: 1.29 },
         { name: '3 Hybrid', head: 'wood', headScale: 0.60, speed: 99.2, loft: 19.5, dynLoft: 14.5, aoa: -3.5, spin: 4600, work: 0.70, sweet: 10, floor: 0.75, gear: 0.7, bulge: -0.6, stand: 0.84, rescue: 5, curve: 1.36 },
@@ -9550,7 +9552,7 @@
       //      type, setup and lie; the marker's carry is looked up in it. Perception (and a bad lie) fuzz what the player sees.
       const chipCache = new Map();
       const stockSwing = (bs) => ({ bs, ds: 1, thetaMouse: 0, sigma: 0, lateSign: 1, vImpact: 1, vPeak: 1, miss: 0 });
-      const chipKeyOf = () => { const s = setup(); return [state.club, state.power, state.lie, state.slope, s.face, s.ballPos, s.stance, s.traj, s.spinCtl, state.chipType, green.stimp].join('|'); };
+      const chipKeyOf = () => { const s = setup(); return [state.club, CLUBS[state.club].model || '', CLUBS[state.club].loft, state.power, state.lie, state.slope, s.face, s.ballPos, s.stance, s.traj, s.spinCtl, state.chipType, green.stimp].join('|'); };
       function chipLaunch(bs) {
         const r = computeImpact(stockSwing(bs), setup(), CLUBS[state.club], { ...env(), stock: true }, () => 0.5);
         return { ballSpeed: r.ballSpeed, vla: r.vla, dir: 0, spin: r.spin, axis: 0, release: 0 };
@@ -12566,11 +12568,11 @@
       });
       const modelName = (id) => (CLUB_MODELS[id] ? `${CLUB_MODELS[id].brand} ${CLUB_MODELS[id].name}` : '');
       // what a model does to one club (index i) of the bag
-      function modelMods(m, i) {
+      function modelMods(m, i, base = null) {        // (base: another base club for slot i, e.g. the approach wedge's)
         // an iron set's loft change is shown for the 7 iron: the 4 and 5 irons get 80% of it, and it tapers off toward the
         // wedge, 75% on the 9 iron and 40% on the PW, as real strong-lofted sets do (swing audit S5.6: a GI set's PW is about
         // 43–44°, not 40°; the full change left a 23–27 yd hole before the gap wedge)
-        const b = BASE_CLUBS[i], k = m.kind !== 'iron' ? 1 : i <= 5 ? 0.8 : i === CI_PW ? 0.4 : i === CI_PW - 1 ? 0.75 : 1, out = {};
+        const b = base || BASE_CLUBS[i], k = m.kind !== 'iron' ? 1 : i <= 5 ? 0.8 : i === CI_PW ? 0.4 : i === CI_PW - 1 ? 0.75 : 1, out = {};
         for (const [f, v] of Object.entries(m.add || {})) out[f] = b[f] + v * k;
         for (const [f, v] of Object.entries(m.x || {})) out[f] = b[f] * v;
         for (const [f, v] of Object.entries(m.set || {})) if (f !== 'bounce' || b.bounce) out[f] = v;
@@ -12582,6 +12584,24 @@
         if (m.bias && career) out.lieBias = Math.round((rng32((career.seed ^ (i * 2654435761)) >>> 0)() * 2 - 1) * m.bias * 10) / 10;   // bent lie: fixed for the career
         return out;
       }
+      // Swing audit S5.6 (the user's choice: automatic): a strong-lofted iron set's PW (44.5° or less) leaves ~20 yds before
+      // a 50° gap wedge, so the gap wedge slot becomes the set's approach wedge, as real sets of this kind are sold: its
+      // loft is the PW's + APPROACH.step (to the nearest half degree, at most 50°; Qi Max PW 43.5° / AW 49°, Takomo
+      // 43° / 48°). Its base numbers are the base PW's and GW's, interpolated by loft; the wedge model in the slot (its
+      // spin, sole, forgiveness) is applied on top as on any club.
+      const APPROACH = { pwMax: 44.5, step: 5.5 };
+      function fitApproachWedge(gw = CLUBS[CI_GW], pw = CLUBS[CI_PW]) {       // (gw / pw: a friend's bag view passes its own)
+        if (!gw.model || !pw.model || !CLUB_MODELS[pw.model] || CLUB_MODELS[pw.model].kind !== 'iron' || pw.loft > APPROACH.pwMax) return false;
+        const loft = Math.round((pw.loft + APPROACH.step) * 2) / 2;
+        if (loft >= BASE_CLUBS[CI_GW].loft) return false;         // (a PW of 44.4° rounds to a 50° wedge: no change, no new name)
+        const bp = BASE_CLUBS[CI_PW], bg = BASE_CLUBS[CI_GW], t = clamp((loft - bp.loft) / (bg.loft - bp.loft), 0, 1), base = { ...bg };
+        for (const f of Object.keys(bg)) if (typeof bg[f] === 'number' && typeof bp[f] === 'number') base[f] = lerp(bp[f], bg[f], t);
+        base.loft = loft;
+        const id = gw.model;
+        for (const f of Object.keys(gw)) delete gw[f];
+        Object.assign(gw, base, id && CLUB_MODELS[id] ? modelMods(CLUB_MODELS[id], CI_GW, base) : {}, { name: 'Approach Wedge', approach: true }, id ? { model: id } : {});
+        return true;
+      }
       // rewrite CLUBS in place: the career's models on the clubs it owns, the base clubs everywhere else (and outside a career)
       function applyCareerClubs() {
         CLUBS.forEach((c, i) => {
@@ -12590,6 +12610,7 @@
           const id = careerOn && (demo && demo.idx === i && demo.on ? demo.model : career.bag[i]);
           if (id && CLUB_MODELS[id]) Object.assign(c, modelMods(CLUB_MODELS[id], i), { model: id });
         });
+        if (careerOn) fitApproachWedge();
         stockCache.clear(); shapeCache.clear(); spreadCache.clear();
         telemetry = null;
       }
@@ -12610,11 +12631,12 @@
         toast(on ? `Hitting the demo: ${modelName(demo.model)}` : `Hitting your own: ${modelName(career.bag[demo.idx])}`, 1400);
       }
       // a club's numbers as another model (your own vs the demo): swap the model in, read, swap back
-      function withClubModel(i, id, fn) {
+      function withClubModel(i, id, fn, pwModel = null) {     // (pwModel: the bag's iron set, for S5.6's approach wedge)
         const c = CLUBS[i], saved = { ...c };
         for (const f of Object.keys(c)) if (!(f in BASE_CLUBS[i])) delete c[f];
         Object.assign(c, BASE_CLUBS[i]);
         if (id && CLUB_MODELS[id]) Object.assign(c, modelMods(CLUB_MODELS[id], i), { model: id });
+        if (i === CI_GW && pwModel && CLUB_MODELS[pwModel]) fitApproachWedge(c, { ...BASE_CLUBS[CI_PW], ...modelMods(CLUB_MODELS[pwModel], CI_PW), model: pwModel });
         try { return fn(); } finally { for (const f of Object.keys(c)) delete c[f]; Object.assign(c, saved); }
       }
       const bagOrder = () => CLUBS.map((_, i) => i).filter((i) => careerOn ? inBag(i) || (demo && demo.idx === i) : !rangeOnly(i));
@@ -13347,7 +13369,7 @@
       // =====================================================================================================
       const bagNumCache = new Map();
       function bagClubNumbers(i) {
-        const c = CLUBS[i], key = `${i}|${c.model || ''}|${c.lieBias || 0}|${state.power}|${state.dex}|${state.composure}`;
+        const c = CLUBS[i], key = `${i}|${c.model || ''}|${c.loft}|${c.lieBias || 0}|${state.power}|${state.dex}|${state.composure}`;     // (loft: S5.6's approach wedge)
         if (bagNumCache.has(key)) return bagNumCache.get(key);
         const saved = [state.lie, state.slope];
         state.lie = 'fairway'; state.slope = 'flat';
@@ -13367,7 +13389,7 @@
           const sd = (k, m) => Math.sqrt(P.reduce((s, p) => s + (p[k] - m) ** 2, 0) / P.length) * 2 * SPREAD.sigmas / YD;
           // (swing audit S5.9 / S2.11: the stock shot includes a used club's bent lie, so the Curve column shows which clubs
           // pull and which push)
-          const out = { loft: c.loft, carry: f.carry / YD, total: Math.hypot(f.p.x, f.p.z) / YD, side: f.p.x / YD, speed: r.ballSpeed, vla: r.vla, spin: r.spin, apex: f.apex / YD, wide: sd('x', mx), deep: sd('z', mz) };
+          const out = { name: c.name, loft: c.loft, carry: f.carry / YD, total: Math.hypot(f.p.x, f.p.z) / YD, side: f.p.x / YD, speed: r.ballSpeed, vla: r.vla, spin: r.spin, apex: f.apex / YD, wide: sd('x', mx), deep: sd('z', mz) };
           if (bagNumCache.size > 200) bagNumCache.clear();
           bagNumCache.set(key, out);
           return out;
@@ -13407,7 +13429,7 @@
           const keep = { power: state.power, dex: state.dex, composure: state.composure, perception: state.perception, seed: career && career.seed };
           Object.assign(state, { power: eff.power, dex: eff.dex, composure: eff.composure, perception: eff.perception });
           if (career) career.seed = G.seed || 0;
-          try { return withClubModel(i, G.bag[i], () => bagClubNumbers(i)); } finally {
+          try { return withClubModel(i, G.bag[i], () => bagClubNumbers(i), G.bag[CI_PW]); } finally {
             Object.assign(state, { power: keep.power, dex: keep.dex, composure: keep.composure, perception: keep.perception });
             if (career) career.seed = keep.seed;
           }
@@ -13431,12 +13453,14 @@
             + barRow('Forgiveness', shopBar(m.kind, 'forgive', st.forgive)) + barRow('Shaping', shopBar(m.kind, 'shape', st.shape));
           const rows = slots.map((i) => {
             const n = numbersOf(i), out = (G.out || []).includes(i), snapped = (G.snapped || []).includes(i);
-            return `<tr class="${out ? 'out' : ''}${snapped ? ' snapped' : ''}"><td>${CLUBS[i].name}${out ? '<small>locker</small>' : ''}${snapped ? '<small>snapped</small>' : ''}</td>`
+            return `<tr class="${out ? 'out' : ''}${snapped ? ' snapped' : ''}"><td>${n.name || CLUBS[i].name}${out ? '<small>locker</small>' : ''}${snapped ? '<small>snapped</small>' : ''}</td>`
               + `<td>${n.loft.toFixed(1)}°</td><td>${n.carry.toFixed(0)}</td><td>${n.total.toFixed(0)}</td><td>${n.speed.toFixed(0)}</td><td>${n.vla.toFixed(1)}°</td>`
               + `<td>${Math.round(n.spin).toLocaleString()}</td><td>${n.apex.toFixed(0)}</td>${lr(n.side)}<td>${n.wide.toFixed(0)} × ${n.deep.toFixed(0)}</td></tr>`;
           }).join('');
+          const awN = slots.includes(CI_GW) ? numbersOf(CI_GW) : null, aw = !!awN && awN.name === 'Approach Wedge';      // (swing audit S5.6)
           return `<div class="br-model${m.lux ? ' lux' : ''}"><div class="br-head"><div><b>${m.lux ? '✦ ' : ''}${m.brand} ${m.name}</b><em>${m.lux ? `Luxury · ${money(m.price)}` : m.cat}</em><em>${KIND[m.kind]}${slots.length > 1 ? ` · ${slots.length} clubs` : ''}</em>`
-            + `<i>${m.note}</i>${m.bias ? `<i>Used: each club's lie angle is bent a little (fixed for ${V ? 'their' : 'your'} career), so some pull and some push — see Curve.</i>` : ''}</div><div class="sh-bars">${bars}</div></div>`
+            + `<i>${m.note}</i>${m.bias ? `<i>Used: each club's lie angle is bent a little (fixed for ${V ? 'their' : 'your'} career), so some pull and some push — see Curve.</i>` : ''}`
+            + `${aw ? `<i>With ${V ? 'their' : 'your'} strong-lofted irons, the gap wedge is an approach wedge (${awN.loft.toFixed(1)}°), as such sets are sold, to fill the gap below the PW.</i>` : ''}</div><div class="sh-bars">${bars}</div></div>`
             + `<table class="br-tbl"><tr><th>Club</th><th>Loft</th><th>Carry</th><th>Total</th><th>Ball mph</th><th>Launch</th><th>Spin</th><th>Apex</th><th>Curve</th><th>Spread</th></tr>${rows}</table></div>`;
         }).join('');
         // the putter (and the others in the locker)
@@ -15446,11 +15470,11 @@
       // fairway, so the fairway's own number (a perfect strike) stays the reference.
       const lieFactorCache = new Map();
       function lieFactor(ci) {
-        const club = CLUBS[ci], key = [ci, club.model || '', state.lie, state.power, state.dex, state.composure, state.badStreak, state.height, state.spinCtl, swingHistVer].join('|');
+        const club = CLUBS[ci], key = [ci, club.model || '', club.loft, state.lie, state.power, state.dex, state.composure, state.badStreak, state.height, state.spinCtl, swingHistVer].join('|');
         if (lieFactorCache.has(key)) return lieFactorCache.get(key);
         const su = { face: 0, ballPos: 0, stance: 0, traj: state.height, spinCtl: state.spinCtl };
         const batch = (lie, stock) => {
-          const fkey = lie === 'fairway' ? `fw|${key.split('|').slice(0, 2).join('|')}|${[state.power, state.dex, state.composure, state.badStreak, state.height, state.spinCtl, swingHistVer, stock].join('|')}` : null;
+          const fkey = lie === 'fairway' ? `fw|${key.split('|').slice(0, 3).join('|')}|${[state.power, state.dex, state.composure, state.badStreak, state.height, state.spinCtl, swingHistVer, stock].join('|')}` : null;
           if (fkey && lieFactorCache.has(fkey)) return lieFactorCache.get(fkey);       // the fairway half is the same for every lie
           const rnd = rng32(31415 + ci), env0 = { lie, slope: 'flat', power: state.power, dex: state.dex, composure: state.composure, badStreak: state.badStreak, teed: false, stock };
           let c = 0; const n = stock ? 1 : 100;          // (carry only: each flight stops where it lands)
@@ -16840,7 +16864,7 @@
         analyzeSwing, computeImpact, swingSample, beginSwing, endSwing, onPointerMove, isSpike, tempoTarget, powerFromBackswing, powerFromTempo,
         LIES, SLOPES, AERO, windVector, clubFit, solveShape, powerMult, runChip, computePutt, analyzePutt, CADDIES,
         createPutt, stepPutt, puttTarget, rollDecel, puttGate, rng32, shopStats, SHOP, withClubModel, setup, careerStats,
-        fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock, flatChipView, treeDeflect, treePart, TREE, previewTrack, previewSide, spreadRatio, dexSpreadAt, lowRunnerHeight,
+        fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock, flatChipView, treeDeflect, treePart, TREE, previewTrack, previewSide, spreadRatio, dexSpreadAt, lowRunnerHeight, fitApproachWedge, APPROACH, bagClubNumbers,
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
