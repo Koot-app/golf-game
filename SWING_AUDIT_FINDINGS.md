@@ -942,6 +942,10 @@ either way.
   set against the player's distances.
 
 ### S4.5 [Low, realism] Hybrids miss like irons: a toe hit finishes right
+- **✅ Fixed 2026-11-20:** the 2 and 3 hybrids' `bulge` is −0.6 (was −0.3). A toe hit now draws back, as with a small
+  wood: at 8 / 14 mm the 3 hybrid finishes 3 / 3 yds left (was 4 / 7 right), and a heel hit 3 / 3 right (was 4 / 7
+  left). The hybrid models follow it through S5.5's scaling. The base 3 hybrid's spread at Dexterity 2 is ±27.5 (was
+  ±27.8 before this change). `tools/test/swing-fix5.js`.
 - **Measured:** where an off-centre hit finishes, in yds (+ = right), and the carry lost:
 
   | Club (sweet, gear, bulge) | Toe 6 mm | Toe 10 | Toe 14 | Heel 10 | Heel 14 |
@@ -1286,6 +1290,10 @@ the ZXi7 and the 620 CB. The full rows, with spin and landing angle, are the scr
   pace edge that saves strokes (for example a smaller length error on long putts). Re-measure this table.
 
 ### S5.8 [Low, feel / balance] The Max D finishes 20 yds left of a straight swing, the Triple Diamond 15 right
+- **✅ Fixed 2026-11-20:** offsets reduced. Max D 0.6 (was 1.5), Triple Diamond −0.4 (−0.8), Beres 5-Star 0.5 (0.8);
+  their fairway-wood versions follow at half. A centred, straight-swung drive now finishes 7 yds left with the Max D
+  (was 17), 6 right with the Triple Diamond (was 12) and 6 left with the Beres. That is a "few yards" bias, still the
+  most in each direction. `tools/test/swing-fix5.js`.
 - **Measured:** mean side of ordinary swings (table in S5.4): Max D (offset 1.5) −20 yds at both Dexterities;
   Triple Diamond (offset −0.8) +15; G440 K −6; Beres 5-Star −10. The stock preview includes the offset, so the shape
   line shows it.

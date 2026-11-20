@@ -18,6 +18,8 @@
   apply(0, null);
   for (const id of [null, ...Object.keys(M).filter((k) => M[k].kind === 'wood')]) { apply(1, id); out.push(`   ${(id || 'base 3 wood').padEnd(13)} bulge ${f(C[1].bulge, 2)} · ${side(1)}`); }
   apply(1, null);
+  for (const id of [null, ...Object.keys(M).filter((k) => M[k].kind === 'wood')]) { apply(3, id); out.push(`   ${(id ? id + ' (3 hybrid)' : 'base 3 hybrid').padEnd(13)} bulge ${f(C[3].bulge, 2)} · ${side(3)}`); }
+  apply(3, null); out.push(`   base 2 hybrid bulge ${f(C[2].bulge, 2)} · ${side(2)}`);
   // ---- S5.6
   out.push('', 'S5.6 EACH IRON SET\'S SHORT END: PW loft, carries of the 9 iron, PW and the base gap wedge, and the gaps');
   const gw = shot(11).c;
