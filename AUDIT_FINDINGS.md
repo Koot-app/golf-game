@@ -317,6 +317,28 @@ The probe scripts are `tools/test/sync-*.js`. Each one's header says how to run 
     things.
   - For two tabs in one browser, also listen for the other tab's save (the `storage` event). The older tab should
     reload the career when it isn't in a round, or say "the game is open in another tab".
+- **✅ Fixed 2026-11-20:** both.
+  - **The three-way merge (`mergeServer`):** every field this PC hasn't changed since its last sync takes the server's
+    value. A field changed on both sides keeps this PC's, except where a field has its own rule:
+    - the old five (cash, history, scorecards, rounds, wall destroyed);
+    - trophies, titles and results seen are unions;
+    - shots learned: learned on either side counts;
+    - stats: the higher level wins;
+    - the wall's settings: three-way, field by field.
+
+    The round being played keeps its own match / entry / friend card (2.4). After a merge on a save, the game
+    refreshes its clubs, stats and screens.
+  - **Two tabs:** when another tab saves this career, this tab takes its copy, provided it isn't in a round and has
+    nothing of its own waiting (a guest: no pending write; a profile: nothing unsent). Otherwise it warns "⚠ The
+    game is open in another tab", at most once a minute.
+
+  `sync-conflicts.js`:
+  - the other device's driver ($300), power lesson and draw all survive this PC's save, alongside this PC's fade and
+    reputation;
+  - a match settled on the other device is no longer "in progress" here, and its result is in the history.
+
+  `money-merge.js` part 1 now gives `driverHere d-prestigio` (it was `d-xr16`). `sync-guest.js` covers the two-tab
+  cases.
 
 ### 2.3 [Medium] The fix for 1.1 has a gap: after six failed saves in a row, cash can still be counted twice
 - **Where:** `syncNow` (about line 10480): `sync.pend = [...].slice(-6)`.
@@ -472,6 +494,14 @@ The probe scripts are `tools/test/sync-*.js`. Each one's header says how to run 
 - **Evidence:** code path traced.
 - **Fix (S):** listen for the `storage` event (same as 2.2). Show a warning when a write fails. Before starting a new
   career over an unreadable save, copy the old text to a backup key.
+- **✅ Fixed 2026-11-20:** all three.
+  - **Two tabs:** the `storage` event (see 2.2).
+  - **A failed write:** a toast, and the clubhouse's status line reads "Playing on this PC only · ⚠ this browser
+    isn't keeping it (storage is blocked or full)" until a write works again.
+  - **A save that can't be read:** it is copied to `<key>_damaged` (or `<key>_damaged_<time>` if that's taken by a
+    different one) as soon as it's read, before anything can write over it.
+
+  `sync-guest.js`: all six checks pass.
 
 ### 2.9 [Low] Small robustness gaps
 - **A copy this version can't read.** If the server's copy fails `upgradeCareer` (for example a future save format
@@ -484,6 +514,21 @@ The probe scripts are `tools/test/sync-*.js`. Each one's header says how to run 
 - **Starting over.** "Start your career over" on a profile makes a new career, but if another tab or device has
   unsent changes, the merge brings the old history, scorecards and handicap rounds back into it. Fix: mark a restart
   so a merge doesn't cross it.
+- **✅ Fixed 2026-11-20:** all four.
+  - **A copy this version can't read:** the merge stops, and the status line says "⚠ a newer version of the game
+    saved this career: reload the page". `syncLoad` never replaces this PC's career with an unreadable one.
+    `sync-conflicts.js`: 1 request instead of about 40.
+  - **Retrying when offline:** a failed save is retried on a timer (15 s, doubling to 5 minutes) and as soon as the
+    browser's `online` event fires.
+  - **A half-made profile:** the name, salt, hash and creation time are now written in one Redis script (`SIGNUP` in
+    `api/profile.js`). A name left half-made the old way (a name with no password) can be signed up again. The dev
+    server's fake Redis follows the same rules. Tested: sign-up, a duplicate refused (409) and sign-in. Claiming a
+    half-made name couldn't be set up from a test, so that part was only checked by reading the script.
+  - **Starting over:** a career's `created` marks which career it is. A merge never crosses a restart: if the
+    server's copy is the newer career, it replaces this PC's (a round of the old career is dropped, not settled into
+    the new one), with a toast; if this PC's is, nothing from the old career comes across. (Careers without `created`
+    count as 0, not "now", so they aren't mistaken for a restart.) `sync-conflicts.js`: the new career replaces this
+    PC's (cash $150, no history).
 
 ### Checked and fine
 - **The version check.** The server only accepts a save made from its current version; an older copy gets a 409 with

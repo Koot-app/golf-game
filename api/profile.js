@@ -86,6 +86,11 @@ async function newSession(id) {
   await redis([['SET', `golf:sess:${token}`, sessionValue(id), 'EX', SESSION_S]]);     // (an admin's is tied to the current credential)
   return token;
 }
+// a new profile: its name, salt, hash and creation time, all at once, unless the name is taken by a profile that has a
+// password (one with a name but no password was left half-made, and can be claimed). 1 = made, 0 = taken.
+const SIGNUP = `if redis.call('HSETNX', KEYS[1], 'name', ARGV[1]) == 0 and redis.call('HEXISTS', KEYS[1], 'hash') == 1 then return 0 end
+redis.call('HSET', KEYS[1], 'name', ARGV[1], 'salt', ARGV[2], 'hash', ARGV[3], 'created', ARGV[4])
+return 1`;
 // a career the client sent: an object of a sensible size, named after the profile, with its fields repaired to the
 // right types (normCareer, audit 3.2)
 function cleanCareer(c, name) {
@@ -128,10 +133,11 @@ module.exports = async (req, res) => {
         const data = cleanCareer(b.career, name);
         if (!data) return send(400, { error: 'No career to save' });
         const salt = crypto.randomBytes(16).toString('hex'), hash = await hashPw(pw, salt);
-        const [fresh] = await redis([['HSETNX', `golf:user:${id}`, 'name', name]]);
+        // the name and the password in one step (audit 2.9: they were two, and if the second failed the name was taken
+        // for good with no password to sign in with). A name left half-made that way is free to sign up again.
+        const [fresh] = await redis([['EVAL', SIGNUP, 1, `golf:user:${id}`, name, salt, hash, String(Date.now())]]);
         if (!fresh) return send(409, { error: 'That name is taken' });
         await redis([
-          ['HSET', `golf:user:${id}`, 'salt', salt, 'hash', hash, 'created', Date.now()],
           ['SADD', 'golf:players', id],
           ['HSET', `golf:career:${id}`, 'data', data, 'ver', 1],
         ]);

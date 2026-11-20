@@ -10443,10 +10443,24 @@
       const disk = { timer: 0, key: '', write: null };
       function flushCareer() { clearTimeout(disk.timer); const w = disk.write; disk.write = null; if (w) w(); }
       const lsGet = (k) => { if (disk.write && k === disk.key) flushCareer(); try { return localStorage.getItem(k); } catch { return null; } };
+      // (true if it was written: false when storage is blocked or full)
       const lsSet = (k, v) => {
         if (disk.write && k === disk.key) { clearTimeout(disk.timer); disk.write = null; }     // this write replaces the pending one
-        try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* storage blocked */ }
+        try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); return true; } catch { return false; }
       };
+      // Audit 2.8: a career that can't be written (a private window, storage full) used to fail silently, and a guest
+      // played a whole session that wasn't kept. Now the player is told, once, and the clubhouse's status line says so.
+      function careerWritten(ok) {
+        if (ok === !disk.failed) return;
+        disk.failed = !ok;
+        if (!ok) toast('⚠ This browser isn\'t keeping your career\nIts storage is blocked or full: what you do now is lost when the game closes', 5000);
+        if (typeof setSync === 'function') setSync(sync.state);
+      }
+      // ... and a saved career that can't be read is copied to a backup key before anything can write over it
+      function backupDamaged(key, raw) {
+        if (!raw || lsGet(`${key}_damaged`) === raw) return;
+        lsSet(lsGet(`${key}_damaged`) ? `${key}_damaged_${Date.now()}` : `${key}_damaged`, raw);
+      }
       window.addEventListener('pagehide', flushCareer);
       window.addEventListener('beforeunload', flushCareer);
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushCareer(); });
@@ -10472,6 +10486,7 @@
         if (typeof c.putter !== 'string') c.putter = CAREER.putter;
         if (!Array.isArray(c.putters)) c.putters = [c.putter];
         if (!Number.isFinite(c.tierMax)) c.tierMax = Number.isFinite(c.tier) ? c.tier : 1;
+        if (!Number.isFinite(c.created)) c.created = 0;       // (not "now": it tells a career from one started over, audit 2.9)
         const d = newCareer(c.name), isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
         for (const k of Object.keys(d)) {
           if (k === 'match') continue;                                   // (null until a match is teed off)
@@ -10501,18 +10516,28 @@
         const cut = h.length - HIST_KEEP;
         c.history = h.filter((x, i) => i >= cut || (x && x.friend) || keep.has(x));
       }
-      function readCareer(key) { try { return upgradeCareer(JSON.parse(lsGet(key) || 'null')); } catch { return null; } }
+      function readCareer(key) {
+        const raw = lsGet(key);
+        let c = null;
+        try { c = upgradeCareer(JSON.parse(raw || 'null')); } catch { c = null; }
+        if (!c && raw) backupDamaged(key, raw);             // (audit 2.8: kept, in case it can be recovered)
+        return c;
+      }
       // A profile's copy on this PC is stored in ONE key together with its sync state ({ c: career, s: { ver, base, dirty } }),
       // so the two can never get out of step (a merge relies on `base` being the server copy this career was last synced to).
       function careerLoad() {
         if (!session && playMode !== 'local') return null;     // nobody chosen yet: the clubhouse asks who's playing
         if (!session) return readCareer(careerKey());
+        const raw = lsGet(careerKey());
         try {
-          const p = JSON.parse(lsGet(careerKey()) || 'null');
-          if (!p || !p.c) return null;
-          sync.ver = p.s.ver || 0; sync.base = p.s.base || null; sync.dirty = !!p.s.dirty; sync.pend = Array.isArray(p.s.pend) ? p.s.pend : [];
-          return upgradeCareer(p.c);
-        } catch { return null; }
+          const p = JSON.parse(raw || 'null');
+          if (!p || !p.c) { if (raw) backupDamaged(careerKey(), raw); return null; }
+          const c = upgradeCareer(p.c);
+          if (!c) { backupDamaged(careerKey(), raw); return null; }
+          const s = p.s || {};
+          sync.ver = s.ver || 0; sync.base = s.base || null; sync.dirty = !!s.dirty; sync.pend = Array.isArray(s.pend) ? s.pend : [];
+          return c;
+        } catch { if (raw) backupDamaged(careerKey(), raw); return null; }
       }
       function careerSave() {
         if (!career) return;
@@ -10524,7 +10549,7 @@
         const key = careerKey(), c = career, s = session ? { ver: sync.ver, base: sync.base, dirty: true, pend: sync.pend } : null;
         if (disk.write && disk.key !== key) flushCareer();   // another profile's save still pending: it goes first
         disk.key = key;
-        disk.write = () => lsSet(key, JSON.stringify(s ? { c, s } : c));
+        disk.write = () => careerWritten(lsSet(key, JSON.stringify(s ? { c, s } : c)));
         clearTimeout(disk.timer); disk.timer = setTimeout(flushCareer, 400);
         if (session) queueSync();
       }
@@ -10543,8 +10568,8 @@
       function setSync(s) {
         sync.state = s;
         const el = $('chSync');
-        el.textContent = !session ? 'Playing on this PC only' : `Signed in as ${session.name}${adminOk ? ' 👑 admin' : ''} · ${{ ok: '✓ saved', saving: 'saving…', offline: '⚠ not synced (offline) — will retry', signedout: '⚠ your sign-in has expired — sign in again (home screen)', refused: `⚠ not saved online: the server turned it down${sync.why ? ` (${sync.why})` : ''}. It's kept on this PC`, '': '✓' }[s] || ''}`;
-        el.className = s === 'ok' ? 'ok' : s === 'offline' || s === 'signedout' || s === 'refused' ? 'bad' : '';
+        el.textContent = !session ? `Playing on this PC only${disk.failed ? ' · ⚠ this browser isn\'t keeping it (storage is blocked or full)' : ''}` : `Signed in as ${session.name}${adminOk ? ' 👑 admin' : ''} · ${{ ok: '✓ saved', saving: 'saving…', offline: '⚠ not synced (offline) — will retry', signedout: '⚠ your sign-in has expired — sign in again (home screen)', refused: `⚠ not saved online: the server turned it down${sync.why ? ` (${sync.why})` : ''}. It's kept on this PC`, newer: '⚠ a newer version of the game saved this career: reload the page', '': '✓' }[s] || ''}`;
+        el.className = s === 'ok' ? 'ok' : s === 'offline' || s === 'signedout' || s === 'refused' || s === 'newer' || (!session && disk.failed) ? 'bad' : '';
       }
       // the server no longer accepts this sign-in (it expired, it was signed out, or the admin password changed): say so,
       // drop anything admin, and let the home screen offer "Sign in again"
@@ -10578,19 +10603,94 @@
           if (r.status === 200) {
             sync.ver = r.data.ver; sync.base = JSON.parse(sent); sync.dirty = JSON.stringify(career) !== sent; sync.pend = [];
             saveSyncMeta(); setSync('ok');
-          } else if (r.status === 409 && r.data.career) { mergeServer(r.data.career, r.data.ver); sync.again = true; }
+          } else if (r.status === 409 && r.data.career) { if (mergeServer(r.data.career, r.data.ver)) { sync.again = true; refreshCareerView(); } }
           else if (r.status === 401) signInExpired();
           else if (r.status === 400 || r.status === 413) { sync.why = r.data.error || ''; setSync('refused'); }    // turned down, not offline (audit 2.6)
           else setSync('offline');
         } catch { setSync('offline'); }
         sync.busy = false;
         if (sync.again) { sync.again = false; setTimeout(() => syncNow(), 50); }
+        // offline: try again on a timer, 15 s then doubling to 5 minutes (audit 2.9: the status said "will retry" but
+        // nothing did until the next change), and as soon as the browser says it's back online (below)
+        else if (sync.state === 'offline' && sync.dirty) { sync.retryMs = Math.min(300000, (sync.retryMs || 7500) * 2); queueSync(sync.retryMs); }
+        if (sync.state === 'ok') sync.retryMs = 0;
       }
+      window.addEventListener('online', () => { if (session && sync.dirty && !sync.busy) queueSync(500); });
+      // Audit 2.2 / 2.8: the game open in two tabs of one browser. Each held its own copy and wrote over the other's (a
+      // purchase in one tab vanished when the other saved). Now, when the other tab saves this career, this tab takes its
+      // copy, if it isn't in the middle of a round and has nothing of its own waiting (a guest: no write pending; a
+      // profile: nothing unsent, which the server's three-way merge would sort out). Otherwise it warns, once a minute.
+      let otherTabWarned = 0;
+      window.addEventListener('storage', (e) => {
+        if (!career || e.key !== careerKey() || e.newValue === null) return;
+        let c = null, s = null;
+        try { const p = JSON.parse(e.newValue); if (session) { c = upgradeCareer(p.c); s = p.s || {}; } else c = upgradeCareer(p); } catch { return; }
+        if (!c) return;
+        if (round.on || disk.write || (session && sync.dirty) || sync.busy) {
+          if (Date.now() - otherTabWarned > 60000) { otherTabWarned = Date.now(); toast('⚠ The game is open in another tab\nPlay in one at a time: each can overwrite the other', 4000); }
+          return;
+        }
+        for (const k of Object.keys(career)) delete career[k];
+        Object.assign(career, c);
+        if (session) { sync.ver = s.ver || 0; sync.base = s.base || null; sync.dirty = !!s.dirty; sync.pend = Array.isArray(s.pend) ? s.pend : []; }
+        refreshCareerView();
+      });
       // the server has a newer copy (another PC played): keep this PC's changes, but take the server's money movements and
       // history too: cash = the server's cash + what this PC added since the last sync; history = both, by date
+      // Returns false if the server's copy can't be read (audit 2.9: a newer version of the game saved it); the caller
+      // then stops instead of trying again every 50 ms for ever.
       function mergeServer(srv, ver) {
         srv = upgradeCareer(srv);
-        if (!srv) return;
+        if (!srv) { setSync('newer'); return false; }
+        // Audit 2.9: a career started over (retireCareer) is a new career, with its own `created`. A merge never crosses
+        // that line: if this copy is the restart, nothing comes across from the old career; if the server's is, this
+        // PC's copy (and anything unsent in it) belonged to the old career, and the server's replaces it.
+        const gen = (c) => (Number.isFinite(c && c.created) ? c.created : 0);
+        if (gen(srv) !== gen(career)) {
+          if (gen(srv) > gen(career)) {
+            if (round.on) {                                  // (a round of the old career: dropped, not settled into the new one)
+              round.match = round.tour = round.pvp = null; npc.plan = null;
+              endRound(); if (hp.on) leaveHole();
+              document.body.classList.remove('match'); setCourse(null);
+            }
+            for (const k of Object.keys(career)) delete career[k];
+            Object.assign(career, JSON.parse(JSON.stringify(srv)));
+            sync.ver = ver; sync.base = srv; sync.dirty = false; sync.pend = [];
+            saveSyncMeta(); setSync('ok');
+            toast('This career was started over\non another device or tab', 3000);
+            return true;
+          }
+          sync.ver = ver; sync.base = srv; sync.dirty = true; sync.pend = [];
+          saveSyncMeta();
+          return true;
+        }
+        // Audit 2.2: a THREE-WAY merge. Every field this PC hasn't changed since its last sync (sync.base) takes the
+        // server's value, so a purchase, a lesson, a finished match or a hired caddie from another device or tab is kept.
+        // A field changed on both sides keeps this PC's, except the ones with a rule of their own below (cash, history,
+        // scorecards, rounds, wall, trophies, titles, results seen, shots learned, stats). The round being played keeps
+        // its own match / entry / friend card whatever the server has (audit 2.4).
+        const base0 = sync.base, same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+        const OWN_RULE = new Set(['cash', 'saveIds', 'history', 'cards', 'rounds', 'showcase', 'trophies', 'titles', 'pvpSeen', 'unlocks', 'stats', 'stamp', 'name', 'v']);
+        const live = round.on ? ['match', 'tour', 'pvpCard'] : [];
+        if (base0) {
+          for (const k of new Set([...Object.keys(srv), ...Object.keys(career)])) {
+            if (OWN_RULE.has(k) || live.includes(k)) continue;
+            if (same(career[k], base0[k]) && !same(srv[k], base0[k])) {
+              if (srv[k] === undefined) delete career[k]; else career[k] = JSON.parse(JSON.stringify(srv[k]));
+            }
+          }
+          // the wall's settings, field by field the same way (what's been destroyed is a union, below)
+          const ls = career.showcase || {}, ss = srv.showcase || {}, bs = base0.showcase || {}, out = { ...ls };
+          for (const k of new Set([...Object.keys(ss), ...Object.keys(ls)])) if (k !== 'destroyed' && same(ls[k], bs[k]) && !same(ss[k], bs[k])) out[k] = ss[k];
+          if (career.showcase || srv.showcase) career.showcase = out;
+        }
+        // what only ever grows: pieces bought, titles won, results seen, shots learned, stat levels
+        career.trophies = [...new Set([...(career.trophies || []), ...(srv.trophies || [])])];
+        const tk = new Set((career.titles || []).map((x) => `${x.id}|${x.date}`));
+        career.titles = [...(career.titles || []), ...(srv.titles || []).filter((x) => !tk.has(`${x.id}|${x.date}`))].sort((a, b) => a.date - b.date);
+        career.pvpSeen = [...new Set([...(career.pvpSeen || []), ...(srv.pvpSeen || [])])].slice(-40);
+        for (const k of Object.keys(srv.unlocks || {})) if (srv.unlocks[k]) career.unlocks[k] = true;
+        for (const k of Object.keys(srv.stats || {})) if (Number.isFinite(srv.stats[k]) && !(career.stats[k] >= srv.stats[k])) career.stats[k] = srv.stats[k];
         // what this PC's cash is measured from: the last save the server confirmed, or a later one it got without the
         // reply reaching us (its id is in the server's saveIds); the server's cash already includes that one's change
         const landed = [...(sync.pend || [])].reverse().find((p) => (srv.saveIds || []).includes(p.id));
@@ -10615,6 +10715,7 @@
         career.rounds = [...rs.values()].sort((a, b) => a.date - b.date).slice(-HCP.keep);
         sync.ver = ver; sync.base = srv; sync.dirty = true; sync.pend = [];
         saveSyncMeta();
+        return true;
       }
       // fetch the server's copy (opening the clubhouse, signing in): newer than ours → take it (or merge if ours has
       // unsent changes)
@@ -10639,6 +10740,7 @@
             if (career && sync.dirty) mergeServer(r.data.career, r.data.ver);
             else {
               const c = upgradeCareer(r.data.career);
+              if (!c) return setSync('newer');               // (a copy this version can't read: never wipe ours with it, audit 2.9)
               if (!career) career = c; else { for (const k of Object.keys(career)) delete career[k]; Object.assign(career, c); }
               sync.ver = r.data.ver; sync.base = JSON.parse(JSON.stringify(c)); sync.dirty = false; sync.pend = [];
               saveSyncMeta();
