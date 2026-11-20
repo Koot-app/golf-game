@@ -3668,8 +3668,43 @@
       background: #2a1418;
     }
 
+    /* the buttons stay at the bottom of the card while the rest scrolls (audit 5.2): Next and Close are always in
+       reach, whatever the screen height */
+    #scorecard.card {
+      padding-bottom: 0;
+    }
+
     #scorecard #scBtns {
-      padding: 14px 18px 0;
+      position: sticky;
+      bottom: 0;
+      z-index: 2;
+      margin-top: 14px;
+      padding: 10px 18px 14px;
+      background: #efe6cf;
+      border-top: 1px solid rgba(31, 74, 44, .25);
+      border-radius: 0 0 6px 6px;
+    }
+
+    #scorecard.entry #lbEntry {
+      margin-bottom: 14px;
+    }
+
+    /* short screens (most laptops): a tighter card, so more of it shows without scrolling */
+    @media (max-height: 920px) {
+      #scorecard .card-h { padding: 8px 18px 7px; }
+      #scCourse { padding-top: 4px; font-size: 12px; }
+      #scorecard #scMsg { margin: 6px 18px 2px; padding: 5px 10px; font-size: 13.5px; line-height: 1.3; }
+      #scorecard #scTable { margin-top: 6px; }
+      #scorecard #scTable th, #scorecard #scTable td { padding-top: 2px; padding-bottom: 2px; }
+      #scorecard #scPressBox { margin-top: 8px; padding: 8px 12px; }
+      #scorecard .pr-h { font-size: 15.5px; }
+      #scorecard .pr-why { margin: 4px 0 6px; font-size: 12.5px; line-height: 1.35; }
+      #scorecard .pr-grid div { padding: 4px 8px; font-size: 15px; }
+      #scorecard .pr-grid i { font-size: 11px; }
+      #scorecard .pr-foot { margin-top: 6px; font-size: 11.5px; line-height: 1.35; }
+      #scorecard .pr-btns { margin-top: 7px; }
+      #scorecard #scPress { padding: 6px 14px; }
+      #scorecard #scBtns { margin-top: 8px; padding: 7px 18px 10px; }
     }
 
     #scorecard #scBtns button {
@@ -6603,10 +6638,11 @@
       <div class="card-h"><span id="scTitle">Scorecard</span><span class="tag" id="scTag"></span></div>
       <div id="scCourse"></div>
       <div id="scMsg"></div>
+      <!-- a career match: the press offer when you're 2 down (or the news that he pressed), explained. Above the table
+           (audit 5.2: below it, it was out of sight on any screen under about 1,000 px tall) -->
+      <div id="scPressBox"><div id="scPressTxt"></div><div class="pr-btns"><button id="scPress">Press (P)</button><span id="scPressAlt"></span></div></div>
       <table id="scTable"></table>
       <div id="scBets"></div>
-      <!-- a career match: the press offer when you're 2 down (or the news that he pressed), explained -->
-      <div id="scPressBox"><div id="scPressTxt"></div><div class="pr-btns"><button id="scPress">Press (P)</button><span id="scPressAlt"></span></div></div>
       <div id="lbEntry">
         <div class="lb-new" id="lbHead">NEW HIGH SCORE!</div>
         <div class="lb-sub">ENTER YOUR INITIALS</div>
@@ -10209,6 +10245,8 @@
         const name = scoreName(hp.strokes, HOLE.par);
         if (round.on) {          // a test round: record it and show the card
           round.scores[hp.holeIdx] = { strokes: hp.strokes, putts: hp.putts, par: HOLE.par, pen: hp.pen };
+          const crT = round.match || round.tour || round.pvp;
+          if (crT) crT.tilt = state.badStreak;                                        // saved with the hole just below (audit 6.2)
           $('toast').classList.remove('on');
           const pv = round.pvp && pvpAfterHole(hp.holeIdx);                         // a friend round: the card so far (M3)
           const vs = round.match ? `\n${matchAfterHole(hp.holeIdx)}` : pv ? `\n${pv}` : round.tour ? `\n\n${tourAfterHole(hp.holeIdx)}` : '';   // a career match: the hustler's score, the match; an invitational: the board
@@ -10273,6 +10311,12 @@
         if (round.saved) { setStats(round.saved); state.windMph = round.saved.mph; state.windDir = round.saved.dir; round.saved = null; $('inWind').value = state.windMph; $('inWindDir').value = state.windDir; orientFlags(); syncPanel(); }
         document.body.classList.remove('round'); hideScorecard();
         $('btnRound').textContent = `Test round · holes 1–${HOLES.length}`;
+      }
+      // Audit 6.2: a career round (a match, an invitational, a friend round) saves your tilt at the end of each hole
+      // (finishHole), so reopening the game part-way tees you up as tilted as you left, less what a calm caddie walks
+      // off: the same as walking to the next tee. (It used to be calm again on a fresh tee.)
+      function resumeRoundTilt(cr) {
+        if (cr && cr.holes.some(Boolean) && cr.tilt > 0) setBadStreak(caddieWalkOff(cr.tilt));
       }
       function nextRoundHole() {
         if (!round.on || swing.active) return;
@@ -11456,7 +11500,7 @@
         document.body.classList.add('round', 'match'); hideScorecard();
         hp.holeIdx = Math.min(pc.holes.length, HOLES.length - 1); courseV = TIERS[pc.tier] || null;
         for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
-        buildHole(hp.holeIdx); enterHole();
+        buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(pc);
         $('btnRound').textContent = 'Leave the round';
         const give = holeStrokes(pc.n)[hp.holeIdx];
         toast(`vs ${pc.vsName} · ${FR_FMT[pc.format]}, ${money(pc.stake)}${pc.format === 'skins' ? ' a skin' : ''}\n${pc.holes.length ? `Resuming on hole ${hp.holeIdx + 1}` : strokesText({ player: pc.n ? (pc.mine ? session.id : pc.vs) : null, n: pc.n }, { [pc.vs]: pc.vsName })}`
@@ -13019,7 +13063,7 @@
           + `Up to 3 presses a match (${3 - used} left), and the offer comes back whenever you're 2 down in your newest bet. Decide before you tee off on hole ${next + 1}.`
           + `${short ? ` <span class="warn">You have ${money(career.cash)}: lose it all and you can't pay, and ${n.first} takes it out of your bag (a snapped club).</span>` : ''}</div>`;
         $('scPress').textContent = `Press: add a ${st} bet (P)`;
-        $('scMsg').textContent += `${$('scMsg').textContent ? '\n' : ''}🎲 You're 2 down: you may press (P). How it works is below the card.`;
+        $('scMsg').textContent += `${$('scMsg').textContent ? '\n' : ''}🎲 You're 2 down: you may press (P). How it works is just below.`;
         setText('scPressAlt', `or don't: Next hole (N) plays on with the bets as they are`);
       }
       function playerPress() {
@@ -13129,7 +13173,7 @@
         document.body.classList.add('round', 'match'); hideScorecard();
         hp.holeIdx = Math.min(m.holes.length, HOLES.length - 1); courseV = TIERS[m.tier] || null;
         for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
-        buildHole(hp.holeIdx); enterHole();
+        buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(m);
         $('btnRound').textContent = 'Forfeit the match';
         m.presses = m.presses || [];
         const n = npcById(m.npc), s = matchStatus(m);
@@ -13474,7 +13518,7 @@
         document.body.classList.add('round', 'match'); hideScorecard();
         hp.holeIdx = Math.min(t.holes.length, HOLES.length - 1); courseV = TIERS[t.tier] || null;
         for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
-        buildHole(hp.holeIdx); enterHole();
+        buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(t);
         $('btnRound').textContent = 'Withdraw';
         toast(`🏆 ${T.name}\n${t.holes.length ? `Resuming on hole ${hp.holeIdx + 1}` : `Twelve hustlers in the field · ${money(T.purse[0])} to the winner`} · ${HOLE.name}, par ${HOLE.par}`, 3600);
       }
@@ -13832,6 +13876,7 @@
       function showScorecard(msg = '') {
         $('scPressBox').classList.remove('on'); $('scBets').innerHTML = '';               // (only a career match shows it, below)
         $('scorecard').classList.remove('pvp');            // (the shared friend card is its own mode)
+        if (msg || !$('scorecard').classList.contains('on')) $('scorecard').scrollTop = 0;   // a new card opens at the top: the news and the press offer (5.2)
         const n = HOLES.length, t = roundTotals(), final = t.played === n;
         round.over = final;
         const cur = hp.on && !hp.done ? hp.holeIdx : -1;

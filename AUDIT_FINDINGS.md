@@ -984,6 +984,15 @@ every end-of-match path came out right. Four findings: 2 medium, 2 low. Probes: 
 - **Evidence:** `ui-shots.js` at each size; screenshots in `tools/test/out/ui5-*.png`.
 - **Fix (S–M):** when the press offer is up, put it above the table (or scroll it into view when the card opens).
   Making the card's rows shorter on short screens (a `max-height` media query) would bring the buttons up too.
+- **✅ Fixed 2026-11-19:** all three.
+  - The press offer (and the hustler's press notice) now sits right under the message, above the table.
+  - The buttons (Next / Close) stay pinned to the bottom of the card while the rest scrolls.
+  - Under 920 px tall, the card is tighter.
+  - A new card opens scrolled to the top.
+
+  `ui-card-fit.js` (2 down, with a press already on): the press offer and the buttons are on screen at 1280 × 720,
+  1366 × 768, 1600 × 900 and 1920 × 1080. On the smaller sizes the bottom rows of the table and the bets are a
+  scroll away.
 
 ### 5.3 [Low] The game tells you "The test round plays 1 to 6 in order"
 - **Where:** the N key handler (about line 14709), and the comment at about line 10252 ("holes 1-6").
@@ -1041,6 +1050,10 @@ nothing impossibly far. Extreme putts all finish. The tilt ladder behaves as des
 - **Where:** `state.badStreak` isn't saved with the match; `enterHole` sets it to 0.
 - **Scenario:** three bad shots in a row, reload, and you're calm again on a fresh tee. This is the same gap as 1.4
   (the hole in progress isn't saved), and fixing that should save the tilt too.
+- **✅ Fixed 2026-11-19:** a match, an invitational or a friend round saves your tilt at the end of each hole
+  (`m.tilt`). Resuming after a reload tees you up with it, less what a calm caddie walks off, the same as walking to
+  the next tee (`resumeRoundTilt`). The hole in progress still restarts from the tee (1.4), at the tilt you had on
+  that tee. `tilt-reload-a.js` / `-b.js`: tilt 3 before the reload, 3 after.
 
 ### Checked and fine
 - **Every flight ends:** air has a 30-second cap; the roll always slows down on every surface (the slowest roll is
