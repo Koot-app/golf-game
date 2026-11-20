@@ -15053,6 +15053,10 @@
 
       window.addEventListener('keydown', (e) => {
         if (e.target instanceof HTMLSelectElement) return;
+        // a focused slider or number box keeps its own arrow / Home / End / Page keys (audit 5.4: the game took them and
+        // the developer sliders wouldn't move); every other key still drives the game
+        if (e.target instanceof HTMLInputElement && (e.target.type === 'range' || e.target.type === 'number')
+          && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.code)) return;
         if (homeOpen) return homeKey(e);                 // the home screen (typing a password, Esc back to the game)
         if (beatOpen) return beatKey(e);                 // the loan shark's beating (Enter to get up)
         if (outOpen) return outcomeKey(e);               // the payoff screen at the end of a match / invitational

@@ -1220,6 +1220,11 @@ every end-of-match path came out right. Four findings: 2 medium, 2 low. Probes: 
 - **Where:** the window keydown handler skips only `<select>` elements, so the arrow keys on a focused range slider
   (wind, green speed, power, etc.) are taken by the game and `preventDefault` stops the slider moving. Admin-only.
 - **Fix (S):** skip `input` elements as well.
+- **✅ Fixed 2026-11-20:** a focused slider or number box keeps its own arrow, Home, End and Page keys. Every other key
+  still drives the game, so clicking a slider doesn't cut you off from the hotkeys. Checked in the game:
+  - ArrowRight on a focused slider isn't cancelled (it moves the slider) and the aim doesn't change;
+  - the same key on the page still aims;
+  - `]` with the slider focused still changes club.
 
 ### Checked and fine
 - **End of a match, by keys:** win, wait: the scorecard, then the payoff screen, then Enter goes to the clubhouse. A
