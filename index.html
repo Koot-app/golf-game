@@ -14017,6 +14017,13 @@
         if (!beatOpen || !beatReady) return;
         beatOpen = false; $('beating').classList.remove('on', 'shake'); $('btGo').blur();
         if (outPending) { const o = outPending; outPending = null; setTimeout(() => showOutcome(o), 150); }     // then the payoff screen
+        // (user request, 2026-11-20) no payoff screen after it (a forfeited match: leaving the course early, which used to
+        // leave you on the driving range): back to the clubhouse
+        else setTimeout(() => {
+          if (!careerOn || clubOpen || outOpen) return;
+          if (round.match) { if (round.match.settled) matchToClubhouse(); }
+          else if (!round.on) openClubhouse();
+        }, 150);
       }
       // =====================================================================================================
       //  THE PAYOFF (user request, 2026-11-19): when a hustler match or an invitational is settled, a screen between the
