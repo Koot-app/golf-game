@@ -18,9 +18,11 @@ const rd = (a) => {
 const [url, shotName, exprA, setupA, prof] = process.argv.slice(2), expr = rd(exprA), setup = rd(setupA);
 const CHROME = process.env.CHROME || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const PORT = 9355, sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// the window size: 1600 × 900 unless PROBE_SIZE says otherwise (e.g. PROBE_SIZE=1280x720)
+const [W, H] = (process.env.PROBE_SIZE || '1600x900').split('x').map(Number);
 (async () => {
   const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${PORT}`,
-    `--user-data-dir=${path.join(os.tmpdir(), 'golf-probe-' + (prof || 'default'))}`, '--window-size=1600,900', '--enable-unsafe-swiftshader', '--no-first-run', 'about:blank'], { stdio: 'ignore' });
+    `--user-data-dir=${path.join(os.tmpdir(), 'golf-probe-' + (prof || 'default'))}`, `--window-size=${W},${H}`, '--enable-unsafe-swiftshader', '--no-first-run', 'about:blank'], { stdio: 'ignore' });
   let target;
   for (let i = 0; i < 200 && !target; i++) { await sleep(250); try { target = (await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json()).find((t) => t.type === 'page'); } catch { } }
   const ws = new WebSocket(target.webSocketDebuggerUrl); await new Promise((r) => ws.addEventListener('open', r));
@@ -29,7 +31,7 @@ const PORT = 9355, sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const send = (method, params = {}) => new Promise((r) => { pending.set(++id, r); ws.send(JSON.stringify({ id, method, params })); });
   const ev = async (x) => { const r = await send('Runtime.evaluate', { expression: x, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) problems.push('EVAL ' + (r.exceptionDetails.exception?.description || r.exceptionDetails.text)); return r.result?.value; };
   await send('Runtime.enable'); await send('Page.enable');
-  await send('Emulation.setDeviceMetricsOverride', { width: 1600, height: 900, deviceScaleFactor: 1, mobile: false });
+  await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 1, mobile: false });
   await send('Page.navigate', { url });
   for (let i = 0; i < 40; i++) { await sleep(300); if (await ev('!!window.__golf')) break; }
   await sleep(500);

@@ -743,3 +743,488 @@ fixed before this section was first pushed.)
 - **Section 4:** an "auto" handicap challenge throws on the server if either career's `rounds` is malformed (part
   of 3.2).
 - **Section 9:** `api/leaderboard.js` has its own copies of `findCreds`, `redis` and `readBody`.
+
+## Section 4 — Match and hustler logic (2026-11-19, Fable 5.2)
+
+**Summary.** The rules of a match are right. Every case I tried through the game's own flow came out correctly:
+dormie, an early finish and playing on, all square, presses by you and by him, the three-press limit, and skins with
+carries. The hustler's shown shots always add up to his score. The findings are about how the hustlers score, and
+about a few things the scorecard says. Seven findings: 3 medium, 4 low.
+
+| # | Severity | Finding | Fix size |
+|---|---|---|---|
+| 4.1 | Medium | Hustlers score well above their listed skill, and more so on the harder circuits | S |
+| 4.2 | Medium | "Best case" and "Worst case" on the scorecard are wrong when a bet can only be halved | ✅ Fixed |
+| 4.3 | Medium | Impossible scores happen too often: holes-in-one, hole-outs, and nine-hole rounds of 8 or 9 under | ✅ Fixed (holes) |
+| 4.4 | Low | A loss you couldn't pay is headed "all square" and isn't counted as a loss | ✅ Fixed |
+| 4.5 | Low | The handicap tooltip says "best 4 of the last 3 rounds" | ✅ Fixed |
+| 4.6 | Low | Finishing a hole while the hustler is mid-stroke crashes the hole | ✅ Fixed |
+| 4.7 | Low | Small things: odd-looking shots on his bad holes, and how often he presses | S |
+
+The probes are `tools/test/match-hustlers.js` (3,000 rounds per hustler, and 3,600 shot plans) and
+`tools/test/match-rules.js` (the rule cases).
+
+### 4.1 [Medium] Hustlers score well above their listed skill, and more so on the harder circuits
+- **Where:** `npcHoleScore` (about line 13040); `NPCS` (about line 12826); `TIERS` (about line 8534).
+- **Scenario:** the comment on `NPCS` says `skill` is "strokes over par per hole on average". But each hole also
+  adds a conditions term: `wind mph / 40` plus `0.1` for every point of green speed over 11.5. That term is about
+  +0.17 a hole at the muni, +0.36 at the resort and +0.58 at the country club. So every hustler averages worse than
+  his number, and the gap grows with the circuit:
+
+  | Hustler | Circuit | Pips | Listed skill | Measured, per hole | Average nine | 10% to 90% of rounds |
+  |---|---|---|---|---|---|---|
+  | Dale | 1 | 1 | +1.60 | +1.78 | +16.0 | +10 to +22 |
+  | Terry | 1 | 2 | +1.20 | +1.37 | +12.4 | +7 to +18 |
+  | Sal | 1 | 3 | +0.90 | +1.07 | +9.6 | +4 to +15 |
+  | Gus | 1 | 4 | +0.60 | +0.77 | +6.9 | +2 to +12 |
+  | Chad | 2 | 4 | +0.55 | +0.91 | +8.2 | +3 to +14 |
+  | Marco | 2 | 4 | +0.50 | +0.87 | +7.8 | +1 to +14 |
+  | Rita | 2 | 4 | +0.40 | +0.76 | +6.9 | +2 to +12 |
+  | Jim | 2 | 5 | +0.30 | +0.66 | +5.9 | +1 to +11 |
+  | Whitaker | 3 | 5 | +0.25 | +0.83 | +7.5 | +3 to +12 |
+  | Ana | 3 | 5 | +0.10 | +0.67 | +6.1 | +1 to +11 |
+  | Duke | 3 | 5 | 0.00 | +0.58 | +5.2 | 0 to +10 |
+  | Victor | 3 | 5 | +0.15 | +0.71 | +6.4 | +1 to +12 |
+
+  Two things follow:
+  - **The top of the game isn't hard in absolute terms.** Duke, "eleven-time club champion", averages 5 over for
+    nine holes at his own club. Whitaker (5 pips, country club) averages worse than Gus (4 pips, muni).
+  - **Each round swings a lot.** The "form for the day" is drawn once per match and applied to every hole, worth
+    about ±3 strokes over nine on its own. One hustler's rounds range over 10 to 12 strokes.
+
+  You face the same wind and greens, so whether this is too easy depends on how much they cost *you*. That is for
+  section 7 to weigh. But the numbers aren't what the code says it intends.
+- **Evidence:** `match-hustlers.js`, part 1 (the table above is its output).
+- **Fix (S):** a design choice. Either shrink the conditions term (for example wind / 100 and 0.04 per point of
+  green speed, about a third of today's), or lower the country-club skills below zero so the best players average
+  about par at home. Reducing the form swing (0.32 to about 0.15 a hole) would make a hustler's level more readable.
+
+### 4.2 [Medium] "Best case" and "Worst case" on the scorecard are wrong when a bet can only be halved
+- **Where:** `betsStrip` (about line 12975): `Best case = settled + every live stake`, `Worst case = settled − every
+  live stake`. The press box's "up to $X either way" uses the same sum.
+- **Scenario:** a bet that is "dormie" can't be won by the player who is behind. Two down with two to play, the
+  best you can do is win both and halve the bet. The strip still shows the full stake as the best case. The same
+  happens the other way: one up with one to play, the worst is a halved bet, but the strip shows a loss.
+- **Evidence:** `match-rules.js`:
+  ```
+  2 down with 2 to play (the best possible is a halved match, $0): the card says "Best case +$20 win every live bet"
+  1 up with 1 to play (the worst possible is a halved match, $0): the card says "Worst case −$20 lose every live bet"
+  ```
+- **Fix (S):** work each live bet out from its own position. With `diff` holes up and `left` to play: the best is a
+  win if `diff + left > 0`, a halve if it's 0; the worst is a loss if `diff − left < 0`, a halve if it's 0. Change the
+  sub-labels to "the best that can still happen" and "the worst".
+- **✅ Fixed 2026-11-19.**
+  - `betsStrip` works each live bet out from its own position:
+    - the best is the stake only if `diff + left > 0`;
+    - the worst is minus the stake only if `diff − left < 0`;
+    - otherwise $0.
+  - The sub-labels now read "the best (worst) that can still happen".
+  - Verified with `match-rules.js`: 2 down with 2 to play gives `Best case $0`, and 1 up with 1 to play gives
+    `Worst case $0`.
+  - The press box's "up to $X either way" is still the plain sum of the live stakes, as a ceiling.
+
+### 4.3 [Medium] Impossible scores happen too often
+- **Where:** `npcHoleScore`: `par + clamp(Math.round(d), -2, 5)`.
+- **Scenario:** the lowest score allowed on any hole is two under par. On a par 3 that is a hole-in-one, and on a
+  par 4 it's holing out from the fairway. For a hustler with a wide spread these come up constantly:
+
+  | Hustler | Holes-in-one per 1,000 par 3s | Hole-outs for 2 per 1,000 par 4s |
+  |---|---|---|
+  | Marco | 30 | 33 |
+  | Chad | 9 | 11 |
+  | Gus | 8 | 7 |
+  | Sal | 7 | 6 |
+  | Victor | 4 | 5 |
+
+  Marco makes a hole-in-one on about one par 3 in 33, so roughly one match in eleven. A real golfer's odds are about
+  one in several thousand. The round totals have the same problem at the edge: the best of 3,000 rounds was 9 under
+  par for nine holes (Victor), with several hustlers at 8 under.
+- **Evidence:** `match-hustlers.js`, part 1 (the last two columns, and the "best" column).
+- **Fix (S):** floor the hole score at one under par on par 3s and par 4s (two under only on a par 5), and let a
+  hole-in-one happen only as its own rare roll. The smaller form swing suggested in 4.1 trims the freak rounds.
+- **✅ Fixed 2026-11-19 (the hole scores).**
+  - A new `npcClampScore`, used by both `npcHoleScore` and the invitational field's `fieldHoleScore`, sets the best
+    score on a hole at one under par on a par 3 or 4 and two under on a par 5. A hole-in-one is its own roll,
+    1 in 1,500 par 3s.
+  - Verified with `match-hustlers.js`: holes-in-one are down to 0.1–1.1 per 1,000 par 3s for every hustler (Marco
+    was 30), and hole-outs for 2 on a par 4 to 0. The averages barely moved (for example Gus +0.77 → +0.79 a hole).
+  - **Not changed:** the best rounds are still 7 or 8 under for nine. That comes from the form-for-the-day swing,
+    which is part of the 4.1 design decision.
+  - Matches already in progress roll their remaining holes with the new rule.
+
+### 4.4 [Low] A loss you couldn't pay is headed "all square" and isn't counted as a loss
+- **Where:** `showScorecard` (about line 13840): `m.net ? won/lost : 'all square'`; `renderCardHistory`'s summary.
+- **Scenario:** lose a match with no cash. The loan-shark rule sets what you paid (`net`) to $0, and the card's
+  heading reads "all square". In the trophy room's Scorecards tab that match shows "$0" and is counted as neither won
+  nor lost.
+- **Evidence:** `match-rules.js`: `lose with $0 …: the card's heading says "all square"; the archived card's money
+  is 0, unpaid 20`; the tab's summary then reads `4–1 won–lost` with that loss left out.
+- **Fix (S):** where the result is shown, treat `unpaid > 0` as a loss ("lost: couldn't pay $20").
+- **✅ Fixed 2026-11-19.**
+  - The scorecard's heading for a settled match comes from one `settledTag()`: "lost $20 · couldn't pay $20".
+  - The Scorecards tab counts it as a loss, and its money column says "$0 · couldn't pay $20" in red.
+  - Verified with `match-rules.js`: the heading is `lost $20 · couldn't pay $20`, and the tab's summary went from
+    `4–1` to `4–2`.
+
+### 4.5 [Low] The handicap tooltip says "best 4 of the last 3 rounds"
+- **Where:** `updateCareerUI` (about line 10682).
+- **Scenario:** with three rounds the handicap is the average of all three, but the tooltip's wording is fixed at
+  "best 4".
+- **Evidence:** `regress-handicap.js`, last line: `tooltip: From your best 4 of the last 3 rounds`.
+- **Fix (S):** say "best N" with N the smaller of 4 and the rounds counted.
+- **✅ Fixed 2026-11-19.** Verified with `regress-handicap.js`: `From your best 3 of the last 3 rounds`.
+
+### 4.6 [Low] Finishing a hole while the hustler is mid-stroke crashes the hole
+- **Where:** `finishHole` (about line 10233) and `npcTakeTurns` (about line 13590). When he is busy, `npcTakeTurns`
+  calls its callback straight away; the callback is `finishHole`, which calls `npcTakeTurns` again, and so on.
+- **Scenario:** it needs your ball to go in while his is moving. In normal play you can't swing during his turn.
+  The one gap: when he has the honour, he waits 0.9 seconds before teeing off, and you can start your own swing in
+  that time. If that tee shot is a hole-in-one, the hole never finishes. That is very unlikely, but the loop is real.
+- **Evidence:** `match-rules.js`: `finish the hole while he is mid-stroke (busy true) -> Maximum call stack size
+  exceeded`.
+- **Fix (S):** when he is busy, keep the callback and run it when his stroke ends. Also block your swing during the
+  0.9 seconds before he tees off.
+- **✅ Fixed 2026-11-19.**
+  - `npcTakeTurns` no longer calls its callback while he is mid-stroke. It keeps it (`npc.wait`) and runs it once his
+    strokes are done.
+  - The 0.9 seconds before his tee shot set `npc.starting`, which holds your swing (clicks and keys hurry him
+    instead).
+  - Verified with `match-rules.js`:
+    - finishing mid-stroke gives `no error; he played out (true) and the hole was recorded (true)`;
+    - your swing is held at the start of a hole where he has the honour.
+
+### 4.7 [Low] Small things
+- **His shots on bad holes.** The shot plans always add up, but on a blow-up hole they can look odd. Of 3,600 plans:
+  72 (2%) had a short shot that finished farther from the pin, 31 had three or more short shots in a row that missed
+  the green, and 29 (0.8%) had four or more putts. He also never goes out of bounds or takes a drop; the lost strokes
+  appear as extra chips and putts.
+- **How often he presses.** A hustler's press chance (for example Sal 0.6, Jim 0.3) is rolled again after every hole
+  while he is 2 down. That turns "sometimes" into "usually": if he stays 2 down for three holes, Sal presses about 94%
+  of the time and Jim about 66% (worked out from the chances, not measured). If "0.3" was meant as "presses in about
+  a third of matches", roll once per match.
+- **The shot counter** reads "in the air…" for about a second after his ball has stopped.
+
+### Checked and fine
+- **Match status** (`match-rules.js`, all "ok"):
+  - 2 down with 2 to play stays live, and winning both halves the match ("halved the match: nobody pays", net 0);
+  - 1 up with 1 to play, then winning, is "won 2 up";
+  - five up after five is "won 5 & 4", and playing on changes nothing.
+- **Presses.** Offered after holes 2, 4 and 6 when losing every hole (2 down in the newest bet each time); three at
+  most; the match runs until every bet is decided ("lost 5 & 4 · Press 1: lost 4 & 3 · Press 2: lost 3 & 2 · Press 3:
+  lost 2 & 1", net −4 stakes). A press can't start on the last hole, because a bet 2 down with one to play is over.
+- **His press.** Gus presses when 2 down, from the next hole; the box then is a notice, not an offer; his presses
+  count toward the same limit of three.
+- **Skins.** Carries add up (four skins on the hole after three halves); a tie on the last hole voids what was
+  carried; the net is right.
+- **Money.** Covered in section 1 (24 random matches, 0 mismatches).
+- **The hustler's shown play.** In 3,600 plans across all nine holes, the strokes shown always equal his score, the
+  last one always goes in, and none lands out of bounds. His ball stops on the green 59% of the time, the fairway
+  23%, the rough 15% and sand 3%.
+- **Turn order.** The tee toss on the first hole, then whoever won the last hole that wasn't halved; after the tee,
+  whoever is farther from the pin; he plays out after you hole.
+- **Rating pips** follow the listed skill in order (Dale 1 up to the country club's 5).
+- **Invitationals** (code reading): the field uses the same scoring function with its own seed per player; ties on
+  total go to the better last three holes, then the last hole, and a dead heat goes to you; a withdrawal is recorded
+  once and never shows as a best finish.
+- **Handicap:** a round counts once, only with all nine holes, including a match decided early and played on; a
+  forfeited match doesn't count (`regress-handicap.js`).
+
+### Noticed for later
+- **Section 5:** in the first 0.9 seconds of a hole where he has the honour, you can start your swing before he tees
+  off (see 4.6).
+- **Section 7:** the table in 4.1 is the hustlers' real scoring, for judging stakes and progression. His presses can
+  multiply what you stand to lose (noted in section 1).
+
+## Section 5 — Screens, overlays and keys (2026-11-19, Opus 5.5)
+
+**Summary.** The overlays are well ordered. Each one takes the keys ahead of the game (home, the beating, the payoff
+screen, the initials, the course preview, the clubhouse, the drop card, tips, the tee toss, the hustler's turn), and
+every end-of-match path came out right. Four findings: 2 medium, 2 low. Probes: `tools/test/ui-overlays.js`, and
+`tools/test/ui-shots.js` for screenshots (the probe now takes `PROBE_SIZE=1280x720` and similar).
+
+| # | Severity | Finding | Fix size |
+|---|---|---|---|
+| 5.1 | Medium | The payoff screen is skipped if a match ends on the 9th hole and you press N or Enter at once | S |
+| 5.2 | Medium | On most laptop screens the scorecard scrolls: the bets, the press offer and the buttons are below the fold | S–M |
+| 5.3 | Low | The game tells you "The test round plays 1 to 6 in order"; it's 9 holes | S |
+| 5.4 | Low | Arrow keys on a focused developer slider are swallowed by the game | S |
+
+### 5.1 [Medium] The payoff screen is skipped if a match ends on the 9th hole and you press N or Enter at once
+- **Where:** `maybeShowOutcome` (about line 13250) waits 0.45 seconds before `showOutcome`, which then does nothing if
+  the round is already over (`if (!round.on) return`). It has already marked the screen as seen.
+- **Scenario:** the last hole's scorecard says "Back to the clubhouse (N)". A player who presses N (or clicks) within
+  0.45 seconds goes straight to the clubhouse, and the payoff screen never appears for that match. A match decided
+  early is fine, because N there plays on and the round is still on.
+- **Evidence:** `ui-overlays.js`:
+  ```
+  won on the 9th, then N at once: … payoff false · clubhouse true · round false · "won 1 up" · payoff marked seen true
+  win, then N at once (decided early): … payoff true · round true
+  ```
+- **Fix (S):** open the payoff screen straight away when there is no beating to wait for. Or, while a payoff is due,
+  have the scorecard's N / Enter / Close open it first.
+- **✅ Fixed 2026-11-19:** while the payoff screen is due, the scorecard's N / Enter / Close opens it at once
+  (`outcomeDue`); while the beating is about to open, they wait for it. `ui-overlays.js` and `fix-econ.js` (a loss on
+  the 9th with $0, then N at once) both show the payoff screen now.
+
+### 5.2 [Medium] On most laptop screens the scorecard scrolls: the bets, the press offer and the buttons are below the fold
+- **Where:** the scorecard panel (`#scorecard`) during a match. It is 995 pixels tall with two presses on the card.
+- **Scenario:** the scorecard fits without scrolling only on screens about 1,000 pixels tall or more. The press offer
+  you asked to make loud sits under the table, out of sight until you scroll the card. The message at the top does
+  say "you may press (P), how it works is below the card", which helps.
+
+  | Window | Scorecard | Fits? |
+  |---|---|---|
+  | 1920 × 1080 | 997 px | yes |
+  | 1600 × 900 | 860 px, content 995 | scrolls |
+  | 1366 × 768 (the most common laptop) | 728 px, content 995 | scrolls |
+  | 1280 × 720 | 680 px, content 995 | scrolls |
+
+  The payoff screen, the shop, the bag room and the trophy room all fit at 1024 × 640 (their lists scroll inside, as
+  intended).
+- **Evidence:** `ui-shots.js` at each size; screenshots in `tools/test/out/ui5-*.png`.
+- **Fix (S–M):** when the press offer is up, put it above the table (or scroll it into view when the card opens).
+  Making the card's rows shorter on short screens (a `max-height` media query) would bring the buttons up too.
+
+### 5.3 [Low] The game tells you "The test round plays 1 to 6 in order"
+- **Where:** the N key handler (about line 14709), and the comment at about line 10252 ("holes 1-6").
+- **Scenario:** press N before finishing a hole in a test round and the toast says the round plays 1 to 6. It has 9
+  holes.
+- **Fix (S):** say "in order" without the numbers, or use `HOLES.length`.
+- **✅ Fixed 2026-11-19:** "The round plays all 9 holes in order" (from `HOLES.length`); the comment is fixed too.
+
+### 5.4 [Low] Arrow keys on a focused developer slider are swallowed
+- **Where:** the window keydown handler skips only `<select>` elements, so the arrow keys on a focused range slider
+  (wind, green speed, power, etc.) are taken by the game and `preventDefault` stops the slider moving. Admin-only.
+- **Fix (S):** skip `input` elements as well.
+
+### Checked and fine
+- **End of a match, by keys:** win, wait: the scorecard, then the payoff screen, then Enter goes to the clubhouse. A
+  match decided early, then N: the payoff screen shows, and play goes on. Lose with $0: the beating (Enter does
+  nothing until its button is ready), then the payoff screen, then the clubhouse. On the payoff screen, K shows the
+  scorecard; "Back to the clubhouse" leaves.
+- **During a match hole:** Esc doesn't open the home screen (it says to finish or leave the round first); J doesn't
+  open the clubhouse; H asks, then forfeits and leaves.
+- **Typing:** the name and password boxes, the challenge form and the home screen take their own keys first.
+- **The hustler's turn:** all keys except K, I and L only hurry him up; since 4.6 the same holds in the moment before
+  his tee shot.
+
+## Section 6 — Shot mechanics and tuning (2026-11-19, Opus 5.5)
+
+**Summary.** The physics is robust. 20,000 random flights all ended, with no NaN, nothing under the ground and
+nothing impossibly far. Extreme putts all finish. The tilt ladder behaves as designed. Two low findings. Probes:
+`tools/test/phys-fuzz.js` and `tools/test/phys-drops.js`.
+
+| # | Severity | Finding | Fix size |
+|---|---|---|---|
+| 6.1 | Low | An unplayable drop takes the ball out of a greenside bunker for one stroke, sometimes onto the green | S |
+| 6.2 | Low | Tilt is forgotten when the game is reopened mid-round | S |
+
+### 6.1 [Low] An unplayable drop takes the ball out of a greenside bunker for one stroke
+- **Where:** `dropOptions` (about line 9764). The lateral drop and "back on the line" pick the best lie they can find
+  (`dropScore` ranks fairway 6, green 5, light rough 4, bunker 2).
+- **Scenario:** in a greenside bunker, U gives a one-stroke drop onto the fairway, the rough, or even the green. Under
+  the real rules, relief from a bunker stays in the bunker unless you pay two strokes. Here a hard bunker shot can
+  always be swapped for a penalty stroke and an easy chip or a putt.
+- **Evidence:** `phys-drops.js`, 54 bunker spots near the pins of all nine holes:
+  ```
+  lateral → Fairway (33), Greenside bunker (12), Light rough (4), On the green (5)
+  ```
+  So the ball leaves the sand 78% of the time, onto the green in 5 of 54.
+- **Fix (S):** from a bunker, keep the lateral and back-on-the-line drops inside the bunker. Optionally add a fourth
+  option, "out of the bunker, back on the line, +2".
+- **✅ Fixed 2026-11-19:** both. In a bunker (greenside or fairway), the lateral and back-on-the-line drops stay in
+  that bunker, and a fourth option, "Out of the bunker" (key 4), drops back on the line outside it for two strokes.
+  `phys-drops.js`: all 54 spots now keep the ball in the sand for one stroke; out for two goes to heavy rough (37),
+  light rough (10) or the fairway (7); key 4 adds two strokes.
+
+### 6.2 [Low] Tilt is forgotten when the game is reopened mid-round
+- **Where:** `state.badStreak` isn't saved with the match; `enterHole` sets it to 0.
+- **Scenario:** three bad shots in a row, reload, and you're calm again on a fresh tee. This is the same gap as 1.4
+  (the hole in progress isn't saved), and fixing that should save the tilt too.
+
+### Checked and fine
+- **Every flight ends:** air has a 30-second cap; the roll always slows down on every surface (the slowest roll is
+  still 0.64 m/s² of braking); chips and putts have a 45-second cap. The longest of 20,000 random flights took 27 s of
+  ball time.
+- **No NaN or Infinity.** Every division by a speed is guarded (`s > 1e-4`).
+- **Nothing ends under the ground.** A landing resets the height to the ground.
+- **Distances:** the farthest of 20,000 random flights (any launch from 1.5° up, any spin, wind to 25 m/s) went
+  365 m. The game never launches below 1.5°, and a topped shot leaves at a third of the speed, so no real shot can run
+  away.
+- **Trees:** a ball can hit each tree once, keeps 12–37% of its pace, and drops.
+- **Putts** from a 2 ft tap to a full 3.5× stroke, straight and pulled, all finish (in 1.4–8.4 s).
+- **Tilt:** rough, sand or OB adds a level; fairway, fringe, green or tee clears it; hardpan leaves it. It carries
+  between holes of a round (a calm caddie walks some off) and is reset when a hole or round starts, so range practice
+  never follows you into a match. The ladder:
+
+  | Composure | 1 bad shot | 2 | 3 | 4 | 6 | 8 |
+  |---|---|---|---|---|---|---|
+  | 1 | 0.10 | 0.55 | 1.35 | 2.30 | 4.30 | 6.30 |
+  | 5 | 0.06 | 0.34 | 0.84 | 1.43 | 2.68 | 3.92 |
+  | 10 | 0.02 | 0.08 | 0.20 | 0.35 | 0.65 | 0.95 |
+
+- **Drops never land out of bounds** (OB scores −990), and the lateral drop is never nearer the hole.
+
+## Section 7 — Economy balance (2026-11-19, Opus 5.5)
+
+**Summary.** These are suggestions, not bugs. They come from simulating matches and invitationals against the
+hustlers' real scoring (`tools/test/econ-sim.js`). The player is modelled as μ strokes over par per hole on that
+circuit, ±0.9, with a small form for the day. The headline: once you're decent, **invitationals pay many times what
+matches pay**. And when you're broke, **betting on credit is close to free**.
+
+What a match is worth at the hustler's top stake, after the green fee (win chance · value):
+
+| Hustler | Top stake | μ +1.4 (beginner) | μ +1.0 | μ +0.7 | μ +0.4 | μ +0.1 |
+|---|---|---|---|---|---|---|
+| Dale | $40 | 64% · +$6 | 84% · +$19 | 92% · +$25 | 97% · +$28 | 99% · +$29 |
+| Terry | $80 | 41% · −$15 | 65% · +$23 | 82% · +$47 | 91% · +$59 | 98% · +$67 |
+| Sal | $150 | 25% · −$68 | 44% · −$6 | 64% · +$49 | 81% · +$93 | 90% · +$116 |
+| Gus | $250 | 12% · −$179 | 28% · −$95 | 49% · +$14 | 67% · +$98 | 81% · +$165 |
+| Chad | $400 | 18% · −$281 | 38% · −$109 | 54% · +$25 | 73% · +$158 | 86% · +$256 |
+| Rita | $500 | 11% · −$415 | 28% · −$227 | 46% · −$43 | 65% · +$144 | 81% · +$285 |
+| Jim | $800 | 8% · −$701 | 21% · −$436 | 39% · −$128 | 60% · +$191 | 77% · +$430 |
+| Whitaker | $1,500 | 13% · −$1,291 | 32% · −$687 | 53% · −$37 | 70% · +$451 | 84% · +$819 |
+| Duke | $3,000 | 6% · −$2,860 | 17% · −$1,999 | 35% · −$858 | 55% · +$335 | 74% · +$1,413 |
+| Victor | $5,000 | 10% · −$4,012 | 26% · −$2,180 | 44% · −$327 | 63% · +$1,543 | 83% · +$3,295 |
+
+What an invitational entry is worth (the field's median winning score in brackets):
+
+| Event | Entry | μ +1.0 | μ +0.7 | μ +0.4 | μ +0.1 |
+|---|---|---|---|---|---|
+| Muni Open (−2) | $250 | −$225 | −$162 | +$11 | +$325 |
+| Palm Crest Pro-Am (0) | $1,500 | −$1,188 | −$371 | +$1,279 | +$3,109 |
+| Hawthorne Invitational (+1) | $7,500 | −$4,570 | **+$1,835** | **+$11,815** | **+$24,025** |
+| Hustlers' Classic (0) | $25,000 | −$19,675 | −$8,230 | +$17,135 | +$52,490 |
+
+| # | Severity | Finding | Fix size |
+|---|---|---|---|
+| 7.1 | High (design) | Betting on credit when broke costs almost nothing: a loss is wiped for one snapped club and 10 reputation | S–M |
+| 7.2 | High (design) | The Hawthorne Invitational pays about 8× the best match, and can be entered without limit | S |
+| 7.3 | Medium (design) | The start is a long grind: a beginner earns about $6 a match | S |
+| 7.4 | Low | The end-game money sinks are sized well for invitational money, not for match money | — |
+
+### 7.1 [High, design] Betting on credit when broke costs almost nothing
+- **Where:** `settleMatch`'s loan-shark rule (about line 13126); `creditLine` (100 + 2 × reputation).
+- **Scenario:** with $0 you can still stake up to your credit line. Lose, and the debt is wiped: one club is snapped
+  (a $25–$350 repair) and you lose 10 reputation. Win, and you take the whole stake. For example, broke with 50
+  reputation ($200 of credit) against Gus at a 49% win chance:
+  - on credit: 0.49 × $200 − 0.51 × (about $100 repair) ≈ **+$47 a match**;
+  - with $250 of your own: **+$14 a match**.
+
+  Being broke is better than having money. The hustler's presses add more on top of credit too (noted in section 1).
+- **Fix (S–M):** make the debt real. Keep what you couldn't pay as a debt the loan shark takes from your next winnings
+  (with interest), and/or scale the cost with the debt (one club per $100 unpaid, reputation in proportion). The
+  beating screen already tells the story; it just needs teeth.
+- **✅ Fixed 2026-11-19 (the marker):** what you couldn't pay goes on your marker (`career.debt`). It comes out of your
+  cash when the next match or invitational is settled (as much as you have), and it uses up your credit while you owe
+  it (`creditLeft`: the credit line minus the marker, never below $25, so a broke player can always play for the
+  minimum and work it off). The beating and the snapped club stay. So a loss on credit now costs the full stake plus a
+  repair and 10 reputation: betting on credit is worse than betting your own money, not better. No interest (the
+  beating is the interest). Shown on the beating, the payoff screen ("Off your marker"), the scorecard, the match
+  picker and the clubhouse cash ("$0 owe $40"). Scaling the snapped clubs with the debt was left out: a broke player
+  with every club snapped can't play or pay for repairs. `fix-econ.js`.
+
+### 7.2 [High, design] The Hawthorne Invitational pays about 8× the best match, and can be entered without limit
+- **Where:** `TOURS` (about line 13283).
+- **Scenario:** the invitational field is all twelve hustlers on the event's course. At the country club its median
+  winning score is +1, but the purse is $50,000 for an entry of $7,500. A player at μ +0.4 gets **+$11,815 an entry**,
+  against **+$1,543** for the best match (Victor at $5,000). At μ +0.7, every country-club match loses money while the
+  Hawthorne still pays +$1,835. Each event is one nine-hole round, the same as a match, and can be re-entered straight
+  away. Once a player can enter it, matches stop mattering, and the end-game sinks (7.4) come quickly.
+- **Fix (S):** pick one or two:
+  - limit entries (one per event per "season", or once every N matches);
+  - make the field stronger (`form` −0.2 to −0.4, as the Classic has);
+  - bring the purses into line with the field (Hawthorne $20,000 / $8,000 / $4,000);
+  - raise the entry each time you win it.
+- **✅ Fixed 2026-11-19:** two of these.
+  - Each event is held once every 5 hustler matches (`TOUR_GAP`): after an entry (or a withdrawal), the board says
+    "Next one in N matches" until five matches have been played to the end. A forfeit doesn't count.
+  - The Hawthorne purse is $30,000 / $12,000 / $6,000 (it was $50,000 / $20,000 / $10,000). By the section 7 numbers
+    (purse × 0.6), an entry is worth about +$4,100 at μ +0.4 (it was +$11,800) and loses about $1,900 at μ +0.7. That's
+    a big event worth about three good matches, played once every five.
+  - The other events are unchanged: the Classic is the end-game money for the trophy room, and the cooldown keeps it
+    and the Pro-Am in proportion.
+
+### 7.3 [Medium, design] The start is a long grind
+- **Where:** the starting cash ($150), Dale's and Terry's top stakes ($40, $80), the tier 1 green fee ($10).
+- **Scenario:** a beginner (μ +1.4) makes about **$6 a match** against Dale and loses money against everyone else.
+  The first real upgrades cost $580 (game-improvement irons) and about $600 (a driver), and a first lesson $240: that
+  is around 40 matches for the lesson and 100 for irons and a driver. Even at μ +1.0 (Terry, +$23) it's about 25
+  matches for the irons. Player skill grows with practice, so the real number is lower, but the first hours are slow.
+- **Fix (S):** raise the bottom stakes (Dale $80, Terry $150), take the green fee off at the muni, or make the first
+  lessons cheaper (for example $60 × level, not level², up to level 4).
+
+### 7.4 [Low] The end-game money sinks are sized for invitational money
+- **The sinks:**
+  - every stat to 10: $17,040 a stat, $68,160 in all;
+  - the six shots: $1,850;
+  - the best caddies: $40,000 plus $400 a match;
+  - the trophy room: ten pieces, $444,000 in all;
+  - luxury clubs: up to $250,000 for irons and $120,000 for a driver.
+- **At match money** (the best country-club match at μ +0.4 is about +$1,500), the trophy room alone is about 300
+  matches.
+- **At Hawthorne money** (about +$12,000 an entry), it's about 40 events. Fixing 7.2 brings these back into reach only
+  slowly. Worth deciding which pace you want before changing either.
+- **Related:** Composure 10 removes 85% of tilt, and the top caddies erase it between holes, so late in a career tilt
+  barely matters (see the ladder in section 6). That may be intended.
+
+## Section 8 — Performance (2026-11-19, Opus 5.5)
+
+**Summary.** Nothing leaks. Probe: `tools/test/perf-leaks.js`. One low finding.
+
+### 8.1 [Low] Every save writes and sends the whole career
+- **Where:** `careerSave` / `saveSyncMeta` write the career and its last-synced copy to this PC's storage on every
+  change (several times a hole). `syncNow` sends the whole career.
+- **Scenario:** at 500 matches the career is about 137,000 characters, so a hole writes about 275,000 to storage
+  several times and uploads 137,000. That's fine on a desktop, but it's wasted work, and it is what eventually hits
+  the 64 KB and 250,000 limits (2.5, 2.6).
+- **Fix (S):** debounce the storage write like the sync (a few hundred ms), and trim history (2.6). Sending only what
+  changed is a bigger change and not needed yet.
+
+### Checked and fine
+- **The course:** over 36 holes built back to back, about 821 geometries were made and `dispose()` ran 858 times, so
+  everything built is freed. The scene's size is the same before and after (131–133 objects, 100–102 geometries, 20
+  textures). `clearHoleGroup` frees only top-level objects, but the hole's objects are all top-level; nothing nested is
+  left behind.
+- **The clubhouse:** 120 room visits. The DOM grows once, to 2,474 elements as every room is drawn the first time, and
+  stays there at 10, 20, 30 and 40 rounds of visits. No listeners pile up: the dynamic buttons use `onclick` or
+  delegated listeners set once.
+- **The JS heap** stays at 10–20 MB.
+- **Frame rate** is at the cap (144 fps in headless Chrome, both on a hole and in the clubhouse).
+
+## Section 9 — Dead code and cleanup (2026-11-19, Opus 5.5)
+
+**Summary.** Very little dead code for a file this size. Probe: `tools/test/dead-code.js` (it lists candidates; each
+one below was checked by hand). All three findings are low.
+
+### 9.1 [Low] Unused code
+- **Functions and constants:** `makeGreen` (about line 7653), `runFlight` (7417), `runPutt` (7752), and
+  `composureState` (7049). Each has one hit, its definition. `runChip` is used; keep it.
+- **A computed value never read:** `pathIntent` in `computeImpact` (about line 7167).
+- **CSS:** `.num`, `.tr-wall`, `.tr-plq` (and their nested rules) match nothing in the page or the script.
+- **Element ids nothing uses:** `hmNewForm`, `chRoom`, `chCaddieBtn`, `chTrophyBtn`, `chBagBtn`. They're harmless;
+  remove them only if tidying.
+- **Keep:** `isOB` and `debugSwing` are only used by the test hook (`window.__golf`), and the probes need them.
+- **Fix (S):** delete them. A search for each name has no other hit.
+- **✅ Fixed 2026-11-19:** all of them deleted. `dead-code.js` now lists only the known false positives (names used
+  through spreads or the test hook, ids used by labels, rank classes built as `r${n}`).
+
+### 9.2 [Low] Duplicated helpers
+- **Storage helpers:** `api/leaderboard.js` has its own `findCreds`, `redis` and `readBody`, copies of the ones in
+  `api/_redis.js`. It already imports `sessionId` from there. Fix (S): use the shared ones.
+  **✅ Fixed 2026-11-19:** `leaderboard.js` uses `findCreds`, `redis`, `readBody` (4 KB limit), `clientIp` and
+  `rateLimit` from `_redis.js`. `sec-api.js`'s leaderboard checks give the same results.
+- **The handicap:** `handicapOf` exists in `index.html` and in `api/_career.js`. That's needed (the browser and the
+  server both use it), and both carry a "keep alike" comment. The server's copy now also ignores malformed rounds.
+
+### 9.3 [Low] Stale text and comments
+- The player-facing "The test round plays 1 to 6 in order" (see 5.3). The comment above the test round says "holes
+  1-6".
+- `clubhouseGo`'s last line ("… coming in the next chunks of the campaign") can't be reached: every room is built.
+- **`CAMPAIGN_PLAN.md`:**
+  - "Later chunks" lists **11 · NPCs on the course** as not yet planned; it's built (the hustler plays his shots on
+    the course).
+  - The economy table gives iron sets as "$180–$1,500"; the catalogue is $0–$1,600, plus luxury sets to $250,000.
+- **Fix (S):** update the text; delete the unreachable line.
+- **✅ Fixed 2026-11-19:** all four. `CAMPAIGN_PLAN.md` also now records the marker (7.1) and the invitational changes
+  (7.2).

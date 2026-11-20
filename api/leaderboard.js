@@ -26,48 +26,14 @@ const RATE_MAX = 5, RATE_WINDOW_S = 60;
 const PARS = [5, 3, 4, 4, 3, 5, 4, 3, 4];
 const PAR = PARS.reduce((a, b) => a + b, 0);
 
-// Vercel may put a custom prefix on the names (e.g. GOLF_KV_REST_API_URL), so look for the pairs by their ending too.
-// A URL and token are only used together when they share the same prefix.
-const PAIRS = [['KV_REST_API_URL', 'KV_REST_API_TOKEN'], ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'], ['REDIS_REST_URL', 'REDIS_REST_TOKEN']];
-function findCreds(env = process.env) {
-  for (const [u, t] of PAIRS) if (env[u] && env[t]) return { url: env[u], token: env[t] };
-  for (const k of Object.keys(env).sort()) {
-    for (const [u, t] of PAIRS) {
-      if (!k.endsWith(`_${u}`) || !env[k]) continue;
-      const prefix = k.slice(0, -u.length);
-      if (env[prefix + t]) return { url: env[k], token: env[prefix + t] };
-    }
-  }
-  // last resort: only a connection string (rediss://default:<password>@<host>.upstash.io:6379). On Upstash the REST API
-  // is served from the same host and takes the database password as its token.
-  for (const k of Object.keys(env).sort()) {
-    if (!/(^|_)(REDIS_URL|KV_URL)$/.test(k)) continue;
-    try {
-      const u = new globalThis.URL(env[k]);
-      if (/^rediss?:$/.test(u.protocol) && u.hostname.endsWith('.upstash.io') && u.password) return { url: `https://${u.hostname}`, token: decodeURIComponent(u.password) };
-    } catch { /* not a URL */ }
-  }
-  return null;
-}
-let URL = '', TOKEN = '';
-
-async function redis(commands) {
-  const r = await fetch(`${URL}/pipeline`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(commands),
-  });
-  if (!r.ok) throw new Error(`Upstash ${r.status}`);
-  const out = await r.json();
-  for (const x of out) if (x && x.error) throw new Error(`Upstash: ${x.error}`);
-  return out.map((x) => x.result);
-}
+// The storage helpers (finding the credentials, the Redis pipeline, reading the body, the rate limit) are the shared
+// ones in _redis.js (audit 9.2: this file used to carry its own copies).
+const { findCreds, redis, readBody, clientIp, rateLimit, sessionId } = require('./_redis');
+const { isAdmin } = require('./_admins');
 
 const isInt = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
 // a signed-in player's round goes on the board under their profile name (taken from their session, never from the
 // request); a guest's under three arcade initials
-const { sessionId } = require('./_redis');
-const { isAdmin } = require('./_admins');
 const PROFILE_NAME = /^[A-Za-z0-9 _-]{3,12}$/;
 
 // Only well-formed fields go out, whatever is in the database.
@@ -80,27 +46,14 @@ function clean(member) {
   } catch { return null; }
 }
 
-function readBody(req) {
-  if (req.body && typeof req.body === 'object') return Promise.resolve(req.body);
-  if (typeof req.body === 'string') return Promise.resolve(JSON.parse(req.body || '{}'));
-  return new Promise((resolve, reject) => {
-    let s = '';
-    req.on('data', (c) => { s += c; if (s.length > 4096) reject(new Error('too large')); });
-    req.on('end', () => { try { resolve(JSON.parse(s || '{}')); } catch (e) { reject(e); } });
-    req.on('error', reject);
-  });
-}
-
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const send = (code, obj) => res.status(code).json(obj);
-  const creds = findCreds();
-  if (!creds) {
+  if (!findCreds()) {
     // names only (never values) of anything that looks like storage settings, to show what the server can see
     const seen = Object.keys(process.env).filter((k) => /KV|REDIS|UPSTASH/i.test(k)).sort();
     return send(503, { error: 'Leaderboard storage is not configured', storageVarsSeen: seen });
   }
-  URL = creds.url.replace(/\/+$/, ''); TOKEN = creds.token;
 
   try {
     if (req.method === 'GET') {
@@ -112,7 +65,7 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST') {
-      const b = await readBody(req);
+      const b = await readBody(req, 4096);
       // the admin takes an entry off the board: { action: 'remove', t, id } (its time and id, as the board lists them)
       if (b && b.action === 'remove') {
         let me = null;
@@ -143,10 +96,7 @@ module.exports = async (req, res) => {
       if (holes !== PARS.length || par !== PAR) return send(400, { error: 'Bad course' });
       if (scores.some((s, i) => s < Math.max(1, PARS[i] - 2)) || strokes < PAR - PARS.length) return send(400, { error: 'That score isn\'t possible' });
 
-      const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
-      const rlKey = `golf:rl:${ip}`;
-      const [, count] = await redis([['SET', rlKey, 0, 'EX', RATE_WINDOW_S, 'NX'], ['INCR', rlKey]]);
-      if (count > RATE_MAX) return send(429, { error: 'Too many saves — try again in a minute' });
+      if (!(await rateLimit(`golf:rl:${clientIp(req)}`, RATE_MAX, RATE_WINDOW_S))) return send(429, { error: 'Too many saves — try again in a minute' });
 
       const key = `golf:lb:${holes}h`, t = Date.now();
       const id = Math.random().toString(36).slice(2, 8);                 // two identical rounds in the same ms stay two

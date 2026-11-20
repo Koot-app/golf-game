@@ -33,14 +33,16 @@ this file.
 - NPC opponents are **simulated**, not drawn in 3D: their score on each hole is rolled from their skill and revealed
   when you hole out.
 - The **test round and its leaderboard stay as they are**: standard stats, the full bag, nothing from the career.
-- Losing a bet you can't cover: you pay everything you have, the **rest of the debt is wiped** by the beating, and one
-  random club (never the putter) is snapped.
+- Losing a bet you can't cover: you pay everything you have, take a beating, and one random club (never the putter)
+  is snapped. ~~The rest of the debt is wiped~~ (changed 2026-11-19, audit 7.1: that made betting on credit nearly
+  free): the rest goes on your **marker** (`career.debt`), which comes out of your cash when the next match or
+  invitational is settled and uses up your credit while you owe it (at least $25 of credit always stays).
 - **Quitting a match part-way is a forfeit** (you lose the stake), so reloading can't dodge a loss.
 - The economy numbers in the `CAREER` table below.
 
 **Open questions** (answers change a rule, not the structure):
 
-1. After the beating, is the debt wiped (my default), or do you still owe it?
+1. ~~After the beating, is the debt wiped (my default), or do you still owe it?~~ You still owe it (audit 7.1).
 2. The design PDF listed Charisma. Add it? My suggestion: it improves the terms NPCs offer (bigger stakes, more presses)
    and gives a small shop discount.
 3. Clubhouse menu first, overworld later: OK?
@@ -103,7 +105,7 @@ match = {
 |---|---|
 | Start | $150 cash, rep 0, all stats 2, tier 1 |
 | Starter bag | 7 used clubs + a used blade putter, all from around 2015–16 (chunk 2) |
-| Club prices | by model, in the club catalogue (iron sets $180–$1,500; one iron to replace a snapped one = set ÷ 7 × 1.25) |
+| Club prices | by model, in the club catalogue (iron sets up to $1,600, plus luxury sets up to $250,000; one iron to replace a snapped one = set ÷ 7 × 1.25) |
 | Drivers, wedges, putters | by model, in the club catalogue |
 | Lesson (+1 to a stat) | $60 × current level² (2→3: $240, 5→6: $1,500) |
 | Shot unlocks | draw $250 · fade $250 · stinger (Low 2) $300 · high (High 2) $300 · spin control $350 · flop $400 |
@@ -548,7 +550,8 @@ the gear.
 - **9 · Overworld hub:** a small walkable clubhouse area (the third-person golfer walks between doors: shop, coach,
   first tee, practice range). Replaces the menu buttons with places.
 - **10 · New course layouts** for tiers 2 and 3 instead of mirrored holes.
-- **11 · NPCs on the course:** a second golfer model that "plays" its scored shots (animated, no physics needed).
+- ~~**11 · NPCs on the course:** a second golfer model that "plays" its scored shots (animated, no physics needed).~~
+  Built: the hustler plays his shots on the course during a match.
 - **12 · Story beats:** sandbaggers who lie about their skill, rivals, a season finale.
 
 ---
@@ -619,8 +622,12 @@ puts the event's trophy on the trophy room's earned shelf (`career.titles`).
 |---|---|---|---|---|
 | The Rolling Pines Muni Open | rep 20 | $250 | $1,500 / $700 / $400 | 0 |
 | The Palm Crest Pro-Am | Resorts, rep 80 | $1,500 | $9,000 / $4,000 / $2,000 | −0.05 |
-| The Hawthorne Members' Invitational | Country clubs, rep 150 | $7,500 | $50,000 / $20,000 / $10,000 | −0.1 |
+| The Hawthorne Members' Invitational | Country clubs, rep 150 | $7,500 | $30,000 / $12,000 / $6,000 (was $50,000 / $20,000 / $10,000: audit 7.2) | −0.1 |
 | The Hustlers' Classic | Country clubs, rep 250 | $25,000 | $150,000 / $60,000 / $30,000 | −0.2 |
+
+Each event is held once every `TOUR_GAP` (5) hustler matches: after you play in one (or withdraw), the board says "Next
+one in N matches" until you've played five matches to the end (forfeits don't count). Audit 7.2: it could be re-entered
+straight away, and an entry paid many times what the best match does.
 
 The field's scores: `fieldHoleScore()` = the hustler's own per-hole formula (seeded by the entry, so a reload can't
 change it) plus the event's form (strokes per hole; negative = sharper). `tourStandings()` (cached): totals, ties by

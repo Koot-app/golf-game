@@ -46,6 +46,7 @@
       if (m.settled && settledAt < 0) { settledAt = i; cashAtSettle = g.career.cash; }
       if (!m.settled && $('scPressBox').classList.contains('on') && !$('scPressBox').classList.contains('his') && Math.random() < 0.7) { $('scPress').click(); await sleep(30); }
       if (i < 8) { g.scorecardNext(); await sleep(90); }
+      if (i < 8 && $('outcome').classList.contains('on') && $('ocCard_on')) { $('ocCard_on').click(); await sleep(90); }   // decided early: N opens the payoff screen first (5.1), then "Play on"
     }
     if (m.holes.filter(Boolean).length < 9) { bad.push(`#${n} ${format}: only holes ${m.holes.map((h, k) => (h ? k + 1 : '-')).join('')} recorded (on hole ${g.hp.holeIdx + 1}, round ${g.round.on ? 'on' : 'off'}, same match ${g.round.match === m}, presses ${JSON.stringify(m.presses)})`); await leave(); continue; }
     const want = refNet(m), got = cashAtSettle - cash0;
@@ -66,11 +67,11 @@
   for (let i = 0; i < 9 && !m.settled; i++) { g.npc.done = true; g.hp.strokes = g.HOLES[i].par + 5; g.hp.putts = 2; g.finishHole(); await sleep(30); if (!m.settled) { g.scorecardNext(); await sleep(90); } }
   await sleep(1800);
   const shark = `loan shark: owed 20 with $5 -> net ${m.net}, unpaid ${m.unpaid}, cash ${g.career.cash}, clubs snapped ${g.career.snapped.length - snapped0}, beating on screen ${$('beating').classList.contains('on')}`;
-  // already below zero (a bad sync could do it): losing wipes the old debt too, and cash ends at 0, not below
+  // already below zero (a bad sync could do it): the old debt goes on the marker with the new one (7.1), cash ends at 0
   $('btGo').click(); await sleep(400); await leave();
   const m2 = await tee('match', 20); g.career.cash = -450;
   for (let i = 0; i < 9 && !m2.settled; i++) { g.npc.done = true; g.hp.strokes = g.HOLES[i].par + 5; g.hp.putts = 2; g.finishHole(); await sleep(30); if (!m2.settled) { g.scorecardNext(); await sleep(90); } }
   await sleep(300);
-  const neg = `already −$450, lose $20 -> unpaid ${m2.unpaid} (want 470), cash ${g.career.cash} (want 0)`;
+  const neg = `already −$450, lose $20 -> unpaid ${m2.unpaid} (want 470), cash ${g.career.cash} (want 0), marker ${g.career.debt} (want ${15 + 470}: $15 from the loan-shark case, then 470)`;
   return `matches ${JSON.stringify(seen)}\nmismatches: ${bad.length}\n${bad.join('\n')}\n${shark}\n${neg}`;
 })()

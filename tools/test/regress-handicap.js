@@ -24,8 +24,11 @@
       g.hp.strokes = g.HOLES[i].par + overs[i]; g.hp.putts = 2; g.finishHole();
       last = document.getElementById('scMsg').textContent;
       if (i < 8) g.scorecardNext();
+      const on = document.getElementById('ocCard_on');                 // decided early: N opens the payoff screen first (5.1), then play on
+      if (i < 8 && on && document.getElementById('outcome').classList.contains('on')) on.click();
     }
     document.getElementById('scClose').click(); await sleep(100);
+    if (document.getElementById('outcome').classList.contains('on')) { document.getElementById('ocCard_home').click(); await sleep(100); }   // (audit 5.1: Close opens the payoff screen first)
     return last.split('\n').filter((l) => /handicap|Round recorded/.test(l)).join(' ');
   }
   log.push('round 1 (+12): ' + await round([2, 1, 1, 2, 1, 2, 1, 1, 1]) + ' | kpi ' + kpi());
