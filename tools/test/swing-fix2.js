@@ -28,7 +28,7 @@
     for (const dex of [2, 5]) { S.dex = dex; const v = g.solveShape(7, -1), a = spread(7, SU, dex), d = spread(7, { ...SU, face: v.face, stance: v.stance }, dex); cells.push(`Dex ${dex}: straight ${f(a.cx, 2)} · ±${f(a.w, 1)} · ${f(a.hit * 100, 0)}%  draw ${f(d.cx, 2)} · ±${f(d.w, 1)} · ${f(d.hit * 100, 0)}%`); }
     S.dex = 5;
     const p5 = fly(g.computeImpact({ bs: 1, ds: 1, thetaMouse: 5, sigma: 0, lateSign: 1, vImpact: 1, vPeak: 1, miss: 0 }, SU, C[7], { lie: 'fairway', slope: 'flat', power: 5, dex: 5, composure: 5, badStreak: 0, teed: false, stock: true }, () => 0.5));
-    out.push(`   ${M[id].name.padEnd(18)} pathWork ${f(C[7].pathWork ?? C[7].work, 2)}, shapeCx ${f(C[7].shapeCx || 1, 2)} · ${cells.join(' · ')} · 5° path ${f(p5.p.x / YD, 1)} yds`);
+    out.push(`   ${M[id].name.padEnd(18)} work ${f(C[7].work, 2)}, shapeCx ${f(C[7].shapeCx || 1, 2)} · ${cells.join(' · ')} · 5° path ${f(p5.p.x / YD, 1)} yds`);
   }
   apply(7, null);
   // ---- S5.3: the shop's numbers

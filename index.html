@@ -7096,22 +7096,22 @@
       // on a fairway lie. The irons are one forged-blade set (workable, small sweet spot); the last club is the
       // game-improvement 7-iron, kept for comparing the two equipment archetypes.
       const CLUBS = [
-        { name: 'Driver', head: 'wood', headScale: 1.00, tee: true, speed: 112, loft: 10.5, dynLoft: 12.8, aoa: -1.0, spin: 2600, work: 0.85, sweet: 10, floor: 0.70, gear: 0.8, bulge: -0.7, stand: 0.95 },
-        { name: '3 Wood', head: 'wood', headScale: 0.80, speed: 103, loft: 15.0, dynLoft: 12.0, aoa: -2.9, spin: 3650, work: 0.85, sweet: 9, floor: 0.65, gear: 0.8, bulge: -0.6, stand: 0.90, curve: 0.75 },
-        { name: '2 Hybrid', head: 'wood', headScale: 0.64, speed: 100, loft: 17.0, dynLoft: 13.5, aoa: -3.5, spin: 4300, work: 0.70, sweet: 10, floor: 0.75, gear: 0.7, bulge: -0.3, stand: 0.85, rescue: 5 },
-        { name: '3 Hybrid', head: 'wood', headScale: 0.60, speed: 98, loft: 19.5, dynLoft: 14.5, aoa: -3.5, spin: 4600, work: 0.70, sweet: 10, floor: 0.75, gear: 0.7, bulge: -0.3, stand: 0.84, rescue: 5 },
-        { name: '4 Iron', head: 'iron', speed: 95, loft: 22.0, dynLoft: 13.5, aoa: -3.4, spin: 4850, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.80, curve: 0.62 },
-        { name: '5 Iron', head: 'iron', speed: 93, loft: 25.0, dynLoft: 14.9, aoa: -3.7, spin: 5350, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.78, curve: 0.68 },
-        { name: '6 Iron', head: 'iron', speed: 92, loft: 29.0, dynLoft: 17.3, aoa: -4.1, spin: 6230, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.76, curve: 0.84 },
-        { name: '7 Iron', head: 'iron', speed: 90, loft: 34.0, dynLoft: 20.0, aoa: -4.3, spin: 7000, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.74 },
-        { name: '8 Iron', head: 'iron', speed: 87, loft: 38.0, dynLoft: 22.1, aoa: -4.5, spin: 8000, work: 1.00, sweet: 6, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.72, curve: 1.25 },
-        { name: '9 Iron', head: 'iron', speed: 84, loft: 42.0, dynLoft: 24.8, aoa: -4.7, spin: 8650, work: 1.00, sweet: 6, floor: 0.55, gear: 1.1, bulge: 0, stand: 0.70, curve: 1.5 },
-        { name: 'Pitching Wedge', head: 'iron', speed: 80, loft: 46.0, dynLoft: 29.5, aoa: -5.0, spin: 9200, work: 0.90, sweet: 7, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.68, curve: 1.8 },
+        { name: 'Driver', head: 'wood', headScale: 1.00, tee: true, speed: 113, loft: 10.5, dynLoft: 12.8, aoa: -1.0, spin: 2600, work: 0.85, sweet: 10, floor: 0.70, gear: 0.8, bulge: -0.7, stand: 0.95 },
+        { name: '3 Wood', head: 'wood', headScale: 0.80, speed: 105, loft: 15.0, dynLoft: 12.0, aoa: -2.9, spin: 3650, work: 0.85, sweet: 9, floor: 0.65, gear: 0.8, bulge: -0.6, stand: 0.90, curve: 0.75 },
+        { name: '2 Hybrid', head: 'wood', headScale: 0.64, speed: 101.5, loft: 17.0, dynLoft: 13.5, aoa: -3.5, spin: 4300, work: 0.70, sweet: 10, floor: 0.75, gear: 0.7, bulge: -0.3, stand: 0.85, rescue: 5 },
+        { name: '3 Hybrid', head: 'wood', headScale: 0.60, speed: 99.2, loft: 19.5, dynLoft: 14.5, aoa: -3.5, spin: 4600, work: 0.70, sweet: 10, floor: 0.75, gear: 0.7, bulge: -0.3, stand: 0.84, rescue: 5 },
+        { name: '4 Iron', head: 'iron', speed: 96.2, loft: 22.0, dynLoft: 13.5, aoa: -3.4, spin: 4850, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.80, curve: 0.62 },
+        { name: '5 Iron', head: 'iron', speed: 93.5, loft: 25.0, dynLoft: 14.9, aoa: -3.7, spin: 5350, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.78, curve: 0.68 },
+        { name: '6 Iron', head: 'iron', speed: 92.5, loft: 29.0, dynLoft: 17.3, aoa: -4.1, spin: 6230, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.76, curve: 0.84 },
+        { name: '7 Iron', head: 'iron', speed: 90.5, loft: 34.0, dynLoft: 20.0, aoa: -4.3, spin: 7000, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.74 },
+        { name: '8 Iron', head: 'iron', speed: 88, loft: 38.0, dynLoft: 22.1, aoa: -4.5, spin: 8000, work: 1.00, sweet: 6, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.72, curve: 1.25 },
+        { name: '9 Iron', head: 'iron', speed: 85, loft: 42.0, dynLoft: 24.8, aoa: -4.7, spin: 8650, work: 1.00, sweet: 6, floor: 0.55, gear: 1.1, bulge: 0, stand: 0.70, curve: 1.5 },
+        { name: 'Pitching Wedge', head: 'iron', speed: 82, loft: 46.0, dynLoft: 29.5, aoa: -5.0, spin: 9200, work: 0.90, sweet: 7, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.68, curve: 1.8 },
         // CHIPPING: the short-game wedges. bounce (deg) = a wide sole that skims through sand and thick grass instead of digging.
-        { name: 'Gap Wedge', head: 'iron', speed: 76.5, loft: 50.0, dynLoft: 33.0, aoa: -5.2, spin: 9600, work: 0.90, sweet: 7, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.67, curve: 1.8 },
-        { name: 'Sand Wedge', head: 'iron', speed: 73, loft: 55.0, dynLoft: 37.5, aoa: -5.5, spin: 10100, work: 0.85, sweet: 7, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.66, curve: 1.8, bounce: 12 },
-        { name: 'Lob Wedge', head: 'iron', speed: 65, loft: 60.0, dynLoft: 42.5, aoa: -5.5, spin: 10500, work: 0.85, sweet: 6, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.65, curve: 1.8 },
-        { name: '7 Iron · Game Improvement', head: 'iron', speed: 91, loft: 30.0, dynLoft: 21.3, aoa: -4.0, spin: 6200, work: 0.45, sweet: 12, floor: 0.85, gear: 0.5, bulge: 0, stand: 0.74 },
+        { name: 'Gap Wedge', head: 'iron', speed: 78.3, loft: 50.0, dynLoft: 33.0, aoa: -5.2, spin: 9600, work: 0.90, sweet: 7, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.67, curve: 1.8 },
+        { name: 'Sand Wedge', head: 'iron', speed: 75.2, loft: 55.0, dynLoft: 37.5, aoa: -5.5, spin: 10100, work: 0.85, sweet: 7, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.66, curve: 1.8, bounce: 12 },
+        { name: 'Lob Wedge', head: 'iron', speed: 67, loft: 60.0, dynLoft: 42.5, aoa: -5.5, spin: 10500, work: 0.85, sweet: 6, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.65, curve: 1.8 },
+        { name: '7 Iron · Game Improvement', head: 'iron', speed: 91.5, loft: 30.0, dynLoft: 21.3, aoa: -4.0, spin: 6200, work: 0.45, sweet: 12, floor: 0.85, gear: 0.5, bulge: 0, stand: 0.74 },
       ];
       // keyboard key for each club, in bag order. The bag has more clubs than keys: the rest are on [ ] / the wheel / a click.
       const CLUB_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
@@ -7296,11 +7296,10 @@
         // draw bias) or open (-, fade bias), groove = worn grooves (× spin, again from rough or sand, and more fliers),
         // flopX = × the flop's difficulty (wide-soled wedges don't like being laid open).
         const consist = club.consist || 1;
-        // pathWork (career models, swing audit S5.1): a model's own `work` acts once, on the curve (step 8), and the mouse
-        // path keeps its base club's factor. Applied to both, a forgiving head shrank a 5° stroke's miss to a twentieth of a
-        // blade's. (The base clubs, which the range and the test round play, still have no pathWork: unchanged.)
-        const pathWork = club.pathWork ?? club.work;
-        const path = stanceDir + thM * pathWork +(!env.stock ? (club.lieBias || 0) + TUNE.basePathDeg * dexSpread * consist * bell() : 0);
+        // Swing audit S2.4: a club's `work` acts once, on the curve (step 8). The mouse path is the path: a 5° stroke is a 5°
+        // path with every club. (It used to be multiplied by `work` here too, so a forgiving head shrank a 5° stroke's miss to
+        // a twentieth of a blade's; S5.1 had already fixed that for career models with a pathWork field, now gone.)
+        const path = stanceDir + thM + (!env.stock ? (club.lieBias || 0) + TUNE.basePathDeg * dexSpread * consist * bell() : 0);
 
         // 2. Loft the player is asking for.  AUDIT 6: the club's spin floor also limits how far it can be de-lofted.
         //    setup.traj is the HEIGHT level chosen at address: -2 / -1 = lower (de-lofted: less backspin, more run),
@@ -7356,7 +7355,7 @@
         const range = shapeRange(env.dex);
         const shapeBoost = (ftpDeg) => 1 + (range - 1) * clamp((Math.abs(ftpDeg) - TUNE.shapeRampLo) / (TUNE.shapeRampHi - TUNE.shapeRampLo), 0, 1);
         const ftpAsked = faceDir - path;
-        const ftpIntent = faceDir - (stanceDir + thM * pathWork);      // the same without the random path scatter
+        const ftpIntent = faceDir - (stanceDir + thM);                 // the same without the random path scatter
         const askedCurve = Math.abs(ftpAsked * club.work * axisGainFor(club.dynLoft + loftDelta) * shapeBoost(ftpAsked));   // deg of axis tilt set up
         const bounceK = club.bounce && (env.lie === 'bunker' || env.lie === 'heavy') ? clamp(club.bounce / CHIP.bounceDiv, 0, 0.5) : 0;
         const cx = {
@@ -7477,9 +7476,14 @@
         };
       }
 
-      // ---- Ball flight.  Drag/lift fit to PGA & LPGA launch-monitor averages (driver / 7i / PW within ~2% carry).
+      // ---- Ball flight.  Drag/lift fit to the PGA & LPGA launch-monitor table (swing audit S3.1, tools/test/swing-aero-fit2.js):
+      //      carry, apex, landing angle and a 10 mph crosswind together, the drivers weighted triple. S = spin speed / air
+      //      speed. lift = lA·(1 − exp(−(S/lS0)^lQ)) + lB·S: it bends over gradually (the old straight line up to a ceiling
+      //      let a 3 iron climb 44% too high); drag = d0 + d1·S + d2·max(0, 1 − speed/vRef)^e2. Over the 15 rows: carry 3.0%
+      //      typical (5.0% worst), apex 4.2% (8.5%), landing 1.9° (4.1°); 10 mph across moves the tour driver 15.6 yds and
+      //      7 iron 14.0. Was 3.4% (6.3%), 21% (44%), 2.5° (3.8°), 16.6 and 13.2.
       const BALL_M = 0.04593, BALL_R = 0.021335, BALL_A = Math.PI * BALL_R * BALL_R, RHO = 1.225, GRAV = 9.81;
-      const AERO = { d0: 0.19, d1: 0.149, d2: 0.169, vRef: 65, l1: 1.5, l2: 0.31, clMax: 0.305, spinTau: 25 };
+      const AERO = { lA: 0.357, lS0: 0.201, lQ: 0.838, lB: 0, d0: 0.186, d1: 0.124, d2: 0.75, vRef: 70, e2: 2.97, spinTau: 22.5 };
 
       // AUDIT 14: fromDeg is the bearing the wind blows FROM. 0 = from the target (headwind), 90 = from the right.
       function windVector(mph, fromDeg) {
@@ -7571,8 +7575,8 @@
         const s = Math.hypot(rx, ry, rz);
         if (s > 1e-4) {
           const S = Math.min(1.2, f.rpm * RPM2RAD * BALL_R / s);
-          const cd = Math.min(0.55, AERO.d0 + AERO.d1 * S + AERO.d2 * Math.max(0, 1 - s / AERO.vRef));
-          const cl = Math.min(AERO.clMax, AERO.l1 * S + AERO.l2 * S * S) * f.sideLift;
+          const cd = Math.min(0.55, AERO.d0 + AERO.d1 * S + AERO.d2 * Math.max(0, 1 - s / AERO.vRef) ** AERO.e2);
+          const cl = (AERO.lA * (1 - Math.exp(-Math.pow(S / AERO.lS0, AERO.lQ))) + AERO.lB * S) * f.sideLift;
           const k = 0.5 * RHO * BALL_A * s / BALL_M, w = f.w;
           v.x += (-k * cd * rx + k * cl * (w.y * rz - w.z * ry)) * dt;
           v.y += (-GRAV - k * cd * ry + k * cl * (w.z * rx - w.x * rz)) * dt;
@@ -12364,7 +12368,7 @@
         for (const [f, v] of Object.entries(m.add || {})) out[f] = b[f] + v * k;
         for (const [f, v] of Object.entries(m.x || {})) out[f] = b[f] * v;
         for (const [f, v] of Object.entries(m.set || {})) if (f !== 'bounce' || b.bounce) out[f] = v;
-        if (out.work !== undefined && out.work !== b.work) { out.pathWork = b.work; out.shapeCx = b.work / out.work; }     // (swing audit S5.1: see computeImpact)
+        if (out.work !== undefined && out.work !== b.work) out.shapeCx = b.work / out.work;     // (swing audit S5.1: see computeImpact)
         if (m.bias && career) out.lieBias = Math.round((rng32((career.seed ^ (i * 2654435761)) >>> 0)() * 2 - 1) * m.bias * 10) / 10;   // bent lie: fixed for the career
         return out;
       }

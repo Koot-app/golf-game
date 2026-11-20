@@ -404,6 +404,21 @@ table says "with scatter", it used 4,000 seeded shots and the swing the game its
   nothing. **What else it would move:** nothing else.
 
 ### S2.4 [Medium, feel / balance] A club's `work` is applied twice to a mouse path
+- **✅ Fixed 2026-11-20:** the mouse path is now the club path for every club, and `work` acts once, on the curve. This
+  replaces S5.1's `pathWork` field, which covered career models only. A 5° in-to-out stroke with a square face, before →
+  after (also under S3.1's new flight):
+
+  | Club | Finishes left, before → after |
+  |---|---|
+  | Comparison GI 7 iron (work 0.45) | 1.2 → **5.2** yds |
+  | Base 7 iron (work 1.0) | 16.6 → 14.7 |
+  | Staff Model Blade 7 iron (work 1.15) | 23.7 → 17.1 |
+  | Base driver (work 0.85) | 56 → 68 |
+  | Base 3 hybrid (work 0.70) | 22 → 28 |
+  | Base sand wedge (work 0.85) | 1.5 → 2.6 |
+
+  With the minimap's assumed swing, the base bag's spread hardly moves (`swing-fix4.js`). At Dexterity 2: driver ±71
+  (was ±75), 3 hybrid ±28 (±32), 7 iron ±16 (±17), PW ±10 (±9), sand wedge ±5.7 (±5.4).
 - **Where:** `computeImpact` step 1: `path = stance + thetaMouse × club.work`; step 8: `axis = faceToPath × club.work ×
   …`. A shape made with the stance gets `work` once; one made with the mouse gets it twice.
 - **Measured:** the same 7 iron with three `work` values:
@@ -568,6 +583,44 @@ try other lift curves; it reproduces the game's carries exactly.
 | S3.6 | Low | Realism | Short irons land a few degrees shallow | — |
 
 ### S3.1 [Medium, realism] Fairway woods, hybrids and long irons fly 13–44% too high and 3–6% too far
+- **✅ Fixed 2026-11-20:** new lift and drag in `AERO` / `airStep`, fitted by `tools/test/swing-aero-fit2.js`. It fits
+  carry, apex, landing angle and a 10 mph crosswind together, with the drivers weighted triple. The lift now bends over
+  gradually: `0.357·(1 − exp(−(S/0.201)^0.838))`. The drag is `0.186 + 0.124·S + 0.75·max(0, 1 − speed/70)^2.97`, and
+  the spin decays over 22.5 s. Over the tour table's 15 rows, before → after:
+
+  | Measure | Before | After |
+  |---|---|---|
+  | Carry error, typical (worst) | 3.4% (6.3%) | 3.0% (5.0%) |
+  | Apex error, typical (worst) | **21% (44%)** | **4.2% (8.5%)** |
+  | Landing angle error, typical (worst) | 2.5° (3.8°) | 1.9° (4.1°) |
+  | 10 mph crosswind, tour driver / 7 iron | 16.6 / 13.2 yds | 15.6 / 14.0 yds |
+
+  **The base bag's speeds were re-tuned** to keep their carries: driver 113 (was 112), 3 wood 105 (103), 2 / 3 hybrid
+  101.5 / 99.2 (100 / 98), 4–9 irons +0.5 to +1.2 mph, PW 82 (80), GW 78.3 (76.5), SW 75.2 (73), LW 67 (65), the
+  comparison club 91.5 (91). Most are now at or near the tour's club speeds (S4.3). The bag after, stock (carry /
+  total · apex · landing angle):
+  - **Woods and hybrids:** driver 266 / 283 · 31 · 41°; 3 wood 243 / 257 · 30 · 42°; 2 hybrid 233 / 244 · 33 · 46°;
+    3 hybrid 224 / 234 · 33 · 47°.
+  - **Irons:** 4 iron 212 / 222 · 29 · 44°; 5 iron 200 / 209 · 29 · 45°; 6 iron 191 / 198 · 33 · 49°; 7 iron
+    176 / 181 · 33 · 51°; 8 iron 161 / 165 · 32 · 51°; 9 iron 145 / 148 · 30 · 51°.
+  - **Wedges:** PW 129 / 131 · 30 · 52°; GW 113 / 115 · 28 · 52°; SW 97 / 98 · 25 · 53°; LW 77 / 78 · 22 · 53°.
+
+  Every carry is within a yard of before, and the hybrids now peak at 33 yds instead of 41–42. The driver rolls about
+  3 yds less (its landing is a degree steeper). The long irons still land 2–4° shallower than the tour's.
+  **What it moved** (re-checked with `swing-fix1` to `swing-fix4.js` and the physics fuzz, which passes):
+  - **S5.2's flatter landings now mostly arrive:** the strong-lofted sets land 1.7–4.0° flatter than the blade (JPX
+    47.0° against 51.0°, 101 MKII −2.9°, Qi Max −1.7°), and the forgiving sets still roll more.
+  - **S6.1's balance improves:** a 7 iron's Low 2 is 1.8× as wide as stock and its High 2 1.4×; the driver's High 2
+    ±86 (was ±99).
+  - **The draw / fade solver:** 0 of 140 fail.
+  - **S7.2:** the driver's Low 2 now ties Mid into a 15 mph wind (249 / 250) and beats it into 25 mph (231 / 224). The
+    3 wood stinger is +4 and +13 yds.
+  - **S8.1:** a 40 yd PW pitch rolls 12.6 yds (was 14.8). Full shots onto a green roll driver 21, 3 wood 17, 5 iron 11,
+    7 iron 5.3 and PW 1.7 at Stimp 11, close to the old rule's numbers.
+  - **Chips:** they keep their shape (25% swing: 7 iron 2.6, PW 1.7, sand wedge 1.1). The S8.1 smoothness check is no
+    worse than before.
+  - **Wind:** 10 mph headwind costs the driver 15 yds and the 7 iron 15 (tailwind +10 / +9).
+  - **Tours and hustlers:** `npcClubFor` is only the hustler's club name, so it isn't affected.
 - **Where:** `AERO` and `airStep` (about lines 7452 and 7527). Lift is `min(0.305, 1.5 × S + 0.31 × S²)`, where S is the
   ball's spin speed over its air speed.
 - **Measured:** the tour table's own launch numbers, flown by the game (game / tour):
@@ -1045,6 +1098,8 @@ the ZXi7 and the 620 CB. The full rows, with spin and landing angle, are the scr
   lift is at its ceiling (S3.1), so less spin barely lowers the flight. Taking 2.5° off the launch flattens the
   landing by only about 1°. It will follow from S3.1's refit. The luxury rule still holds: Beres 5-Star +13 yds and
   85% within 10 yds, against the JPX's +14 and the Qi Max's 89%.
+- **Update with S3.1's refit (2026-11-20):** the target is now nearly reached. The strong-lofted sets land 1.7–4.0°
+  flatter than the blade (JPX 47.0° against 51.0°).
 - **Where:** the iron models' `add.dynLoft` (+1.8 on every set from the AP1 to the Ai200, about lines 12250–12255) and
   their spin factors (0.92–0.97). The plan's table had +0.7 to +1.4 and 0.82–0.90.
 - **Measured** (7 iron against the Wilson blade):
