@@ -199,6 +199,20 @@ this section).
   model.
 
 ### S1.5 [Medium, feel / balance] Any backswing past 110% reads exactly 110%
+- **✅ Fixed 2026-11-20:** the speed still stops at 110%, but the risk keeps rising past it, up to a 140% backswing
+  (`TUNE.overBMax`). The part beyond 110% is a new factor, `cx.pastTop` (0.25 for each 10% over). It counts outside
+  Dexterity's discount, like a missed contact, because overshooting the top is a mistake, not an ask. The read-out
+  lists it as "Past the top". Complexity of a 7 iron (`tools/test/swing-fix10.js`):
+
+  | Backswing | Read | Club speed | Dex 2 | Dex 5 | Dex 10 |
+  |---|---|---|---|---|---|
+  | 110% | 110% | ×1.027 | 0.47 | 0.26 | 0.04 |
+  | 120% | 110% | ×1.027 | 0.76 | 0.59 | **0.30** (was 0.04) |
+  | 130% | 110% | ×1.027 | 1.21 | 0.94 | 0.56 |
+  | 140% and more | 110% | ×1.027 | 1.51 | 1.26 | **0.82** (was 0.07–0.15) |
+
+  Stopping near the top is a skill again at every Dexterity. Up to 110% nothing changed: S6.3's table moves by at
+  most 0.03 of complexity.
 - **Where:** `analyzeSwing`: `bs = min(1.10, bsRaw)`; `powerFromBackswing`.
 - **Measured:** the hand's backswing → what the game reads: 100% → 100.0%, 105% → 105.0%, 110% → 110.0%, 120% →
   **110.0%**, 150% → **110.0%**. And the distance table (9a below): just under 100% is steep (driver 90% → 220 yds,
@@ -213,6 +227,11 @@ this section).
   less forgiven by Dexterity than the other asks. **What else it would move:** dispersion at the top end (S6).
 
 ### S1.6 [Medium, feel] A 2 mm nudge of the mouse fires a real stroke
+- **✅ Fixed 2026-11-20:** a full swing needs a 20% backswing to fire (`TUNE.minBackswingFull`). Anything shorter that
+  comes back to the ball is a cancelled waggle, back to "ready". Chips keep the 8% limit, and putts their own. Measured
+  (800 counts = 100%):
+  - **A full swing:** 70, 100 and 150 counts (8.8–18.8%) no longer fire; 165 counts (20.6%) and up fire.
+  - **A chip:** 70 counts (8.8%) and up still fire.
 - **Where:** `swingSample`: a backswing of `minBackswing` (8% = 64 counts at the default) that comes back to the ball
   is a shot.
 - **Measured:**

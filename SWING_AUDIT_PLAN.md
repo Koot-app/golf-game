@@ -404,7 +404,7 @@ Check:
 
 | # | Section | Done | Findings | Fixed |
 |---|---|---|---|---|
-| S1 | The mouse swing | ✅ 2026-11-20 | 12 (2 high, 6 medium, 4 low) | S1.1–S1.4 (2026-11-20) |
+| S1 | The mouse swing | ✅ 2026-11-20 | 12 (2 high, 6 medium, 4 low) | S1.1–S1.6 (2026-11-20) |
 | S2 | Impact | ✅ 2026-11-20 | 11 (4 medium, 7 low) | S2.1, S2.4 (2026-11-20) |
 | S3 | Ball flight, wind, bounce and roll | ✅ 2026-11-20 | 6 (3 medium, 3 low) | S3.1 (2026-11-20); S3.2 mostly (S8.1) |
 | S4 | The base bag | ✅ 2026-11-20 | 5 (2 medium, 3 low) | S4.1, S4.2, S4.5 (2026-11-20); S4.3 by S3.1's speeds |

@@ -7002,7 +7002,9 @@
       // Every feel-related constant lives here so tuning passes don't require hunting through the code.
       const TUNE = {
         specPx: 250,            // the spec's reference swing length; wobble is normalised to it
-        minBackswing: 0.08,     // backswing shorter than this never arms a downswing
+        minBackswing: 0.08,     // backswing shorter than this never arms a downswing (chips; a putt has its own)
+        minBackswingFull: 0.20, // ...and for a full swing (swing audit S1.6: a 2 mm nudge fired a 4-yard drive)
+        overBMax: 1.4,          // the over-swing risk keeps rising until a 140% backswing (swing audit S1.5)
         backswingTimeMs: 1000,  // from the takeaway, this long to set the backswing; after that its length is locked in
         topHysteresis: 0.03,    // fraction of swing length the mouse must return before "transition" is declared
         speedWindowMs: 24,      // AUDIT 10: speeds are averaged over this window, not read from one event
@@ -7274,7 +7276,7 @@
         }
         const sigmaRaw = Math.sqrt(ss / N);
         return {
-          bs, ds, dsImpact, dsWhole, vImpact, vPeak,
+          bs, bsRaw, ds, dsImpact, dsWhole, vImpact, vPeak,
           // AUDIT 15: the path reads the way it LOOKS in the face-on view. Up the screen is toward the golfer (inside),
           // down is toward the camera (outside). So swinging down-and-right through the ball travels from inside to
           // outside = in-to-out = positive = draw; up-and-right is out-to-in = fade. (The spec had these reversed.)
@@ -7353,7 +7355,9 @@
         const axisGainFor = (dyn) => (club.curve || 1) * lowSpinMult * clamp(TUNE.axisK / Math.sin(Math.max(8, dyn - club.aoa) * D2R), TUNE.axisGainMin, TUNE.axisGainMax);
 
         // 3. Tempo.  Going past 100% is never a cliff: the cost ramps in smoothly (0 at 100% -> 1 at the cap).
-        const overB = clamp((sw.bs - 1) / 0.10, 0, 1), overT = clamp((sw.ds - 1) / 0.15, 0, 1);
+        // Swing audit S1.5: the backswing's speed stops at 110%, but its risk keeps rising past it (to TUNE.overBMax), so
+        // yanking it back "past the stop" is no longer a free, perfectly repeatable maximum
+        const overB = clamp((Math.min(sw.bsRaw ?? sw.bs, TUNE.overBMax) - 1) / 0.10, 0, (TUNE.overBMax - 1) / 0.10), overT = clamp((sw.ds - 1) / 0.15, 0, 1);
         const overswing = sw.bs > 1.005 || sw.ds > 1.05;
         const partial = sw.bs < 0.8;
         const decelThr = TUNE.decelRatio - (partial ? 0.15 * dexF : 0);     // dexterity forgives touch shots
@@ -7374,7 +7378,7 @@
         const askedCurve = Math.abs(ftpAsked * club.work * axisGainFor(club.dynLoft + loftDelta) * shapeBoost(ftpAsked));   // deg of axis tilt set up
         const bounceK = club.bounce && (env.lie === 'bunker' || env.lie === 'heavy') ? clamp(club.bounce / CHIP.bounceDiv, 0, 0.5) : 0;
         const cx = {
-          power: (1 + TUNE.cxBack * overB) * (1 + TUNE.cxTempo * overT) - 1,
+          power: (1 + TUNE.cxBack * Math.min(1, overB)) * (1 + TUNE.cxTempo * overT) - 1,     // (past 110%: cx.pastTop below)
           // the "safe" amount of curve grows with the range, so a dexterous player shapes more for the same risk
           // shapeCx (career models, swing audit S5.1): bending a forgiving, low-workability head is a harder ask, a blade's
           // an easier one (the base club's work ÷ the model's: a game-improvement set about 2×, the Wilson blade 0.87×)
@@ -7406,7 +7410,10 @@
         const fit = clubFit(club, env.lie, env.teed);
         cx.club = TUNE.cxClub * fit.s;
         cx.tilt = tilt;
-        const complexity = (1 + asked * dexRisk) * (1 + cx.contact) * (1 + cx.club) * (1 + cx.tilt) - 1;
+        // past the 110% top (swing audit S1.5) the extra backswing buys nothing: it's a mistake, not an ask, so Dexterity
+        // doesn't excuse it (like a missed contact)
+        cx.pastTop = TUNE.cxBack * Math.max(0, overB - 1);
+        const complexity = (1 + asked * dexRisk) * (1 + cx.contact) * (1 + cx.club) * (1 + cx.tilt) * (1 + cx.pastTop) - 1;
         // which side of the face: the side the stroke passed the ball on, else the late drift. Passing above the ball on
         // screen is passing inside it (nearer the golfer), which catches the toe; below is outside, the heel.
         const side = Math.abs(sw.miss || 0) > 0.01 ? (sw.miss < 0 ? 1 : -1) : sw.lateSign;
@@ -9136,7 +9143,7 @@
         if (s.x < topX) { s.iTop = i; s.phase = 'back'; return; }          // still (or again) going back
         if (s.phase === 'back') {
           const lenient = state.calibrating, putt = isPutt();          // a putt can be a very short stroke
-          const minBack = lenient ? 30 : px * (putt ? PUTT.minBack : TUNE.minBackswing);
+          const minBack = lenient ? 30 : px * (putt ? PUTT.minBack : isChip() ? TUNE.minBackswing : TUNE.minBackswingFull);
           const hyst = lenient ? 8 : putt ? Math.max(4, px * PUTT.topHyst) : Math.max(6, px * TUNE.topHysteresis);
           if (s.x >= 0) { s.phase = 'ready'; s.S = []; s.x = 0; s.y = 0; return; }     // drifted back without a real backswing
           if (-topX >= minBack && s.x > topX + hyst) s.phase = 'down';
@@ -9155,7 +9162,7 @@
         const tilt = tiltPenalty(state.composure, state.badStreak);
         res.comp = tilt > 0.005 ? 'tilted' : 'neutral';
         res.cx.tilt = tilt;
-        res.complexity = (1 + res.asked * res.dexRisk) * (1 + res.cx.contact) * (1 + res.cx.club) * (1 + res.cx.tilt) - 1;
+        res.complexity = (1 + res.asked * res.dexRisk) * (1 + res.cx.contact) * (1 + res.cx.club) * (1 + res.cx.tilt) * (1 + (res.cx.pastTop || 0)) - 1;
       }
       function setComposure(c) {
         state.composure = clamp(Math.round(c), 1, 10);
@@ -16057,6 +16064,7 @@
               x.club > 0.005 && `Club <b>${pc(x.club)}</b>`,
               x.tilt > 0.005 && `Tilt <b>${pc(x.tilt)}</b>`,
               x.contact > 0.005 && `Contact <b>${pc(x.contact)}</b>`,
+              x.pastTop > 0.005 && `Past the top <b>${pc(x.pastTop)}</b>`,
             ].filter(Boolean).join(' × ') || 'Stock shot — no added risk';
           }
           if (txtCache.get('tmCx') !== parts) { txtCache.set('tmCx', parts); $('tmCx').innerHTML = parts; }
