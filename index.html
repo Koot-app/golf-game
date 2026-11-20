@@ -7287,7 +7287,11 @@
         // draw bias) or open (-, fade bias), groove = worn grooves (× spin, again from rough or sand, and more fliers),
         // flopX = × the flop's difficulty (wide-soled wedges don't like being laid open).
         const consist = club.consist || 1;
-        const path = stanceDir + thM * club.work + (!env.stock ? (club.lieBias || 0) + TUNE.basePathDeg * dexSpread * consist * bell() : 0);
+        // pathWork (career models, swing audit S5.1): a model's own `work` acts once, on the curve (step 8), and the mouse
+        // path keeps its base club's factor. Applied to both, a forgiving head shrank a 5° stroke's miss to a twentieth of a
+        // blade's. (The base clubs, which the range and the test round play, still have no pathWork: unchanged.)
+        const pathWork = club.pathWork ?? club.work;
+        const path = stanceDir + thM * pathWork +(!env.stock ? (club.lieBias || 0) + TUNE.basePathDeg * dexSpread * consist * bell() : 0);
 
         // 2. Loft the player is asking for.  AUDIT 6: the club's spin floor also limits how far it can be de-lofted.
         //    setup.traj is the HEIGHT level chosen at address: -2 / -1 = lower (de-lofted: less backspin, more run),
@@ -7339,13 +7343,15 @@
         const range = shapeRange(env.dex);
         const shapeBoost = (ftpDeg) => 1 + (range - 1) * clamp((Math.abs(ftpDeg) - TUNE.shapeRampLo) / (TUNE.shapeRampHi - TUNE.shapeRampLo), 0, 1);
         const ftpAsked = faceDir - path;
-        const ftpIntent = faceDir - (stanceDir + thM * club.work);     // the same without the random path scatter
+        const ftpIntent = faceDir - (stanceDir + thM * pathWork);      // the same without the random path scatter
         const askedCurve = Math.abs(ftpAsked * club.work * axisGainFor(club.dynLoft + loftDelta) * shapeBoost(ftpAsked));   // deg of axis tilt set up
         const bounceK = club.bounce && (env.lie === 'bunker' || env.lie === 'heavy') ? clamp(club.bounce / CHIP.bounceDiv, 0, 0.5) : 0;
         const cx = {
           power: (1 + TUNE.cxBack * overB) * (1 + TUNE.cxTempo * overT) - 1,
           // the "safe" amount of curve grows with the range, so a dexterous player shapes more for the same risk
-          shape: TUNE.cxShape * clamp(askedCurve / (TUNE.cxShapeDeg * range), 0, 1),
+          // shapeCx (career models, swing audit S5.1): bending a forgiving, low-workability head is a harder ask, a blade's
+          // an easier one (the base club's work ÷ the model's: a game-improvement set about 2×, the Wilson blade 0.87×)
+          shape: TUNE.cxShape * clamp(askedCurve / (TUNE.cxShapeDeg * range), 0, 1) * (club.shapeCx || 1),
           // height levels asked for: the W/S ladder plus ball position (one full move = one level). A chip preset's own
           // ball position is part of the preset and is not counted again.
           height: (() => {
@@ -12258,22 +12264,27 @@
       const BASE_CLUBS = CLUBS.map((c) => ({ ...c }));           // the clubs as the range and the test round play them
       const CLUB_MODELS = {
         // ---- irons (7-iron loft change shown; 4i–5i get 80% of it)
-        'i-ap1': { kind: 'iron', cat: 'Used', brand: 'Titleist', name: 'AP1 716 (2015)', price: 0, bias: 1.2, add: { loft: -4, dynLoft: 1.8 }, x: { spin: 1.03, speed: 0.96, sweet: 1.6, gear: 0.67, work: 0.65 }, set: { floor: 0.7, offset: 0.9, consist: 1.8, groove: 0.8 }, note: 'A forgiving 2015 cavity, now tired: worn grooves, mismatched shafts, the odd one pulls or pushes' },
-        'i-m2': { kind: 'iron', cat: 'Used', brand: 'TaylorMade', name: 'M2 (2016)', price: 200, bias: 1.5, add: { loft: -5.5, dynLoft: 1.8 }, x: { spin: 1.02, speed: 0.99, sweet: 1.8, gear: 0.58, work: 0.55 }, set: { floor: 0.8, offset: 1.1, consist: 1.9, groove: 0.75 }, note: 'Famously long and strong-lofted, but this set is beaten up, wild and won\'t stop' },
-        'i-qimax': { kind: 'iron', cat: 'Game improvement', brand: 'TaylorMade', name: 'Qi Max', price: 1100, add: { loft: -5.5, dynLoft: 1.8 }, x: { spin: 0.95, speed: 1.01, sweet: 2.4, gear: 0.42, work: 0.45 }, set: { floor: 0.85, offset: 1.1, consist: 0.85 }, note: 'The most forgiving and highest launching; holds greens best of the GIs' },
-        'i-jpxhm': { kind: 'iron', cat: 'Game improvement', brand: 'Mizuno', name: 'JPX 925 Hot Metal', price: 1050, add: { loft: -6, dynLoft: 1.8 }, x: { spin: 0.92, speed: 1.015, sweet: 2.0, gear: 0.5, work: 0.5 }, set: { floor: 0.85, offset: 0.9, consist: 0.9 }, note: 'The longest; lands flattest and runs' },
-        'i-takomo': { kind: 'iron', cat: 'Game improvement', brand: 'Takomo', name: '101 MKII', price: 580, add: { loft: -5, dynLoft: 1.6 }, x: { spin: 0.94, speed: 1.0, sweet: 2.1, gear: 0.46, work: 0.5 }, set: { floor: 0.85, offset: 0.8, consist: 0.8 }, note: 'The budget pick, and the most accurate GI in testing' },
-        'i-ai200': { kind: 'iron', cat: 'In-between', brand: 'Callaway', name: 'Apex Ai200', price: 1400, add: { loft: -4, dynLoft: 1.8 }, x: { spin: 0.97, speed: 1.01, sweet: 1.8, gear: 0.58, work: 0.7 }, set: { floor: 0.7, offset: 0.6, consist: 0.92 }, note: 'Game-improvement distance in a players\' shape' },
-        'i-zxi7': { kind: 'iron', cat: 'In-between', brand: 'Srixon', name: 'ZXi7', price: 1400, add: { loft: -2, dynLoft: 1.8 }, x: { spin: 0.98, speed: 1.0, sweet: 1.5, gear: 0.71, work: 0.8 }, set: { floor: 0.65, offset: 0.4, consist: 0.92 }, note: 'The most forgiving players\' cavity: the all-rounder' },
-        'i-620cb': { kind: 'iron', cat: 'In-between', brand: 'Titleist', name: '620 CB', price: 1600, add: { loft: 0, dynLoft: 0.6 }, x: { spin: 1.01, speed: 1.0, sweet: 1.3, gear: 0.79, work: 0.92 }, set: { floor: 0.6, offset: 0.3, consist: 0.95 }, note: 'Close to a blade, with a little help' },
+        //      Swing audit S5.2 (2026-11-20): dynLoft and spin re-tuned so the strong-lofted sets land a little FLATTER than
+        //      the blade and roll out more (they used to add +1.8° of dynamic loft and landed 2–3° steeper). 7 iron against
+        //      the Wilson blade: GI +11 to +14 yds, 1,200–1,500 rpm less spin, 0–1.2° flatter, 6.5–7.3 yds of roll on a green
+        //      against 4.8; in-between +3 to +8, 300–1,000 rpm less. (The research target of 3–5° flatter needs the flight's
+        //      lift refit, swing audit S3.1: at 7-iron speeds the lift is at its ceiling, so less spin barely lowers it.)
+        'i-ap1': { kind: 'iron', cat: 'Used', brand: 'Titleist', name: 'AP1 716 (2015)', price: 0, bias: 1.2, add: { loft: -4, dynLoft: -0.3 }, x: { spin: 0.95, speed: 0.96, sweet: 1.6, gear: 0.67, work: 0.65 }, set: { floor: 0.7, offset: 0.9, consist: 1.8, groove: 0.8 }, note: 'A forgiving 2015 cavity, now tired: worn grooves, mismatched shafts, the odd one pulls or pushes' },
+        'i-m2': { kind: 'iron', cat: 'Used', brand: 'TaylorMade', name: 'M2 (2016)', price: 200, bias: 1.5, add: { loft: -5.5, dynLoft: -1.0 }, x: { spin: 0.9, speed: 0.99, sweet: 1.8, gear: 0.58, work: 0.55 }, set: { floor: 0.8, offset: 1.1, consist: 1.9, groove: 0.75 }, note: 'Famously long and strong-lofted, but this set is beaten up, wild and won\'t stop' },
+        'i-qimax': { kind: 'iron', cat: 'Game improvement', brand: 'TaylorMade', name: 'Qi Max', price: 1100, add: { loft: -5.5, dynLoft: -1.6 }, x: { spin: 0.87, speed: 1.01, sweet: 2.4, gear: 0.42, work: 0.45 }, set: { floor: 0.85, offset: 1.1, consist: 0.85 }, note: 'The most forgiving and highest launching; holds greens best of the GIs' },
+        'i-jpxhm': { kind: 'iron', cat: 'Game improvement', brand: 'Mizuno', name: 'JPX 925 Hot Metal', price: 1050, add: { loft: -6, dynLoft: -2.8 }, x: { spin: 0.82, speed: 1.006, sweet: 2.0, gear: 0.5, work: 0.5 }, set: { floor: 0.85, offset: 0.9, consist: 0.9 }, note: 'The longest; lands flattest and runs' },
+        'i-takomo': { kind: 'iron', cat: 'Game improvement', brand: 'Takomo', name: '101 MKII', price: 580, add: { loft: -5, dynLoft: -1.8 }, x: { spin: 0.84, speed: 1.0, sweet: 2.1, gear: 0.46, work: 0.5 }, set: { floor: 0.85, offset: 0.8, consist: 0.8 }, note: 'The budget pick, and the most accurate GI in testing' },
+        'i-ai200': { kind: 'iron', cat: 'In-between', brand: 'Callaway', name: 'Apex Ai200', price: 1400, add: { loft: -4, dynLoft: -1.0 }, x: { spin: 0.9, speed: 1.0, sweet: 1.8, gear: 0.58, work: 0.7 }, set: { floor: 0.7, offset: 0.6, consist: 0.92 }, note: 'Game-improvement distance in a players\' shape' },
+        'i-zxi7': { kind: 'iron', cat: 'In-between', brand: 'Srixon', name: 'ZXi7', price: 1400, add: { loft: -2, dynLoft: -0.5 }, x: { spin: 0.94, speed: 1.0, sweet: 1.5, gear: 0.71, work: 0.8 }, set: { floor: 0.65, offset: 0.4, consist: 0.92 }, note: 'The most forgiving players\' cavity: the all-rounder' },
+        'i-620cb': { kind: 'iron', cat: 'In-between', brand: 'Titleist', name: '620 CB', price: 1600, add: { loft: 0, dynLoft: -0.2 }, x: { spin: 0.99, speed: 1.0, sweet: 1.3, gear: 0.79, work: 0.92 }, set: { floor: 0.6, offset: 0.3, consist: 0.95 }, note: 'Close to a blade, with a little help' },
         'i-wmb': { kind: 'iron', cat: 'Blade', brand: 'Wilson', name: 'Staff Model Blade', price: 1400, add: { loft: 0, dynLoft: 0 }, x: { spin: 1.03, speed: 1.0, sweet: 0.8, gear: 1.08, work: 1.15 }, set: { floor: 0.45, offset: 0, consist: 1.0 }, note: 'Compact, minimal offset, a tiny sweet spot; shapes anything, the best stinger' },
         'i-temb': { kind: 'iron', cat: 'Blade', brand: 'Tour Edge', name: 'MB Forged', price: 1000, add: { loft: 0, dynLoft: 0.2 }, x: { spin: 1.02, speed: 1.0, sweet: 1.0, gear: 0.96, work: 1.05 }, set: { floor: 0.5, offset: 0.1, consist: 1.0 }, note: 'A true muscle back with a bit more forgiveness' },
         // ---- LUXURY (user request, 2026-11-19): a money sink and something to show off. lux = gold in the shop, the bag
         //      list, the bag room and the bag graphics (which friends see). They play like the best ordinary models, never
         //      better: the money buys the look, not strokes. (Hawthorne Atelier is the country club's own clubmaker: made up.)
-        'i-prestigio': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Majesty', name: 'Prestigio (gold)', price: 20000, add: { loft: -4, dynLoft: 1.8 }, x: { spin: 0.97, speed: 1.01, sweet: 1.8, gear: 0.58, work: 0.7 }, set: { floor: 0.7, offset: 0.6, consist: 0.92 }, note: 'Gold-plated heads and hand-painted lettering; under the shine, a forgiving distance iron' },
-        'i-beres5': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Honma', name: 'Beres 5-Star', price: 30000, add: { loft: -5, dynLoft: 1.8 }, x: { spin: 0.95, speed: 1.01, sweet: 2.2, gear: 0.46, work: 0.5 }, set: { floor: 0.85, offset: 0.9, consist: 0.86 }, note: '24-carat gold trim and five-star shafts, hand-finished in Sakata. Plays like a game-improvement iron: built for members who would rather not practise' },
-        'i-atelier': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Sovereign platinum', price: 125000, add: { loft: -1, dynLoft: 1.2 }, x: { spin: 1.0, speed: 1.0, sweet: 1.4, gear: 0.75, work: 0.88 }, set: { floor: 0.62, offset: 0.35, consist: 0.94 }, note: 'One of one: platinum-plated forgings with your initials in the cavity. A players\' cavity at heart' },
+        'i-prestigio': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Majesty', name: 'Prestigio (gold)', price: 20000, add: { loft: -4, dynLoft: -1.0 }, x: { spin: 0.9, speed: 1.0, sweet: 1.8, gear: 0.58, work: 0.7 }, set: { floor: 0.7, offset: 0.6, consist: 0.92 }, note: 'Gold-plated heads and hand-painted lettering; under the shine, a forgiving distance iron' },
+        'i-beres5': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Honma', name: 'Beres 5-Star', price: 30000, add: { loft: -5, dynLoft: -1.8 }, x: { spin: 0.86, speed: 1.01, sweet: 2.2, gear: 0.46, work: 0.5 }, set: { floor: 0.85, offset: 0.9, consist: 0.86 }, note: '24-carat gold trim and five-star shafts, hand-finished in Sakata. Plays like a game-improvement iron: built for members who would rather not practise' },
+        'i-atelier': { kind: 'iron', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Sovereign platinum', price: 125000, add: { loft: -1, dynLoft: -0.4 }, x: { spin: 0.97, speed: 1.0, sweet: 1.4, gear: 0.75, work: 0.88 }, set: { floor: 0.62, offset: 0.35, consist: 0.94 }, note: 'One of one: platinum-plated forgings with your initials in the cavity. A players\' cavity at heart' },
         // ---- drivers
         'd-xr16': { kind: 'driver', cat: 'Used', brand: 'Callaway', name: 'XR 16 (2016)', price: 0, add: { dynLoft: 0.3 }, x: { spin: 1.15, speed: 0.97, sweet: 1.0, gear: 1.125, work: 1 }, set: { offset: 0.3, consist: 1.3 }, note: 'An old warhorse: spins too much, a bit short' },
         'd-m2': { kind: 'driver', cat: 'Used', brand: 'TaylorMade', name: 'M2 (2016)', price: 90, add: {}, x: { spin: 1.1, speed: 0.98, sweet: 1.05, gear: 1.06, work: 1 }, set: { offset: 0.2, consist: 1.3 }, note: 'Long in its day, now just loose' },
@@ -12313,6 +12324,7 @@
         for (const [f, v] of Object.entries(m.add || {})) out[f] = b[f] + v * k;
         for (const [f, v] of Object.entries(m.x || {})) out[f] = b[f] * v;
         for (const [f, v] of Object.entries(m.set || {})) if (f !== 'bounce' || b.bounce) out[f] = v;
+        if (out.work !== undefined && out.work !== b.work) { out.pathWork = b.work; out.shapeCx = b.work / out.work; }     // (swing audit S5.1: see computeImpact)
         if (m.bias && career) out.lieBias = Math.round((rng32((career.seed ^ (i * 2654435761)) >>> 0)() * 2 - 1) * m.bias * 10) / 10;   // bent lie: fixed for the career
         return out;
       }
@@ -12920,12 +12932,14 @@
         const m = CLUB_MODELS[id], i = SHOP.testClub[m.kind], b = BASE_CLUBS[i], c = { ...b, ...modelMods(m, i) };
         const r = computeImpact(stockSwing(1), { face: 0, ballPos: 0, stance: 0, traj: 0, spinCtl: 0 }, c,
           { lie: 'fairway', slope: 'flat', power: 5, dex: 5, composure: 5, badStreak: 0, teed: m.kind === 'driver', stock: true }, () => 0.5);
-        const f = createFlight({ ballSpeed: r.ballSpeed, vla: r.vla, dir: r.hla, spin: r.spin, axis: r.axis, release: r.release }, { x: 0, z: 0 }, m.kind === 'driver' ? 0.04 : 0);
-        let land = 0;
-        const ph = f.phase;
-        for (let n = 0; f.phase !== 'stopped' && n < 30000; n++) { const vy = f.v.y, vh = Math.hypot(f.v.x, f.v.z); stepFlight(f, 1 / 120); if (!land && f.phase !== ph) land = Math.atan2(-vy, vh) * R2D; }
+        // landed on a green, so "Stopping" is how far it rolls there (swing audit S5.3: the bar read the landing angle at the
+        // end of the bounces, which measured the last little hop: 9–11° for drivers, 71–82° for wedges; and the sets' real
+        // stopping difference is in their spin and roll more than their descent angle)
+        const f = createFlight({ ballSpeed: r.ballSpeed, vla: r.vla, dir: r.hla, spin: r.spin, axis: r.axis, release: r.release, ground: () => SURF.green }, { x: 0, z: 0 }, m.kind === 'driver' ? 0.04 : 0);
+        let land = 0;          // the angle at the FIRST touchdown
+        for (let n = 0; f.phase !== 'stopped' && n < 30000; n++) { const vy = f.v.y, vh = Math.hypot(f.v.x, f.v.z), up = f.carry === null; stepFlight(f, 1 / 120); if (up && f.carry !== null) land = Math.atan2(-vy, vh) * R2D; }
         const out = {
-          carry: f.carry / YD, land,
+          carry: f.carry / YD, land, roll: (Math.hypot(f.p.x, f.p.z) - f.carry) / YD,
           forgive: (c.sweet / b.sweet) / Math.sqrt((c.gear || 1) / (b.gear || 1)) / (c.consist || 1),
           shape: (c.work / b.work) * (1.5 - (c.floor ?? b.floor)), offset: c.offset || 0, bias: m.bias || 0,
         };
@@ -12992,7 +13006,7 @@
         return `<div class="sh-item${owned ? ' owned' : ''}${m.lux ? ' lux' : ''}">
           <div><div class="sh-name"><b>${m.lux ? '✦ ' : ''}${m.brand} ${m.name}</b>${owned ? `<span>✓ ${m.kind === 'iron' ? 'in your bag' : ownedAt.map(SLOT_NAME).join(', ')}</span>` : forSale ? `<em>${money(m.price)}${m.kind === 'iron' ? ' the set' : m.kind === 'wedge' || m.kind === 'wood' ? ' each' : ''}</em>` : ''}</div>
             <div class="sh-note">${m.note}</div><div class="sh-tag">${bias}</div></div>
-          <div class="sh-bars">${barRow('Distance', shopBar(m.kind, 'carry', s.carry))}${barRow('Stopping', shopBar(m.kind, 'land', s.land))}${barRow('Forgiveness', shopBar(m.kind, 'forgive', s.forgive))}${barRow('Shaping', shopBar(m.kind, 'shape', s.shape))}</div>
+          <div class="sh-bars">${barRow('Distance', shopBar(m.kind, 'carry', s.carry))}${barRow('Stopping', shopBar(m.kind, 'roll', s.roll, true))}${barRow('Forgiveness', shopBar(m.kind, 'forgive', s.forgive))}${barRow('Shaping', shopBar(m.kind, 'shape', s.shape))}</div>
           <div class="sh-btns">${btns}</div></div>`;
       }
       function shopPuttersHTML() {
@@ -13142,7 +13156,7 @@
         const lr = (v) => (Math.abs(v) < 0.5 ? '<td>straight</td>' : `<td class="${v < 0 ? 'l' : 'r'}">${Math.abs(v).toFixed(0)} ${v < 0 ? 'L' : 'R'}</td>`);
         let h = models.map((id) => {
           const m = CLUB_MODELS[id], st = shopStats(id), slots = slotsOf(id);
-          const bars = barRow('Distance', shopBar(m.kind, 'carry', st.carry)) + barRow('Stopping', shopBar(m.kind, 'land', st.land))
+          const bars = barRow('Distance', shopBar(m.kind, 'carry', st.carry)) + barRow('Stopping', shopBar(m.kind, 'roll', st.roll, true))
             + barRow('Forgiveness', shopBar(m.kind, 'forgive', st.forgive)) + barRow('Shaping', shopBar(m.kind, 'shape', st.shape));
           const rows = slots.map((i) => {
             const n = numbersOf(i), out = (G.out || []).includes(i), snapped = (G.snapped || []).includes(i);

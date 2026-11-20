@@ -965,6 +965,33 @@ of mouse path, up to 2.5 px of wobble, ±5% backswing). "Within 10 yds" means th
 the ZXi7 and the 620 CB. The full rows, with spin and landing angle, are the script's output.)
 
 ### S5.1 [High, feel / balance] Forgiveness costs almost nothing, so the iron sets are a ladder
+- **✅ Fixed 2026-11-20** (the finding's three parts; `tools/test/swing-fix2.js`):
+  - **The mouse path is damped once.** A model's `work` now acts only on the curve. The mouse path keeps the base
+    club's factor (`pathWork`, set in `modelMods`), so the base bag and the test round are unchanged; S2.4 is still
+    open for the base clubs. A 5° stroke now finishes 15.5 yds left with the Qi Max (was 6.5), against 19.0 with the
+    blade (was 23.7).
+  - **Shaping a forgiving head costs more.** The Shape risk is multiplied by `shapeCx` = base `work` ÷ model `work`:
+    2.0–2.2× for the game-improvement sets, 1.25–1.43× for the in-between sets, 0.87× for the Wilson blade.
+  - **Stopping:** S5.2 below.
+
+  7 iron, the game's assumed swing (complexity · 2σ width · within 10 yds), before → after:
+
+  | Set | Straight, Dex 2 | Draw preset, Dex 2 | Straight, Dex 5 | Roll on a green | Low 2 apex |
+  |---|---|---|---|---|---|
+  | 101 MKII ($580) | ±8.9, 96% → **±11.5, 88%** | 0.40 · ±16.2 · 73% | 100% → 97% | 5.3 → **7.0** | 35 → 30 |
+  | Qi Max | ±9.0, 96% → ±11.3, 89% | 0.41 · ±15.7 · 74% | 100% → 97% | 5.1 → 6.6 | 37 → 32 |
+  | JPX 925 HM | ±10.5, 93% → ±13.9, 80% | 0.38 · ±18.4 · 67% | 99% → 93% | 5.3 → 7.4 | 38 → 30 |
+  | Apex Ai200 | ±12.0, 87% → ±14.4, 79% | 0.32 · ±18.6 · 67% | 97% → 92% | 5.0 → 6.2 | |
+  | ZXi7 | ±12.8, 85% → ±14.6, 79% | 0.30 · ±18.8 · 67% | 96% → 92% | 4.9 → 5.8 | |
+  | 620 CB | ±14.4, 80% → ±15.2, 77% | 0.29 · ±19.4 · 64% | 92% → 91% | 5.0 → 5.3 | |
+  | Staff Model Blade | ±19.1, 68% → ±18.5, 68% | **0.27** · ±22.7 · 54% | 84% → 85% | **4.8** | **25** |
+  | AP1 716 (starter) | ±19.3, 68% → ±22.7, **58%** | 0.33 · ±25.8 · 47% | 85% → 77% | 5.5 → 6.8 | |
+
+  The forgiving sets are still the most accurate to swing straight. That is their whole point, and true of real golf.
+  They now pay for it: they run out on the greens (40–55% more roll), cost more risk to shape, and can't flight it
+  down. The gap in accuracy is smaller: 88% against 68% at Dexterity 2, where it was 96% against 68%; on the 4 iron
+  69% against 43% (was 79%). The starter set is now clearly the worst set (S5.9). If the blades should be the better
+  pick for a skilled player, the next lever is their straight-line accuracy at high Dexterity.
 - **Measured** (7 iron unless said; "vs blade" is against the Wilson Staff Model Blade; Dexterity 2 is a new career):
 
   | Set | Price | Carry vs blade | Within 10 yds, Dex 2 / 5 | 4 iron within 10 yds, Dex 2 | 2σ wide, Dex 2 | Draw preset curve | A 5° mouse path | Low 2 apex / carry | Roll on a green |
@@ -997,6 +1024,25 @@ the ZXi7 and the 620 CB. The full rows, with spin and landing angle, are the scr
   the shop bars.
 
 ### S5.2 [Medium, bug] Game-improvement and in-between sets land 2–3° steeper than the blade, not 3–5° flatter
+- **✅ Fixed 2026-11-20 (as far as the current flight allows):** the sets now take dynamic loft off instead of adding it,
+  and spin less. Each model's new values are in `CLUB_MODELS`, and the table in `CAMPAIGN_PLAN.md` is updated. 7 iron
+  against the Wilson blade, after:
+
+  | Set | Carry Δ | Spin Δ | Launch Δ | Landing Δ | Roll on a green (blade 4.8) |
+  |---|---|---|---|---|---|
+  | JPX 925 HM ("lands flattest and runs") | +14 | −1,518 | −2.5° | **−1.2°** (flattest GI) | **7.4** (most) |
+  | 101 MKII | +11 | −1,376 | −1.6° | −0.8° | 7.0 |
+  | Qi Max ("highest launching; holds greens best of the GIs") | +13 | −1,178 | −1.5° (highest GI) | 0.0° | 6.6 (least GI) |
+  | Apex Ai200 | +8 | −960 | −0.9° | −0.2° | 6.2 |
+  | ZXi7 | +5 | −669 | −0.5° | −0.2° | 5.8 |
+  | 620 CB | +1 | −314 | −0.2° | −0.3° | 5.3 |
+  | M2 / AP1 (used) | +10 / −1 | −1,605 / −1,158 | | −0.5° / −1.6° | 7.3 / 6.8 |
+
+  Every set now lands at or flatter than the blade, rolls further, and meets the carry and spin targets. Each model's
+  note now matches the measurements. The full 3–5° flatter isn't reachable through the clubs: at 7 iron speeds the
+  lift is at its ceiling (S3.1), so less spin barely lowers the flight. Taking 2.5° off the launch flattens the
+  landing by only about 1°. It will follow from S3.1's refit. The luxury rule still holds: Beres 5-Star +13 yds and
+  85% within 10 yds, against the JPX's +14 and the Qi Max's 89%.
 - **Where:** the iron models' `add.dynLoft` (+1.8 on every set from the AP1 to the Ai200, about lines 12250–12255) and
   their spin factors (0.92–0.97). The plan's table had +0.7 to +1.4 and 0.82–0.90.
 - **Measured** (7 iron against the Wilson blade):
@@ -1019,6 +1065,14 @@ the ZXi7 and the 620 CB. The full rows, with spin and landing angle, are the scr
   they use models.
 
 ### S5.3 [Medium, bug] The shop's "Stopping" bar reads the angle of the ball's last little hop
+- **✅ Fixed 2026-11-20:** `shopStats` now flies the test shot onto a green. It records the landing angle at the first
+  touchdown (irons 45.8–47.6°, drivers 36.6–40.4°, wedges 49.6–49.9°). The Stopping bar now shows the roll there (less
+  roll gives a longer bar), because the sets' real stopping difference is in their roll more than their angle.
+  Measured in the pro shop of a guest career:
+  - **Irons:** Wilson blade 100%, MB Forged 97%, 620 CB 83%, ZXi7 67%, Ai200 52%, Qi Max 40%, AP1 34%, 101 MKII 28%,
+    M2 18%, JPX 15%.
+  - **Wedges:** Vokey SM11 100%, worn SM6 15%.
+  - **Drivers:** Triple Diamond 100% (the fade), Max D 15% (the draw).
 - **Where:** `shopStats` (about line 12914) records the angle when the flight's phase first changes. That happens
   when the bounces end and the roll starts, not when the ball first lands.
 - **Measured:** the shop's `land` against the real first landing: drivers 9–11° (real 37°), irons 31–37° (real

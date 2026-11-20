@@ -179,16 +179,16 @@ loft Δ = the model's real 7-iron loft − 34° (the base 7 iron).
 
 | Id | Model | Category | 7i loft | Price (set) | loft Δ | dynLoft Δ | spin × | speed × | sweet × | gear | work | floor | offset | consist | groove | lieBias |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `i-ap1` | Titleist AP1 716 (2015, hand-me-down) | Used | ≈30° | starter | −4 | +0.8 | 0.9 | 0.96 | 1.6 | 0.8 | 0.65 | 0.7 | 0.9 | 1.35 | 0.8 | ±1.2° |
-| `i-m2` | TaylorMade M2 (2016, pawn shop) | Used | 28.5° | $200 | −5.5 | +1.0 | 0.8 | 0.99 | 1.8 | 0.7 | 0.55 | 0.8 | 1.1 | 1.4 | 0.75 | ±1.5° |
-| `i-qimax` | TaylorMade Qi Max | Game improvement | ≈28.5° | $1,100 | −5.5 | +1.4 | 0.86 | 1.01 | 2.4 | 0.5 | 0.45 | 0.85 | 1.1 | 0.85 | 1 | 0 |
-| `i-jpxhm` | Mizuno JPX 925 Hot Metal | Game improvement | 28° | $1,050 | −6 | +1.0 | 0.82 | 1.015 | 2.0 | 0.6 | 0.5 | 0.85 | 0.9 | 0.9 | 1 | 0 |
-| `i-takomo` | Takomo 101 MKII | Game improvement | ≈29° | $580 | −5 | +1.1 | 0.86 | 1.0 | 2.1 | 0.55 | 0.5 | 0.85 | 0.8 | 0.8 | 1 | 0 |
-| `i-ai200` | Callaway Apex Ai200 | In-between (players distance) | 30° | $1,400 | −4 | +0.7 | 0.9 | 1.01 | 1.8 | 0.7 | 0.7 | 0.7 | 0.6 | 0.92 | 1 | 0 |
-| `i-zxi7` | Srixon ZXi7 | In-between (players cavity) | 32° | $1,400 | −2 | +0.4 | 0.95 | 1.0 | 1.5 | 0.85 | 0.8 | 0.65 | 0.4 | 0.92 | 1 | 0 |
-| `i-620cb` | Titleist 620 CB | In-between (players cavity) | ≈34° | $1,600 | 0 | +0.2 | 0.99 | 1.0 | 1.3 | 0.95 | 0.92 | 0.6 | 0.3 | 0.95 | 1 | 0 |
-| `i-wmb` | Wilson Staff Model Blade (2026) | Blade | ≈34° | $1,400 | 0 | 0 | 1.03 | 1.0 | 0.8 | 1.3 | 1.15 | 0.45 | 0 | 1.0 | 1 | 0 |
-| `i-temb` | Tour Edge MB Forged | Blade | ≈34° | ≈$1,000 | 0 | +0.1 | 1.0 | 1.0 | 1.0 | 1.15 | 1.05 | 0.5 | 0.1 | 1.0 | 1 | 0 |
+| `i-ap1` | Titleist AP1 716 (2015, hand-me-down) | Used | ≈30° | starter | −4 | −0.3 | 0.95 | 0.96 | 1.6 | 0.8 | 0.65 | 0.7 | 0.9 | 1.8 | 0.8 | ±1.2° |
+| `i-m2` | TaylorMade M2 (2016, pawn shop) | Used | 28.5° | $200 | −5.5 | −1.0 | 0.9 | 0.99 | 1.8 | 0.7 | 0.55 | 0.8 | 1.1 | 1.9 | 0.75 | ±1.5° |
+| `i-qimax` | TaylorMade Qi Max | Game improvement | 28° | $1,100 | −5.5 | −1.6 | 0.87 | 1.01 | 2.4 | 0.5 | 0.45 | 0.85 | 1.1 | 0.85 | 1 | 0 |
+| `i-jpxhm` | Mizuno JPX 925 Hot Metal | Game improvement | 28° | $1,050 | −6 | −2.8 | 0.82 | 1.006 | 2.0 | 0.6 | 0.5 | 0.85 | 0.9 | 0.9 | 1 | 0 |
+| `i-takomo` | Takomo 101 MKII | Game improvement | 29° | $580 | −5 | −1.8 | 0.84 | 1.0 | 2.1 | 0.55 | 0.5 | 0.85 | 0.8 | 0.8 | 1 | 0 |
+| `i-ai200` | Callaway Apex Ai200 | In-between (players distance) | 30° | $1,400 | −4 | −1.0 | 0.9 | 1.0 | 1.8 | 0.7 | 0.7 | 0.7 | 0.6 | 0.92 | 1 | 0 |
+| `i-zxi7` | Srixon ZXi7 | In-between (players cavity) | 32° | $1,400 | −2 | −0.5 | 0.94 | 1.0 | 1.5 | 0.85 | 0.8 | 0.65 | 0.4 | 0.92 | 1 | 0 |
+| `i-620cb` | Titleist 620 CB | In-between (players cavity) | ≈34° | $1,600 | 0 | −0.2 | 0.99 | 1.0 | 1.3 | 0.95 | 0.92 | 0.6 | 0.3 | 0.95 | 1 | 0 |
+| `i-wmb` | Wilson Staff Model Blade (2026) | Blade | 34° | $1,400 | 0 | 0 | 1.03 | 1.0 | 0.8 | 1.3 | 1.15 | 0.45 | 0 | 1.0 | 1 | 0 |
+| `i-temb` | Tour Edge MB Forged | Blade | ≈34° | ≈$1,000 | 0 | +0.2 | 1.02 | 1.0 | 1.0 | 1.15 | 1.05 | 0.5 | 0.1 | 1.0 | 1 | 0 |
 
 One-line character for the shop (from the reviews): **AP1 716**: a forgiving 2015 cavity, now tired: worn grooves,
 mismatched shafts, the odd one pulls or pushes · **M2**: famously long and strong-lofted, but this set is beaten up,
@@ -209,6 +209,14 @@ shipping): vs the Wilson blade, the GI sets carry +10–14 yds with spin −1,00
 in-between +3–8 yds and 1–2° flatter. The used sets have strong lofts (they were GI-type sets), so they go about as far
 as a blade but with a landing area ~35% wider, fliers from the rough and a fixed push or pull on some clubs. Models
 within a category differ by only a few yards and a degree or two.
+
+**Re-tuned 2026-11-20 (swing audit S5.2; the table above is the code's values now).** The strong-lofted sets take
+dynamic loft *off* (they used to add it and landed 2–3° steeper than the blade). Measured on the 7 iron against the
+Wilson blade: GI +11 to +14 yds, 1,200–1,500 rpm less spin, 0–1.2° flatter, and 6.5–7.3 yds of roll on a green
+against 4.8; in-between +3 to +8. The 3–5° flatter target isn't reachable until the flight's lift curve is refitted
+(swing audit S3.1). Swing audit S5.1 also gave models two derived fields in `modelMods`: `pathWork` (the mouse path
+keeps the base club's `work`, so a model's own `work` acts once, on the curve) and `shapeCx` (base `work` ÷ model `work`
+multiplies the Shape risk: a GI set about 2×, the Wilson blade 0.87×).
 
 ### Woods, wedges and putters (build after the irons, in the same chunks)
 
