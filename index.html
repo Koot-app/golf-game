@@ -3968,6 +3968,45 @@
       padding: 7px 12px 5px;
     }
 
+    /* the green read (G on a hole, full swings only): beside the hole map, below the hole's banner */
+    #greenCard {
+      position: fixed;
+      left: 344px;
+      top: 150px;
+      width: 242px;
+      display: none;
+      pointer-events: auto;
+    }
+
+    body.hole.gr-on:not(.putt):not(.chip):not(.home-on) #greenCard {
+      display: block;
+    }
+
+    #greenCard .card-h {
+      padding: 7px 12px 5px;
+    }
+
+    #greenRead {
+      display: block;
+      width: 216px;
+      height: 196px;
+      margin: 0 12px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      cursor: pointer;
+    }
+
+    #grText {
+      padding: 6px 12px 9px;
+      font-size: 11.5px;
+      line-height: 1.4;
+      color: #c9d4e0;
+    }
+
+    #grText b {
+      color: #fff;
+    }
+
     .setup-rst:disabled {
       opacity: .35;
       pointer-events: none;
@@ -6484,6 +6523,12 @@
     <div id="tbPractice">PRACTICE</div>
   </div>
 
+  <!-- the hole's green read on an approach (user request, 2026-11-20): G toggles it; detail follows Perception -->
+  <div id="greenCard" class="card">
+    <div class="card-h"><span>Green read</span><span class="tag" id="grTag">G hides</span></div>
+    <canvas id="greenRead" width="216" height="196" title="The green from where you are: the pin, height (lighter = higher) and arrows pointing downhill. G or click to hide"></canvas>
+    <div id="grText"></div>
+  </div>
   <div id="leftcol">
     <div id="mapCard" class="card">
       <div class="card-h">
@@ -8089,6 +8134,7 @@
         if (saved && saved.swingPx > 0 && saved.vTarget > 0) { state.cal = saved; state.calSaved = true; }
       } catch { /* storage unavailable — defaults are fine */ }
       // the full-swing flight cameras, in the order V cycles them (user request, 2026-11-20: 'player', from where you stand)
+      const greenRead = { open: false, sig: '' };      // the hole's green read card (see drawGreenRead)
       const FLIGHT_CAMS = [['chase', 'Chase'], ['player', 'From where you stand'], ['tee', 'Tee tracer']];
       const flightCamName = (k = state.flightCam) => (FLIGHT_CAMS.find(([x]) => x === k) || FLIGHT_CAMS[0])[1];
       try { const fc = localStorage.getItem('golfFlightCam'); if (FLIGHT_CAMS.some(([k]) => k === fc)) state.flightCam = fc; } catch { /* storage unavailable: fine */ }
@@ -9992,7 +10038,7 @@
         if (swing.active) return;
         if (careerOn && demo) clearDemo();                   // demos are for the range
         hp.on = true; document.body.classList.add('hole');
-        Object.assign(hp, { ball: { x: 0, z: 0 }, strokes: 0, putts: 0, pen: 0, lastFrom: null, onTee: true, done: false, history: [], frame: null, aimPin: false, mapZoom: 0 });
+        Object.assign(hp, { ball: { x: 0, z: 0 }, strokes: 0, putts: 0, pen: 0, lastFrom: null, onTee: true, done: false, history: [], frame: null, aimPin: false, mapZoom: 0, grUser: null });
         if (round.on) applyRoundConditions();
         state.badStreak = 0;
         for (const t of trails.splice(0)) { t.group.removeFromParent(); t.dispose(); }
@@ -10018,6 +10064,7 @@
         const leftPvp = !!round.pvp && !round.over;
         if (round.on) endRound();          // leaving the course ends a test round
         hp.on = false; document.body.classList.remove('hole');
+        setGreenRead(false);
         state.badStreak = 0;
         for (const t of trails.splice(0)) { t.group.removeFromParent(); t.dispose(); }
         shot = null; puttRun = null; telemetry = null; puttTel = null; lastNumbers = null;
@@ -10041,6 +10088,7 @@
         if (pinDist() <= CHIP.maxYd * YD) { state.club = suggestChipClub(); return enterHoleChip(); }     // close to the green: chip it
         if (state.mode !== 'range') setMode('range');          // rolled off the green, or a chip ran a long way
         state.club = suggestClub(); refreshShotType(); renderBag();
+        autoGreenRead();                                       // the green read: open once the green is in reach
         hp.aimPin = false; state.aim = holeAim(); state.view = 'scout'; clubPhi = clubPhiTarget = 0;
         layoutWorld(); syncPanel();
       }
@@ -15117,6 +15165,115 @@
         if (v1 - v0 < minV) { const c = (v0 + v1) / 2; v0 = c - minV / 2; v1 = c + minV / 2; }
         return makeMapTransform(u0, u1, v0, v1);
       }
+      // =====================================================================================================
+      //  THE GREEN READ (user request, 2026-11-20): the hole's green from above, turned so your line to the pin points up
+      //  the card, for the approach. G toggles it on a hole (full swings; chipping and putting have their own reads); it
+      //  opens by itself once the green is in reach of a club in the bag, unless you've closed it on this hole. Height is
+      //  shaded in bands of the putting read's contour interval and the arrows point downhill, coloured by steepness, as on
+      //  the putting overhead: Perception sets the detail (1-3: sparse, two colours, the main fall in words; 4-7: more
+      //  arrows, three colours, the fall and around the pin; 8-10: dense, with the slope in %).
+      // =====================================================================================================
+      const grCv = $('greenRead'), grCtx = grCv.getContext('2d'), GR_W = 216, GR_H = 196;
+      {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        grCv.width = GR_W * dpr; grCv.height = GR_H * dpr;
+        grCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      function setGreenRead(on, byUser = false) {        // (greenRead itself is declared with the game state, near the top)
+        greenRead.open = !!on; greenRead.sig = '';
+        if (byUser) hp.grUser = on ? 'open' : 'closed';
+        document.body.classList.toggle('gr-on', greenRead.open);
+      }
+      // can a club in the bag reach the pin from here? (its stock total, with a little to spare)
+      function greenInReach() {
+        const d = pinDist() / YD;
+        let best = 0;
+        for (const i of usableOrder()) best = Math.max(best, stockShot(i).total);
+        return best * 1.05 >= d;
+      }
+      // at each new full shot on a hole: your choice on this hole stands; otherwise open when the green is in reach
+      function autoGreenRead() {
+        if (hp.grUser === 'closed') return setGreenRead(false);
+        setGreenRead(hp.grUser === 'open' || greenInReach());
+      }
+      const grSlopeWord = (pct) => (pct < 1 ? 'gentle' : pct <= 2.5 ? 'moderate' : 'steep');
+      function drawGreenRead() {
+        if (!greenRead.open || !hp.on || isPutt() || isChip()) return;
+        const S = hole.surface, gr = hole.green, pin = hole.pin, b = hp.ball, per = state.perception, pt = per <= 3 ? 0 : per <= 7 ? 1 : 2;
+        const sig = [hp.holeIdx, hole.length.toFixed(1), pin.x.toFixed(2), pin.z.toFixed(2), b.x.toFixed(1), b.z.toFixed(1), per, holeStimp().toFixed(1)].join('|');
+        if (sig === greenRead.sig) return;
+        greenRead.sig = sig;
+        const g = grCtx;
+        // the frame: up the card is your line to the pin, right is your right
+        let ux = pin.x - b.x, uz = pin.z - b.z;
+        const dl = Math.hypot(ux, uz);
+        if (dl < 0.5) { ux = 0; uz = -1; } else { ux /= dl; uz /= dl; }
+        const rx = -uz, rz = ux;
+        const R = Math.max(gr.rx, gr.rz) * 1.12, k = Math.min(GR_W, GR_H) / (2 * R), cx = GR_W / 2, cy = GR_H / 2;
+        const toW = (sx, sy) => { const a = (sx - cx) / k, f = (cy - sy) / k; return { x: gr.x + rx * a + ux * f, z: gr.z + rz * a + uz * f }; };
+        const toS = (x, z) => { const dx = x - gr.x, dz = z - gr.z; return { x: cx + (dx * rx + dz * rz) * k, y: cy - (dx * ux + dz * uz) * k }; };
+        // heights on the green, for the bands
+        const cStep = (per <= 3 ? 4 : per <= 7 ? 2 : 1) * INCH;
+        let hMin = Infinity, hMax = -Infinity;
+        for (let sy = 0; sy < GR_H; sy += 6) for (let sx = 0; sx < GR_W; sx += 6) { const w = toW(sx, sy); if (S.inside(w.x, w.z)) { const h = S.h(w.x, w.z); hMin = Math.min(hMin, h); hMax = Math.max(hMax, h); } }
+        const qMax = Math.max(1, Math.floor((hMax - hMin) / cStep));
+        // rough, fringe, and the green in height bands (lighter = higher)
+        const C = 2;
+        for (let sy = 0; sy < GR_H; sy += C) for (let sx = 0; sx < GR_W; sx += C) {
+          const w = toW(sx + C / 2, sy + C / 2), e = inEllipse(gr, w.x, w.z);
+          if (e < 1) { const q = Math.min(qMax, Math.floor((S.h(w.x, w.z) - hMin) / cStep)); g.fillStyle = `hsl(112, 46%, ${(24 + 34 * q / qMax).toFixed(1)}%)`; }
+          else g.fillStyle = e < 1.25 ? '#3d6e3a' : '#1c3520';
+          g.fillRect(sx, sy, C, C);
+        }
+        // downhill arrows on a lattice square to the card, spaced by Perception
+        const spFt = [15, 10, 6][pt], sp = spFt * FT * k, nx = Math.ceil(GR_W / 2 / sp), ny = Math.ceil(GR_H / 2 / sp);
+        g.lineCap = 'round'; g.font = '600 8px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        const labels = [];
+        for (let i = -nx; i <= nx; i++) for (let j = -ny; j <= ny; j++) {
+          const sx = cx + i * sp, sy = cy + j * sp, w = toW(sx, sy);
+          if (!S.inside(w.x, w.z, 0.9)) continue;
+          const gd = S.grad(w.x, w.z), slope = Math.hypot(gd.x, gd.z);
+          if (slope < 5e-4) continue;
+          let dx = -(gd.x * rx + gd.z * rz), dy = gd.x * ux + gd.z * uz;      // downhill, in card pixels (y down)
+          const dn = Math.hypot(dx, dy); dx /= dn; dy /= dn;
+          const L = sp * 0.62, x0 = sx - dx * L / 2, y0 = sy - dy * L / 2, x1 = sx + dx * L / 2, y1 = sy + dy * L / 2;
+          g.strokeStyle = g.fillStyle = pt === 0 ? (slope < 0.018 ? '#5ee08a' : '#ff5d6c') : slope < 0.010 ? '#5ee08a' : slope <= 0.025 ? '#ffc24a' : '#ff5d6c';
+          g.lineWidth = 1.6; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+          const hl = Math.min(5, L * 0.45), px = -dy, py = dx;
+          g.beginPath(); g.moveTo(x1, y1); g.lineTo(x1 - dx * hl + px * hl * 0.55, y1 - dy * hl + py * hl * 0.55); g.lineTo(x1 - dx * hl - px * hl * 0.55, y1 - dy * hl - py * hl * 0.55); g.closePath(); g.fill();
+          if (pt === 2 && ((i % 3) + 3) % 3 === 0 && ((j % 3) + 3) % 3 === 0) labels.push({ x: sx, y: sy + 7, t: `${(slope * 100).toFixed(1)}%` });
+        }
+        for (const l of labels) { g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(l.x - 11, l.y - 5, 22, 10); g.fillStyle = '#fff'; g.fillText(l.t, l.x, l.y); }
+        // the pin
+        const p = toS(pin.x, pin.z);
+        g.fillStyle = '#000'; g.beginPath(); g.arc(p.x, p.y, 2.4, 0, 7); g.fill();
+        g.strokeStyle = '#fff'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.x, p.y - 15); g.stroke();
+        g.fillStyle = '#ff3b3b'; g.beginPath(); g.moveTo(p.x, p.y - 15); g.lineTo(p.x + 9, p.y - 12); g.lineTo(p.x, p.y - 9); g.closePath(); g.fill();
+        // where you're coming from
+        g.fillStyle = 'rgba(9, 13, 19, .7)'; g.fillRect(cx - 40, GR_H - 15, 80, 13);
+        g.fillStyle = '#c9d4e0'; g.font = '600 9px system-ui, sans-serif';
+        g.fillText(`▲ from you · ${fmtToPin(pinDist())}`, cx, GR_H - 8.5);
+        // the words: how the green falls, around the pin, and its speed
+        const fall = (gx, gz) => {
+          const fb = gx * ux + gz * uz, lr = gx * rx + gz * rz, A = Math.abs(fb) * 100, B = Math.abs(lr) * 100;
+          const fbW = fb > 0 ? 'back to front' : 'front to back', lrW = lr > 0 ? 'right to left' : 'left to right';
+          if (pt === 0) return `<b>${A >= B ? fbW : lrW}</b>`;
+          const parts = [];
+          if (A >= 0.25) parts.push(`<b>${fbW}</b>${pt === 2 ? ` ${A.toFixed(1)}%` : ''}`);
+          if (B >= 0.25) parts.push(`<b>${lrW}</b>${pt === 2 ? ` ${B.toFixed(1)}%` : ''}`);
+          return parts.length ? `${parts.join(' and ')} · ${grSlopeWord(Math.hypot(A, B))}` : '<b>nearly flat</b>';
+        };
+        let mgx = 0, mgz = 0, n = 0;
+        for (let sy = 4; sy < GR_H; sy += 8) for (let sx = 4; sx < GR_W; sx += 8) { const w = toW(sx, sy); if (S.inside(w.x, w.z)) { const gd = S.grad(w.x, w.z); mgx += gd.x; mgz += gd.z; n++; } }
+        const gp = S.grad(pin.x, pin.z), st = holeStimp();
+        const lines = [`Falls ${n ? fall(mgx / n, mgz / n) : '—'}`];
+        if (pt >= 1) lines.push(`Around the pin: ${fall(gp.x, gp.z)}`);
+        lines.push(`Speed: Stimp ${st.toFixed(1)} (${st >= 13 ? 'lightning' : st >= 12 ? 'fast' : st >= 10.5 ? 'medium' : 'slow'})`);
+        if (pt === 0) lines.push('<span style="color:#8a97a8">A rough read: more detail as Perception grows</span>');
+        $('grText').innerHTML = lines.join('<br>');
+      }
+      grCv.addEventListener('click', () => setGreenRead(false, true));
+
       function drawRangeMap() {
         const g = mapCtx, { W, H, k, X, Y } = rangeMapTransform();
         g.clearRect(0, 0, W, H);
@@ -15678,7 +15835,11 @@
         if (c === 'KeyN' && !e.repeat && hp.on && !swing.active) return selectHole((hp.holeIdx + 1) % HOLES.length);
         if (c === 'KeyM' && !e.repeat && hp.on) { hp.mapZoom = (hp.mapZoom + 1) % 3; return; }
         if (c === 'KeyM' && !e.repeat && !hp.on && state.mode === 'range') { rangeZoom = (rangeZoom + 1) % 3; return; }
-        if (c === 'KeyG' && !e.repeat) { if (!hp.on) setMode(isPutt() ? 'range' : 'putt'); return; }      // on the hole the game decides when you putt
+        if (c === 'KeyG' && !e.repeat) {          // on the hole the game decides when you putt, so there G is the green read
+          if (!hp.on) setMode(isPutt() ? 'range' : 'putt');
+          else if (!isPutt() && !isChip()) setGreenRead(!greenRead.open, true);
+          return;
+        }
         if (isPutt()) return puttKey(c, e);
         if (isChip() && chipKey(c, e)) return;
         if (c === 'KeyC' && !e.repeat && !hp.on && !isChip() && state.view !== 'address' && !swing.active) return setMode('chip');
@@ -16266,7 +16427,7 @@
         else if (chip && state.view === 'flight') hint = hp.on ? '<kbd>R</kbd> walk to the ball' : '<kbd>R</kbd> chip it again · <kbd>N</kbd> new chip · <kbd>T</kbd> clear trails';
         else if (chip && !swing.active && peek) hint = 'Looking at your landing spot — swing is locked · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move it';
         else if (chip && !swing.active) hint = 'Hold <kbd>Left-Click</kbd>: pull the ring back into the <b>LANDING</b> band, swing it back through the ball · <kbd>1</kbd>–<kbd>4</kbd> shot type · tweak: <kbd>Q</kbd><kbd>E</kbd> face · <kbd>A</kbd><kbd>D</kbd> ball · <kbd>Z</kbd><kbd>C</kbd> stance · <kbd>W</kbd><kbd>S</kbd> height · <kbd>B</kbd> spin · <kbd>X</kbd> preset · <kbd>Shift</kbd> peek · <kbd>Space</kbd> back';
-        else if (state.view === 'scout' && hp.on) hint = '<kbd>A</kbd><kbd>D</kbd> aim · <kbd>Tab</kbd> aim at the pin / down the fairway · <kbd>1</kbd>–<kbd>=</kbd> or <kbd>[</kbd><kbd>]</kbd> or wheel: club · <kbd>F</kbd> shape · <kbd>B</kbd> spin · <kbd>Space</kbd> step in to the ball · <kbd>H</kbd> leave';
+        else if (state.view === 'scout' && hp.on) hint = '<kbd>A</kbd><kbd>D</kbd> aim · <kbd>Tab</kbd> aim at the pin / down the fairway · <kbd>1</kbd>–<kbd>=</kbd> or <kbd>[</kbd><kbd>]</kbd> or wheel: club · <kbd>F</kbd> shape · <kbd>B</kbd> spin · <kbd>G</kbd> green read · <kbd>Space</kbd> step in to the ball · <kbd>H</kbd> leave';
         else if (state.view === 'scout') hint = '<kbd>A</kbd><kbd>D</kbd> aim · <kbd>Tab</kbd> next pin · <kbd>1</kbd>–<kbd>=</kbd> or <kbd>[</kbd><kbd>]</kbd> or wheel: club · <kbd>F</kbd> shape · <kbd>B</kbd> spin · <kbd>Space</kbd> step in to the ball · <kbd>C</kbd> chipping green';
         else if (state.view === 'flight') hint = `<kbd>R</kbd> ${hp.on ? 'walk to the ball' : 'next shot'} · <kbd>V</kbd> camera: ${flightCamName()} → ${flightCamName(FLIGHT_CAMS[(FLIGHT_CAMS.findIndex(([k]) => k === state.flightCam) + 1) % FLIGHT_CAMS.length][0])} · <kbd>T</kbd> clear trails`;
         else if (swing.active) {
@@ -16837,7 +16998,7 @@
         updateCamera(dt, now);
         if (isPutt()) updatePuttHUD(); else updateHUD();
         hideOldTracersAtAddress();
-        if (hp.on) drawHoleMap();
+        if (hp.on) { drawHoleMap(); drawGreenRead(); }
         else if (state.mode === 'range' && !document.body.classList.contains('home-on')) drawRangeMap();     // the range's own map
         if (tipsAvail()) { updateTips(now); updateTipsButton(); }
         else { document.body.classList.remove('tipsNew'); if (tipsOn) setTips(false); }
@@ -16896,7 +17057,7 @@
         analyzeSwing, computeImpact, swingSample, beginSwing, endSwing, onPointerMove, isSpike, tempoTarget, powerFromBackswing, powerFromTempo,
         LIES, SLOPES, AERO, windVector, clubFit, solveShape, powerMult, runChip, computePutt, analyzePutt, CADDIES,
         createPutt, stepPutt, puttTarget, rollDecel, puttGate, rng32, shopStats, SHOP, withClubModel, setup, careerStats,
-        fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock, flatChipView, treeDeflect, treePart, TREE, previewTrack, previewSide, spreadRatio, dexSpreadAt, lowRunnerHeight, fitApproachWedge, APPROACH, bagClubNumbers,
+        fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock, flatChipView, treeDeflect, treePart, TREE, previewTrack, previewSide, spreadRatio, dexSpreadAt, lowRunnerHeight, fitApproachWedge, APPROACH, bagClubNumbers, greenInReach, setGreenRead, get greenReadOpen() { return greenRead.open; },
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
