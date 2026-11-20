@@ -7100,6 +7100,9 @@
       // AUDIT 3: dynLoft = loft actually delivered at impact with a neutral setup; aoa = attack angle.
       // curve (optional, default 1) = extra spin-axis tilt per degree of face-to-path. High loft and a slow, short flight
       // both suppress curve, so without it a wedge barely moves; this keeps shot-shaping usable through the bag.
+      // Swing audit S2.7: from the driver to the 8 iron (and the comparison GI 7 iron) it is set so the tilt per degree
+      // matches the D-plane, atan(tan 1° / tan spin loft): the driver tilted 21% too much, the 3 wood to 8 iron 15-60%
+      // too little. The 9 iron to the lob wedge stay above it on purpose (shapeable wedges).
       // gear = how strongly an off-centre hit twists the face (blade amplifies, GI damps); bulge = driver-only
       // horizontal gear effect (toe hit adds draw spin).
       // head = which clubhead model to draw (headScale shrinks the wood model for fairway woods / hybrids); tee = teed up
@@ -7108,22 +7111,22 @@
       // speed: re-tuned 2026-11-20 with the flight's refit (swing audit S3.1: the old carries kept) and to even out the short
       // end (S4.2: 7 iron 176, 8 iron 163, 9 iron 150, PW 136, GW 122, SW 107, LW 93; gaps of 13–15 yds).
       const CLUBS = [
-        { name: 'Driver', head: 'wood', headScale: 1.00, tee: true, speed: 113, loft: 10.5, dynLoft: 12.8, aoa: -1.0, spin: 2600, work: 0.85, sweet: 10, floor: 0.70, gear: 0.8, bulge: -0.7, stand: 0.95 },
-        { name: '3 Wood', head: 'wood', headScale: 0.80, speed: 105, loft: 15.0, dynLoft: 12.0, aoa: -2.9, spin: 3650, work: 0.85, sweet: 9, floor: 0.65, gear: 0.8, bulge: -0.6, stand: 0.90, curve: 0.75 },
-        { name: '2 Hybrid', head: 'wood', headScale: 0.64, speed: 101.5, loft: 17.0, dynLoft: 13.5, aoa: -3.5, spin: 4300, work: 0.70, sweet: 10, floor: 0.75, gear: 0.7, bulge: -0.6, stand: 0.85, rescue: 5 },
-        { name: '3 Hybrid', head: 'wood', headScale: 0.60, speed: 99.2, loft: 19.5, dynLoft: 14.5, aoa: -3.5, spin: 4600, work: 0.70, sweet: 10, floor: 0.75, gear: 0.7, bulge: -0.6, stand: 0.84, rescue: 5 },
-        { name: '4 Iron', head: 'iron', speed: 96.2, loft: 22.0, dynLoft: 13.5, aoa: -3.4, spin: 4850, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.80, curve: 0.62 },
-        { name: '5 Iron', head: 'iron', speed: 93.5, loft: 25.0, dynLoft: 14.9, aoa: -3.7, spin: 5350, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.78, curve: 0.68 },
-        { name: '6 Iron', head: 'iron', speed: 92.5, loft: 29.0, dynLoft: 17.3, aoa: -4.1, spin: 6230, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.76, curve: 0.84 },
-        { name: '7 Iron', head: 'iron', speed: 90.5, loft: 34.0, dynLoft: 20.0, aoa: -4.3, spin: 7000, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.74 },
-        { name: '8 Iron', head: 'iron', speed: 89, loft: 38.0, dynLoft: 22.1, aoa: -4.5, spin: 8000, work: 1.00, sweet: 6, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.72, curve: 1.25 },
+        { name: 'Driver', head: 'wood', headScale: 1.00, tee: true, speed: 113, loft: 10.5, dynLoft: 12.8, aoa: -1.0, spin: 2600, work: 0.85, sweet: 10, floor: 0.70, gear: 0.8, bulge: -0.7, stand: 0.95, curve: 0.83 },
+        { name: '3 Wood', head: 'wood', headScale: 0.80, speed: 105, loft: 15.0, dynLoft: 12.0, aoa: -2.9, spin: 3650, work: 0.85, sweet: 9, floor: 0.65, gear: 0.8, bulge: -0.6, stand: 0.90, curve: 1.02 },
+        { name: '2 Hybrid', head: 'wood', headScale: 0.64, speed: 101.5, loft: 17.0, dynLoft: 13.5, aoa: -3.5, spin: 4300, work: 0.70, sweet: 10, floor: 0.75, gear: 0.7, bulge: -0.6, stand: 0.85, rescue: 5, curve: 1.29 },
+        { name: '3 Hybrid', head: 'wood', headScale: 0.60, speed: 99.2, loft: 19.5, dynLoft: 14.5, aoa: -3.5, spin: 4600, work: 0.70, sweet: 10, floor: 0.75, gear: 0.7, bulge: -0.6, stand: 0.84, rescue: 5, curve: 1.36 },
+        { name: '4 Iron', head: 'iron', speed: 96.2, loft: 22.0, dynLoft: 13.5, aoa: -3.4, spin: 4850, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.80, curve: 1.0 },
+        { name: '5 Iron', head: 'iron', speed: 93.5, loft: 25.0, dynLoft: 14.9, aoa: -3.7, spin: 5350, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.78, curve: 1.08 },
+        { name: '6 Iron', head: 'iron', speed: 92.5, loft: 29.0, dynLoft: 17.3, aoa: -4.1, spin: 6230, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.76, curve: 1.21 },
+        { name: '7 Iron', head: 'iron', speed: 90.5, loft: 34.0, dynLoft: 20.0, aoa: -4.3, spin: 7000, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.74, curve: 1.3 },
+        { name: '8 Iron', head: 'iron', speed: 89, loft: 38.0, dynLoft: 22.1, aoa: -4.5, spin: 8000, work: 1.00, sweet: 6, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.72, curve: 1.43 },
         { name: '9 Iron', head: 'iron', speed: 87, loft: 42.0, dynLoft: 24.8, aoa: -4.7, spin: 8650, work: 1.00, sweet: 6, floor: 0.55, gear: 1.1, bulge: 0, stand: 0.70, curve: 1.5 },
         { name: 'Pitching Wedge', head: 'iron', speed: 85, loft: 46.0, dynLoft: 29.5, aoa: -5.0, spin: 9200, work: 0.90, sweet: 7, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.68, curve: 1.8 },
         // CHIPPING: the short-game wedges. bounce (deg) = a wide sole that skims through sand and thick grass instead of digging.
         { name: 'Gap Wedge', head: 'iron', speed: 82.7, loft: 50.0, dynLoft: 33.0, aoa: -5.2, spin: 9600, work: 0.90, sweet: 7, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.67, curve: 1.8 },
         { name: 'Sand Wedge', head: 'iron', speed: 80.8, loft: 55.0, dynLoft: 37.5, aoa: -5.5, spin: 10100, work: 0.85, sweet: 7, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.66, curve: 1.8, bounce: 12 },
         { name: 'Lob Wedge', head: 'iron', speed: 76.7, loft: 60.0, dynLoft: 42.5, aoa: -5.5, spin: 10500, work: 0.85, sweet: 6, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.65, curve: 1.8 },
-        { name: '7 Iron · Game Improvement', head: 'iron', speed: 91.5, loft: 30.0, dynLoft: 21.3, aoa: -4.0, spin: 6200, work: 0.45, sweet: 12, floor: 0.85, gear: 0.5, bulge: 0, stand: 0.74 },
+        { name: '7 Iron · Game Improvement', head: 'iron', speed: 91.5, loft: 30.0, dynLoft: 21.3, aoa: -4.0, spin: 6200, work: 0.45, sweet: 12, floor: 0.85, gear: 0.5, bulge: 0, stand: 0.74, curve: 1.3 },
       ];
       // keyboard key for each club, in bag order. The bag has more clubs than keys: the rest are on [ ] / the wheel / a click.
       const CLUB_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
@@ -7530,7 +7533,11 @@
         // 9. Speed.  AUDIT 9: backswing length is the distance control; tempo is a wide forgiving band.
         const speedFrac = powerFromBackswing(sw.bs) * powerFromTempo(sw.ds);
         const strikeLoss = Math.max(0, mm - club.sweet) * 0.018;
-        const smash = Math.max(1.10, 1.49 - 0.00012 * club.loft * club.loft - strikeLoss);      // AUDIT 4
+        // AUDIT 4. Swing audit S2.5: the centred smash is floored at 1.10, then the strike loss comes off it (the floor used
+        // to come last, so a lob wedge, already at it, lost nothing at any strike). The loss stops at whichever is larger:
+        // the old floor's limit (driver to 9 iron unchanged) or 18% of the centred smash (the wedges).
+        const smashC = Math.max(1.10, 1.49 - 0.00012 * club.loft * club.loft);
+        const smash = smashC - Math.min(strikeLoss, Math.max(smashC - 1.10, 0.18 * smashC));
         const clubSpeed = club.speed * powerMult(env.power) * speedFrac;
         let ballSpeed = clubSpeed * liePower * smash * flubSpeed;
         ballSpeed *= 1 - (1 - TUNE.decelSpeedMult) * decelCost;
@@ -15252,14 +15259,25 @@
         const want = clamp(0.055 * carry, 3.5 * YD, 14 * YD);
         // curve = how far the ball bends away from its start line, for a face-to-path of D degrees
         const curveOf = (D) => { const { r, f } = stockFlightOf(ci, { ...base, stance: -sign * D }); return Math.abs(f.p.x + Math.tan(r.hla * D2R) * f.p.z); };
-        const D = clamp(3 * want / Math.max(0.05, curveOf(3)), 1, 9);
+        // (swing audit S2.7: the curve isn't linear in D, as the shaping boost ramps in from 1.5° to 6°. A club that bends
+        // a lot per degree wants little D, and from the rough the straight-line guess could come up with under half of
+        // `want`; then it is refined. Above 60% of it the guess stands, as the presets' draw / fade numbers are tuned on it.)
+        let D = clamp(3 * want / Math.max(0.05, curveOf(3)), 1, 9);
+        for (let k = 0; k < 3; k++) { const c = curveOf(D); if (c >= 0.6 * want) break; D = clamp(D * want / Math.max(0.05, c), 1, 9); }
         // the face that brings it back to the aim line (finish moves right as the face opens)
-        let lo = -12, hi = 12;
-        for (let i = 0; i < 16; i++) {
-          const mid = (lo + hi) / 2, x = stockFlightOf(ci, { ...base, face: mid, stance: mid - sign * D }).f.p.x;
-          if (x > 0) hi = mid; else lo = mid;
-        }
-        const face = clamp(Math.round((lo + hi) / 2 * 10) / 10, -10, 10);
+        const faceFor = (d) => {
+          let lo = -12, hi = 12;
+          for (let i = 0; i < 16; i++) {
+            const mid = (lo + hi) / 2, x = stockFlightOf(ci, { ...base, face: mid, stance: mid - sign * d }).f.p.x;
+            if (x > 0) hi = mid; else lo = mid;
+          }
+          return (lo + hi) / 2;
+        };
+        // a shape the setup's limits can't bring back to the line (a low long-iron draw from heavy rough barely curves) is
+        // asked for less, so it finishes on the line with less curve rather than off it
+        let f0 = faceFor(D);
+        for (let k = 0; k < 4 && D > 1 && (Math.abs(f0) > 10 || Math.abs(f0 - sign * D) > 15); k++) { D = Math.max(1, D * 0.7); f0 = faceFor(D); }
+        const face = clamp(Math.round(f0 * 10) / 10, -10, 10);
         const out = { face, stance: clamp(Math.round((face - sign * D) * 10) / 10, -15, 15) };
         if (shapeCache.size > 300) shapeCache.clear();
         shapeCache.set(key, out);

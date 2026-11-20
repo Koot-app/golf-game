@@ -582,6 +582,11 @@ table says "with scatter", it used 4,000 seeded shots and the swing the game its
 - **Measured:** ball speed lost at 14 mm off-centre: 7 iron −12.0%, pitching wedge −10.2%, sand wedge **−2.4%**, lob
   wedge **0.0%**.
 - **Fix (S):** floor the centred smash, then take the strike loss off it.
+- **✅ Fixed 2026-11-20:** `smashC = max(1.10, 1.49 − 0.00012 × loft²)` and then `smash = smashC − strikeLoss`. The loss
+  stops at whichever is larger: the old floor's limit (`smashC − 1.10`) or 18% of `smashC`. So the driver to the 9 iron
+  are exactly as before, and the wedges can now lose up to 18%. Ball speed lost at 14 mm (`tools/test/swing-fix13.js`):
+  7 iron −12.0% (unchanged), PW −10.2% (unchanged), gap wedge −10.6% (was −7.6%), sand wedge −11.2% (was −2.4%), lob
+  wedge −13.1% (was 0).
 
 ### S2.6 [Low, unfinished] Slope lies exist only on the range
 - **Where:** `SLOPES` and `computeImpact` handle five slopes. `setupNextShot` sets `state.slope = 'flat'` for every
@@ -609,6 +614,49 @@ table says "with scatter", it used 4,000 seeded shots and the swing the game its
 - **Expected:** by the usual rules a 2° open driver face finishes about 23 yds right. Design direction 5 asks for
   dramatic shaping, so this is a note on the driver's face sensitivity (about 15 yds per degree), not on shaping.
 - **For S3 and S6:** how the flight turns tilt into yards, and what this does to driver dispersion.
+- **✅ Fixed 2026-11-20:** the per-club `curve` trims from the driver to the 8 iron are set so the tilt per degree matches
+  the D-plane:
+  - Driver 0.83 (was 1), 3 wood 1.02 (0.75), 2 / 3 hybrid 1.29 / 1.36 (1), 4 / 5 / 6 iron 1.0 / 1.08 / 1.21
+    (0.62 / 0.68 / 0.84), 7 iron 1.3 (1), 8 iron 1.43 (1.25), and the comparison GI 7 iron 1.3 (1).
+  - The 9 iron to the lob wedge stay above the D-plane on purpose, as the trims' comment says, to keep wedges
+    shapeable.
+
+  Measured (`tools/test/swing-fix13.js`; game °/° now, and where a 2° open face finishes, before → after):
+
+  | Club | Game °/° (D-plane) | 2° open face finishes | 5° mouse path finishes |
+  |---|---|---|---|
+  | Driver | 4.09 (4.06) | 27.1 → 23.7 yds right | 70.8 → 56.0 L |
+  | 3 Wood | 3.76 (3.75) | 18.2 → 22.4 | 37.0 → 53.6 L |
+  | 3 Hybrid | 3.08 (3.08) | 15.3 → 18.7 | 28.0 → 40.6 L |
+  | 4 Iron | 3.28 (3.29) | 13.5 → 18.2 | 23.0 → 41.0 L |
+  | 7 Iron | 2.21 (2.21) | 10.1 → 11.6 | 14.7 → 20.4 L |
+  | 8 Iron | 1.99 (2.00) | 9.3 → 10.0 | 13.7 → 16.3 L |
+
+  - **What it moves (S6):** face errors now cost the long clubs more and the driver less. Lateral 2σ width with the
+    default hand, Dex 2 / 5 / 9, before → after:
+    - Driver: 74 / 52 / 23 → 62 / 43 / 19.
+    - 3 wood: 36 / 25 / 11 → 47 / 33 / 16.
+    - 3 hybrid: 26 / 18 / 8 → 34 / 24 / 12.
+    - 4 iron: 28 / 20 / 9 → 42 / 30 / 15.
+    - 5 iron: 24 / 17 / 8 → 35 / 25 / 13.
+    - 7 iron: 17 / 12 / 6 → 21 / 15 / 7.
+    - 8 iron: 16 / 12 / 6 → 18 / 13 / 6.
+    - PW: unchanged.
+
+    Within 10 yds at Dex 5, the 4 iron falls from 64% to 48% and the 7 iron from 86% to 78%. Long irons are now
+    clearly harder to hit straight than hybrids (as in real golf), and the driver is a little easier. The landing
+    ellipse and the bag's spread read it automatically.
+  - **The shape solver** (`solveShape`) had come up with under half its curve on 27 of 1,260 setups, all of them
+    rough draws with the 4–7 irons:
+    - **Refining:** when its straight-line guess gives under 60% of the wanted curve, the guess is refined. Above 60%
+      it stands, as the presets' draw / fade tuning (S7.3) rests on it.
+    - **Backing off:** a shape whose face or stance would pass its limit is asked for less, so it finishes on the line
+      with less curve instead of off it.
+
+    The sweep now has 0 failures (it had 6 before this fix), and a solve takes 5 ms (8 at worst).
+  - **The draw − fade gaps (S7.3)** after this: driver +10.3, 3 wood +8.6, hybrids +6.8–7.3, 4–8 iron +6.2–7.2,
+    wedges +4.9–5.4. The 3 wood to 8 iron are 0.5–1 yd lower than after S7.3, since they need less face-to-path for
+    the same curve. Physics fuzz passes.
 
 ### S2.8 [Low, realism] An iron's toe or heel hit pushes and curves the same way
 - **Measured:** 7 iron, toe hits: 4 mm → 6.0 yds right; 8 mm → 11.6 yds right, ball −4.0%, carry −10; 14 mm → 18.2 yds
