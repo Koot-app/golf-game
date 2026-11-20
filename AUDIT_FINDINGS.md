@@ -1095,6 +1095,29 @@ The probes are `tools/test/match-hustlers.js` (3,000 rounds per hustler, and 3,6
   of the time and Jim about 66% (worked out from the chances, not measured). If "0.3" was meant as "presses in about
   a third of matches", roll once per match.
 - **The shot counter** reads "in the air…" for about a second after his ball has stopped.
+- **✅ Fixed 2026-11-20:** all three.
+  - **His shots on bad holes (`npcPlan`):**
+    - every shot before the green goes forward and gets closer, the extra strokes shared out along the way (it used
+      to be clamped backwards when there were too many);
+    - a shot before the green never stops on the green or its fringe;
+    - on a blow-up hole (two or more strokes to spare), half the time his tee shot goes **out of bounds**: the ball
+      flies out, a penalty stroke ("+1 penalty, he re-tees, playing 3"), and he plays again from the tee, as you would.
+
+    `match-hustlers.js`, 3,600 plans:
+
+    | Check | Before | After |
+    |---|---|---|
+    | Four or more putts | 22 | 0 |
+    | A shot that stops on the green, then a chip from it | (not checked) 90 | 0 |
+    | A short shot that ends farther from the pin | 67 | 15 (0.4%) |
+    | Three short shots in a row that miss the green | 38 | 21 (real hacker golf) |
+
+    An out-of-bounds hole was watched in the game: OB, the penalty, a re-tee, and he holed out on his 9th as planned.
+  - **Presses:** `press` is now the share of matches he presses in, rolled once a match (`npcPresses`). Measured:
+    Sal 59% (0.6), Jim 30% (0.3), Gus 100%, Terry 0%. A presser still presses each time he's 2 down in his newest
+    bet, up to the limit of three.
+  - **The counter:** once his ball has stopped it shows where it lies, during the moment it's held there too, and
+    "re-teeing (out of bounds)" for the penalty stroke.
 
 ### Checked and fine
 - **Match status** (`match-rules.js`, all "ok"):

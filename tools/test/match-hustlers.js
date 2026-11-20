@@ -38,7 +38,7 @@
   for (let k = 0; k < 40 && !g.tossOpen; k++) await sleep(50);
   const m = g.career.match; m.toss = 'me'; g.closeToss(); await sleep(200);
   const bad = {}, note = (k) => { bad[k] = (bad[k] || 0) + 1; };
-  let plans = 0, strokes = 0; const surf = {};
+  let plans = 0, strokes = 0, obs = 0, pens = 0; const surf = {};
   for (let i = 0; i < 9; i++) {
     const pin = g.hole.pin, dPin = (p) => Math.hypot(pin.x - p.x, pin.z - p.z);
     for (let t = 0; t < 400; t++) {
@@ -51,9 +51,12 @@
       plan.forEach((st, j) => {
         if (![st.from.x, st.from.z, st.to.x, st.to.z].every(Number.isFinite)) note('a stroke with no position');
         const sf = g.surfaceAt(st.to.x, st.to.z); surf[sf] = (surf[sf] || 0) + 1;
-        if (sf === 'ob') note('lands out of bounds (no penalty is counted)');
+        if (st.ob) { obs++; if (!(plan[j + 1] && plan[j + 1].type === 'pen')) note('out of bounds with no penalty stroke after it'); }
+        else if (sf === 'ob') note('lands out of bounds (no penalty is counted)');
+        if (st.type === 'pen') { pens++; return; }
         if (st.type === 'putt') putts++;
         if (st.type !== 'putt' && j > 0 && dPin(st.from) < 30 && dPin(st.to) > dPin(st.from) + 3) note('a short shot that ends farther from the pin');
+        if (st.type !== 'putt' && !st.ob && !st.holed && j < plan.length - 1 && plan[j + 1].type !== 'putt' && g.surfaceAt(st.to.x, st.to.z) === 'green') note('a shot that stops on the green, then a chip from it');
         if (st.type !== 'putt' && dPin(st.from) < 40 && !st.holed && g.surfaceAt(st.to.x, st.to.z) !== 'green') nearMiss++;
         if (j > 0 && st.type === 'full' && plan[j - 1].type === 'putt') note('a full shot after a putt');
       });
@@ -62,6 +65,15 @@
     if (i < 8) { g.npc.done = true; g.hp.strokes = pars[i]; g.hp.putts = 2; g.finishHole(); await sleep(60); g.scorecardNext(); await sleep(200); }
   }
   out.push('', `shot plans checked: ${plans} (${strokes} strokes) · where his ball stops: ${Object.entries(surf).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${(100 * v / strokes).toFixed(1)}%`).join(', ')}`);
+  out.push(`  out of bounds off the tee (then a penalty stroke and a re-tee): ${obs} plans · penalty strokes ${pens}`);
   out.push(Object.keys(bad).length ? Object.entries(bad).map(([k, v]) => `  ${String(v).padStart(5)} × ${k}`).join('\n') : '  no problems');
+  // ---- part 3: how often a hustler presses (audit 4.7: once a match, not again on every hole he's 2 down)
+  const pressed = {};
+  for (const id of ['sal', 'jim', 'gus', 'terry']) {
+    let n = 0; const N = 2000, tier = g.NPCS.find((x) => x.id === id).tier;
+    for (let t = 0; t < N; t++) if (g.npcPresses({ npc: id, tier, no: t + 1, salt: rnd() })) n++;
+    pressed[id] = `${(100 * n / N).toFixed(0)}% (press ${g.NPCS.find((x) => x.id === id).press})`;
+  }
+  out.push('', `matches in which he presses when 2 down: ${Object.entries(pressed).map(([k, v]) => `${k} ${v}`).join(' · ')}`);
   return out.join('\n');
 })()

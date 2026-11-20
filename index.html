@@ -13355,6 +13355,8 @@
       const condAvgs = {};
       const condAvg = (tier) => (condAvgs[tier] ??= HOLES.reduce((s, h) => s + holeCond(variantDef(h, TIERS[tier])), 0) / HOLES.length);
       const NPC_FORM = 0.2;
+      // is he a presser in this match? (the share of matches is his `press`; rolled once a match, audit 4.7)
+      const npcPresses = (m) => rng32(matchSeed(m, 0x5eed3301))() < npcById(m.npc).press;
       function npcForm(m) { return NPC_FORM * gauss(rng32(matchSeed(m, 48271))); }       // strokes per hole: − sharp, + rusty
       function npcHoleScore(m, i) {
         const n = npcById(m.npc), def = variantDef(HOLES[i], TIERS[m.tier]);
@@ -13478,9 +13480,11 @@
               if (i < b.from || matchStatus({ holes: m.holes.slice(0, i) }, b.from).decided) continue;     // only bets still live coming into this hole
               msg += `\n${b.label}: ${s.decided ? betResult(s) : `${statusText(s.diff)}${left ? ` with ${left} to play` : ''}`}`;
             }
-            // the hustler presses when he's 2 down in the latest bet, if that's his style (seeded, so a reload can't change it)
+            // the hustler presses when he's 2 down in the latest bet, if that's his style (seeded, so a reload can't change it).
+            // `press` is the share of MATCHES he's a presser in (Sal 0.6, Jim 0.3; Dale and Gus always, Terry never): rolled
+            // once a match (audit 4.7: rolled again after every hole 2 down, 0.3 came out as "usually")
             const b = lastLiveBet(m);
-            if (b && left > 0 && m.presses.length < 3 && matchStatus(m, b.from).diff >= 2 && rng32(matchSeed(m, Math.imul(i + 7, 3301)))() < n.press) {
+            if (b && left > 0 && m.presses.length < 3 && matchStatus(m, b.from).diff >= 2 && npcPresses(m)) {
               m.presses.push({ from: i + 1, by: 'npc', stake: m.stake });
               msg += `\n${n.nick} presses! A new ${money(m.stake)} bet on the last ${left} holes: “${n.lines.press}”`;
             }
@@ -13867,31 +13871,59 @@
       }
       const npcClubFor = (yd, tee, par) => (tee && par > 3 && yd > 190 ? 'driver'
         : [[215, '3 wood'], [195, 'hybrid'], [180, '4 iron'], [170, '5 iron'], [160, '6 iron'], [150, '7 iron'], [140, '8 iron'], [128, '9 iron'], [112, 'pitching wedge'], [95, 'gap wedge'], [0, 'sand wedge']].find(([d]) => yd >= d)[1]);
-      // strokes that add up to score S on hole i: [{ from, to, type: 'full' | 'chip' | 'putt', holed }]
+      // strokes that add up to score S on hole i: [{ from, to, type: 'full' | 'chip' | 'putt' | 'pen', holed, ob }]
+      // AUDIT 4.7: on a bad hole the plan used to look odd: a shot could be clamped back behind the last one (finishing
+      // farther from the pin), extra "full" shots could stop on the green and turn into a fourth or fifth putt, and the
+      // lost strokes only ever showed as chips. Now:
+      //  - every shot before the green goes forward and gets closer, the extra ones shared out along the way;
+      //  - a shot before the green never stops on it (so he takes at most three putts, as planned);
+      //  - on a blow-up hole of a par 4 or 5 his tee shot may go out of bounds: stroke and distance, a penalty stroke
+      //    ('pen', no swing) and he plays again from the tee, as you would.
       function npcPlan(m, i, S) {
         const n = npcById(m.npc), r = rng32(matchSeed(m, Math.imul(i + 1, 92821) ^ 31337));
         const par = HOLES[i].par, pin = hole.pin, onGreen = (p) => inEllipse(hole.green, p.x, p.z) < 0.92;
+        const dPin = (p) => Math.hypot(pin.x - p.x, pin.z - p.z);
         let k = S <= 1 ? 0 : S <= par - 1 ? 1 : S >= par + 2 ? (r() < 0.45 ? 3 : 2) : (r() < 0.12 ? 1 : 2);
         k = Math.min(k, S - 1);
-        const f = S - k;                                       // full shots (and chips), at least one
+        let f = S - k;                                         // full shots (and chips), at least one
         const around = (c, d) => {                             // a spot on the green d metres from c
           for (let t = 0; t < 30; t++) { const a = r() * Math.PI * 2, p = { x: c.x + Math.cos(a) * d, z: c.z + Math.sin(a) * d }; if (onGreen(p)) return p; d *= 0.85; }
           return { ...c };
         };
+        const t0 = pathPoint(0), t1 = pathPoint(4), tl = Math.hypot(t1.x - t0.x, t1.z - t0.z) || 1;
+        const tee = { x: -(t1.z - t0.z) / tl * 2.4, z: (t1.x - t0.x) / tl * 2.4 };          // his own spot on the tee, beside yours
+        const drive = (250 - 25 * n.skill) * YD * (0.9 + 0.2 * r()), reach = (200 - 15 * n.skill) * YD;
+        const sideAt = (s, d) => {                              // the point d metres to the side of the line at s
+          const a = pathPoint(Math.max(0.5, s - 1)), b = pathPoint(s + 1), L = Math.hypot(b.x - a.x, b.z - a.z) || 1, c = pathPoint(s);
+          return { x: c.x - (b.z - a.z) / L * d, z: c.z + (b.x - a.x) / L * d };
+        };
+        const out = [];
+        // out of bounds off the tee: two strokes (the shot and the penalty), when there are at least two to spare
+        if (f - Math.max(1, par - 2) >= 2 && r() < 0.5) {
+          const s = Math.min(drive, pathNear(pin.x, pin.z).s * 0.7), sg = r() < 0.5 ? -1 : 1;
+          out.push({ from: tee, to: sideAt(s, sg * (hole.ob + 6 + r() * 12)), type: 'full', tee: true, ob: true });
+          out.push({ from: tee, to: { ...tee }, type: 'pen', tee: true });
+          f -= 2;
+        }
         const gp = k === 0 ? { ...pin } : around(pin, k === 1 ? 1 + r() * 4 : k === 2 ? 4 + r() * 9 : 9 + r() * 7);
         const sG = pathNear(gp.x, gp.z).s, stops = [];
-        const wild = S - par >= 2, drive = (250 - 25 * n.skill) * YD * (0.9 + 0.2 * r()), reach = (200 - 15 * n.skill) * YD, minPitch = 15;
+        const wild = S - par >= 2;
         let sPrev = 0;
         for (let j = 1; j < f; j++) {
-          // as far as he can, leaving at least a short pitch for each shot still to come (extra shots end up as chips)
-          const left = f - j;
-          let s = j === 1 && par > 3 ? Math.min(drive, sG - minPitch * left) : sPrev + Math.min(reach * (0.85 + 0.15 * r()), sG - sPrev - minPitch * left);
-          if (j === 1 && par === 3) s = sG - (8 + r() * 22);  // a par 3 tee shot that misses the green
-          s = clamp(s, sPrev + 6, sG - 6);
-          const a = pathPoint(Math.max(0.5, s - 1)), b = pathPoint(s + 1), L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
-          const side = (r() * 2 - 1) * hole.halfW * (wild ? 2.2 : 1.1);
-          const c = pathPoint(s), d = clamp(side, -(hole.ob - 8), hole.ob - 8);
-          stops.push({ x: c.x - (b.z - a.z) / L * d, z: c.z + (b.x - a.x) / L * d });
+          const left = f - j;                                  // shots still to come after this one (the last reaches the green)
+          let s;
+          if (j === 1 && par === 3) s = sG - (8 + r() * 22);   // a par 3 tee shot that misses the green
+          else if (j === 1) s = Math.min(drive, sG - 12 * left);
+          else s = sPrev + Math.min(reach, (sG - sPrev) / (left + 1) * (0.8 + 0.4 * r()));   // the rest shared out
+          s = Math.min(Math.max(s, sPrev + 4), sG - 4 * left); // always forward, leaving room for the shots to come
+          // off the line, less so as he gets near the green; never on it before the last approach
+          const near = clamp((sG - s) / 60, 0.25, 1);
+          let side = clamp((r() * 2 - 1) * hole.halfW * (wild ? 2.2 : 1.1) * near, -(hole.ob - 8), hole.ob - 8);
+          let p = sideAt(s, side);
+          const nearGreen = (q) => inEllipse(hole.green, q.x, q.z) < 1.15 || surfaceAt(q.x, q.z) === 'green';     // (the green and its fringe)
+          for (let t = 0; t < 20 && nearGreen(p); t++) { s = Math.max(sPrev + 2, s - 3); side = (side || 1) * 1.2; p = sideAt(s, side); }
+          if (stops.length && dPin(p) >= dPin(stops[stops.length - 1]) - 1 && !nearGreen(sideAt(s, 0))) p = sideAt(s, 0);   // (and closer than the last)
+          stops.push(p);
           sPrev = s;
         }
         stops.push(gp);
@@ -13899,11 +13931,9 @@
         if (k === 3) stops.push(around(pin, 1.2 + r() * 1.2));
         if (k >= 2) stops.push(around(pin, 0.3 + r() * 0.6));
         if (k >= 1) stops.push({ ...pin });
-        const out = [];
-        const t0 = pathPoint(0), t1 = pathPoint(4), tl = Math.hypot(t1.x - t0.x, t1.z - t0.z) || 1;
-        let from = { x: -(t1.z - t0.z) / tl * 2.4, z: (t1.x - t0.x) / tl * 2.4 };          // his own spot on the tee, beside yours
+        let from = tee;
         stops.forEach((to, j) => {
-          const type = onGreen(from) ? 'putt' : Math.hypot(pin.x - from.x, pin.z - from.z) <= CHIP.maxYd * YD ? 'chip' : 'full';
+          const type = onGreen(from) ? 'putt' : dPin(from) <= CHIP.maxYd * YD ? 'chip' : 'full';
           out.push({ from, to, type, holed: j === stops.length - 1, tee: j === 0 });
           from = to;
         });
@@ -13951,6 +13981,11 @@
         const st = npc.plan[npc.k], nn = npcById(round.match.npc), d = Math.hypot(st.to.x - st.from.x, st.to.z - st.from.z);
         const yd = Math.round(Math.hypot(hole.pin.x - st.from.x, hole.pin.z - st.from.z) / YD);
         npc.busy = true;
+        if (st.type === 'pen') {                               // out of bounds: the penalty stroke, and back to the tee (audit 4.7)
+          toast(`${nn.nick}: out of bounds · +1 penalty\nHe re-tees, playing ${npc.k + 2}`, 2000);
+          npc.anim = { st, t: 0, dur: 0.01, land: 0, apex: 0, delay: npc.fast ? 0 : 1.2, next };
+          return;
+        }
         if (!onGreenView()) updateTreeClearance(st.from.x, st.from.z, Math.atan2(st.to.x - st.from.x, -(st.to.z - st.from.z)) * R2D);   // keep the trees out of the camera's way
         if (st.type === 'putt') toast(`${nn.nick} putts from ${Math.max(1, Math.round(d / FT))} ft`, 1600);
         else toast(`${nn.nick} · ${st.type === 'chip' ? 'chips with a wedge' : npcClubFor(Math.round(d / YD), st.tee, HOLE.par)} · ${yd} yds to the pin`, 1600);
@@ -13980,6 +14015,8 @@
             npc.anim = null; npc.pos = { ...st.to }; npc.k++; npc.trail.push({ a: st.from, b: st.to });
             const nn = npcById(round.match.npc);
             if (st.holed) { npc.done = true; npc.holed = true; toast(`${nn.nick} holes out: ${npc.k} on the hole`, 1800); }
+            else if (st.type === 'pen') { /* (its toast was shown as it began) */ }
+            else if (st.ob) toast(`${nn.nick}: out of bounds!`, 1500);
             else if (st.type !== 'putt') toast(`${nn.nick}: ${SURF[surfaceAt(st.to.x, st.to.z)].name.toLowerCase()} · ${Math.round(npcDist() / YD)} yds left`, 1500);
             else toast(`${nn.nick} leaves it ${Math.max(1, Math.round(npcDist() / FT))} ft away`, 1500);
             npc.busy = false;
@@ -14670,11 +14707,15 @@
           const el = $('hbNpc'), on = !!(round.match && npc.plan);
           el.classList.toggle('on', on);
           if (on) {
-            const nn = npcById(round.match.npc), a = npc.anim, flying = !!(a && a.delay <= 0);
-            const n = npc.k + (flying ? 1 : 0), d = npcDist();
-            const where = npc.holed ? 'holed out' : flying ? (a.st.type === 'putt' ? 'rolling…' : 'in the air…') : npc.k === 0 ? 'on the tee'
-              : inEllipse(hole.green, npc.pos.x, npc.pos.z) < 0.95 ? `on the green · ${Math.max(1, Math.round(d / FT))} ft`
-              : `${SURF[surfaceAt(npc.pos.x, npc.pos.z)].name.toLowerCase()} · ${Math.round(d / YD)} yds`;
+            const nn = npcById(round.match.npc), a = npc.anim, started = !!(a && a.delay <= 0);
+            // (audit 4.7: once the ball has stopped, where it lies, not "in the air…" for the moment it's held there)
+            const landed = started && a.t >= a.dur, at = landed ? a.st.to : npc.pos;
+            const n = npc.k + (started ? 1 : 0), d = Math.hypot(hole.pin.x - at.x, hole.pin.z - at.z);
+            const where = npc.holed || (landed && a.st.holed) ? 'holed out'
+              : a && a.st.type === 'pen' ? 're-teeing (out of bounds)'
+              : started && !landed ? (a.st.type === 'putt' ? 'rolling…' : 'in the air…') : (npc.k === 0 && !landed) ? 'on the tee'
+              : inEllipse(hole.green, at.x, at.z) < 0.95 ? `on the green · ${Math.max(1, Math.round(d / FT))} ft`
+              : `${SURF[surfaceAt(at.x, at.z)].name.toLowerCase()} · ${Math.round(d / YD)} yds`;
             el.classList.toggle('holed', npc.holed);
             setText('hbNpcL', npc.holed ? `${nn.first} holed in` : `${nn.first} · ${n === 1 ? 'shot' : 'shots'}`);
             setText('hbNpcN', String(n));
@@ -16201,7 +16242,7 @@
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
-        npc, npcPlan, npcHoleScore, npcHurry, condAvg, NPCS, npcRating, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, holeStrokes, submitPvp, playFriend, startFriendRound, showSharedCard, closeSharedCard, checkNewResults, h2h, openHome, closeHome, get homeOpen() { return homeOpen; }, devOn, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
+        npc, npcPlan, npcHoleScore, npcHurry, condAvg, NPCS, npcRating, npcPresses, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, holeStrokes, submitPvp, playFriend, startFriendRound, showSharedCard, closeSharedCard, checkNewResults, h2h, openHome, closeHome, get homeOpen() { return homeOpen; }, devOn, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }
       };
 
