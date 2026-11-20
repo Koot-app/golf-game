@@ -16272,7 +16272,8 @@
             if (isPeeking()) { toWorld(goalPos.set(-club.stand + 0.26, 1.64, state.ballPos * 0.16)); onGround(toWorld(goalLook.set(0, 0, -L))); fovGoal = 48; }
             else addressPose();
           } else if (state.view === 'overhead') overheadPose(dist, 240, 0.4);
-          else { toWorld(goalPos.set(0, 1.9, 4.6)); onGround(toWorld(goalLook.set(0, 0, -Math.min(dist, Math.max(L, dist * 0.7))))); fovGoal = 50; }
+          // (user request, 2026-11-20: higher, looking down on the green more steeply for a better read; was 1.9 m up, 4.6 back)
+          else { toWorld(goalPos.set(0, 4.2, 5.0)); onGround(toWorld(goalLook.set(0, 0, -Math.min(dist, Math.max(L, dist * 0.7))))); fovGoal = 50; }
         } else if (state.view === 'flight' && shot) {
           const b = ball.position, dist = Math.hypot(b.x, b.z);
           if (shot.age < 0.15) addressPose();                    // hold on the turf, then go with the ball
