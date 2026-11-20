@@ -87,7 +87,7 @@ The sections can be run in any order. S4–S9 are quicker if S2 and S3 are done 
 12. **The test round is the same for everyone:** all stats 5, the base bag, each hole's fixed wind and green speed.
 13. **Putting:** the marker's power read deliberately ignores slope; Perception sets how accurate the reads are.
 14. **A career starts as a beginner and climbs to the tour** (user, 2026-11-20). For Dexterity: Dex 1–2 a beginner,
-    Dex 8–9 a tour pro's average, Dex 10 the very best (S6.4's re-done table). Power is not yet on this scale (S4.4).
+    Dex 8–9 a tour pro's average, Dex 10 the very best (S6.4's re-done table). For Power: Power 1–2 a beginner and Power 5 left as the tour average (S4.4).
 
 ## Benchmarks
 
@@ -409,7 +409,7 @@ Check:
 | S1 | The mouse swing | ✅ 2026-11-20 | 12 (2 high, 6 medium, 4 low) | S1.1–S1.10, S1.12 (2026-11-20); S1.11 closed, kept as designed |
 | S2 | Impact | ✅ 2026-11-20 | 11 (4 medium, 7 low) | S2.1–S2.5, S2.7–S2.11 (2026-11-20); S2.6 closed, range-only by choice |
 | S3 | Ball flight, wind, bounce and roll | ✅ 2026-11-20 | 6 (3 medium, 3 low) | S3.1–S3.5 (2026-11-20); S3.6 closed, resolved by S3.1 |
-| S4 | The base bag | ✅ 2026-11-20 | 5 (2 medium, 3 low) | S4.1–S4.3, S4.5 (2026-11-20); S4.4 open (Power on the beginner-to-tour scale) |
+| S4 | The base bag | ✅ 2026-11-20 | 5 (2 medium, 3 low) | S4.1–S4.5 (2026-11-20; S4.4: Power 1–2 a beginner, Power 5 up unchanged) |
 | S5 | The club catalogue | ✅ 2026-11-20 | 9 (1 high, 6 medium, 2 low) | S5.1–S5.9 (2026-11-20; S5.6 by an automatic approach wedge) |
 | S6 | Stats, lies, dispersion and difficulty | ✅ 2026-11-20 | 5 (3 medium, 2 low); S2.1 raised to high | S6.1–S6.4 (2026-11-20; S6.4 re-done as a beginner-to-tour scale); S6.5 closed, kept as designed |
 | S7 | Shot shaping, height and spin | ✅ 2026-11-20 | 5 (2 medium, 3 low) | S7.1–S7.4 (2026-11-20); S7.5 closed, resolved by S2.4 / S2.7 |

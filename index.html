@@ -7216,7 +7216,10 @@
         const t = TUNE.dexSpreadByDex, x = clamp((d || 5) - 1, 0, t.length - 1), i = Math.min(t.length - 2, Math.floor(x));
         return lerp(t[i], t[i + 1], x - i);
       };
-      const powerMult = (p) => p <= 5 ? 0.90 + (p - 1) * 0.025 : 1.0 + (p - 5) * 0.02;   // 1 -> 0.90, 5 -> 1.00, 10 -> 1.10
+      // 1 -> 0.82, 5 -> 1.00, 10 -> 1.10. Swing audit S4.4 (the user's direction: a career starts as a beginner): Power 1
+      // swings a driver at about 94 mph, a typical amateur's, and Power 2 (a new career) at about 99; it was 0.90 + 0.025 a
+      // point (102 mph at Power 1, a good club player). Power 5 and up are unchanged (5 is the tour average, the test round).
+      const powerMult = (p) => p <= 5 ? 0.82 + (p - 1) * 0.045 : 1.0 + (p - 5) * 0.02;
       // Composure (1..10 stat points) offsets the behind-the-scenes Tilt penalty stacked by consecutive bad shots.
       const compOffset = (c) => {
         const pts = c > 10 ? c / 10 : (c || 5);

@@ -1255,6 +1255,27 @@ either way.
     for today's start.
   - **A second question:** Power 5 is the tour average today (the base bag, the test round), whereas on the new
     Dexterity scale the tour is 8–9. Matching that would retune distances throughout.
+- **✅ Fixed 2026-11-20 (the user's choice: Power 1–2 a beginner, Power 5 left alone):**
+  - **The curve:** `powerMult` is 0.82 + 0.045 a point up to Power 5 (it was 0.90 + 0.025), so Power 1 is ×0.82,
+    Power 2 ×0.865, 3 ×0.91, 4 ×0.955. Power 5–10 are unchanged.
+  - **Measured** (`tools/test/swing-fix18.js`; stock carry / total, before → after):
+
+    | Power | Driver mph | Driver | 7 Iron | PW |
+    |---|---|---|---|---|
+    | 1 | 103 → 94 | 232 / 253 → 197 / 221 | 152 / 159 → 130 / 139 | 118 / 121 → 103 / 107 |
+    | 2 (a new career) | 106 → 99 | 242 / 262 → 217 / 239 | 158 / 165 → 143 / 151 | 122 / 125 → 111 / 115 |
+    | 3 | 109 → 104 | 252 / 271 → 236 / 256 | 164 / 170 → 154 / 161 | 127 / 130 → 120 / 123 |
+    | 4 | 112 → 109 | 262 / 279 → 254 / 272 | 170 / 176 → 166 / 172 | 132 / 134 → 128 / 131 |
+    | 5–10 | unchanged | 271 / 287 at 5, 304 / 317 at 10 | | |
+
+    Power 1 is now a typical amateur (about 93 mph and 215–220 total), and a new career starts about 23 yds shorter
+    off the tee.
+  - **The long clubs at low speed:** at Power 1 they bunch up. The 5 and 6 iron carry 3 yds apart and the 3 wood and
+    hybrids 4–5 (the narrowest gap was 8), because a slow swing can't launch a long iron. Real beginners have the
+    same problem, which is why they carry hybrids.
+  - **What it moves:** a new career's whole game is shorter. The first circuit's holes and hustlers were tuned for
+    the old start (the muni, audit 7.3), so the start is now harder. Their skills may want lowering after some play.
+    Physics fuzz passes.
 
 ### S4.5 [Low, realism] Hybrids miss like irons: a toe hit finishes right
 - **✅ Fixed 2026-11-20:** the 2 and 3 hybrids' `bulge` is −0.6 (was −0.3). A toe hit now draws back, as with a small
