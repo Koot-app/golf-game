@@ -359,8 +359,11 @@ targets. The test round still has every club at full spec.
 
 ### Chunk 3 — The first hustle: match play for a stake (L) — ✅ built 2026-11-18
 
-As built: `MATCH` (fees, min stake, reputation), `NPCS` (tier 1: Dale "Dew Sweeper" Pruitt skill 1.6 / $80, Terry
-"Two-Putt" Vance 1.2 / $150, Sal "Sandbag" Moretti 0.9 / $200 (raised in audit 7.3), Gus "Gravel" Haney 0.6 / $250), `matchStatus()`,
+As built: `MATCH` (fees, min stake, reputation), `NPCS` (tier 1: Dale "Dew Sweeper" Pruitt skill 1.775 / $80, Terry
+"Two-Putt" Vance 1.375 / $150, Sal "Sandbag" Moretti 1.075 / $200 (stakes raised in audit 7.3), Gus "Gravel" Haney
+0.775 / $250; the skills were re-based in audit 4.1, so they're what each one really averages, with no change in how
+the muni plays. Resort: Chad 0.7, Marco 0.65, Rita 0.55, Jim 0.45; country club: Whitaker 0.5, Ana 0.3, Victor 0.2,
+Duke 0.0), `matchStatus()`,
 `npcHoleScore()` (seed = career seed ^ match no ^ hole), picker `openMatchPicker()` / `renderMatchPicker()` /
 `teeOffMatch()` (overlay view `#chMatch`), `startMatch()` (also resumes from `career.match` after a reload),
 `matchAfterHole()` (called from `finishHole()`), `settleMatch(kind)`, `confirmForfeit()` (in `leaveHole()` and

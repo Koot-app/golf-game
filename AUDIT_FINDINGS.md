@@ -960,6 +960,36 @@ The probes are `tools/test/match-hustlers.js` (3,000 rounds per hustler, and 3,6
 - **Fix (S):** a design choice. Either shrink the conditions term (for example wind / 100 and 0.04 per point of
   green speed, about a third of today's), or lower the country-club skills below zero so the best players average
   about par at home. Reducing the form swing (0.32 to about 0.15 a hole) would make a hustler's level more readable.
+- **✅ Fixed 2026-11-20:**
+  - **`skill` means what it says.** The conditions term is now measured against the circuit's own average
+    (`condAvg`: 0.175 a hole at the muni, 0.361 at the resort, 0.586 at the country club). A windy hole still plays
+    harder than a calm one, but over nine holes a hustler averages his skill. Invitational fields work the same way.
+  - **The skills, set again:**
+    - the muni: Dale 1.775, Terry 1.375, Sal 1.075, Gus 0.775. That's old + 0.175, so the muni plays exactly as before
+      and the start of the game, tuned in 7.3, is unchanged;
+    - the resort: Chad 0.7, Marco 0.65, Rita 0.55, Jim 0.45, about 0.2 a hole stronger than they played;
+    - the country club: Whitaker 0.5, Ana 0.3, Victor 0.2, Duke 0.0, so its best average about par at home (Duke
+      was +5 for nine).
+  - **Pips:** the formula follows the new numbers (Dale 1, Terry 2, Sal 3, Gus 4, the resort 4–5, the country club
+    5).
+  - **Form for the day:** 0.32 → 0.2 a hole. "Looks sharp / rusty today" shows about as often as before (its line
+    moved from 0.18 to 0.11).
+
+  `match-hustlers.js` now reads the game's own hustlers. Each averages his listed skill: Dale +1.77, Gus +0.77, Jim
+  +0.45, Whitaker +0.50, Duke −0.01 a hole, and the spread is narrower (Duke −4 to +4 for nine, 10% to 90%).
+
+  `econ-sim.js`, the money ladder now:
+
+  | Where | Breaks even at about | Example |
+  |---|---|---|
+  | The muni | μ +1.4 (a beginner) | Dale +$23 a match at μ +1.4 |
+  | The resort | μ +0.4 | Chad +$81, Rita +$21 at μ +0.4 |
+  | The country club | μ +0.1 | Whitaker +$431, Ana +$328, Victor +$210 at μ +0.1; Duke still −$993 there |
+
+  - **Invitationals:** the fields are stronger at the top (the Hawthorne's median winner −2, the Classic's −4). At
+    μ +0.1 the Hawthorne is worth about +$6,800 an entry and the Classic +$6,400; at μ +0.4 both lose money.
+  - **Knock-on for 7.4:** the end-game money comes more slowly than before, so the trophy room is a longer goal. Worth
+    a look once you've played the country club.
 
 ### 4.2 [Medium] "Best case" and "Worst case" on the scorecard are wrong when a bet can only be halved
 - **Where:** `betsStrip` (about line 12975): `Best case = settled + every live stake`, `Worst case = settled − every

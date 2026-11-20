@@ -13116,27 +13116,27 @@
       // skill = strokes over par per hole on average; spread = how much that varies hole to hole. The muni's top stakes
       // were raised for a quicker start (audit 7.3): Dale $40 → $80, Terry $80 → $150, Sal $150 → $200
       const NPCS = [
-        { id: 'dale', tier: 1, first: 'Dale', nick: 'Dew Sweeper', last: 'Pruitt', skill: 1.6, spread: 1.0, maxStake: 80, press: 1, desc: 'Out at dawn every day; hacks it round, loves a bet', lines: { hello: 'Early bird gets the cash, kid.', win: 'Pleasure doing business.', lose: 'Ah, nuts. Double or nothing tomorrow?', halve: 'Nobody wins, nobody cries.', cantPay: 'No cash? Then I\'ll take it in clubs.', press: 'Double or nothing on the rest!', pressed: 'Ha! You\'re on.' } },
-        { id: 'terry', tier: 1, first: 'Terry', nick: 'Two-Putt', last: 'Vance', skill: 1.2, spread: 0.8, maxStake: 150, press: 0, desc: 'A steady bogey golfer who never three-putts', lines: { hello: 'Slow and steady, friend. Slow and steady.', win: 'Told you. Never three-putt.', lose: 'Well. That stings.', halve: 'Square. I\'ll take it.', cantPay: 'You bet money you didn\'t have? Steady on. Steady.', press: 'I don\'t press. Never have.', pressed: 'If you must. Steady, though.' } },
-        { id: 'sal', tier: 1, first: 'Sal', nick: 'Sandbag', last: 'Moretti', skill: 0.9, spread: 0.9, maxStake: 200, press: 0.6, desc: 'Says he\'s a 20 handicap. He isn\'t.', lines: { hello: 'Go easy on me, I\'m just a hacker.', win: 'Huh, lucky day I guess. Pay up.', lose: 'Fine. You got me.', halve: 'Even. Rematch?', cantPay: 'Hacker, huh? So am I. Hold still.', press: 'Let\'s make it interesting, shall we?', pressed: 'Sure, sure. Whatever you say.' } },
-        { id: 'gus', tier: 1, first: 'Gus', nick: 'Gravel', last: 'Haney', skill: 0.6, spread: 0.8, maxStake: 250, press: 1, desc: 'The best player at the muni, and he knows it', lines: { hello: 'You sure about this?', win: 'Thought so.', lose: '...Nobody beats me here. Nobody.', halve: 'Not bad. Not good either.', cantPay: 'Nobody stiffs Gravel Haney.', press: 'Press. You got lucky.', pressed: 'Your funeral.' } },
+        { id: 'dale', tier: 1, first: 'Dale', nick: 'Dew Sweeper', last: 'Pruitt', skill: 1.775, spread: 1.0, maxStake: 80, press: 1, desc: 'Out at dawn every day; hacks it round, loves a bet', lines: { hello: 'Early bird gets the cash, kid.', win: 'Pleasure doing business.', lose: 'Ah, nuts. Double or nothing tomorrow?', halve: 'Nobody wins, nobody cries.', cantPay: 'No cash? Then I\'ll take it in clubs.', press: 'Double or nothing on the rest!', pressed: 'Ha! You\'re on.' } },
+        { id: 'terry', tier: 1, first: 'Terry', nick: 'Two-Putt', last: 'Vance', skill: 1.375, spread: 0.8, maxStake: 150, press: 0, desc: 'A steady bogey golfer who never three-putts', lines: { hello: 'Slow and steady, friend. Slow and steady.', win: 'Told you. Never three-putt.', lose: 'Well. That stings.', halve: 'Square. I\'ll take it.', cantPay: 'You bet money you didn\'t have? Steady on. Steady.', press: 'I don\'t press. Never have.', pressed: 'If you must. Steady, though.' } },
+        { id: 'sal', tier: 1, first: 'Sal', nick: 'Sandbag', last: 'Moretti', skill: 1.075, spread: 0.9, maxStake: 200, press: 0.6, desc: 'Says he\'s a 20 handicap. He isn\'t.', lines: { hello: 'Go easy on me, I\'m just a hacker.', win: 'Huh, lucky day I guess. Pay up.', lose: 'Fine. You got me.', halve: 'Even. Rematch?', cantPay: 'Hacker, huh? So am I. Hold still.', press: 'Let\'s make it interesting, shall we?', pressed: 'Sure, sure. Whatever you say.' } },
+        { id: 'gus', tier: 1, first: 'Gus', nick: 'Gravel', last: 'Haney', skill: 0.775, spread: 0.8, maxStake: 250, press: 1, desc: 'The best player at the muni, and he knows it', lines: { hello: 'You sure about this?', win: 'Thought so.', lose: '...Nobody beats me here. Nobody.', halve: 'Not bad. Not good either.', cantPay: 'Nobody stiffs Gravel Haney.', press: 'Press. You got lucky.', pressed: 'Your funeral.' } },
         // ---- tier 2: the resort circuit (chunk 8)
-        { id: 'chad', tier: 2, first: 'Chad', nick: 'Trust Fund', last: 'Whitmore', skill: 0.55, spread: 0.9, maxStake: 400, press: 1, desc: 'Plays with his father\'s money and presses everything', lines: { hello: 'Let\'s make this worth my time, yeah?', win: 'Put it on my tab. Oh wait — you pay me.', lose: 'Whatever. Dad\'s good for it.', halve: 'Boring. Again tomorrow.', cantPay: 'You don\'t have it? That\'s embarrassing. For you.', press: 'Press. Money\'s no object.', pressed: 'Sure, bro. Love it.' } },
-        { id: 'marco', tier: 2, first: 'Marco', nick: 'Mulligan', last: 'Bellini', skill: 0.5, spread: 1.15, maxStake: 300, press: 0.8, desc: 'Brilliant one hole, a disaster the next', lines: { hello: 'No mulligans today. Probably.', win: 'Bellissimo. Pay the man.', lose: 'Bah! The wind, the greens, everything.', halve: 'A draw. Like football.', cantPay: 'In my family we have a word for this.', press: 'Press! Now it gets fun.', pressed: 'Ah, you have courage. I like it.' } },
-        { id: 'rita', tier: 2, first: 'Rita', nick: 'The Closer', last: 'Delgado', skill: 0.4, spread: 0.7, maxStake: 500, press: 0.5, desc: 'Never misses a short putt when money is on it', lines: { hello: 'Bring your putter. You\'ll need it.', win: 'Closed. As always.', lose: 'Fair. You earned that.', halve: 'Even. Don\'t get used to it.', cantPay: 'Then we settle it another way.', press: 'Let\'s press. I close better than you.', pressed: 'Bold. Fine.' } },
-        { id: 'jim', tier: 2, first: 'Jim', nick: 'Pro-Am', last: 'Kessler', skill: 0.3, spread: 0.6, maxStake: 800, press: 0.3, desc: 'A retired club pro who plays the resort every day', lines: { hello: 'Thirty years teaching this game. Let\'s see.', win: 'Lesson\'s free. The bet isn\'t.', lose: 'Well struck, son. Well struck.', halve: 'A fair contest.', cantPay: 'I taught you better than that.', press: 'Alright. Press.', pressed: 'Accepted.' } },
+        { id: 'chad', tier: 2, first: 'Chad', nick: 'Trust Fund', last: 'Whitmore', skill: 0.7, spread: 0.9, maxStake: 400, press: 1, desc: 'Plays with his father\'s money and presses everything', lines: { hello: 'Let\'s make this worth my time, yeah?', win: 'Put it on my tab. Oh wait — you pay me.', lose: 'Whatever. Dad\'s good for it.', halve: 'Boring. Again tomorrow.', cantPay: 'You don\'t have it? That\'s embarrassing. For you.', press: 'Press. Money\'s no object.', pressed: 'Sure, bro. Love it.' } },
+        { id: 'marco', tier: 2, first: 'Marco', nick: 'Mulligan', last: 'Bellini', skill: 0.65, spread: 1.15, maxStake: 300, press: 0.8, desc: 'Brilliant one hole, a disaster the next', lines: { hello: 'No mulligans today. Probably.', win: 'Bellissimo. Pay the man.', lose: 'Bah! The wind, the greens, everything.', halve: 'A draw. Like football.', cantPay: 'In my family we have a word for this.', press: 'Press! Now it gets fun.', pressed: 'Ah, you have courage. I like it.' } },
+        { id: 'rita', tier: 2, first: 'Rita', nick: 'The Closer', last: 'Delgado', skill: 0.55, spread: 0.7, maxStake: 500, press: 0.5, desc: 'Never misses a short putt when money is on it', lines: { hello: 'Bring your putter. You\'ll need it.', win: 'Closed. As always.', lose: 'Fair. You earned that.', halve: 'Even. Don\'t get used to it.', cantPay: 'Then we settle it another way.', press: 'Let\'s press. I close better than you.', pressed: 'Bold. Fine.' } },
+        { id: 'jim', tier: 2, first: 'Jim', nick: 'Pro-Am', last: 'Kessler', skill: 0.45, spread: 0.6, maxStake: 800, press: 0.3, desc: 'A retired club pro who plays the resort every day', lines: { hello: 'Thirty years teaching this game. Let\'s see.', win: 'Lesson\'s free. The bet isn\'t.', lose: 'Well struck, son. Well struck.', halve: 'A fair contest.', cantPay: 'I taught you better than that.', press: 'Alright. Press.', pressed: 'Accepted.' } },
         // ---- tier 3: the country club (chunk 8)
-        { id: 'whit', tier: 3, first: 'Whitaker', nick: 'Old Money', last: 'Pell', skill: 0.25, spread: 0.6, maxStake: 1500, press: 0.3, desc: 'Fourth-generation member; never hurried, never rattled', lines: { hello: 'Shall we say a modest wager?', win: 'Splendid. My man will collect.', lose: 'Hm. Most irregular.', halve: 'A gentleman\'s draw.', cantPay: 'One simply does not welch at Hawthorne.', press: 'I believe I shall press.', pressed: 'If you insist.' } },
-        { id: 'ana', tier: 3, first: 'Ana', nick: 'Ice', last: 'Lindqvist', skill: 0.1, spread: 0.5, maxStake: 2500, press: 0, desc: 'A former college star: says nothing, misses nothing', lines: { hello: '...', win: 'Good game.', lose: 'Good game.', halve: 'Good game.', cantPay: 'That was a mistake.', press: '...', pressed: 'Fine.' } },
+        { id: 'whit', tier: 3, first: 'Whitaker', nick: 'Old Money', last: 'Pell', skill: 0.5, spread: 0.6, maxStake: 1500, press: 0.3, desc: 'Fourth-generation member; never hurried, never rattled', lines: { hello: 'Shall we say a modest wager?', win: 'Splendid. My man will collect.', lose: 'Hm. Most irregular.', halve: 'A gentleman\'s draw.', cantPay: 'One simply does not welch at Hawthorne.', press: 'I believe I shall press.', pressed: 'If you insist.' } },
+        { id: 'ana', tier: 3, first: 'Ana', nick: 'Ice', last: 'Lindqvist', skill: 0.3, spread: 0.5, maxStake: 2500, press: 0, desc: 'A former college star: says nothing, misses nothing', lines: { hello: '...', win: 'Good game.', lose: 'Good game.', halve: 'Good game.', cantPay: 'That was a mistake.', press: '...', pressed: 'Fine.' } },
         { id: 'duke', tier: 3, first: 'Duke', nick: 'Club Champ', last: 'Harrington', skill: 0.0, spread: 0.5, maxStake: 3000, press: 0.6, desc: 'Eleven-time club champion. It\'s his course', lines: { hello: 'Welcome to my course.', win: 'They don\'t give eleven titles away.', lose: '...Rematch. Tomorrow. Same stakes.', halve: 'You\'ve got game. Not enough, but some.', cantPay: 'Members pay their debts.', press: 'Press. Let\'s see what you\'re made of.', pressed: 'Ha! Gladly.' } },
-        { id: 'vic', tier: 3, first: 'Victor', nick: 'The Shark', last: 'Kane', skill: 0.15, spread: 0.7, maxStake: 5000, press: 1, desc: 'Plays for life-changing money, and collects in person', lines: { hello: 'I hear you like to gamble.', win: 'Nothing personal. Just business.', lose: 'Enjoy it. It won\'t happen twice.', halve: 'Interesting.', cantPay: 'I was hoping you\'d say that.', press: 'Press. Always press.', pressed: 'Now we\'re talking.' } },
+        { id: 'vic', tier: 3, first: 'Victor', nick: 'The Shark', last: 'Kane', skill: 0.2, spread: 0.7, maxStake: 5000, press: 1, desc: 'Plays for life-changing money, and collects in person', lines: { hello: 'I hear you like to gamble.', win: 'Nothing personal. Just business.', lose: 'Enjoy it. It won\'t happen twice.', halve: 'Interesting.', cantPay: 'I was hoping you\'d say that.', press: 'Press. Always press.', pressed: 'Now we\'re talking.' } },
       ];
       const npcById = (id) => NPCS.find((n) => n.id === id);
       const npcName = (n) => `${n.first} “${n.nick}” ${n.last}`;
       // ---- the hustlers drawn (user request, 2026-11-19): on the first tee and on their cards. How good they are shows on
       // them: 1–5 golf-ball pips, and the better ones dress sharper and carry more bag (1: untucked tee, backwards cap,
       // sneakers, a pencil bag … 5: crisp polo and belt, a glove, a tour staff bag).
-      const npcRating = (n) => clamp(Math.round((1.8 - n.skill) / 0.33), 1, 5);     // Dale 1 · Terry 2 · Sal 3 · Gus 4 · the resort 4–5 · the country club 5
+      const npcRating = (n) => clamp(Math.round((2.1 - n.skill) / 0.33), 1, 5);     // Dale 1 · Terry 2 · Sal 3 · Gus 4 · the resort 4–5 · the country club 5 (skills as now measured, audit 4.1)
       const LOOKS = {
         dale: { shirt: '#c96a2b', pants: '#3b5b8a', hat: '#2f6b3f', skin: '#e0ac7e' },
         terry: { shirt: '#7aa6c9', pants: '#c8b48a', hat: '#ffffff', skin: '#c58c5c', prop: 'putter' },
@@ -13342,12 +13342,25 @@
       // same; the hustler has a form for the day (sharp or rusty, the whole match); and now and then a hole blows up.
       const gauss = (r) => Math.sqrt(-2 * Math.log(Math.max(1e-6, r()))) * Math.cos(2 * Math.PI * r());
       const matchSeed = (m, k) => (career.seed ^ Math.imul(m.no, 7919) ^ (m.salt || 0) ^ k) >>> 0;
-      function npcForm(m) { return 0.32 * gauss(rng32(matchSeed(m, 48271))); }       // strokes per hole: − sharp, + rusty
+      // AUDIT 4.1: a hustler's `skill` is now what it says, strokes over par a hole on his own circuit, and his form for
+      // the day swings less.
+      //  - The conditions (wind, fast greens) used to be ADDED to every hole's score: +0.17 a hole at the muni, +0.36 at
+      //    the resort, +0.58 at the country club. So everyone scored worse than his skill, more so on the harder
+      //    circuits (Duke, eleven-time club champion, averaged 5 over at his own club). Now it's measured against the
+      //    circuit's average (condAvg): a windy hole still plays harder than a calm one, but over nine he averages his skill.
+      //  - The skills were set again to keep the muni as it played (the start of the game is tuned on it, audit 7.3),
+      //    and make the resort a little and the country club a lot stronger: its best now average about par at home.
+      //  - Form for the day: 0.32 a hole was ±3 strokes over nine on its own; 0.2 makes a hustler's level readable.
+      const holeCond = (def) => Math.max(0, (def.stimp || 11.5) - 11.5) * 0.1 + ((def.wind && def.wind.mph) || 0) / 40;
+      const condAvgs = {};
+      const condAvg = (tier) => (condAvgs[tier] ??= HOLES.reduce((s, h) => s + holeCond(variantDef(h, TIERS[tier])), 0) / HOLES.length);
+      const NPC_FORM = 0.2;
+      function npcForm(m) { return NPC_FORM * gauss(rng32(matchSeed(m, 48271))); }       // strokes per hole: − sharp, + rusty
       function npcHoleScore(m, i) {
         const n = npcById(m.npc), def = variantDef(HOLES[i], TIERS[m.tier]);
         const r = rng32(matchSeed(m, Math.imul(i + 1, 104729)));
         const g = gauss(r);
-        const cond = Math.max(0, (def.stimp || 11.5) - 11.5) * 0.1 + ((def.wind && def.wind.mph) || 0) / 40;
+        const cond = holeCond(def) - condAvg(m.tier);
         let d = n.skill - 0.14 + npcForm(m) + cond + n.spread * 1.05 * g;     // (−0.14: the blow-ups' average, so his average stays his skill)
         if (r() < 0.09) d += 1 + Math.floor(r() * 2);           // a blow-up hole: a double or worse
         return npcClampScore(def.par, d, r);
@@ -13440,7 +13453,7 @@
         $('btnRound').textContent = 'Forfeit the match';
         m.presses = m.presses || [];
         const n = npcById(m.npc), s = matchStatus(m);
-        const form = npcForm(m), look = form < -0.18 ? `\n${n.first} looks sharp today` : form > 0.18 ? `\n${n.first} looks a bit rusty today` : '';
+        const form = npcForm(m), look = form < -0.11 ? `\n${n.first} looks sharp today` : form > 0.11 ? `\n${n.first} looks a bit rusty today` : '';     // (as often as before: 0.18 of the old 0.32 swing)
         const cdl = caddieOf(), cdTxt = cdl ? (m.noCaddie ? `\n🧢 ${cdl.short} sits this one out: you couldn't pay the ${money(cdl.loop)} loop fee` : `\n🧢 ${cdl.short} is on your bag`) : '';
         // carrying luxury gear: the hustler notices (and so does everyone else)
         const LUX_QUIP = { 1: 'Gold clubs? At the muni? Somebody\'s overcompensating.', 2: 'Ooh, the shiny set. Is that Daddy\'s money too?', 3: 'Ah, the good stuff. Lovely. Pity about the swing.' };
@@ -13690,7 +13703,7 @@
       function fieldHoleScore(t, n, k, i) {
         const T = tourById(t.id), fm = { npc: n.id, tier: t.tier, no: 5000 + t.no, salt: (t.salt ^ Math.imul(k + 1, 2654435761)) >>> 0 };
         const def = variantDef(HOLES[i], TIERS[t.tier]), r = rng32(matchSeed(fm, Math.imul(i + 1, 104729))), g = gauss(r);
-        const cond = Math.max(0, (def.stimp || 11.5) - 11.5) * 0.1 + ((def.wind && def.wind.mph) || 0) / 40;
+        const cond = holeCond(def) - condAvg(t.tier);                 // (as a match: audit 4.1)
         let d = n.skill - 0.14 + npcForm(fm) + cond + n.spread * 1.05 * g + T.form;
         if (r() < 0.09) d += 1 + Math.floor(r() * 2);
         return npcClampScore(def.par, d, r);
@@ -16188,7 +16201,7 @@
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
-        npc, npcPlan, npcHoleScore, npcHurry, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, holeStrokes, submitPvp, playFriend, startFriendRound, showSharedCard, closeSharedCard, checkNewResults, h2h, openHome, closeHome, get homeOpen() { return homeOpen; }, devOn, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
+        npc, npcPlan, npcHoleScore, npcHurry, condAvg, NPCS, npcRating, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, holeStrokes, submitPvp, playFriend, startFriendRound, showSharedCard, closeSharedCard, checkNewResults, h2h, openHome, closeHome, get homeOpen() { return homeOpen; }, devOn, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }
       };
 

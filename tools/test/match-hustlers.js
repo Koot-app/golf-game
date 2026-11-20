@@ -9,8 +9,8 @@
   localStorage.clear(); window.confirm = () => true; const g = window.__golf, out = [];
   $('hmGuest').click(); await sleep(150); document.querySelector('[data-h=career]').click(); await sleep(200);
   $('chName').value = 'TESTER'; $('chCreate').click(); await sleep(300);
-  const NP = [['dale', 1, 1.6, 1], ['terry', 1, 1.2, 2], ['sal', 1, 0.9, 3], ['gus', 1, 0.6, 4], ['chad', 2, 0.55, 4], ['marco', 2, 0.5, 4], ['rita', 2, 0.4, 4], ['jim', 2, 0.3, 5],
-    ['whit', 3, 0.25, 5], ['ana', 3, 0.1, 5], ['duke', 3, 0.0, 5], ['vic', 3, 0.15, 5]];
+  // (the game's own hustlers: their circuit, listed skill and pips, as they are now)
+  const NP = g.NPCS.map((n) => [n.id, n.tier, n.skill, g.npcRating(n)]);
   const pars = g.HOLES.map((h) => h.par), PAR = pars.reduce((a, b) => a + b, 0), rnd = () => (Math.random() * 2 ** 31) >>> 0;
   // ---- part 1
   out.push('hustler  tier pips  skill  avg/hole  avg round   10%  median  90%   best worst  birdie+  double+  aces/1000 par 3s  eagles on par 4/1000');
