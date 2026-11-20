@@ -132,6 +132,8 @@ confirm against a current source and note any difference. Carry is at sea level,
   `endSwing`, `onPointerMove`, `isSpike`, `tempoTarget`, `powerFromBackswing`, `powerFromTempo`, `LIES`, `SLOPES`,
   `AERO`, `windVector`, `clubFit`, `solveShape`, `powerMult`, `runChip`, `computePutt`, `analyzePutt`, `CADDIES`.
   Adding names to `window.__golf` is the one edit to `index.html` this audit allows.
+- **Added by S5:** `createPutt`, `stepPutt`, `puttTarget`, `rollDecel`, `puttGate`, `rng32`, `shopStats`, `SHOP`,
+  `withClubModel`, `setup`, `careerStats`.
 - **From S1:** `debugSwing` reads about 95% tempo when asked for 100% and leaves the swing active. For exact numbers,
   call `computeImpact` directly with the swing numbers you want (`tools/test/swing-input.js` shows how).
 - `debugSwing({ back, tempo, angle, wobble, miss, traj })` plays a scripted swing through the real input path.
@@ -403,11 +405,11 @@ Check:
 | # | Section | Done | Findings | Fixed |
 |---|---|---|---|---|
 | S1 | The mouse swing | ✅ 2026-11-20 | 12 (2 high, 6 medium, 4 low) | |
-| S2 | Impact | | | |
-| S3 | Ball flight, wind, bounce and roll | | | |
-| S4 | The base bag | | | |
-| S5 | The club catalogue | | | |
-| S6 | Stats, lies, dispersion and difficulty | | | |
-| S7 | Shot shaping, height and spin | | | |
-| S8 | Chipping and putting | | | |
-| S9 | What the player is shown vs what happens | | | |
+| S2 | Impact | ✅ 2026-11-20 | 11 (4 medium, 7 low) | |
+| S3 | Ball flight, wind, bounce and roll | ✅ 2026-11-20 | 6 (3 medium, 3 low) | |
+| S4 | The base bag | ✅ 2026-11-20 | 5 (2 medium, 3 low) | |
+| S5 | The club catalogue | ✅ 2026-11-20 | 9 (1 high, 6 medium, 2 low) | |
+| S6 | Stats, lies, dispersion and difficulty | ✅ 2026-11-20 | 5 (3 medium, 2 low); S2.1 raised to high | |
+| S7 | Shot shaping, height and spin | ✅ 2026-11-20 | 5 (2 medium, 3 low) | |
+| S8 | Chipping and putting | ✅ 2026-11-20 | 3 (2 medium, 1 low) | |
+| S9 | What the player is shown vs what happens | ✅ 2026-11-20 | 3 (2 medium, 1 low) | |
