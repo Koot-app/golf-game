@@ -10568,8 +10568,13 @@
         sync.pend = [...(sync.pend || []), { id: sid, cash: career.cash }].slice(-300);
         saveSyncMeta();
         const sent = JSON.stringify(career);
+        // a "keepalive" request outlives the page closing, but browsers refuse one over 64 KB, and an established
+        // career is bigger (audit 2.5: from about 100 matches, the save as the tab hid failed every time, at once). A big
+        // one goes as a normal request: a hidden tab still finishes it; if the page closes first, the change is still on
+        // this PC and goes up on the next visit.
+        const KEEPALIVE_MAX = 60000;
         try {
-          const r = await profileApi('save', { career: JSON.parse(sent), ver: sync.ver }, keepalive);
+          const r = await profileApi('save', { career: JSON.parse(sent), ver: sync.ver }, keepalive && sent.length <= KEEPALIVE_MAX);
           if (r.status === 200) {
             sync.ver = r.data.ver; sync.base = JSON.parse(sent); sync.dirty = JSON.stringify(career) !== sent; sync.pend = [];
             saveSyncMeta(); setSync('ok');
@@ -10706,7 +10711,13 @@
         if (clubOpen && session && $('clubhouse').classList.contains('friends')) renderFriends();     // (cash, records vs friends)
         if (homeOpen) renderHome();
       }
-      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && session && sync.dirty) { clearTimeout(sync.timer); syncNow(true); } });
+      // the tab hides (or closes) with unsent changes: send them now. Back again with changes still unsent (that save
+      // failed, or was cut off by the page closing): queue another (audit 2.5: nothing retried until the next change)
+      document.addEventListener('visibilitychange', () => {
+        if (!session || !sync.dirty) return;
+        if (document.visibilityState === 'hidden') { clearTimeout(sync.timer); syncNow(true); }
+        else if (!sync.busy) queueSync(300);
+      });
       function newCareer(name) {
         return {
           v: 1, name, seed: (Math.random() * 2 ** 31) >>> 0,

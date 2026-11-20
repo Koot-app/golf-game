@@ -388,6 +388,15 @@ The probe scripts are `tools/test/sync-*.js`. Each one's header says how to run 
 - **Fix (S):** when the tab hides, send a normal save if the career is over about 60 KB (a hidden tab still finishes
   its requests), and keep keepalive for small ones. When the tab becomes visible again with unsent changes, queue a
   save. Trimming what is sent (see 2.6) pushes the limit much further out.
+- **✅ Fixed 2026-11-20:** both.
+  - When the tab hides with unsent changes, a career over 60,000 characters is sent as a normal request (a hidden
+    tab still finishes it). A smaller one still goes as keepalive, which outlives the page closing. If the page
+    closes before a normal request finishes, the change is still on this PC (8.1 flushes it as the page goes) and is
+    sent on the next visit.
+  - When the tab comes back with changes still unsent, a save is queued.
+
+  `sync-size.js`: a 71,990-character career hiding the tab → `syncState "ok" · serverVersionMoved true`. A save that
+  failed while the tab was hidden → `afterTabBack "ok" · serverVersionMoved true · stillUnsent false`.
 
 ### 2.6 [Medium] A career grows without limit; at about 1,160 matches every save is refused, shown as "offline"
 - **Where:** `career.history` (never trimmed); `api/profile.js` `MAX_CAREER` (250,000 characters); `syncNow`'s

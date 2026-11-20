@@ -1,7 +1,9 @@
-// Audit 2.4 and 2.5: how big a career gets, and what happens at the two size limits.
+// Audit 2.5 and 2.6: how big a career gets, and what happens at the two size limits.
 //   node tools/test/probe.js http://127.0.0.1:8090/ - @tools/test/sync-size.js 0 audit-size
 // The server refuses a career over 250,000 characters (api/profile.js MAX_CAREER); the browser refuses a save sent while
-// the tab is closing or hiding (fetch keepalive) over 64 KB. career.history is never trimmed.
+// the tab is closing or hiding (fetch keepalive) over 64 KB. Since the fixes: a big save as the tab hides goes as a
+// normal request (2.5), a failed one is sent again when the tab is back, and the history is trimmed on save (2.6).
+// (The "after N matches" sizes are of a career built without saving, so untrimmed.)
 (async () => {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms)), $ = (id) => document.getElementById(id);
   for (let i = 0; i < 50 && !window.__golf; i++) await sleep(200);
@@ -39,6 +41,16 @@
   out.tabHidingSaveOver64KB = { bytes: len(g.career), syncState: g.sync.state, serverVersionMoved: g.sync.ver !== v0, retryQueued: !!g.sync.again };
   await g.syncNow(); await sleep(300);
   out.normalSaveSameCareer = { syncState: g.sync.state, serverVersionMoved: g.sync.ver !== v0 };
+  // ---- 2.5: a save that failed while the tab was hidden is sent again when the tab is back
+  const f0 = window.fetch; let failNext = true;
+  window.fetch = function (...a) { if (failNext && /profile/.test(String(a[0]))) { failNext = false; return Promise.reject(new TypeError('Failed to fetch')); } return f0.apply(this, a); };
+  g.career.cash += 1; g.career.stamp = Date.now(); g.sync.dirty = true; const v3 = g.sync.ver;
+  await g.syncNow(true); await sleep(200);
+  const whileHidden = g.sync.state;
+  Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+  document.dispatchEvent(new Event('visibilitychange')); await sleep(1200);
+  window.fetch = f0;
+  out.failedThenTabBack = { whileHidden, afterTabBack: g.sync.state, serverVersionMoved: g.sync.ver !== v3, stillUnsent: g.sync.dirty };
   // ---- 2.6: the history is trimmed on the next save (the last 300 lines, plus what's kept for good: the first hustler
   // win, the first $1,000 win, the best finish in each invitational, every friend challenge)
   grow(out.matchesToPass250000 + 20);
