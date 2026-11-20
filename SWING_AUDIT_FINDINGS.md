@@ -607,6 +607,8 @@ try other lift curves; it reproduces the game's carries exactly.
   speeds, wind effects, every shape and height number (S7), and the hustler's club table (`npcClubFor`).
 
 ### S3.2 [Medium, realism] A full shot's roll on a green ignores the green's speed and slope
+- **Mostly fixed with S8.1 (2026-11-20):** a full shot that comes down on the green now rolls by the green's Stimp and
+  slopes. One that lands short and runs on keeps the old roll.
 - **Where:** `stepFlight`'s roll: a straight line slowing at `rollDecel × SURF[…].roll`. For a green that is always
   2.2 × 0.45 = 0.99 m/s². The hole's Stimp and the green's contours are not read.
 - **Measured:** rolling friction (m/s²): a full shot on any green **0.99**; a putt or chip on a green at Stimp 9 /
@@ -1478,6 +1480,17 @@ Dexterity 1 and 10 differ little: the driver bends 13 / 11 / 10 yds at Dexterity
 range shows up as less risk for the same curve (`cx.shape`), not more curve.
 
 ### S7.1 [Medium, bug] The career's shot locks can be got round
+- **✅ Fixed 2026-11-20** (`tools/test/swing-fix3.js`, keys sent to the game in a new guest career):
+  - **Height:** while the stinger or the high ball is unlearned, the height ladder plus ball position is capped at
+    one level that way (`heightCapBallPos`, used by the A / D keys, `setHeight` and `enforceUnlocks`). Measured:
+    - ball all the way back is one level, and W is then refused;
+    - after W, the ball can't go back;
+    - after S, it can't go forward.
+  - **Shapes:** while the draw and fade are unlearned, the face may sit only 0.5° off the stance
+    (`COACH.tweakFtp`). The ±2° limit on each stays, because moving face and stance together only re-aims. The most
+    a locked setup can now curve is about 1 yd with the driver, 4 iron or 7 iron (it was 59, 24 and 13).
+  - **Still free, by design:** a curve made with the mouse path (design direction 7: the swing itself shapes the
+    ball) and the extra spin of High 1, which isn't locked.
 - **Where:** `setHeight` refuses Low 2 and High 2 while "the stinger" and "the high ball" are locked. Ball position
   (A / D, ±1) is not limited, and in `computeImpact` a full ball-position move is exactly one height level (`loftRaw
   = ballPos × 3 + traj × 3`). With draw and fade both locked, face and stance are capped at ±2° (`COACH.tweakMax`).
@@ -1504,6 +1517,20 @@ range shows up as less risk for the same curve (`cx.shape`), not more curve.
   would move:** nothing outside a career.
 
 ### S7.2 [Medium, feel / realism] The driver's and 3 wood's Low 2 is never worth hitting, even into the wind
+- **✅ Fixed 2026-11-20:** a club under 16° of loft (`TUNE.lowWoodLoft`: the driver and 3 wood) is lowered only 1.5° a
+  level (`TUNE.lowWoodDeg`; it was 3°). High levels and every other club are unchanged. After, totals in yds:
+
+  | | Launch, apex | Calm | 15 mph headwind | 25 mph headwind |
+  |---|---|---|---|---|
+  | 3 Wood, Low 2 (was 4.7°, apex 7, 232 total) | 7.2°, 18 | 254 | **228** | **208** |
+  | 3 Wood, Mid | 9.8°, 35 | 259 | 221 | 189 |
+  | Driver, Low 2 (was 6.1°, apex 9, 241) | 8.2°, 15 | 262 | 239 | 222 |
+  | Driver, Mid | 10.7°, 29 | 286 | 250 | 223 |
+
+  The 3 wood stinger now does what the coach sells: 5 yds short in still air, 7 yds longer into 15 mph and 19 into
+  25. The driver's Low 2 is now a usable flat drive rather than a knuckleball. It can't beat Mid into the wind,
+  because the stock drive is already a low-spin shot (S4.3); at 25 mph they tie. (A test of launch and spin found no
+  setting that beats Mid into 15 mph.)
 - **Measured** (straight; launch · apex · spin · carry / total; then the total into a 15 mph headwind):
 
   | Club | Low 2 | Low 1 | Mid | High 1 | High 2 |
@@ -1636,6 +1663,41 @@ sand. The same chip rolls 6.3 / 7.2 / 8.1 / 8.5 yds at Stimp 9 / 11 / 13 / 14. M
 and less spin to 7.9.
 
 ### S8.1 [Medium, bug] At the 45 yd hand-off the same pitch rolls twice as far as a chip as it does as a full shot
+- **✅ Fixed 2026-11-20, with S3.2's hand-off** (`tools/test/swing-fix3.js`):
+  - **One rule:** on a hole, a full shot that comes down on the green now lands with the chip's bounce
+    (`chipBounce`, shared with `stepChip`) and rolls with the putting roll on the hole's own green: its Stimp and
+    slopes (`fullShotGreen`, `stepFlight`). The same launch now rolls the same as a chip or as a full shot at every
+    length: PW 10 / 20 / 30 / 42 yds carry rolls 18.8 / 15.0 / 15.4 / 14.8 both ways. It can hole out through the
+    putting cup rule: 2 of 601 straight-at-the-pin pitches dropped.
+  - **Fast landings skid:** a ball that lands hard and is still rolling fast gets up to 4× the green's friction. It
+    gets none of that if it landed slower than 10 m/s (chips and bump-and-runs, which are meant to run) and all of it
+    at 24 m/s or faster (`CHIP.fastV`, `fastSpan`, `fastDrag`, `fastLandLo`, `fastLandHi`). Putts never get it: a
+    50% stroke on the 40 ft scale still rolls 20.0 ft.
+  - **Measured at Stimp 11:**
+    - **Short chips:** they keep about their carry-to-roll ratios. At a 25% swing: sand wedge 1.2, PW 1.9, 9 iron
+      2.3, 7 iron 2.7.
+    - **A 40 yd PW pitch:** rolls 14.8 yds (was 19.6).
+    - **Full shots onto a green:**
+
+      | Club | Before (any Stimp) | After, Stimp 9 / 11 / 13 |
+      |---|---|---|
+      | Driver | 17 | 23 / 26 / 28 |
+      | 3 Wood | 12 | 16 / 18 / 19 |
+      | 5 Iron | 8 | 11 / 12 / 13 |
+      | 7 Iron | 5 | 6.7 / 7.2 / 7.6 |
+      | PW | 2 | 2.4 at every Stimp |
+      | Sand Wedge | 1 | 1.0 at every Stimp |
+
+      About 1.4× before, within S3.2's own estimate ("about double").
+  - **Not reached:** the finding's 5–10 yds for a 40 yd pitch. Most of what's left happens while the ball is still
+    hopping. The deeper cause is that a part swing carries too little spin, because spin follows the backswing in a
+    straight line (S2's note on partial swings). That would be its own fix.
+  - **Side effect:** S8.2 is largely fixed. The 7 iron low runner now totals 48 / 61 / 85 / 104 yds at a 25 / 35 / 50
+    / 65% swing (was 69 / 123 / 205 / 185): about 1.3 yds per 1% of backswing instead of 5, and it rises steadily.
+    Across every chip club and type, totals that fall as the backswing grows (by over a yard) are down from 44 to 35,
+    and the worst from 67 yds to 20.
+  - **Still open:** a full shot that lands short and rolls onto the green keeps the old full-shot roll (S3.2's last
+    part).
 - **Where:** inside `CHIP.maxYd` (45 yds) a shot flies with `createChip` / `stepChip`: it lands with `CHIP.surf`'s
   bounce and rolls with the putting physics. Outside, it flies with `stepFlight`: `SURF`'s bounce, then `rollDecel ×
   SURF.roll` (S3.2).
@@ -1661,6 +1723,8 @@ and less spin to 7.9.
   (the table above), the chip read, and approach shots' release.
 
 ### S8.2 [Medium, feel / realism] A low runner or stock chip with a long club is far too hot
+- **Largely fixed by S8.1 (2026-11-20):** the 7 iron low runner is about 1.3 yds per 1% of backswing (was 5), and
+  rises steadily. Its ratio at a 25% swing is still 1:6 (rule of thumb about 1:4).
 - **Measured:** the 7 iron low runner carries 6.5 yds and rolls 62 at a 25% backswing. At 35% it's 13 and 109. That
   is about 5 yds of total for each 1% of backswing. The 9 iron low runner is 1:5.4 and the PW 1:3.5. The 7 iron stock
   chip is 1:3.7, which is about right.

@@ -7080,6 +7080,7 @@
         shapeFullDeg: 8, shapeFullPerLoft: 0.45, shapeLaunchDeg: 1.0, shapeSpin: 0.10, shapeKeep: 0.10, shapeRoll: 0.35,
         shapeLoftLo: 10.5, shapeLoftHi: 20, shapeAirMin: 0.4,    // in-air launch/spin part fades out below shapeLoftHi of delivered loft
         trajLoftDeg: 3,         // degrees of loft per spin level: W takes it off (forward spin, lower), S adds it (backspin, higher)
+        lowWoodLoft: 16, lowWoodDeg: 1.5,   // ...but a club under 16° of loft is only lowered 1.5° a level (swing audit S7.2)
         // Deceleration only counts when the club is clearly quitting on the shot, and the penalty scales with how badly.
         decelRatio: 0.70, decelSpan: 0.35, decelSpeedMult: 0.94, decelStrikeMm: 4,
         axisK: 0.7, axisGainMin: 1.0, axisGainMax: 2.5, axisMax: 65,   // AUDIT 7
@@ -7132,6 +7133,14 @@
         flopHardpanMm: 1.5, flopBladeChance: 0.30,    // off hardpan the open blade bounces into the ball's equator
         bounceDiv: 30,                  // a wedge's bounce / this = share of the bunker / heavy-rough lie difficulty it skims past
         checkDecel: 5.0, checkTau: 0.30,   // backspin left at the first roll grips the green: extra m/s^2 per 9000 rpm, fading fast
+        // a ball that has LANDED hard (a pitch, a full shot onto the green) skids while it is still rolling fast: friction ×
+        // up to (1 + fastDrag), reached fastSpan m/s above fastV. How much of that it gets grows with its landing speed, from
+        // none at fastLandLo m/s (a chip or a bump-and-run, which is meant to run) to all of it at fastLandHi. Putts never
+        // get it. Swing audit S8.1: with plain putting friction a 40 yd pitch ran 20 yds and a driver onto a green 50.
+        // Measured at Stimp 11: chips keep about their carry-to-roll ratios (sand wedge 1.2, PW 1.9, 9 iron 2.3, 7 iron 2.7
+        // at a 25% swing); a 40 yd PW pitch rolls about 15 yds; full shots onto a green roll driver 26, 3 wood 18, 5 iron
+        // 12, 7 iron 7, PW 2 (about 1.4 times the old full-shot rule, which ignored the Stimp and the slopes).
+        fastV: 1.2, fastSpan: 3, fastDrag: 3, fastLandLo: 10, fastLandHi: 24,
         dunkSpeed: 5,                   // m/s: a ball landing in the cup slower than this stays in
         // how each surface takes a landing chip: bounce (e), speed kept through the bounce (keep), how much backspin can
         // grip (check), and rolling friction as a multiple of the green's Stimp friction (drag)
@@ -7305,7 +7314,11 @@
         //    shapeKeep, shapeRoll), keyed to how hard the ball is curving for its club. A chip preset's own open face still
         //    adds its loft (the flop, the high soft chip).
         const faceLoft = (align ? align.face : 0) * 0.6;      // (the draw / fade flight difference comes from SHOT SHAPE below)
-        const loftRaw = faceLoft + setup.ballPos * 3.0 + traj * TUNE.trajLoftDeg;
+        // Height levels: the W/S ladder plus ball position (a full move is one level). Swing audit S7.2: a club with little
+        // loft to give (under lowWoodLoft: the driver, the 3 wood) loses only lowWoodDeg a level when it is LOWERED, so its
+        // Low 2 is a flat bullet (about 8°, apex 15 yds) instead of a knuckleball that falls out of the sky (5–6°, 7–9 yds).
+        const levels = traj + setup.ballPos * 3.0 / TUNE.trajLoftDeg;
+        const loftRaw = faceLoft + levels * (levels < 0 && club.loft < TUNE.lowWoodLoft ? TUNE.lowWoodDeg : TUNE.trajLoftDeg);
         const loftDelta = Math.max(-9 * (1 - club.floor) / 0.5, loftRaw) + (flop ? CHIP.flopLoft : 0);     // the flop lays the blade wide open
         const setupSpin = clamp(1 + loftRaw * (0.2 / 3.0), club.floor, 1.5);
         //    SPIN (setup.spinCtl -1 / 0 / +1): separate from height. A steeper, trapping strike adds backspin (and launches
@@ -7490,11 +7503,14 @@
           release: L.release || 0,        // +1 = full draw (runs out), -1 = full fade (checks)
           ground: L.ground || null,       // optional (x, z) => { e, keep, roll } multipliers for the surface under the ball
           obstacle: L.obstacle || null,   // optional (x, y, z) => id of a tree the ball is inside, or -1 (see treeDeflect)
+          green: L.green || null,         // optional chip view of the hole's green in this flight's frame (see stepFlight)
         };
       }
 
       function stepFlight(f, dt) {
         if (f.phase === 'stopped') return;
+        // handed to the chip's rules after coming down on the green (below): the green's Stimp and slopes from then on
+        if (f.g) { stepChip(f, dt); if (f.phase === 'holed') f.phase = 'stopped'; return; }
         f.t += dt;
         const p = f.p, v = f.v;
 
@@ -7517,6 +7533,13 @@
         // Ground: steep, high-spin landings check up; shallow, low-spin ones skip forward.
         if (p.y <= 0 && v.y < 0) {
           p.y = 0;
+          // swing audit S8.1 / S3.2: on a hole, a full shot that comes down on the green lands and rolls as a chip does,
+          // on the hole's own green (its Stimp and slopes), so the same pitch plays alike either side of CHIP.maxYd
+          if (f.green && f.green.surfAt(p.x, p.z) === 'green') {
+            f.g = f.green; chipBounce(f, 'green');
+            if (f.phase === 'holed') f.phase = 'stopped';
+            return;
+          }
           if (f.carry === null) { f.carry = Math.hypot(p.x, p.z); f.land = { x: p.x, z: p.z }; }
           const vy = -v.y, vh = Math.hypot(v.x, v.z);
           const steep = Math.sin(Math.atan2(vy, vh)), spinN = f.rpm / 9000;
@@ -7583,30 +7606,33 @@
         }
         airStep(f, dt);
         const gy = g.h(p.x, p.z);
-        if (p.y <= gy && v.y < 0) {
-          p.y = gy;
-          const key = g.surfAt(p.x, p.z), S = CHIP.surf[key] || CHIP.surf.fairway;
-          if (f.carry === null) { f.carry = Math.hypot(p.x, p.z); f.land = { x: p.x, z: p.z }; f.landSurf = key; }
-          const vy = -v.y, vh = Math.hypot(v.x, v.z);
-          if (Math.hypot(p.x - g.hole.x, p.z - g.hole.z) < HOLE_R * 0.9 && vh < CHIP.dunkSpeed) {      // straight in the cup
-            p.x = g.hole.x; p.z = g.hole.z; v.x = v.y = v.z = 0; f.phase = 'holed'; f.holed = true; return;
-          }
-          const steep = Math.sin(Math.atan2(vy, vh)), spinN = f.rpm / 9000;
-          const e = clamp(0.52 - 0.014 * vy, 0.18, 0.5) * S.e;
-          const keep = clamp(0.80 - 0.25 * steep - 0.75 * spinN * steep * S.check + TUNE.shapeKeep * f.release, -0.12, 0.88) * S.keep;
-          v.x *= keep; v.z *= keep; v.y = e * vy;
-          f.rpm *= 0.35; f.bounces++;
-          if (v.y < 0.7 || key === 'bunker') {
-            v.y = 0; f.phase = 'roll';
-            f.q = {
-              green: g, p: { x: p.x, z: p.z }, v: { x: v.x, z: v.z }, dir: Math.atan2(v.x, -v.z), skid: 0, t: 0, rolled: 0,
-              phase: 'roll', holed: false, lip: false, inCup: false, maxBreak: 0, holeSpeed: null,
-              // spin left on the ball grips: a fade / backspin chip checks, a draw / forward-spin chip releases
-              extraDecel: CHIP.checkDecel * (f.rpm / 9000) * S.check * (1 - TUNE.shapeRoll * f.release),
-            };
-          }
-        }
+        if (p.y <= gy && v.y < 0) { p.y = gy; chipBounce(f, g.surfAt(p.x, p.z)); }
         if (f.t > 30) f.phase = 'stopped';
+      }
+      // One landing on the chip's surfaces (key = CHIP.surf key). Also used by a full shot that comes down on the green
+      // (swing audit S8.1 / S3.2: createFlight's `green`), so a pitch lands and rolls by one rule either side of 45 yds.
+      function chipBounce(f, key) {
+        const p = f.p, v = f.v, g = f.g, S = CHIP.surf[key] || CHIP.surf.fairway;
+        if (f.carry === null) { f.carry = Math.hypot(p.x, p.z); f.land = { x: p.x, z: p.z }; f.landSurf = key; f.landV = Math.hypot(v.x, v.y, v.z); }
+        const vy = -v.y, vh = Math.hypot(v.x, v.z);
+        if (Math.hypot(p.x - g.hole.x, p.z - g.hole.z) < HOLE_R * 0.9 && vh < CHIP.dunkSpeed) {      // straight in the cup
+          p.x = g.hole.x; p.z = g.hole.z; v.x = v.y = v.z = 0; f.phase = 'holed'; f.holed = true; return;
+        }
+        const steep = Math.sin(Math.atan2(vy, vh)), spinN = f.rpm / 9000;
+        const e = clamp(0.52 - 0.014 * vy, 0.18, 0.5) * S.e;
+        const keep = clamp(0.80 - 0.25 * steep - 0.75 * spinN * steep * S.check + TUNE.shapeKeep * f.release, -0.12, 0.88) * S.keep;
+        v.x *= keep; v.z *= keep; v.y = e * vy;
+        f.rpm *= 0.35; f.bounces++;
+        if (v.y < 0.7 || key === 'bunker') {
+          v.y = 0; f.phase = 'roll';
+          f.q = {
+            green: g, p: { x: p.x, z: p.z }, v: { x: v.x, z: v.z }, dir: Math.atan2(v.x, -v.z), skid: 0, t: 0, rolled: 0,
+            phase: 'roll', holed: false, lip: false, inCup: false, maxBreak: 0, holeSpeed: null,
+            landed: clamp(((f.landV ?? 0) - CHIP.fastLandLo) / (CHIP.fastLandHi - CHIP.fastLandLo), 0, 1),     // how hard it came in (S8.1)
+            // spin left on the ball grips: a fade / backspin chip checks, a draw / forward-spin chip releases
+            extraDecel: CHIP.checkDecel * (f.rpm / 9000) * S.check * (1 - TUNE.shapeRoll * f.release),
+          };
+        }
       }
       function runChip(g, L, wind = { x: 0, z: 0 }) {
         const f = createChip(g, L, wind);
@@ -7850,8 +7876,9 @@
         if (q.phase !== 'roll') return;
         const g = q.green, p = q.p, v = q.v, k = (5 / 7) * GRAV;
         const drag = g.drag ? g.drag(p.x, p.z) : !g.inside ? 1 : g.inside(p.x, p.z) ? 1 : g.inside(p.x, p.z, 1.3) ? PUTT.fringeDrag : PUTT.roughDrag;
-        const decel = g.decel * drag + (q.extraDecel || 0);       // extraDecel: a chip's leftover backspin gripping
-        const gr = g.grad(p.x, p.z), s = Math.hypot(v.x, v.z), pull = Math.hypot(gr.x, gr.z) * k;
+        const s = Math.hypot(v.x, v.z), fast = q.landed ? 1 + q.landed * CHIP.fastDrag * clamp((s - CHIP.fastV) / CHIP.fastSpan, 0, 1) : 1;     // (a landed ball skidding: CHIP)
+        const decel = g.decel * drag * fast + (q.extraDecel || 0);       // extraDecel: a chip's leftover backspin gripping
+        const gr = g.grad(p.x, p.z), pull = Math.hypot(gr.x, gr.z) * k;
         const skidding = q.rolled < q.skid;                    // a skidding ball has not started to take the break
         let ax = skidding ? 0 : -k * gr.x, az = skidding ? 0 : -k * gr.z;
         if (s > 1e-4) { ax -= decel * v.x / s; az -= decel * v.z / s; }
@@ -9600,6 +9627,7 @@
           ballSpeed: res.ballSpeed, vla: res.vla, dir, spin: res.spin, axis: res.axis, release: res.release,
           ground: hb ? (x, z) => SURF[surfaceAt(hb.x + x, hb.z + z)] : null,
           obstacle: hb ? (x, y, z) => treeAt(hb.x + x, y, hb.z + z) : null,      // the trees on the hole
+          green: hb ? fullShotGreen(hb) : null,                                  // a landing on the green plays as a chip's (S8.1)
         }, windVector(state.windMph, state.windDir), Math.max(0, ballLift()));
         const tracer = newTracer();
         shot = {
@@ -9825,8 +9853,20 @@
         if (isChip()) startChip(); else setMode('chip');
       }
 
+      // The hole's green as a chip view in a full shot's own frame (the ball at the origin, world-aligned axes), for
+      // stepFlight's hand-off when the shot comes down on it. Flat for the bounces (the full flight's ground is y = 0);
+      // the green's real slopes, its Stimp and the collar's drag for the roll, as a putt or chip gets.
+      function fullShotGreen(hb) {
+        const S = hole.surface, surfAt = (x, z) => holeChipSurf(hb.x + x, hb.z + z);
+        return {
+          decel: rollDecel(holeStimp()), stimp: holeStimp(), hole: { x: hole.pin.x - hb.x, z: hole.pin.z - hb.z },
+          h: () => 0, grad: (x, z) => S.grad(hb.x + x, hb.z + z), surfAt, drag: (x, z) => (CHIP.surf[surfAt(x, z)] || CHIP.surf.fairway).drag,
+        };
+      }
       function checkHoleOut(s) {             // a chip or pitch that rolls into the cup
         const f = s.flight;
+        if (f.holed) { s.holed = true; return; }          // (a full shot handed to the green's roll: stepFlight)
+        if (f.g) return;                                   // ...whose cup is the putting roll's own (capture speed, lip-outs)
         if (!s.pinRel || f.phase !== 'roll' || Math.hypot(f.p.x - s.pinRel.x, f.p.z - s.pinRel.z) > HOLE_R + 0.02 || Math.hypot(f.v.x, f.v.z) > 3) return;
         f.p.x = s.pinRel.x; f.p.z = s.pinRel.z; f.v.x = f.v.z = 0; f.phase = 'stopped'; s.holed = true;
       }
@@ -12378,7 +12418,7 @@
       //  rebuilt by hand. The mouse swing line still bends the ball: that's skill, not a lesson.
       // =====================================================================================================
       const COACH = {
-        lessonPerLevel: 60, maxStat: 10, tweakMax: 2,
+        lessonPerLevel: 60, maxStat: 10, tweakMax: 2, tweakFtp: 0.5,
         unlocks: {
           draw: { name: 'The draw', price: 250, what: 'F sets up a right-to-left curve that runs out for extra distance' },
           fade: { name: 'The fade', price: 250, what: 'F sets up a left-to-right curve that lands soft and stops' },
@@ -12389,6 +12429,17 @@
         },
       };
       const shotLocked = (k) => careerOn && !!career && k in COACH.unlocks && !career.unlocks[k];
+      // swing audit S7.1: a full ball-position move is a height level, so while the stinger (Low 2) or the high ball (High 2)
+      // is unlearned the ladder PLUS ball position is capped at one level that way. -> true if the setup is past the cap;
+      // fix = also pull the ball position back inside it.
+      function heightCapBallPos(fix = false) {
+        if (!careerOn || isChip()) return false;
+        const lo = shotLocked('stinger') ? -1 : -2, hi = shotLocked('high') ? 1 : 2, per = 3.0 / TUNE.trajLoftDeg;
+        const L = state.height + state.ballPos * per;
+        if (L >= lo - 1e-9 && L <= hi + 1e-9) return false;
+        if (fix) state.ballPos = Math.round(clamp(state.ballPos, (lo - state.height) / per, (hi - state.height) / per) * 10) / 10;
+        return true;
+      }
       function lockedToast(k) { toast(`🔒 ${COACH.unlocks[k].name}\nLearn it from the coach in the clubhouse (J)`, 1800); }
       // $60 × level² (5→6: $1,500), but the first two lessons cost less (audit 7.3: the start was a long grind):
       // 2→3 $80 and 3→4 $360 (they were $240 and $540); from 4→5 ($960) on, the full price
@@ -12400,7 +12451,11 @@
         state.height = clamp(state.height, shotLocked('stinger') ? -1 : -2, shotLocked('high') ? 1 : 2);
         if (shotLocked('spin')) state.spinCtl = 0;
         if ((state.chipType === 'high' && shotLocked('high')) || (state.chipType === 'flop' && shotLocked('flop'))) { if (isChip()) applyChipType('stock', true); else state.chipType = 'stock'; }
-        if (!isChip() && shotLocked('draw') && shotLocked('fade')) { state.face = clamp(state.face, -COACH.tweakMax, COACH.tweakMax); state.stance = clamp(state.stance, -COACH.tweakMax, COACH.tweakMax); }
+        if (!isChip() && shotLocked('draw') && shotLocked('fade')) {
+          state.face = clamp(state.face, -COACH.tweakMax, COACH.tweakMax); state.stance = clamp(state.stance, -COACH.tweakMax, COACH.tweakMax);
+          if (Math.abs(state.face - state.stance) > COACH.tweakFtp) state.stance = clamp(state.face - Math.sign(state.face - state.stance) * COACH.tweakFtp, -COACH.tweakMax, COACH.tweakMax);     // (S7.1)
+        }
+        heightCapBallPos(true);
         updateLockUI(); txtCache.clear();
       }
       // padlocks on the telemetry card's pills
@@ -15079,7 +15134,9 @@
         let v = clamp(Math.round(h), -2, 2);
         if (v <= -2 && shotLocked('stinger')) { v = -1; lockedToast('stinger'); }          // (career: Low 2 and High 2 are learned)
         if (v >= 2 && shotLocked('high')) { v = 1; lockedToast('high'); }
+        const was = state.height;
         state.height = v; telemetry = null;
+        if (heightCapBallPos()) { state.height = was; lockedToast(v < was ? 'stinger' : 'high'); }     // (with the ball position: S7.1)
         refreshShotType(); renderBag();
       }
       function setSpinCtl(v, quiet = false) {
@@ -15286,6 +15343,7 @@
         if (state.view !== 'address' || isPeeking()) return;
         const tw = careerOn && !isChip() && shotLocked('draw') && shotLocked('fade') ? COACH.tweakMax : 0;     // (career: ±2° until a shape is learned)
         if (tw && ['KeyQ', 'KeyE', 'KeyZ', 'KeyC'].includes(c) && !e.repeat && Math.abs(c === 'KeyQ' || c === 'KeyE' ? state.face : state.stance) >= tw) toast('🔒 Bigger face and stance changes\nLearn the draw or the fade from the coach', 1600);
+        const before = { face: state.face, stance: state.stance, ballPos: state.ballPos };
         if (c === 'KeyQ') { state.face = step(state.face, -0.5, -(tw || 10), tw || 10, 0.5); telemetry = null; }
         if (c === 'KeyE') { state.face = step(state.face, 0.5, -(tw || 10), tw || 10, 0.5); telemetry = null; }
         if (c === 'KeyA') { state.ballPos = step(state.ballPos, -0.1, -1, 1, 0.1); telemetry = null; }
@@ -15295,6 +15353,14 @@
         if (c === 'KeyS' && !e.repeat) setHeight(state.height + 1);
         if (c === 'KeyZ') { state.stance = step(state.stance, -0.5, -(tw || 15), tw || 15, 0.5); telemetry = null; }
         if (c === 'KeyC') { state.stance = step(state.stance, 0.5, -(tw || 15), tw || 15, 0.5); telemetry = null; }
+        // swing audit S7.1: what the coach sells can't be set up by hand first. Until a shape is learned the face may sit
+        // only COACH.tweakFtp off the stance (face and stance together just re-aim; the gap between them is what curves
+        // it). Until Low 2 / High 2 are learned, the ladder plus ball position can't pass one level either way.
+        if (tw && Math.abs(state.face - state.stance) > COACH.tweakFtp + 1e-9 && ['KeyQ', 'KeyE', 'KeyZ', 'KeyC'].includes(c)) {
+          state.face = before.face; state.stance = before.stance;
+          if (!e.repeat) toast('🔒 Curving it from the setup\nLearn the draw or the fade from the coach', 1600);
+        }
+        if ((c === 'KeyA' || c === 'KeyD') && heightCapBallPos()) { state.ballPos = before.ballPos; if (!e.repeat) lockedToast(c === 'KeyA' ? 'stinger' : 'high'); }
         if (c === 'KeyX' && !e.repeat) return resetSetup();
       });
       window.addEventListener('keyup', (e) => {
@@ -16420,6 +16486,7 @@
         analyzeSwing, computeImpact, swingSample, beginSwing, endSwing, onPointerMove, isSpike, tempoTarget, powerFromBackswing, powerFromTempo,
         LIES, SLOPES, AERO, windVector, clubFit, solveShape, powerMult, runChip, computePutt, analyzePutt, CADDIES,
         createPutt, stepPutt, puttTarget, rollDecel, puttGate, rng32, shopStats, SHOP, withClubModel, setup, careerStats,
+        fullShotGreen, holeStimp, heightCapBallPos, COACH,
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },

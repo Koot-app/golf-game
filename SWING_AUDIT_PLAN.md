@@ -410,6 +410,6 @@ Check:
 | S4 | The base bag | ✅ 2026-11-20 | 5 (2 medium, 3 low) | S4.1 (2026-11-20) |
 | S5 | The club catalogue | ✅ 2026-11-20 | 9 (1 high, 6 medium, 2 low) | S5.1, S5.2, S5.3 (2026-11-20) |
 | S6 | Stats, lies, dispersion and difficulty | ✅ 2026-11-20 | 5 (3 medium, 2 low); S2.1 raised to high | S6.1 (2026-11-20; S9.2 partly) |
-| S7 | Shot shaping, height and spin | ✅ 2026-11-20 | 5 (2 medium, 3 low) | |
-| S8 | Chipping and putting | ✅ 2026-11-20 | 3 (2 medium, 1 low) | |
+| S7 | Shot shaping, height and spin | ✅ 2026-11-20 | 5 (2 medium, 3 low) | S7.1, S7.2 (2026-11-20) |
+| S8 | Chipping and putting | ✅ 2026-11-20 | 3 (2 medium, 1 low) | S8.1 (2026-11-20; S8.2 largely, S3.2 mostly) |
 | S9 | What the player is shown vs what happens | ✅ 2026-11-20 | 3 (2 medium, 1 low) | |
