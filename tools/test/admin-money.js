@@ -9,19 +9,23 @@
   for (let i = 0; i < 50 && !window.__golf; i++) await sleep(200);
   localStorage.clear(); window.confirm = () => true; const g = window.__golf, out = [];
   const say = (ok, t) => out.push(`${(ok ? 'ok' : 'FAIL').padEnd(5)} ${t}`);
-  const shown = () => getComputedStyle($('chAdmin')).display !== 'none';
+  const shown = () => getComputedStyle($('chAdmin')).display !== 'none', btn = () => getComputedStyle($('chAdminBtn')).display !== 'none';
   // ---- a normal profile: no admin row
   $('hmGuest').click(); await sleep(150); document.querySelector('[data-h=career]').click(); await sleep(200);
   document.querySelector('#siTabs [data-si=new]').click(); await sleep(100);
   $('chName').value = 'N' + (Date.now() % 1e9); $('siPw').value = 'pw'; $('chCreate').click(); await sleep(1500);
-  say(g.session && !shown(), `a normal profile: signed in ${!!g.session}, the admin row shown ${shown()}`);
+  say(g.session && !shown() && !btn(), `a normal profile: signed in ${!!g.session}, the admin button shown ${btn()}, the row ${shown()}`);
   // ---- the admin: sign in as Keeto (the dev server's throwaway credential)
   $('chSwitch').click(); await sleep(800);
   document.querySelector('[data-h=career]') && document.querySelector('[data-h=career]').click(); await sleep(300);
   document.querySelector('#siTabs [data-si=in]').click(); await sleep(100);
   $('chName').value = 'Keeto'; $('siPw').value = 'test-admin-pw'; $('chCreate').click(); await sleep(2500);
   if (!g.session || g.session.id !== 'keeto') return out.concat(`could not sign in as Keeto: ${$('chErr').textContent}`).join('\n');
-  say(shown(), `signed in as Keeto: the admin row shown ${shown()}`);
+  say(btn() && !shown(), `signed in as Keeto: the "👑 Admin" button shown ${btn()}, the row hidden to start with (${!shown()})`);
+  $('chAdminBtn').click(); await sleep(150);
+  const opened = shown(); $('chAdminBtn').click(); await sleep(150);
+  const closed = !shown(); $('chAdminBtn').click(); await sleep(150);
+  say(opened && closed && shown(), `the button opens the row (${opened}), closes it (${closed}), and opens it again (${shown()})`);
   const c0 = g.career.cash;
   document.querySelector('#chAdmin button[data-add="100000"]').click(); await sleep(200);
   $('chAdminAmt').value = '2500'; $('chAdminAmt').dispatchEvent(new KeyboardEvent('keydown', { code: 'Enter', key: 'Enter', bubbles: true })); await sleep(200);

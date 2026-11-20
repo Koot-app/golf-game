@@ -5656,8 +5656,22 @@
       font-size: 12px;
     }
 
-    .ch-admin.on {
+    /* (hidden until the footer's "👑 Admin" button opens it: .on = this is the admin, .open = shown) */
+    .ch-admin.on.open {
       display: flex;
+    }
+
+    #chAdminBtn {
+      display: none;
+    }
+
+    #chAdminBtn.on {
+      display: inline-block;
+    }
+
+    #chAdminBtn.open {
+      border-color: rgba(243, 220, 160, .7);
+      color: #f3dca0;
     }
 
     .ch-admin b {
@@ -6796,7 +6810,7 @@
           <button data-go="bagroom"><b>🎒 Your bag</b><i>Every club, every number</i></button>
         </div>
         <div class="ch-msg" id="chMsg"></div>
-        <div class="ch-foot"><button id="chLeave">Leave career</button><button id="chSwitch">Switch player</button><button id="chPw">Change password</button><button id="chRetire">Retire (start over)</button><span
+        <div class="ch-foot"><button id="chLeave">Leave career</button><button id="chSwitch">Switch player</button><button id="chPw">Change password</button><button id="chAdminBtn" title="Show or hide the admin tools">👑 Admin</button><button id="chRetire">Retire (start over)</button><span
             id="chSync">J opens the clubhouse any time</span></div>
         <!-- the admin's money (user request, 2026-11-20): only for the admin profile, for testing what costs a lot -->
         <div class="ch-admin" id="chAdmin"><b>👑 Admin</b><span>Add money:</span><button data-add="1000">+$1,000</button><button
@@ -10995,6 +11009,7 @@
         setText('chWho', career.name);
         $('chPw').style.display = session && !adminOk ? '' : 'none';
         $('chAdmin').classList.toggle('on', !!session && adminOk);      // (the server says who the admin is, never the browser)
+        $('chAdminBtn').classList.toggle('on', !!session && adminOk);
         if (!session) $('chPwForm').classList.remove('on');
         setText('chMedal', career.name.slice(0, 2).toUpperCase());
         const colv = collectionOf(career.trophies).value;
@@ -12041,6 +12056,7 @@
         const on = devOn();
         document.body.classList.toggle('dev', on);
         $('chAdmin').classList.toggle('on', !!session && adminOk && !!career);   // (the admin's money: also when the rights arrive late)
+        $('chAdminBtn').classList.toggle('on', !!session && adminOk && !!career);
         if (!on && !careerOn && !round.on && typeof setStats === 'function') {        // everyone else plays the standard game
           setStats(ROUND_STATS);
           state.windMph = 0; state.windDir = 0; $('inWind').value = 0; $('inWindDir').value = 0;
@@ -15394,6 +15410,12 @@
         $('siTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { b.blur(); siMode = b.dataset.si; renderSignIn(); } });
         $('chSwitch').addEventListener('click', (e) => { e.currentTarget.blur(); switchPlayer(); });
         $('chPw').addEventListener('click', (e) => { e.currentTarget.blur(); togglePwForm(); });
+        $('chAdminBtn').addEventListener('click', (e) => {     // show / hide the admin tools (hidden to start with)
+          e.currentTarget.blur();
+          const open = !$('chAdmin').classList.contains('open');
+          $('chAdmin').classList.toggle('open', open); $('chAdminBtn').classList.toggle('open', open);
+          if (!open) setText('chAdminMsg', '');
+        });
         $('chAdmin').addEventListener('click', (e) => {
           const b = e.target.closest('button[data-add], button[data-rep]');
           if (!b) return;
