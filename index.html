@@ -7042,6 +7042,7 @@
         spinMore: 0.30, spinLess: 0.25,            // backspin +30% / -25% at full authority (More is capped by the lie's spinCap)
         spinMoreLaunch: -1.0, spinLessLaunch: 0.8, // launch change (deg): trapped = a touch lower, swept = a touch higher
         spinMoreSpeed: 0.02,                       // ball speed lost to the steeper strike
+        spinAskMax: 1.35, spinMaxRpm: 12000,       // swing audit S2.2: height + More spin add at most +35%, and never past 12,000 rpm
         cxSpinMore: 0.35, cxSpinLess: 0.15,        // difficulty at full authority: the steep strike is the riskier one
         // AGAINST THE GRAIN: a draw naturally flies lower and a fade higher (see SHOT SHAPE). Asking a draw to fly HIGH
         // (backspin) or a fade to fly LOW (forward spin) fights that, and costs this much more per spin level, scaled in
@@ -7225,6 +7226,11 @@
       // Turns a recorded mouse stroke into swing numbers.
       // S = [{t (ms), x, y}] in raw mouse counts (x<0 = backswing, y>0 = screen-down); iTop = index of the top of the
       // backswing; iImp = index of the sample where x crosses 0.
+      // the most loft a full swing can take off this club (deg, negative): its spin floor, from 1 (none) to 0.5 (9°)
+      const heightLoftFloor = (club) => -9 * (1 - club.floor) / 0.5;
+      // the loft a height level (W/S ladder + ball position, in levels) changes on this club, after its floor
+      const heightLoft = (club, levels) => Math.max(heightLoftFloor(club), levels * (levels < 0 && club.loft < TUNE.lowWoodLoft ? TUNE.lowWoodDeg : TUNE.trajLoftDeg));
+
       function analyzeSwing(S, iTop, iImp, cal) {
         const top = S[iTop];
         const bsRaw = Math.abs(top.x) / cal.swingPx, bs = Math.min(1.10, bsRaw);
@@ -7357,8 +7363,17 @@
         // Low 2 is a flat bullet (about 8°, apex 15 yds) instead of a knuckleball that falls out of the sky (5–6°, 7–9 yds).
         const levels = traj + setup.ballPos * 3.0 / TUNE.trajLoftDeg;
         const loftRaw = faceLoft + levels * (levels < 0 && club.loft < TUNE.lowWoodLoft ? TUNE.lowWoodDeg : TUNE.trajLoftDeg);
-        const loftDelta = Math.max(-9 * (1 - club.floor) / 0.5, loftRaw) + (flop ? CHIP.flopLoft : 0);     // the flop lays the blade wide open
-        const setupSpin = clamp(1 + loftRaw * (0.2 / 3.0), club.floor, 1.5);
+        const loftFloor = heightLoftFloor(club);
+        const loftDelta = Math.max(loftFloor, loftRaw) + (flop ? CHIP.flopLoft : 0);     // the flop lays the blade wide open
+        // Swing audit S2.3: the share of a LOWERING that the club's floor lets happen (a game-improvement 7 iron, floor 0.85,
+        // can lose 2.7°: its Low 2 is its Low 1). The height risk is charged on that share, not on the level asked for.
+        const lowerKept = loftRaw < loftFloor && loftRaw < faceLoft ? clamp((loftFloor - faceLoft) / (loftRaw - faceLoft), 0, 1) : 1;
+        // Spin from the setup: 0.2/3 per degree of loft. Swing audit S2.2: loft ADDED by a height level raises spin in
+        // proportion to the spin loft instead (+3° on a 7 iron, spin loft ~24°, is +12%; it was +20% on every club), and
+        // setupBase is the part that's the chip preset's own open face, which the spin cap (step 10) leaves alone.
+        const levelLoft = loftRaw - faceLoft, spinLoft = Math.max(12, club.dynLoft - club.aoa);
+        const setupBase = clamp(1 + faceLoft * (0.2 / 3.0), club.floor, 1.5);
+        const setupSpin = clamp(1 + faceLoft * (0.2 / 3.0) + (levelLoft > 0 ? levelLoft / spinLoft : levelLoft * (0.2 / 3.0)), club.floor, 1.5);
         //    SPIN (setup.spinCtl -1 / 0 / +1): separate from height. A steeper, trapping strike adds backspin (and launches
         //    a touch lower), a shallow sweep takes it off. Only lofted clubs can do much with it, and grass or sand between
         //    club and ball caps the extra spin. So a low wedge can check hard; a low driver cannot spin.
@@ -7366,6 +7381,14 @@
         const spinAuth = clamp((club.loft - TUNE.spinAuthLoLoft) / (TUNE.spinAuthHiLoft - TUNE.spinAuthLoLoft), TUNE.spinAuthMin, 1);
         const spinGain = spinCtl > 0 ? 1 + TUNE.spinMore * spinAuth * (lie.spinCap ?? 1) : spinCtl < 0 ? 1 - TUNE.spinLess * spinAuth : 1;
         if (spinCtl) flags.push(spinCtl > 0 ? 'MORE SPIN' : 'LESS SPIN');
+        // Swing audit S2.2: the spin asks over the club's own spin stack only to spinAskMax, and never past spinMaxRpm
+        // (applied in step 10). moreKept = the share of More spin's gain that survives that cap, judged on the club's own
+        // spin off this lie at this swing's speed: More's risk is charged on that share (High 2 already at the cap gets
+        // nothing from it, so pays nothing for it).
+        const spinCapAsk = (a, own) => (a > 1 ? Math.max(1, Math.min(a, TUNE.spinAskMax, TUNE.spinMaxRpm / Math.max(1, own))) : a);
+        const spinRef = club.spin * setupBase * lie.spin * powerFromBackswing(sw.bs) * powerFromTempo(sw.ds);
+        const hAsk = setupSpin / setupBase;
+        const moreKept = spinGain > 1 ? clamp((spinCapAsk(hAsk * spinGain, spinRef) - spinCapAsk(hAsk, spinRef)) / (hAsk * (spinGain - 1)), 0, 1) : 1;
         // Lower backspin means a given sideways force tilts the spin axis much further toward a slice/hook. Swing audit S6.1:
         // read from the club's own spin off this lie, NOT the spin after the height / spin asks. A lower (de-lofted) shot
         // already curves more through the spin-loft term in axisGainFor, and its risk is in the complexity number; counting
@@ -7408,12 +7431,13 @@
           // height levels asked for: the W/S ladder plus ball position (one full move = one level). A chip preset's own
           // ball position is part of the preset and is not counted again.
           height: (() => {
-            const L = Math.min(3, Math.abs(traj + (setup.ballPos - (align ? align.ballPos || 0 : 0)) * 3 / TUNE.trajLoftDeg)), i = Math.floor(L);
+            const lv = traj + (setup.ballPos - (align ? align.ballPos || 0 : 0)) * 3 / TUNE.trajLoftDeg;
+            const L = Math.min(3, Math.abs(lv) * (lv < 0 ? lowerKept : 1)), i = Math.floor(L);     // (S2.3: what the floor lets happen)
             return i >= 3 ? TUNE.cxHeight[3] : lerp(TUNE.cxHeight[i], TUNE.cxHeight[i + 1], L - i);
           })(),
           // swing audit S7.4: More spin's difficulty is capped by the lie as its spin is (light rough adds 35% of it), so
           // asking for spin the lie can't give no longer costs the full risk for almost nothing
-          spin: spinCtl > 0 ? TUNE.cxSpinMore * spinAuth * (lie.spinCap ?? 1) : spinCtl < 0 ? TUNE.cxSpinLess * spinAuth : 0,
+          spin: spinCtl > 0 ? TUNE.cxSpinMore * spinAuth * (lie.spinCap ?? 1) * moreKept : spinCtl < 0 ? TUNE.cxSpinLess * spinAuth : 0,
           // a bad lie is one more thing to manage; it compounds with everything else asked. A high-bounce wedge skims
           // through sand and thick grass instead of digging, so it takes part of that out.
           lie: (lie.cx || 0) * (1 - bounceK),
@@ -7517,7 +7541,11 @@
         // a pitch is played steeper; spin follows speedFrac × (1 + partSpin × speedFrac × (1 − speedFrac)), the same at a
         // full swing, +30% at a half swing, +22% at a quarter (a 40 yd PW pitch spins about 6,000 rpm, not 4,700)
         const spinFrac = speedFrac * (1 + TUNE.partSpin * speedFrac * Math.max(0, 1 - speedFrac));
-        const spin = club.spin * setupSpin * lieSpin * spinFrac * (1 + TUNE.shapeSpin * shapeAir) * flubSpin * spinGain;
+        // Swing audit S2.2: the asks that add spin (a higher height level, ball forward, More spin) stack only so far. Together
+        // they add at most spinAskMax over the club's own spin, and never past spinMaxRpm (a tour wedge's ceiling off a
+        // clean lie), though a club's own spin is never cut. High 2 + More spin on a sand wedge spun 18,400 rpm.
+        const spinOwn = club.spin * setupBase * lieSpin * spinFrac * (1 + TUNE.shapeSpin * shapeAir) * flubSpin;
+        const spin = spinOwn * spinCapAsk(hAsk * spinGain, spinOwn);
 
         return {
           thetaMouse: thM, path, faceDyn, ftp, hla, vla, axis, strike, dynLoft, smash, clubSpeed, ballSpeed, spin,
@@ -15267,6 +15295,10 @@
         state.height = v; telemetry = null;
         if (heightCapBallPos()) { state.height = was; lockedToast(v < was ? 'stinger' : 'high'); }     // (with the ball position: S7.1)
         refreshShotType(); renderBag();
+        // swing audit S2.3: a club whose floor stops it de-lofting further says so (its risk isn't charged either)
+        const c = CLUBS[state.club], bp = (state.ballPos || 0) * 3 / TUNE.trajLoftDeg;
+        if (!isChip() && state.height < was && state.height < 0 && heightLoft(c, state.height + bp) > heightLoft(c, was + bp) - 0.05)
+          toast(`Low ${-state.height}\nThe ${c.name} can't go any lower: its sole won't de-loft further, so this flies like ${was < 0 ? `Low ${-was}` : 'Mid'}`, 2200);
       }
       function setSpinCtl(v, quiet = false) {
         if (swing.active || state.view === 'flight' || isPutt()) return;

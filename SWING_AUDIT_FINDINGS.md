@@ -488,6 +488,30 @@ table says "with scatter", it used 4,000 seeded shots and the swing the game its
 - **Fix (S):** cap the total (for example the club's own spin × 1.35), or make a height level worth about 10% spin.
   **What else it would move:** the stopping power of high shots and the More-spin button (S7), spin-back on greens
   (S3), chip check (S8).
+- **✅ Fixed 2026-11-20:** both suggestions, plus one more change so the cap doesn't charge for nothing.
+  - **Height levels:** loft added by a height level raises spin in proportion to the club's spin loft (`dynLoft −
+    aoa`, at least 12°), not +20% a level on every club. +3° on a 7 iron (spin loft ~24°) is now +12%, and +8% on a
+    sand wedge. Lowering is unchanged (−20% a level, down to the club's floor), so the stingers are as they were.
+  - **The cap:** the spin asks together (height, ball forward, More spin) add at most `TUNE.spinAskMax` (+35%) over
+    the club's own spin, and never past `TUNE.spinMaxRpm` (12,000). The club's own spin is never cut. A chip preset's
+    open face (`setupBase`) is part of the club's own spin, so the chips' tuning is untouched.
+  - **More spin's risk** is charged on the share of its gain that survives the cap (`moreKept`), as S2.3 does for
+    height. High 2 already at the cap gets little from More spin, so it now costs little.
+  - **Measured** (`tools/test/swing-fix12.js`, stock, fairway; stock / More / High 1 / High 2 / High 2 + More / + ball
+    forward):
+
+    | | rpm | More's risk, alone → on High 2 |
+    |---|---|---|
+    | 7 Iron | 7,000 / 8,400 / 7,864 / 8,728 / 9,450 / 9,450 | 0.23 → 0.10 |
+    | Pitching Wedge | 9,200 / 11,960 / 10,000 / 10,800 / 12,000 / 12,000 | 0.35 → 0.13 |
+    | Sand Wedge | 10,100 / 12,000 / 10,805 / 11,509 / 12,000 / 12,000 | 0.22 → 0.05 |
+    | Lob Wedge | 10,500 / 12,000 / 11,156 / 11,813 / 12,000 / 12,000 | 0.17 → 0.02 |
+
+    The top was 12,600 / 17,940 / 19,695 / 20,475. Lower asks are uncapped: the 7 iron's Low 2 + Less spin still spins
+    3,500. From light rough the sand wedge's High 2 + More spins 9,173. A 40% sand-wedge swing with High 2 + More spins
+    7,025, the +35% cap on its 5,204.
+  - **Unchanged:** the part-swing spin and chip checks (`swing-fix9.js`: same spins and rolls; chip totals that dip
+    with a longer backswing 34 → 35, same worst case). Physics fuzz passes.
 
 ### S2.3 [Medium, bug] Low 2 does nothing more than Low 1 on high-floor clubs, but costs more than twice the risk
 - **Where:** `computeImpact` step 2: `loftDelta = max(−9 × (1 − floor) / 0.5, loftRaw)`; `cx.height` is charged on the
@@ -507,6 +531,18 @@ table says "with scatter", it used 4,000 seeded shots and the swing the game its
 - **Expected:** the floor itself is intended (a forgiving head can't be flighted down). The charge for nothing isn't.
 - **Fix (S):** charge the risk on the loft actually changed, and say "this club can't go lower" when a level adds
   nothing. **What else it would move:** nothing else.
+- **✅ Fixed 2026-11-20:** both.
+  - **The risk:** `cx.height` for a lowering is charged on the share the club's floor lets happen (`lowerKept`). The
+    floor is now one helper, `heightLoftFloor`, with `heightLoft` for a level's applied loft.
+  - **The toast:** stepping down to a level that takes off no more loft says "Low 2 · The 7 Iron can't go any lower:
+    its sole won't de-loft further, so this flies like Low 1".
+  - **Measured** (`tools/test/swing-fix12.js`; loft applied, carry / total, height risk):
+    - Comparison GI 7 iron, Low 2 and Low 1 both: −2.7°, 188 / 197, risk 0.23. It was 0.60 for Low 2 and 0.25 for
+      Low 1. Low 1 is now 0.23 too, because it loses 2.7° of its 3.
+    - Qi Max: the same.
+    - M2 (floor 0.80): Low 2 −3.6°, risk 0.32 (Low 1 0.25).
+    - Base 7 iron and driver: unchanged (0.60 / 0.25).
+  - **The toast checked:** the Qi Max's Low 1 → Low 2 shows it; Mid → Low 1 and the base 7 iron's Low 2 don't.
 
 ### S2.4 [Medium, feel / balance] A club's `work` is applied twice to a mouse path
 - **✅ Fixed 2026-11-20:** the mouse path is now the club path for every club, and `work` acts once, on the curve. This
