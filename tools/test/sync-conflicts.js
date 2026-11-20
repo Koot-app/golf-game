@@ -16,7 +16,7 @@
   if (!g.session) return 'sign-up failed: ' + $('chErr').textContent;
   const me = g.session.token;
   // ---- sign-up (2.9): the name is taken now, and sign-in works
-  const su2 = await api('/api/profile', null, 'signup', { name, password: 'other1', career: { v: 1, name, stats: {} } });
+  const su2 = await api('/api/profile', null, 'signup', { name, password: 'otherpass1', career: { v: 1, name, stats: {} } });
   const li = await api('/api/profile', null, 'login', { name, password: 'testpass1' });
   say(su2.status === 409 && li.status === 200, `sign-up made the profile in one step: the same name again ${su2.status}, sign in ${li.status}`);
   g.career.cash = 1000; g.careerSave(); await sleep(2500);

@@ -47,8 +47,14 @@ function normCareer(c) {
   return c;
 }
 
+// a player's summary for the lists (audit 3.3: the sign-in screen and Friends read these, not the whole careers)
+const summaryOf = (c, id) => ({
+  id, name: plain(c.name).slice(0, 12), tierMax: tierOf(c.tierMax), cash: num(c.cash), rep: num(c.rep), handicap: handicapOf(c),
+  rounds: goodRounds(c).length, last: num(c.stamp), trophies: strs(c.trophies, 40),
+});
+
 // a settled challenge's result from one player's side: the word their history line starts with
 const outcomeFor = (res, p) => (res.kind === 'refund' ? 'refunded' : !res.winner ? 'halved' : res.winner === p ? 'won' : res.kind === 'played' ? 'lost'
   : res.kind === 'expired' ? 'lost (out of time)' : 'lost (forfeit)');
 
-module.exports = { arr, num, tierOf, plain, strs, goodRounds, HCP, handicapOf, normCareer, outcomeFor };
+module.exports = { arr, num, tierOf, plain, strs, goodRounds, HCP, handicapOf, normCareer, outcomeFor, summaryOf };

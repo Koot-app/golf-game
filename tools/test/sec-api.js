@@ -17,6 +17,8 @@ const tag = Date.now() % 1e7, out = [];
 const say = (verdict, text) => { out.push(`${verdict.padEnd(12)} ${text}`); };
 const pars = [4, 3, 5, 4, 4, 3, 4, 5, 4].map((s) => ({ strokes: s, putts: 2, pen: 0 }));
 const change = async (tok, fn) => { const l = await P(tok, 'load'); fn(l.career); return P(tok, 'save', { career: l.career, ver: l.ver }); };
+// a friend round the way the game sends it (audit 3.4): each hole as it's finished, then the card
+const play = async (tok, id, card) => { for (let i = 0; i < card.length; i++) await C(tok, 'hole', { id, i, ...card[i] }); return C(tok, 'submit', { id, card }); };
 
 (async () => {
   // ---- who can act as whom
@@ -24,11 +26,12 @@ const change = async (tok, fn) => { const l = await P(tok, 'load'); fn(l.career)
   r = await P('f'.repeat(64), 'load'); say(r.status === 401 ? 'ok' : 'FINDING', `load with a made-up token -> ${r.status}`);
   r = await P(null, 'signup', { name: 'KEETO', password: 'whatever1', career: career('KEETO') }); say(r.status !== 200 && !r.token ? 'ok' : 'FINDING', `sign up as the admin's name -> ${r.status} ${r.error || ''}`);
   const alice = await P(null, 'signup', { name: 'Al' + tag, password: 'testpass1', career: career('Al' + tag) });
-  const mal = await P(null, 'signup', { name: 'Ma' + tag, password: 'aaaa', career: career('Ma' + tag) });
+  const mal = await P(null, 'signup', { name: 'Ma' + tag, password: 'testpass1', career: career('Ma' + tag) });
   const trent = await P(null, 'signup', { name: 'Tr' + tag, password: 'testpass1', career: career('Tr' + tag) });
   if (!alice.token || !mal.token || !trent.token) { console.log('sign-ups failed (auth rate limit? restart the dev server):', alice.status, mal.status, trent.status); return; }
   const A = alice.token, M = mal.token, T = trent.token, aId = ('Al' + tag).toLowerCase(), mId = ('Ma' + tag).toLowerCase();
-  say('FINDING 3.7', `a 4-character password ("aaaa") is accepted -> ${mal.status}`);
+  r = await P(null, 'signup', { name: 'Sh' + tag, password: 'aaaa', career: career('Sh' + tag) });
+  say(r.status === 400 ? 'ok' : 'FINDING 3.7', `a new profile with a 4-character password ("aaaa") -> ${r.status} ${r.error || ''}`);
   say(alice.admin || mal.admin ? 'FINDING' : 'ok', `a new profile is not an admin -> admin ${!!alice.admin}`);
   r = await change(M, (c) => { c.name = 'Al' + tag; c.cash = 1000; }); const who = (await P(M, 'load')).career.name;
   say(who === 'Ma' + tag ? 'ok' : 'FINDING', `save a career under another player's name -> stored as ${who}`);
@@ -39,12 +42,24 @@ const change = async (tok, fn) => { const l = await P(tok, 'load'); fn(l.career)
   r = await C(T, 'forfeit', { id: ch.id }); say(r.status === 404 ? 'ok' : 'FINDING', `a third player forfeits someone else's challenge -> ${r.status}`);
   r = await C(A, 'accept', { id: ch.id }); say(r.status === 400 ? 'ok' : 'FINDING', `the challenger accepts their own challenge -> ${r.status}`);
 
-  // ---- 3.4: the card is whatever the browser sends
+  // ---- 3.4: the card was whatever the browser sent
   await C(M, 'accept', { id: ch.id });
-  await C(A, 'submit', { id: ch.id, card: pars });
-  r = await C(M, 'submit', { id: ch.id, card: Array.from({ length: 9 }, () => ({ strokes: 1, putts: 0, pen: 0 })) });
-  const aCash = (await P(A, 'load')).career.cash;
-  say('FINDING 3.4', `nine holes-in-one sent as a card -> ${r.status}, "${r.challenge && r.challenge.result && r.challenge.result.line}"; the honest player's cash 1000 -> ${aCash}`);
+  await play(A, ch.id, pars);
+  const aces = Array.from({ length: 9 }, () => ({ strokes: 1, putts: 0, pen: 0 }));
+  r = await C(M, 'submit', { id: ch.id, card: aces });
+  const r1 = await C(M, 'hole', { id: ch.id, i: 0, strokes: 1, putts: 0, pen: 0 });
+  say(r.status === 400 && r1.status === 400 ? 'ok' : 'FINDING 3.4', `nine holes-in-one: as a card -> ${r.status} ${r.error || ''}; a hole-in-one on the par-5 1st -> ${r1.status} ${r1.error || ''}`);
+  r = await C(M, 'submit', { id: ch.id, card: pars });
+  say(r.status === 409 ? 'ok' : 'FINDING 3.4', `a card with no holes sent first -> ${r.status} ${r.error || ''}`);
+  await C(M, 'hole', { id: ch.id, i: 0, ...pars[0], strokes: 7 });
+  const r2 = await C(M, 'hole', { id: ch.id, i: 0, ...pars[0], strokes: 4 }), r3 = await C(M, 'hole', { id: ch.id, i: 3, ...pars[3] });
+  say(r2.status === 409 && r3.status === 409 ? 'ok' : 'FINDING 3.4', `a hole can't be changed once it's in (${r2.status} ${r2.error || ''}), or skipped ahead (${r3.status} ${r3.error || ''})`);
+  for (let i = 1; i < 9; i++) await C(M, 'hole', { id: ch.id, i, ...pars[i] });
+  r = await C(M, 'submit', { id: ch.id, card: pars });
+  say(r.status === 409 ? 'ok' : 'FINDING 3.4', `a card that isn't the holes sent (hole 1: 4 on the card, 7 sent) -> ${r.status} ${r.error || ''}`);
+  r = await C(M, 'submit', { id: ch.id, card: [{ ...pars[0], strokes: 7 }, ...pars.slice(1)] });
+  const fast = r.challenge && r.challenge.fast;
+  say(r.status === 200 && fast && fast[mId] && fast[aId] ? 'ok' : 'FINDING 3.4', `the right card -> ${r.status}, "${r.challenge && r.challenge.result && r.challenge.result.line}"; both cards marked as sent all at once (${JSON.stringify(fast)})`);
   r = await C(M, 'submit', { id: ch.id, card: pars }); say(r.status === 400 ? 'ok' : 'FINDING', `send a second card -> ${r.status}`);
 
   // ---- 3.2: a career with the wrong shape breaks what everyone shares
@@ -59,8 +74,8 @@ const change = async (tok, fn) => { const l = await P(tok, 'load'); fn(l.career)
   await C(A, 'accept', { id: ch.id });
   const before = (await P(A, 'load')).career.cash;
   await change(M, (c) => { c.history = 'x'; });
-  await C(M, 'submit', { id: ch.id, card: pars.map((h) => ({ ...h, strokes: h.strokes + 2 })) });
-  r = await C(A, 'submit', { id: ch.id, card: pars });
+  await play(M, ch.id, pars.map((h) => ({ ...h, strokes: h.strokes + 2 })));
+  r = await play(A, ch.id, pars);
   const l1 = await C(A, 'list'); const mine = (l1.challenges || []).find((x) => x.id === ch.id) || {};
   const after = (await P(A, 'load')).career.cash;
   say(after === before + 400 ? 'ok' : 'FINDING 3.2', `the loser's career has history: "x" -> the winner's submit ${r.status}; "${mine.result && mine.result.line}"; the winner's cash ${before} -> ${after} (should be ${before + 400})`);
@@ -104,11 +119,18 @@ const change = async (tok, fn) => { const l = await P(tok, 'load'); fn(l.career)
     say(r.status === 200 && !(r.top || []).some((x) => x.t === good.t) ? 'ok' : 'FINDING', `the admin removes it -> ${r.status}, still on the board ${(r.top || []).some((x) => x.t === good.t)}`);
   } else say('skipped', 'the admin removing a round (start the dev server with a test GOLF_ADMIN_KEETO and GOLF_TEST_ADMIN_PW)');
 
-  // ---- 3.3: no limit on what a new profile stores, or on how many there are
+  // ---- 3.3: the lists read small summaries, not whole careers; signed-in calls are limited per player
   const big = career('Bg' + tag, { cash: 1e12, junk: 'x'.repeat(248000) });
   r = await P(null, 'signup', { name: 'Bg' + tag, password: 'testpass1', career: big });
   const t0 = Date.now(), ro2 = await P(null, 'roster'), ms = Date.now() - t0, row = (ro2.players || []).find((p) => p.name === 'Bg' + tag) || {};
-  say('FINDING 3.3', `a new profile with 248,000 characters of junk and $1,000,000,000,000 -> ${r.status}; on the public sign-in list with cash ${row.cash}; that list reads every profile's whole career each time (${(ro2.players || []).length} profiles here, ${ms} ms)`);
+  const rosterBytes = JSON.stringify(ro2).length;
+  say(r.status === 200 && row.name ? 'ok' : 'FINDING 3.3', `a profile with 248,000 characters of junk -> ${r.status}; the sign-in list reads summaries (${(ro2.players || []).length} profiles, ${ms} ms, ${rosterBytes} characters back); its cash shows as ${row.cash} (cash is the browser's word, as everywhere in this game)`);
+  await change(A, (c) => { c.cash = 4321; });
+  const fr2 = ((await P(T, 'players')).players || []).find((p) => p.name === 'Al' + tag) || {};
+  say(fr2.cash === 4321 ? 'ok' : 'FINDING 3.3', `a save updates the summary the lists show: Alice's cash on Friends -> ${fr2.cash}`);
+  const codes2 = [];
+  for (let i = 0; i < 32; i++) codes2.push((await P(T, 'players')).status);
+  say(codes2.includes(429) ? 'ok' : 'FINDING 3.3', `the Friends list 32 times in a minute -> 429 from call ${codes2.indexOf(429) + 1}`);
 
   // ---- sign-in attempts are limited per address (last: it locks this address out for a minute)
   const codes = [];

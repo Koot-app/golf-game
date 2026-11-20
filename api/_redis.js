@@ -94,12 +94,15 @@ async function updateCareer(id, fn) {
     const c = normCareer(JSON.parse(data));         // (the right types first: a bad save can't block a payout, audit 3.2)
     fn(c);
     const [n] = await redis([['EVAL', CAS, 1, `golf:career:${id}`, String(+ver || 0), JSON.stringify(c)]]);
-    if (n !== -1) return c;
+    if (n !== -1) {
+      try { await redis([['SET', `golf:sum:${id}`, JSON.stringify(summaryOf(c, id))]]); } catch { /* the lists catch up on the next save */ }
+      return c;
+    }
   }
   throw new Error('Busy — try again');
 }
 
 const { isAdmin, adminCred } = require('./_admins');
-const { normCareer } = require('./_career');
+const { normCareer, summaryOf } = require('./_career');
 
 module.exports = { findCreds, redis, readBody, clientIp, rateLimit, sessionId, sessionValue, SESSION_S, CAS, updateCareer };

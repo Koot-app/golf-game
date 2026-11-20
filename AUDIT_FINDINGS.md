@@ -686,6 +686,24 @@ fixed before this section was first pushed.)
   - Limit sign-ups much harder (a few per address per day, and a ceiling per day overall), and start new profiles
     with a server-made career, not one sent by the browser.
   - Put a per-player limit on `save`, `players`, `showcase` and `list`.
+- **✅ Fixed 2026-11-20:** all but the server-made starting career.
+  - **Summaries:** each player has a small summary (`golf:sum:<id>`: name, circuit, cash, reputation, handicap, rounds,
+    last played, trophies). It's written on every save and sign-up, and by `updateCareer` (payouts, wall sales).
+    `roster` and `players` read only these. A player without one yet gets it worked out from their career once. With
+    a 248,000-character profile on the server, the sign-in list came back in 7 ms, 469 characters long.
+  - **Sign-ups:** 5 a day from one address, and 300 a day for everyone, on top of the 10 a minute. Both are settings
+    (`GOLF_SIGNUPS_PER_IP`, `GOLF_SIGNUPS_PER_DAY`). The dev server raises them for its tests; `sec-limits.js` runs
+    one with the real limit.
+  - **Per-player limits a minute:** save 120, load 60, Friends list 30, trophy rooms 60, buying off a wall 20,
+    password changes 10, the challenge list 60.
+  - **Not done:** a new profile still starts with the career its browser sends (the guest career brought into a
+    profile is a feature). It's checked for shape and size like every save. The game trusts the browser's career
+    everywhere, so a server-made one at sign-up wouldn't stop a made-up cash figure on the next save.
+
+  `sec-api.js` and `sec-limits.js`:
+  - four sign-ups from one address → 200 200 200 429;
+  - 32 Friends lists in a minute → 429 from the 30th;
+  - a save shows on the Friends list straight away.
 
 ### 3.4 [High] A friend-challenge card is whatever the browser sends
 - **Where:** `api/challenge.js` `submit` and `cleanCard` (each hole 1–30 strokes, putts and penalties in range;
@@ -704,6 +722,25 @@ fixed before this section was first pushed.)
   - Work the handicap out on the server from rounds it recorded itself.
   - Both players already see both cards after it settles, which is the social check. A "dispute" note on the shared
     card would add to it.
+- **✅ Fixed 2026-11-20:** the first two in full, the third in part.
+  - **Hole by hole:** each hole goes to the server as it's finished (`hole`), in order. Once in, a hole can't be
+    changed (409), and a hole can't be skipped. The card must be exactly the nine holes sent.
+  - **Impossible scores:** a hole better than three under par (so a hole-in-one on a par 5), or a round better than
+    one under par a hole, is refused.
+  - **Visible speed:** a card whose holes all came in within 3 minutes is marked. Both players see "⚠ …'s card was
+    sent all at once, not hole by hole as it was played" on the shared card. It's a mark, not a refusal: an honest
+    player who lost the connection mid-round sends the rest at the end and gets the same mark.
+  - **What the other player sees:** while a challenge is open, only the number of holes each has sent, never the
+    scores.
+  - **In the game:** it sends each hole after it's played, sends any missing ones before the card, and carries on
+    after a lost reply or a reload (sending a hole that's already in, unchanged, is fine).
+  - **Not done:** working out the "auto" handicap from rounds the server recorded itself. The server records no
+    rounds but challenge cards, too few for a handicap. A cheat who scripts the API, waits, and sends a believable
+    card can still win; only a server that played the shots could stop that.
+
+  `sec-api.js`: nine aces refused (400), a card with no holes sent (409), a changed hole (409), a skipped hole (409),
+  a card that isn't the holes sent (409), the right card settles and is marked. `pvp-round.js`: a friend round played
+  in the game; the server has 3 holes after hole 3, the card settles after the 9th, and the shared card shows the mark.
 
 ### 3.5 [Medium] The rivalry wall is built from the owner's own save
 - **Where:** `api/profile.js`: `wallItem`, `wallPrice`, `showcase`, `buyshow`; the client's `rivalItems`.
@@ -770,6 +807,19 @@ fixed before this section was first pushed.)
   (`14 wrong passwords in a row -> 401 ×5 then 429`).
 - **Fix (S):** a longer minimum (8), a limit per profile as well as per address (for example 10 wrong tries an hour,
   then a wait), and a way to change a password.
+- **✅ Fixed 2026-11-20:** all three.
+  - **Minimum length:** a new profile's password is at least 8 characters. Older, shorter ones still sign in.
+  - **Per-profile limit:** 10 wrong passwords for one profile in an hour, from anywhere, and it can't be signed in to
+    until the hour is up ("Too many wrong passwords for this profile — try again in N minutes"). The 10 a minute per
+    address stays. The trade-off: someone can lock a friend out for an hour on purpose.
+  - **Changing a password:** a "Change password" button in the clubhouse footer (profiles only; the admin's is set on
+    the server), and the server's `password` action, which checks the current one against the same limit.
+  - **Not done:** changing it doesn't sign out other sessions. The server keeps no list of a player's sessions; that
+    is part of 3.9.
+
+  `sec-limits.js`: 10 wrong passwords from 10 addresses, then the right one → 429, while another profile still signs
+  in. The password change: wrong current 401, too short 400, right 200, then the old one 401 and the new one 200.
+  The form was also checked in the game.
 
 ### 3.8 [Medium] The admin password's hash is public, so its length is the only protection
 - **Where:** `api/_admins.js` (the salt and hash for `keeto`), in a public repo.

@@ -91,6 +91,47 @@ async function newSession(id) {
 const SIGNUP = `if redis.call('HSETNX', KEYS[1], 'name', ARGV[1]) == 0 and redis.call('HEXISTS', KEYS[1], 'hash') == 1 then return 0 end
 redis.call('HSET', KEYS[1], 'name', ARGV[1], 'salt', ARGV[2], 'hash', ARGV[3], 'created', ARGV[4])
 return 1`;
+// ---- AUDIT 3.7: passwords. New ones are at least PW_MIN characters. Every profile name is public, so wrong guesses are
+// limited per profile as well as per address: PW_FAILS wrong ones in an hour, then that profile can't be signed in to
+// until the hour is up (whoever is guessing, from wherever). `password` changes a password.
+const PW_MIN = 8, PW_FAILS = 10, PW_WINDOW_S = 3600;
+const pwMatches = async (pw, user) => crypto.timingSafeEqual(Buffer.from(await hashPw(pw, user.salt), 'hex'), Buffer.from(user.hash, 'hex'));
+async function pwLocked(id) {
+  const [n, ttl] = await redis([['GET', `golf:rl:pwfail:${id}`], ['TTL', `golf:rl:pwfail:${id}`]]);
+  return +n >= PW_FAILS ? `Too many wrong passwords for this profile — try again in ${Math.max(1, Math.ceil((+ttl || PW_WINDOW_S) / 60))} minutes` : '';
+}
+const pwFailed = (id) => redis([['SET', `golf:rl:pwfail:${id}`, 0, 'EX', PW_WINDOW_S, 'NX'], ['INCR', `golf:rl:pwfail:${id}`]]);
+const userOf = async (id) => {
+  const [u] = await redis([['HGETALL', `golf:user:${id}`]]);
+  const user = {};
+  if (Array.isArray(u)) for (let i = 0; i < u.length; i += 2) user[u[i]] = u[i + 1];      // (Upstash returns [k, v, k, v])
+  else if (u && typeof u === 'object') Object.assign(user, u);
+  return user;
+};
+// ---- AUDIT 3.3: limits. Sign-ups per address per day and for everyone per day (the dev server raises these for its
+// tests), and per-player limits on the calls a signed-in player makes.
+const SIGNUPS_PER_IP = +process.env.GOLF_SIGNUPS_PER_IP || 5;
+const SIGNUPS_PER_DAY = +process.env.GOLF_SIGNUPS_PER_DAY || 300;
+const PER_MIN = { save: 120, load: 60, players: 30, showcase: 60, buyshow: 20, password: 10 };
+// A small summary of each player (golf:sum:<id>), for the sign-in screen and Friends lists, so they no longer read every
+// player's whole career (up to 200 of them, each up to 250,000 characters) on every call. Written with each save here,
+// and by updateCareer (payouts, wall sales); a player without one yet gets it worked out once from their career.
+const { summaryOf } = require('./_career');
+const putSummary = (id, c) => redis([['SET', `golf:sum:${id}`, JSON.stringify(summaryOf(c, id))]]);
+async function summaries(ids) {
+  const rows = ids.length ? await redis(ids.map((p) => ['GET', `golf:sum:${p}`])) : [];
+  const out = rows.map(parse);
+  const missing = ids.filter((_, i) => !out[i]);
+  if (missing.length) {
+    const cs = await redis(missing.map((p) => ['HGET', `golf:career:${p}`, 'data']));
+    for (let k = 0; k < missing.length; k++) {
+      const c = parse(cs[k]);
+      if (!c || typeof c !== 'object') continue;
+      try { const s = summaryOf(c, missing[k]); out[ids.indexOf(missing[k])] = s; await putSummary(missing[k], c); } catch { /* a bad career: skipped */ }
+    }
+  }
+  return out;
+}
 // a career the client sent: an object of a sensible size, named after the profile, with its fields repaired to the
 // right types (normCareer, audit 3.2)
 function cleanCareer(c, name) {
@@ -125,11 +166,17 @@ module.exports = async (req, res) => {
         const data = action === 'signup' ? cleanCareer(b.career, admin.name) : null;
         if (data) await redis([['HSETNX', `golf:career:${id}`, 'data', data], ['HSETNX', `golf:career:${id}`, 'ver', 1]]);
         const [[cd, cv]] = await redis([['HMGET', `golf:career:${id}`, 'data', 'ver']]);
+        if (cd && data) await putSummary(id, parse(cd));
         return send(200, { token: await newSession(id), name: admin.name, career: parse(cd), ver: +cv || 0, admin: true });
       }
-      if (pw.length < 4 || pw.length > 128) return send(400, { error: 'Passwords are at least 4 characters' });
+      // (audit 3.7: a new profile's password is at least 8 characters; one made before that, shorter, still signs in)
+      if (!pw || pw.length > 128) return send(action === 'signup' ? 400 : 401, { error: action === 'signup' ? `Passwords are ${PW_MIN}–128 characters` : 'Wrong password' });
 
       if (action === 'signup') {
+        if (pw.length < PW_MIN) return send(400, { error: `Passwords are at least ${PW_MIN} characters` });
+        // (audit 3.3: a few new profiles a day from one address, and a ceiling for everyone)
+        if (!(await rateLimit(`golf:rl:signup:${clientIp(req)}`, SIGNUPS_PER_IP, 86400))) return send(429, { error: 'Too many new profiles from here today — try again tomorrow' });
+        if (!(await rateLimit('golf:rl:signup:all', SIGNUPS_PER_DAY, 86400))) return send(429, { error: 'No more new profiles today — try again tomorrow' });
         const data = cleanCareer(b.career, name);
         if (!data) return send(400, { error: 'No career to save' });
         const salt = crypto.randomBytes(16).toString('hex'), hash = await hashPw(pw, salt);
@@ -141,6 +188,7 @@ module.exports = async (req, res) => {
           ['SADD', 'golf:players', id],
           ['HSET', `golf:career:${id}`, 'data', data, 'ver', 1],
         ]);
+        await putSummary(id, JSON.parse(data));
         return send(200, { token: await newSession(id), name, career: JSON.parse(data), ver: 1 });
       }
 
@@ -149,8 +197,9 @@ module.exports = async (req, res) => {
       if (Array.isArray(u)) for (let i = 0; i < u.length; i += 2) user[u[i]] = u[i + 1];      // (Upstash returns [k, v, k, v])
       else if (u && typeof u === 'object') Object.assign(user, u);
       if (!user.hash) return send(401, { error: 'No profile with that name' });
-      const hash = await hashPw(pw, user.salt);
-      if (!crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(user.hash, 'hex'))) return send(401, { error: 'Wrong password' });
+      const locked = await pwLocked(id);
+      if (locked) return send(429, { error: locked });
+      if (!(await pwMatches(pw, user))) { await pwFailed(id); return send(401, { error: 'Wrong password' }); }
       const [data, ver] = await redis([['HMGET', `golf:career:${id}`, 'data', 'ver']]).then(([r]) => r);
       return send(200, { token: await newSession(id), name: user.name, career: parse(data), ver: +ver || 0, admin: false });
     }
@@ -160,22 +209,22 @@ module.exports = async (req, res) => {
       if (!(await rateLimit(`golf:rl:roster:${clientIp(req)}`, 60, 60))) return send(429, { error: 'Too many requests — wait a minute' });
       const [ids] = await redis([['SMEMBERS', 'golf:players']]);
       const list = (ids || []).slice(0, 200);
-      const rows = list.length ? await redis(list.flatMap((p) => [['HGET', `golf:career:${p}`, 'data'], ['HGET', `golf:user:${p}`, 'name']])) : [];
-      const players = list.map((p, i) => [p, parse(rows[2 * i]), rows[2 * i + 1]]).filter(([, c, n]) => c || n)
-        .map(([p, c, n]) => {                                // (one player at a time: a bad career is skipped, never the list)
-          try {
-            const name = c && NAME_RE.test(String(c.name)) ? c.name : n;
-            if (!NAME_RE.test(String(name))) return null;
-            return c ? { name, tierMax: tierOf(c.tierMax), cash: num(c.cash), handicap: handicapOf(c), rounds: goodRounds(c).length, last: num(c.stamp), admin: isAdmin(p), trophies: tro(c) }
-              : { name, tierMax: 1, cash: null, handicap: null, rounds: 0, last: 0, admin: isAdmin(p) };     // (an admin who hasn't played yet)
-          } catch { return null; }
-        }).filter(Boolean);
+      const sums = await summaries(list);                    // (audit 3.3: the summaries, not the whole careers)
+      const noSum = list.filter((_, i) => !sums[i]);
+      const names = noSum.length ? await redis(noSum.map((p) => ['HGET', `golf:user:${p}`, 'name'])) : [];
+      const players = list.map((p, i) => {
+        const s = sums[i];
+        if (s) return NAME_RE.test(String(s.name)) ? { name: s.name, tierMax: s.tierMax, cash: s.cash, handicap: s.handicap, rounds: s.rounds, last: s.last, admin: isAdmin(p), trophies: s.trophies } : null;
+        const n = names[noSum.indexOf(p)];                   // (an admin who hasn't played yet: a name and nothing else)
+        return NAME_RE.test(String(n)) ? { name: n, tierMax: 1, cash: null, handicap: null, rounds: 0, last: 0, admin: isAdmin(p) } : null;
+      }).filter(Boolean);
       return send(200, { players });
     }
 
     // ---- everything else needs a session
     const id = await sessionId(req);
     if (!id) return send(401, { error: 'Not signed in' });
+    if (PER_MIN[action] && !(await rateLimit(`golf:rl:${action}:${id}`, PER_MIN[action], 60))) return send(429, { error: 'Too many requests — wait a minute' });
 
     if (action === 'logout') {
       const m = /^Bearer ([a-f0-9]{64})$/.exec(req.headers.authorization);
@@ -197,6 +246,7 @@ module.exports = async (req, res) => {
         const [[cur, cv]] = await redis([['HMGET', `golf:career:${id}`, 'data', 'ver']]);
         return send(409, { error: 'There is a newer copy', career: parse(cur), ver: +cv || 0 });
       }
+      await putSummary(id, b.career);                       // (b.career is the cleaned career just stored)
       return send(200, { ver });
     }
     // another player's trophy room, to visit from Friends: what's on show and what it takes to work out their earned
@@ -270,14 +320,20 @@ module.exports = async (req, res) => {
     if (action === 'players') {
       const [ids] = await redis([['SMEMBERS', 'golf:players']]);
       const list = (ids || []).slice(0, 200);
-      const rows = list.length ? await redis(list.map((p) => ['HGET', `golf:career:${p}`, 'data'])) : [];
-      const players = rows.map(parse).filter((c) => c && typeof c === 'object').map((c) => {   // (one at a time: a bad career is skipped)
-        try {
-          if (!NAME_RE.test(String(c.name))) return null;
-          return { name: c.name, tierMax: tierOf(c.tierMax), cash: num(c.cash), rep: num(c.rep), handicap: handicapOf(c), rounds: goodRounds(c).length, trophies: tro(c) };
-        } catch { return null; }
-      }).filter(Boolean);
+      const players = (await summaries(list)).filter((s) => s && NAME_RE.test(String(s.name)))     // (audit 3.3: the summaries)
+        .map((s) => ({ name: s.name, tierMax: s.tierMax, cash: s.cash, rep: s.rep, handicap: s.handicap, rounds: s.rounds, trophies: s.trophies }));
       return send(200, { players });
+    }
+    if (action === 'password') {                             // change your password (audit 3.7)
+      if (isAdmin(id)) return send(400, { error: 'The admin password is set on the server' });
+      const locked = await pwLocked(id);
+      if (locked) return send(429, { error: locked });
+      const user = await userOf(id), old = String(b.old || '').slice(0, 128), pw = String(b.password || '');
+      if (!user.hash || !(await pwMatches(old, user))) { await pwFailed(id); return send(401, { error: 'Your current password is wrong' }); }
+      if (pw.length < PW_MIN || pw.length > 128) return send(400, { error: `Passwords are ${PW_MIN}–128 characters` });
+      const salt = crypto.randomBytes(16).toString('hex');
+      await redis([['HSET', `golf:user:${id}`, 'salt', salt, 'hash', await hashPw(pw, salt)]]);
+      return send(200, { ok: true });
     }
     return send(400, { error: 'Unknown action' });
   } catch (e) {

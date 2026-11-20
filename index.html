@@ -5642,6 +5642,37 @@
       margin-left: 0;
     }
 
+    /* change a password (audit 3.7) */
+    .ch-pw {
+      display: none;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .ch-pw.on {
+      display: flex;
+    }
+
+    .ch-pw input {
+      width: 190px;
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+
+    .ch-pw button {
+      width: auto;
+      margin: 0;
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    #chPwMsg {
+      font-size: 12px;
+      color: var(--dim);
+    }
+
     /* the lobby's menu: hanging signs on the doors, the window and the bar (positions match the lobby picture) */
     .ch-spots .ch-menu {
       display: block;
@@ -6344,7 +6375,7 @@
         <div class="hm-newform">
           <div class="hm-h2">New profile</div>
           <input id="hmNewName" maxlength="12" placeholder="Profile name (3–12 letters)" autocomplete="off" spellcheck="false">
-          <input id="hmNewPw" type="password" maxlength="64" placeholder="Password (at least 4 characters)" autocomplete="new-password">
+          <input id="hmNewPw" type="password" maxlength="64" placeholder="Password (at least 8 characters)" autocomplete="new-password">
           <label class="hm-bring" id="hmBringBox"><input type="checkbox" id="hmBring" checked> <span id="hmBringL"></span></label>
           <div class="hm-row"><button id="hmNewGo" class="go">Create profile (Enter)</button><button id="hmNewCancel">Cancel</button></div>
         </div>
@@ -6692,7 +6723,7 @@
         <p class="ch-p" id="siIntro"></p>
         <label class="ch-namebox" id="siNameBox"><span id="siNameL">Profile name</span><input id="chName" maxlength="12" placeholder="3–12 letters"
             autocomplete="username" spellcheck="false"></label>
-        <label class="ch-namebox" id="siPwBox"><span>Password</span><input id="siPw" type="password" maxlength="64" placeholder="at least 4 characters"
+        <label class="ch-namebox" id="siPwBox"><span>Password</span><input id="siPw" type="password" maxlength="64" placeholder="your password"
             autocomplete="current-password"></label>
         <label class="si-bring" id="siBringBox"><input type="checkbox" id="siBring" checked> <span id="siBringL"></span></label>
         <div class="ch-err" id="chErr"></div>
@@ -6722,8 +6753,11 @@
           <button data-go="bagroom"><b>🎒 Your bag</b><i>Every club, every number</i></button>
         </div>
         <div class="ch-msg" id="chMsg"></div>
-        <div class="ch-foot"><button id="chLeave">Leave career</button><button id="chSwitch">Switch player</button><button id="chRetire">Retire (start over)</button><span
+        <div class="ch-foot"><button id="chLeave">Leave career</button><button id="chSwitch">Switch player</button><button id="chPw">Change password</button><button id="chRetire">Retire (start over)</button><span
             id="chSync">J opens the clubhouse any time</span></div>
+        <!-- change a profile's password (audit 3.7) -->
+        <div class="ch-pw" id="chPwForm"><input id="chPwOld" type="password" maxlength="128" placeholder="Current password" autocomplete="current-password"><input
+            id="chPwNew" type="password" maxlength="128" placeholder="New password (8+ characters)" autocomplete="new-password"><button id="chPwGo">Change it (Enter)</button><span id="chPwMsg"></span></div>
       </div>
       <div id="chShop">
         <div class="sh-top"><div class="ch-lead">Pro shop</div><span class="sh-cash" id="shCash"></span></div>
@@ -10869,6 +10903,8 @@
         }
         if (!career) return;
         setText('chWho', career.name);
+        $('chPw').style.display = session && !adminOk ? '' : 'none';
+        if (!session) $('chPwForm').classList.remove('on');
         setText('chMedal', career.name.slice(0, 2).toUpperCase());
         const colv = collectionOf(career.trophies).value;
         setText('chRank', `${rankOf(career.rep || 0)} · ${CAREER.tiers[career.tier]} circuit${caddieOf() ? ` · 🧢 ${caddieOf().short}` : ''}${colv ? ` · 🏆 ${money(colv)}` : ''}`);
@@ -11001,6 +11037,7 @@
         setText('siNameL', siMode === 'local' ? 'Your golfer\'s name' : 'Profile name');
         if (local) setText('siBringL', `Bring ${local.name}'s career from this PC (${money(local.cash)}) into the new profile`);
         $('chCreate').textContent = siMode === 'in' ? 'Sign in (Enter)' : siMode === 'new' ? 'Create profile (Enter)' : local ? 'Continue (Enter)' : 'Start career (Enter)';
+        $('siPw').placeholder = siMode === 'new' ? 'at least 8 characters' : 'your password';      // (audit 3.7: 8 for a new profile)
         setText('chErr', msg);
         if (!(siMode === 'local' && local)) setTimeout(() => $('chName').focus(), 0);
       }
@@ -11071,6 +11108,24 @@
         applyDevTools();
         closeClubhouse();
         openHome();                                          // who's playing: the profile list
+      }
+      // change a profile's password (audit 3.7): the clubhouse's footer, signed in and not the admin (whose is on the server)
+      function togglePwForm(on = !$('chPwForm').classList.contains('on')) {
+        $('chPwForm').classList.toggle('on', on);
+        $('chPwOld').value = $('chPwNew').value = ''; setText('chPwMsg', '');
+        if (on) $('chPwOld').focus();
+      }
+      async function changePassword() {
+        const old = $('chPwOld').value, pw = $('chPwNew').value;
+        if (!old) return setText('chPwMsg', 'Type your current password');
+        if (pw.length < 8) return setText('chPwMsg', 'The new one needs at least 8 characters');
+        setText('chPwMsg', 'Changing it…'); $('chPwGo').disabled = true;
+        let r;
+        try { r = await profileApi('password', { old, password: pw }); } catch { r = { status: 0, data: { error: 'Can\'t reach the server' } }; }
+        $('chPwGo').disabled = false;
+        if (r.status !== 200) return setText('chPwMsg', r.data.error || `Something went wrong (${r.status})`);
+        $('chPwOld').value = $('chPwNew').value = '';
+        setText('chPwMsg', '✓ Changed. Use the new one next time you sign in.');
       }
       // the practice range with the career's game (Esc, or the button)
       function careerToRange() {
@@ -11150,6 +11205,11 @@
           return;
         }
         const typing = e.target === $('chName') || e.target === $('siPw');
+        if (e.target === $('chPwOld') || e.target === $('chPwNew')) {         // the change-password form: its own keys
+          if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); changePassword(); }
+          else if (e.code === 'Escape') { e.preventDefault(); togglePwForm(false); }
+          return;
+        }
         if (e.code === 'Escape') { e.preventDefault(); if (career) careerToRange(); else closeClubhouse(); return; }
         if (typing) { if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); submitSignIn(); } return; }
         if ((e.code === 'Enter' || e.code === 'NumpadEnter') && !career) { e.preventDefault(); submitSignIn(); return; }
@@ -11677,8 +11737,29 @@
         const pc = round.pvp, k = holeStrokes(pc.n)[i];
         pc.holes[i] = { strokes: hp.strokes, putts: hp.putts, pen: hp.pen, par: HOLE.par };
         careerSave();
+        sendPvpHoles(pc);                                    // each hole goes to the server as it's finished (audit 3.4)
         if (!k) return '';
         return pc.mine ? `You get ${k > 1 ? `${k} strokes` : 'a stroke'} here: net ${hp.strokes - k}` : `${pc.vsName} gets ${k > 1 ? `${k} strokes` : 'a stroke'} on this hole`;
+      }
+      // Audit 3.4: the server takes a friend round hole by hole, in order, and a hole can't change once it's in; the card
+      // at the end must be those holes. pc.sent = how many it has confirmed. Sending again what's already in is fine (the
+      // server checks it's the same), so after a lost reply or a reload this just carries on. Returns '' or the error.
+      let pvpSending = null;
+      function sendPvpHoles(pc) {
+        if (pvpSending) return pvpSending.then(() => sendPvpHoles(pc));
+        pvpSending = (async () => {
+          let restarted = false;
+          for (let i = pc.sent || 0; i < pc.holes.length && pc.holes[i]; i++) {
+            const h = pc.holes[i];
+            let r;
+            try { r = await chApi('hole', { id: pc.id, i, strokes: h.strokes, putts: h.putts, pen: h.pen || 0 }); } catch { return 'offline'; }
+            if (r.status === 409 && /first/.test((r.data && r.data.error) || '') && !restarted) { restarted = true; pc.sent = 0; i = -1; continue; }   // (out of step: from the top)
+            if (r.status !== 200) return (r.data && r.data.error) || `error ${r.status}`;
+            pc.sent = i + 1;
+          }
+          return '';
+        })().finally(() => { pvpSending = null; careerSave(); });
+        return pvpSending;
       }
       // all 9 holes played: send the card. If it can't be sent now it's kept, and Friends offers "Send your card".
       async function submitPvp() {
@@ -11688,7 +11769,9 @@
         const note = (t) => { if ($('scorecard').classList.contains('on') && round.pvp) $('scMsg').textContent = `${$('scMsg').textContent.replace(/\n\n(Sending your card|Card sent|Both cards|Couldn't send)[\s\S]*$/, '')}\n\n${t}`; setText('frMsg', t); };
         note('Sending your card…');
         let r;
-        try { r = await chApi('submit', { id: pc.id, card: pc.holes.map((h) => ({ strokes: h.strokes, putts: h.putts, pen: h.pen || 0 })) }); } catch { r = { status: 0, data: {} }; }
+        const holesErr = await sendPvpHoles(pc);              // (any hole the server doesn't have yet goes first)
+        if (holesErr && holesErr !== 'offline' && !/already in|first/.test(holesErr)) r = { status: 400, data: { error: holesErr } };
+        else try { r = await chApi('submit', { id: pc.id, card: pc.holes.map((h) => ({ strokes: h.strokes, putts: h.putts, pen: h.pen || 0 })) }); } catch { r = { status: 0, data: {} }; }
         fr.sending = false;
         if (r.status === 200 || r.status === 400 || r.status === 404) {        // in (or the challenge is over): the card is done with
           career.pvpCard = null; careerSave();
@@ -11785,7 +11868,9 @@
         const nm = (ch.result.net || {})[me] || 0;
         $('scMsg').textContent = `${headline ? headline + '\n' : ''}${ch.result.line}\n`
           + (framed ? (nm > 0 ? `${ch.names[me]} took ${money(nm)} off ${ch.names[o]}` : nm < 0 ? `${ch.names[o]} took ${money(-nm)} off ${ch.names[me]}` : 'Nobody paid')
-            : nm > 0 ? `+${money(nm)}: your ${money(escrowOf(ch.format, ch.stake))} back and ${money(nm)} of ${ch.names[o]}'s` : nm < 0 ? `−${money(-nm)}: ${ch.names[o]} takes it from your held stake` : 'Nobody pays: your stake is back');
+            : nm > 0 ? `+${money(nm)}: your ${money(escrowOf(ch.format, ch.stake))} back and ${money(nm)} of ${ch.names[o]}'s` : nm < 0 ? `−${money(-nm)}: ${ch.names[o]} takes it from your held stake` : 'Nobody pays: your stake is back')
+          // (audit 3.4: a card whose holes all came in within 3 minutes was sent at once, not hole by hole as it was played)
+          + [me, o].filter((p) => ch.fast && ch.fast[p]).map((p) => `\n⚠ ${p === me && !framed ? 'Your' : `${ch.names[p]}'s`} card was sent all at once, not hole by hole as it was played`).join('');
         const inRound = !!round.pvp;
         $('scNext').textContent = inRound ? 'Back to the clubhouse (N)' : 'OK (Enter)';
         $('scClose').textContent = inRound ? 'Back to the clubhouse' : 'Close (Esc)';
@@ -11939,7 +12024,7 @@
       async function homeNewProfile() {
         const name = $('hmNewName').value.trim(), pw = $('hmNewPw').value;
         if (!/^[A-Za-z0-9 _-]{3,12}$/.test(name)) return setText('hmErr', 'Names are 3–12 letters, numbers, spaces, - or _');
-        if (pw.length < 4) return setText('hmErr', 'Passwords are at least 4 characters');
+        if (pw.length < 8) return setText('hmErr', 'Passwords are at least 8 characters');
         const bring = !!readCareer(CAREER.key) && $('hmBring').checked;
         setText('hmErr', 'Creating your profile…'); $('hmNewGo').disabled = true;
         const err = await profileSignIn('new', name, pw, bring);
@@ -15123,6 +15208,8 @@
         $('chCreate').addEventListener('click', (e) => { e.currentTarget.blur(); submitSignIn(); });
         $('siTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { b.blur(); siMode = b.dataset.si; renderSignIn(); } });
         $('chSwitch').addEventListener('click', (e) => { e.currentTarget.blur(); switchPlayer(); });
+        $('chPw').addEventListener('click', (e) => { e.currentTarget.blur(); togglePwForm(); });
+        $('chPwGo').addEventListener('click', (e) => { e.currentTarget.blur(); changePassword(); });
         $('chCancel').addEventListener('click', (e) => { e.currentTarget.blur(); closeClubhouse(); });
         $('chLeave').addEventListener('click', (e) => { e.currentTarget.blur(); leaveCareer(); });
         $('chRetire').addEventListener('click', (e) => { e.currentTarget.blur(); retireCareer(); });
@@ -16092,7 +16179,7 @@
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
-        npc, npcPlan, npcHoleScore, npcHurry, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, holeStrokes, submitPvp, showSharedCard, closeSharedCard, checkNewResults, h2h, openHome, closeHome, get homeOpen() { return homeOpen; }, devOn, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
+        npc, npcPlan, npcHoleScore, npcHurry, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, holeStrokes, submitPvp, playFriend, startFriendRound, showSharedCard, closeSharedCard, checkNewResults, h2h, openHome, closeHome, get homeOpen() { return homeOpen; }, devOn, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }
       };
 

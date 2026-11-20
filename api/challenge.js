@@ -170,21 +170,36 @@ async function expire(ch) {
 // what a player sees: the other player's card stays hidden until the challenge is settled
 function view(ch, me) {
   const v = { ...ch, cards: { ...ch.cards } };
-  if (ch.status === 'open') { const o = other(ch, me); if (v.cards[o]) v.cards[o] = true; }
+  if (ch.status === 'open') {
+    const o = other(ch, me); if (v.cards[o]) v.cards[o] = true;
+    v.holes = { [me]: ((ch.holes || {})[me] || []).length, [o]: ((ch.holes || {})[o] || []).length };    // (how far each is: counts only)
+  } else delete v.holes;
   if (v.result) { v.result = { ...v.result }; delete v.result.payout; }
   delete v.paid;
   return v;
 }
+function cleanHole(h) {
+  const s = h && h.strokes, p = h && h.putts, pen = (h && h.pen) || 0;
+  if (!Number.isInteger(s) || s < 1 || s > 30 || !Number.isInteger(p) || p < 0 || p > s || !Number.isInteger(pen) || pen < 0 || pen > s) return null;
+  return { strokes: s, putts: p, pen };
+}
 function cleanCard(card) {
   if (!Array.isArray(card) || card.length !== HOLES) return null;
-  const out = [];
-  for (const h of card) {
-    const s = h && h.strokes, p = h && h.putts, pen = (h && h.pen) || 0;
-    if (!Number.isInteger(s) || s < 1 || s > 30 || !Number.isInteger(p) || p < 0 || p > s || !Number.isInteger(pen) || pen < 0 || pen > s) return null;
-    out.push({ strokes: s, putts: p, pen });
-  }
-  return out;
+  const out = card.map(cleanHole);
+  return out.every(Boolean) ? out : null;
 }
+// AUDIT 3.4: the round is played in the browser, so a card is what the browser says. The server can't make cheating
+// impossible without playing the shots itself, but it makes it harder and visible:
+//   - a score nobody makes is refused: better than three under par on a hole (so a hole-in-one on a par 5), or a round
+//     better than one under par a hole (the same floor as the Top 10);
+//   - each hole is sent as it's finished (`hole`), in order, and can't be changed once it's in: a hole can't be
+//     replayed and the card can't be rewritten at the end; the card is the holes the server has;
+//   - when the holes came in faster than a round can be played (the whole card within 3 minutes: sent all at once), the
+//     card is marked, and both players see it on the shared card.
+const PARS = [5, 3, 4, 4, 3, 5, 4, 3, 4];        // index.html HOLES (the same on every circuit; mirrored, not re-par'd)
+const PAR = PARS.reduce((a, b) => a + b, 0);
+const holePossible = (h, i) => h.strokes >= Math.max(1, PARS[i] - 3);
+const MIN_ROUND_MS = 3 * 60 * 1000;
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -235,6 +250,7 @@ module.exports = async (req, res) => {
     }
 
     if (action === 'list') {
+      if (!(await rateLimit(`golf:rl:chlist:${me}`, 60, 60))) return send(429, { error: 'Too many requests — wait a minute' });     // (audit 3.3)
       const [ids] = await redis([['SMEMBERS', `golf:chs:${me}`]]);
       const out = [], drop = [];
       for (const cid of ids || []) {
@@ -261,7 +277,7 @@ module.exports = async (req, res) => {
     }
 
     const cid = String(b.id || '');
-    if (!['accept', 'decline', 'cancel', 'submit', 'forfeit'].includes(action)) return send(400, { error: 'Unknown action' });
+    if (!['accept', 'decline', 'cancel', 'hole', 'submit', 'forfeit'].includes(action)) return send(400, { error: 'Unknown action' });
     const ch = await withLock(cid, async (ch) => {
       if (ch.from !== me && ch.to !== me) throw fail(404, 'No such challenge');
       if (action === 'decline' || action === 'cancel') {
@@ -300,10 +316,33 @@ module.exports = async (req, res) => {
       }
       if (ch.status !== 'open') throw fail(400, ch.status === 'pending' ? 'It hasn\'t been accepted yet' : 'That challenge is over');
       if (Date.now() > ch.deadline) return expire(ch);
+      if (action === 'hole') {                               // one hole, as it's finished (audit 3.4)
+        if (ch.cards[me]) throw fail(400, 'Your card is already in');
+        const i = b.i, h = cleanHole(b);
+        if (!Number.isInteger(i) || i < 0 || i >= HOLES || !h) throw fail(400, 'That hole doesn\'t look right');
+        if (!holePossible(h, i)) throw fail(400, `A ${h.strokes} on a par ${PARS[i]} isn't possible`);
+        ch.holes = ch.holes || {};
+        const mine = ch.holes[me] = ch.holes[me] || [];
+        if (i < mine.length) {                               // already in: the same again is fine (a lost reply), a change isn't
+          const x = mine[i];
+          if (x.strokes !== h.strokes || x.putts !== h.putts || x.pen !== h.pen) throw fail(409, `Hole ${i + 1} is already in, as a ${x.strokes}`);
+          return ch;
+        }
+        if (i > mine.length) throw fail(409, `Send hole ${mine.length + 1} first`);
+        mine.push({ ...h, t: Date.now() });
+        await putCh(ch);
+        return ch;
+      }
       if (action === 'submit') {
         if (ch.cards[me]) throw fail(400, 'Your card is already in');
         const card = cleanCard(b.card);
         if (!card) throw fail(400, 'That card doesn\'t look right');
+        if (card.some((h, i) => !holePossible(h, i)) || card.reduce((s, h) => s + h.strokes, 0) < PAR - HOLES) throw fail(400, 'That card isn\'t possible');
+        // the card must be the holes sent one by one (all nine of them)
+        const sent = (ch.holes && ch.holes[me]) || [];
+        if (sent.length < HOLES) throw fail(409, `Send every hole first (${sent.length} of ${HOLES} are in)`);
+        if (card.some((h, i) => h.strokes !== sent[i].strokes || h.putts !== sent[i].putts || h.pen !== sent[i].pen)) throw fail(409, 'That card isn\'t the holes you sent');
+        if (Date.now() - sent[0].t < MIN_ROUND_MS) ch.fast = { ...(ch.fast || {}), [me]: true };     // all at once: marked for both to see
         ch.cards[me] = card; ch.submitted = { ...(ch.submitted || {}), [me]: Date.now() };
         if (ch.cards[ch.from] && ch.cards[ch.to]) return finish(ch, score(ch));
         await putCh(ch);

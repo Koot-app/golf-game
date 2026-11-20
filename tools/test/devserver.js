@@ -6,6 +6,9 @@
 const http = require('http'), fs = require('fs'), path = require('path');
 const ROOT = path.resolve(__dirname, '..', '..'), PORT = +process.argv[2] || 8090;
 process.env.KV_REST_API_URL = 'https://fake.upstash.io'; process.env.KV_REST_API_TOKEN = 'tok';
+// the tests make many profiles from one address: the real limits (5 a day per address, 300 a day for everyone, audit
+// 3.3) would stop them. Start it with GOLF_SIGNUPS_PER_IP=5 to try the real limit.
+process.env.GOLF_SIGNUPS_PER_IP = process.env.GOLF_SIGNUPS_PER_IP || '100000'; process.env.GOLF_SIGNUPS_PER_DAY = process.env.GOLF_SIGNUPS_PER_DAY || '100000';
 const kv = new Map(), hashes = new Map(), sets = new Map(), exp = new Map();
 const alive = (k) => { if (exp.has(k) && exp.get(k) < Date.now()) { kv.delete(k); exp.delete(k); } return kv.has(k); };
 const H = (k) => { if (!hashes.has(k)) hashes.set(k, new Map()); return hashes.get(k); };
