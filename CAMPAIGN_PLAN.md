@@ -170,7 +170,7 @@ and range don't change):
 - The three baseline scatter terms (`basePathDeg`, `baseFaceDeg`, `baseStrikeMm` × `dexSpread`) × `club.consist || 1`.
 - `spin *= g`, and from a rough or sand lie `spin *= g` once more, where `g = club.groove || 1`; flier chance
   `lie.flier × (1 + 2 × (1 − g))`.
-- `path += club.lieBias || 0` and `faceDyn += club.lieBias || 0`: a true push or pull (swing audit S5.9; it was on the path alone, which the face mostly cancelled). The locker room's Curve column shows it.
+- `path += club.lieBias || 0` and `faceDyn += club.lieBias || 0`: a true push or pull (swing audit S5.9; it was on the path alone, which the face mostly cancelled). It is in the no-scatter preview too (S2.11), so the aim line and the locker room's Curve column show it.
 - Flop difficulty `CHIP.flopCx × (club.flopX || 1)` (wide-soled cavity wedges, see Wedges).
 
 ### Iron models (deltas on the base irons 4i–PW; loft deltas shown for the 7 iron, ×0.8 for 4i–5i)
@@ -332,8 +332,8 @@ range (shorter drives). Leave career → your own stats are back. The test round
 As built: `BASE_CLUBS`, `CLUB_MODELS` (`add` / `x` / `set` per model, `bias` for used sets), the five putters added to
 `PUTTERS` (flagged `model`, kept out of the range's putter list), `modelMods()`, `applyCareerClubs()`, `canUseClub()`,
 `bagOrder()` / `usableOrder()` (number keys follow the bag's order in a career), `usableClub()`, `setClub(i, dir)`.
-Physics hooks in `computeImpact`: `consist`, `lieBias` (not in the stock numbers, so the player finds it on the
-course or in the locker room's Curve column), `offset`, `groove` (clean lie × `1 − (1 − g) × 0.4`, rough or sand × `g²`, flier chance × `1 + 2(1 − g)`),
+Physics hooks in `computeImpact`: `consist`, `lieBias` (in the stock numbers too since swing audit S2.11, so the aim line, the bag's numbers and the
+locker room's Curve column show it), `offset`, `groove` (clean lie × `1 − (1 − g) × 0.4`, rough or sand × `g²`, flier chance × `1 + 2(1 − g)`),
 `flopX`. `suggestClub`, `suggestChipClub` and the flop switch only pick clubs the career has.
 
 **Tuning (measured, 7 iron at Power 5 vs the Wilson blade):** GI +8 to +13 yds carry, landing 3–4.5° flatter, landing

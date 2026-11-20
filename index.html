@@ -7006,7 +7006,8 @@
         minBackswing: 0.08,     // backswing shorter than this never arms a downswing (chips; a putt has its own)
         minBackswingFull: 0.20, // ...and for a full swing (swing audit S1.6: a 2 mm nudge fired a 4-yard drive)
         overBMax: 1.4,          // the over-swing risk keeps rising until a 140% backswing (swing audit S1.5)
-        backswingTimeMs: 1000,  // from the takeaway, this long to set the backswing; after that its length is locked in
+        backswingTimeMs: 1500,  // from the takeaway, this long to set the backswing; after that its length is locked in
+        //                         (swing audit S1.9: was 1,000, which cut a deliberate 1.3 s backswing to 93%)
         topHysteresis: 0.03,    // fraction of swing length the mouse must return before "transition" is declared
         speedWindowMs: 24,      // AUDIT 10: speeds are averaged over this window, not read from one event
         arcFree: 0.10,          // swing audit S1.7: a downswing may bow this share of its length off its line before it counts as wobble
@@ -7042,6 +7043,9 @@
         spinMore: 0.30, spinLess: 0.25,            // backspin +30% / -25% at full authority (More is capped by the lie's spinCap)
         spinMoreLaunch: -1.0, spinLessLaunch: 0.8, // launch change (deg): trapped = a touch lower, swept = a touch higher
         spinMoreSpeed: 0.02,                       // ball speed lost to the steeper strike
+        backKeep: 1.5, backFrom: 0.8,             // swing audit S3.4: a high-spin landing backs up (see backUp)
+        dexSpreadMin: 0.25,                       // swing audit S6.4: the game's own scatter never falls below 25% of Dexterity 1's
+        spinPowerExp: 1,                           // swing audit S2.10: spin × powerMult(Power)^this (0 = Power doesn't move spin)
         spinAskMax: 1.35, spinMaxRpm: 12000,       // swing audit S2.2: height + More spin add at most +35%, and never past 12,000 rpm
         cxSpinMore: 0.35, cxSpinLess: 0.15,        // difficulty at full authority: the steep strike is the riskier one
         // AGAINST THE GRAIN: a draw naturally flies lower and a fade higher (see SHOT SHAPE). Asking a draw to fly HIGH
@@ -7103,8 +7107,10 @@
       // Swing audit S2.7: from the driver to the 8 iron (and the comparison GI 7 iron) it is set so the tilt per degree
       // matches the D-plane, atan(tan 1° / tan spin loft): the driver tilted 21% too much, the 3 wood to 8 iron 15-60%
       // too little. The 9 iron to the lob wedge stay above it on purpose (shapeable wedges).
-      // gear = how strongly an off-centre hit twists the face (blade amplifies, GI damps); bulge = driver-only
-      // horizontal gear effect (toe hit adds draw spin).
+      // gear = how strongly an off-centre hit twists the face (blade amplifies, GI damps); bulge = the horizontal gear
+      // effect (a toe hit adds draw spin). Swing audit S2.8: the irons have one too, smaller than the woods' for their
+      // twist (−0.7 at gear 1.2 and work 1, scaled with gear × work as modelMods does), so a toe hit starts right and curves only a little more right, about
+      // half the miss it was (a 7 iron's 8 mm toe hit finished 13 yds right, now 6).
       // head = which clubhead model to draw (headScale shrinks the wood model for fairway woods / hybrids); tee = teed up
       // on a fairway lie. The irons are one forged-blade set (workable, small sweet spot); the last club is the
       // game-improvement 7-iron, kept for comparing the two equipment archetypes.
@@ -7115,18 +7121,18 @@
         { name: '3 Wood', head: 'wood', headScale: 0.80, speed: 105, loft: 15.0, dynLoft: 12.0, aoa: -2.9, spin: 3650, work: 0.85, sweet: 9, floor: 0.65, gear: 0.8, bulge: -0.6, stand: 0.90, curve: 1.02 },
         { name: '2 Hybrid', head: 'wood', headScale: 0.64, speed: 101.5, loft: 17.0, dynLoft: 13.5, aoa: -3.5, spin: 4300, work: 0.70, sweet: 10, floor: 0.75, gear: 0.7, bulge: -0.6, stand: 0.85, rescue: 5, curve: 1.29 },
         { name: '3 Hybrid', head: 'wood', headScale: 0.60, speed: 99.2, loft: 19.5, dynLoft: 14.5, aoa: -3.5, spin: 4600, work: 0.70, sweet: 10, floor: 0.75, gear: 0.7, bulge: -0.6, stand: 0.84, rescue: 5, curve: 1.36 },
-        { name: '4 Iron', head: 'iron', speed: 96.2, loft: 22.0, dynLoft: 13.5, aoa: -3.4, spin: 4850, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.80, curve: 1.0 },
-        { name: '5 Iron', head: 'iron', speed: 93.5, loft: 25.0, dynLoft: 14.9, aoa: -3.7, spin: 5350, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.78, curve: 1.08 },
-        { name: '6 Iron', head: 'iron', speed: 92.5, loft: 29.0, dynLoft: 17.3, aoa: -4.1, spin: 6230, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.76, curve: 1.21 },
-        { name: '7 Iron', head: 'iron', speed: 90.5, loft: 34.0, dynLoft: 20.0, aoa: -4.3, spin: 7000, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.74, curve: 1.3 },
-        { name: '8 Iron', head: 'iron', speed: 89, loft: 38.0, dynLoft: 22.1, aoa: -4.5, spin: 8000, work: 1.00, sweet: 6, floor: 0.50, gear: 1.2, bulge: 0, stand: 0.72, curve: 1.43 },
-        { name: '9 Iron', head: 'iron', speed: 87, loft: 42.0, dynLoft: 24.8, aoa: -4.7, spin: 8650, work: 1.00, sweet: 6, floor: 0.55, gear: 1.1, bulge: 0, stand: 0.70, curve: 1.5 },
-        { name: 'Pitching Wedge', head: 'iron', speed: 85, loft: 46.0, dynLoft: 29.5, aoa: -5.0, spin: 9200, work: 0.90, sweet: 7, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.68, curve: 1.8 },
+        { name: '4 Iron', head: 'iron', speed: 96.2, loft: 22.0, dynLoft: 13.5, aoa: -3.4, spin: 4850, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: -0.7, stand: 0.80, curve: 1.0 },
+        { name: '5 Iron', head: 'iron', speed: 93.5, loft: 25.0, dynLoft: 14.9, aoa: -3.7, spin: 5350, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: -0.7, stand: 0.78, curve: 1.08 },
+        { name: '6 Iron', head: 'iron', speed: 92.5, loft: 29.0, dynLoft: 17.3, aoa: -4.1, spin: 6230, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: -0.7, stand: 0.76, curve: 1.21 },
+        { name: '7 Iron', head: 'iron', speed: 90.5, loft: 34.0, dynLoft: 20.0, aoa: -4.3, spin: 7000, work: 1.00, sweet: 5, floor: 0.50, gear: 1.2, bulge: -0.7, stand: 0.74, curve: 1.3 },
+        { name: '8 Iron', head: 'iron', speed: 89, loft: 38.0, dynLoft: 22.1, aoa: -4.5, spin: 8000, work: 1.00, sweet: 6, floor: 0.50, gear: 1.2, bulge: -0.7, stand: 0.72, curve: 1.43 },
+        { name: '9 Iron', head: 'iron', speed: 87, loft: 42.0, dynLoft: 24.8, aoa: -4.7, spin: 8650, work: 1.00, sweet: 6, floor: 0.55, gear: 1.1, bulge: -0.64, stand: 0.70, curve: 1.5 },
+        { name: 'Pitching Wedge', head: 'iron', speed: 85, loft: 46.0, dynLoft: 29.5, aoa: -5.0, spin: 9200, work: 0.90, sweet: 7, floor: 0.60, gear: 1.0, bulge: -0.53, stand: 0.68, curve: 1.8 },
         // CHIPPING: the short-game wedges. bounce (deg) = a wide sole that skims through sand and thick grass instead of digging.
-        { name: 'Gap Wedge', head: 'iron', speed: 82.7, loft: 50.0, dynLoft: 33.0, aoa: -5.2, spin: 9600, work: 0.90, sweet: 7, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.67, curve: 1.8 },
-        { name: 'Sand Wedge', head: 'iron', speed: 80.8, loft: 55.0, dynLoft: 37.5, aoa: -5.5, spin: 10100, work: 0.85, sweet: 7, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.66, curve: 1.8, bounce: 12 },
-        { name: 'Lob Wedge', head: 'iron', speed: 76.7, loft: 60.0, dynLoft: 42.5, aoa: -5.5, spin: 10500, work: 0.85, sweet: 6, floor: 0.60, gear: 1.0, bulge: 0, stand: 0.65, curve: 1.8 },
-        { name: '7 Iron · Game Improvement', head: 'iron', speed: 91.5, loft: 30.0, dynLoft: 21.3, aoa: -4.0, spin: 6200, work: 0.45, sweet: 12, floor: 0.85, gear: 0.5, bulge: 0, stand: 0.74, curve: 1.3 },
+        { name: 'Gap Wedge', head: 'iron', speed: 82.7, loft: 50.0, dynLoft: 33.0, aoa: -5.2, spin: 9600, work: 0.90, sweet: 7, floor: 0.60, gear: 1.0, bulge: -0.53, stand: 0.67, curve: 1.8 },
+        { name: 'Sand Wedge', head: 'iron', speed: 80.8, loft: 55.0, dynLoft: 37.5, aoa: -5.5, spin: 10100, work: 0.85, sweet: 7, floor: 0.60, gear: 1.0, bulge: -0.5, stand: 0.66, curve: 1.8, bounce: 12 },
+        { name: 'Lob Wedge', head: 'iron', speed: 76.7, loft: 60.0, dynLoft: 42.5, aoa: -5.5, spin: 10500, work: 0.85, sweet: 6, floor: 0.60, gear: 1.0, bulge: -0.5, stand: 0.65, curve: 1.8 },
+        { name: '7 Iron · Game Improvement', head: 'iron', speed: 91.5, loft: 30.0, dynLoft: 21.3, aoa: -4.0, spin: 6200, work: 0.45, sweet: 12, floor: 0.85, gear: 0.5, bulge: -0.13, stand: 0.74, curve: 1.3 },
       ];
       // keyboard key for each club, in bag order. The bag has more clubs than keys: the rest are on [ ] / the wheel / a click.
       const CLUB_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
@@ -7322,7 +7328,9 @@
         const comp = tilt > 0.005 ? 'tilted' : 'neutral';
         const dexF = (env.dex - 1) / 9;
         const bell = () => rnd() + rnd() - 1;              // random in [-1, 1], weighted toward 0
-        const dexSpread = env.stock ? 0 : lerp(1.0, 0.08, dexF);
+        // (swing audit S6.4: floored at dexSpreadMin, so Dexterity 9-10 is about tour level, not tighter than anyone real;
+        // Dexterity 1-8 are unchanged)
+        const dexSpread = env.stock ? 0 : Math.max(TUNE.dexSpreadMin, lerp(1.0, 0.08, dexF));
         const flags = [];
         // CHIPPING: a shot-type preset's face and stance are aligned to the target, so only the player's tweaks on top of
         // them steer the ball (setup.align = the preset's own face / stance). The full values still set loft and spin.
@@ -7346,8 +7354,10 @@
         // Swing audit S5.9: a bent lie angle tilts the face's loft, so it turns the face AND the swing's line: the ball starts
         // off line and flies straight, a true push or pull (it was on the path alone, which the face mostly cancelled, so
         // the worst club moved its 7 iron 1.3 yds).
-        const bent = !env.stock ? club.lieBias || 0 : 0;
-        const path = stanceDir + thM + (!env.stock ? bent + TUNE.basePathDeg * dexSpread * consist * bell() : 0);
+        // Swing audit S2.11: in the no-scatter preview (env.stock) too, so the aim line, the bag's numbers and the shape
+        // presets show it (it was left out, and the preview finished where no real shot averaged).
+        const bent = club.lieBias || 0;
+        const path = stanceDir + thM + bent + (!env.stock ? TUNE.basePathDeg * dexSpread * consist * bell() : 0);
 
         // 2. Loft the player is asking for.  AUDIT 6: the club's spin floor also limits how far it can be de-lofted.
         //    setup.traj is the HEIGHT level chosen at address: -2 / -1 = lower (de-lofted: less backspin, more run),
@@ -7389,7 +7399,7 @@
         // spin off this lie at this swing's speed: More's risk is charged on that share (High 2 already at the cap gets
         // nothing from it, so pays nothing for it).
         const spinCapAsk = (a, own) => (a > 1 ? Math.max(1, Math.min(a, TUNE.spinAskMax, TUNE.spinMaxRpm / Math.max(1, own))) : a);
-        const spinRef = club.spin * setupBase * lie.spin * powerFromBackswing(sw.bs) * powerFromTempo(sw.ds);
+        const spinRef = club.spin * setupBase * lie.spin * powerFromBackswing(sw.bs) * powerFromTempo(sw.ds) * Math.pow(powerMult(env.power), TUNE.spinPowerExp);
         const hAsk = setupSpin / setupBase;
         const moreKept = spinGain > 1 ? clamp((spinCapAsk(hAsk * spinGain, spinRef) - spinCapAsk(hAsk, spinRef)) / (hAsk * (spinGain - 1)), 0, 1) : 1;
         // Lower backspin means a given sideways force tilts the spin axis much further toward a slice/hook. Swing audit S6.1:
@@ -7514,7 +7524,10 @@
         // 7. Face, launch direction.  Baseline dexterity & complexity spread face timing (amplified on low-spin clubs).
         const faceErr = !env.stock ? (TUNE.baseFaceDeg * dexSpread * clubSpread * consist + TUNE.cxFaceDeg * complexity) * bell() : 0;
         const faceDyn = faceDir + twist + strike * TUNE.gearDegPerMm * club.gear + faceErr - (club.offset || 0) + bent;
-        const hla = 0.75 * faceDyn + 0.25 * path;
+        // Swing audit S2.9: the face's share of the start direction grows as loft falls: 85% with the driver (12° delivered),
+        // down to 75% from about 20° (the 7 iron) on (it was 75% for every club)
+        const faceShare = clamp(0.85 - 0.0125 * (club.dynLoft + loftDelta - 12), 0.75, 0.85);
+        const hla = faceShare * faceDyn + (1 - faceShare) * path;
         const ftp = faceDyn - path;
 
         // 8. Spin axis, then what the shape does to the flight: a draw comes out lower with less spin and releases
@@ -7551,7 +7564,10 @@
         // Swing audit S2.2: the asks that add spin (a higher height level, ball forward, More spin) stack only so far. Together
         // they add at most spinAskMax over the club's own spin, and never past spinMaxRpm (a tour wedge's ceiling off a
         // clean lie), though a club's own spin is never cut. High 2 + More spin on a sand wedge spun 18,400 rpm.
-        const spinOwn = club.spin * setupBase * lieSpin * spinFrac * (1 + TUNE.shapeSpin * shapeAir) * flubSpin;
+        // (swing audit S2.10: spin follows the Power stat's club speed too, as it does the backswing's: Power 10 swings 10%
+        // faster and spins about 10% more; spinPowerExp 1)
+        const spinPower = Math.pow(powerMult(env.power), TUNE.spinPowerExp);
+        const spinOwn = club.spin * setupBase * lieSpin * spinFrac * spinPower * (1 + TUNE.shapeSpin * shapeAir) * flubSpin;
         const spin = spinOwn * spinCapAsk(hAsk * spinGain, spinOwn);
 
         return {
@@ -7595,6 +7611,7 @@
           release: L.release || 0,        // +1 = full draw (runs out), -1 = full fade (checks)
           ground: L.ground || null,       // optional (x, z) => { e, keep, roll } multipliers for the surface under the ball
           obstacle: L.obstacle || null,   // optional (x, y, z) => id of a tree the ball is inside, or -1 (see treeDeflect)
+          obstaclePart: L.obstaclePart || null,     // optional (id, x, y, z) => 'trunk' / 'canopy' (default canopy)
           green: L.green || null,         // optional chip view of the hole's green in this flight's frame (see stepFlight)
         };
       }
@@ -7619,7 +7636,7 @@
         // TREES: f.obstacle(x, y, z) -> the id of a tree the ball is inside, or -1. Each tree can only be hit once.
         if (f.obstacle) {
           const id = f.obstacle(p.x, p.y, p.z);
-          if (id >= 0 && !(f.hitIds && f.hitIds.has(id))) { (f.hitIds || (f.hitIds = new Set())).add(id); treeDeflect(f, f.rnd || Math.random); }
+          if (id >= 0 && !(f.hitIds && f.hitIds.has(id))) { (f.hitIds || (f.hitIds = new Set())).add(id); treeDeflect(f, f.rnd || Math.random, f.obstaclePart ? f.obstaclePart(id, p.x, p.y, p.z) : 'canopy'); }
         }
 
         // Ground: steep, high-spin landings check up; shallow, low-spin ones skip forward.
@@ -7638,18 +7655,30 @@
           const gs = f.ground ? f.ground(p.x, p.z) : null;          // sand kills the bounce, hardpan adds to it, rough grabs
           const e = clamp(0.52 - 0.014 * vy, 0.18, 0.5) * (gs ? gs.e : 1);
           // the draw / fade landing effect is on the FIRST bounce only (a low, shallow shot bounces several times and it compounded)
-          const keep = clamp(0.80 - 0.25 * steep - 0.75 * spinN * steep + (f.bounces === 0 ? TUNE.shapeKeep * f.release : 0), -0.12, 0.88) * (gs ? gs.keep : 1);
-          v.x *= keep; v.z *= keep; v.y = e * vy;
+          const bk = f.bounces === 0 ? backUp(spinN * steep) : 0;     // (swing audit S3.4: real backspin pulls it back)
+          const keep = clamp(0.80 - 0.25 * steep - 0.75 * spinN * steep + (f.bounces === 0 ? TUNE.shapeKeep * f.release : 0) - bk, -0.12 - bk, 0.88) * (gs ? gs.keep : 1);
+          v.x *= keep; v.z *= keep; v.y = keep < 0 ? 0 : e * vy;     // (S3.4: a ball that bites back stays down and spins back)
           f.rpm *= 0.35; f.bounces++;
           if (v.y < 0.7) { v.y = 0; f.phase = 'roll'; }
         }
         if (f.t > 30) f.phase = 'stopped';
       }
 
-      // A ball that flies into a tree hits branches: it keeps only 12-37% of its pace, is knocked up to ~140 deg off line
-      // (it can come straight back out), loses its spin and drops — usually into whatever is under the tree.
-      function treeDeflect(f, rnd = Math.random) {
-        const v = f.v, keep = 0.12 + 0.25 * rnd(), turn = (rnd() * 2 - 1) * 2.4, c = Math.cos(turn), s = Math.sin(turn);
+      // Swing audit S3.4: the first bounce of a steep, high-spin landing draws back harder than the ordinary keep allows
+      // (it stopped at −12% of the landing speed, so nothing backed up more than ~1.5 yds whatever its spin). Past
+      // backFrom of spin × steepness (spin in 9,000s of rpm), each 0.1 more takes backKeep × 0.1 more off, and the floor
+      // moves down with it.
+      const backUp = (x) => TUNE.backKeep * Math.max(0, x - TUNE.backFrom);
+      const TREE_BIG_BRANCH = 0.15;          // (swing audit S3.5) the share of branch hits that can turn the ball right round
+
+      // A ball that flies into a tree hits branches: it keeps only 12-37% of its pace, loses its spin and drops — usually
+      // into whatever is under the tree. Swing audit S3.5: most go on or drop, knocked up to ~50° off line; 1 in 7 meets a
+      // big branch and can go anywhere up to ~140° (it used to be every ball, so 1 in 4 came back toward the player). The
+      // trunk is solid: it kicks the ball back the way it came, keeping 25-45% of its pace.
+      function treeDeflect(f, rnd = Math.random, part = 'canopy') {
+        const trunk = part === 'trunk', v = f.v;
+        const keep = trunk ? 0.25 + 0.2 * rnd() : 0.12 + 0.25 * rnd();
+        const turn = trunk ? Math.PI + (rnd() * 2 - 1) * 0.6 : (rnd() * 2 - 1) * (rnd() < TREE_BIG_BRANCH ? 2.4 : 0.9), c = Math.cos(turn), s = Math.sin(turn);
         const vx = (v.x * c - v.z * s) * keep, vz = (v.x * s + v.z * c) * keep;
         v.x = vx; v.z = vz; v.y = Math.min(v.y, 0) * 0.3 - 1.5 * rnd();
         f.rpm *= 0.3; f.release = 0; f.treeHits = (f.treeHits || 0) + 1;
@@ -7712,8 +7741,12 @@
         }
         const steep = Math.sin(Math.atan2(vy, vh)), spinN = f.rpm / 9000;
         const e = clamp(0.52 - 0.014 * vy, 0.18, 0.5) * S.e;
-        const keep = clamp(0.80 - 0.25 * steep - 0.75 * spinN * steep * S.check + TUNE.shapeKeep * f.release, -0.12, 0.88) * S.keep;
-        v.x *= keep; v.z *= keep; v.y = e * vy;
+        const bk = f.bounces === 0 ? backUp(spinN * steep * S.check) : 0;      // (swing audit S3.4)
+        const keep = clamp(0.80 - 0.25 * steep - 0.75 * spinN * steep * S.check + TUNE.shapeKeep * f.release - bk, -0.12 - bk, 0.88) * S.keep;
+        // (swing audit S3.4: a ball that bites back stays down and spins back; the backspin that reversed it doesn't then
+        // brake it as it rolls back, the check decel below being for a ball still going forward)
+        const backing = keep < 0;
+        v.x *= keep; v.z *= keep; v.y = backing ? 0 : e * vy;
         f.rpm *= 0.35; f.bounces++;
         if (v.y < 0.7 || key === 'bunker') {
           v.y = 0; f.phase = 'roll';
@@ -7722,7 +7755,7 @@
             phase: 'roll', holed: false, lip: false, inCup: false, maxBreak: 0, holeSpeed: null,
             landed: clamp(((f.landV ?? 0) - CHIP.fastLandLo) / (CHIP.fastLandHi - CHIP.fastLandLo), 0, 1),     // how hard it came in (S8.1)
             // spin left on the ball grips: a fade / backspin chip checks, a draw / forward-spin chip releases
-            extraDecel: CHIP.checkDecel * (f.rpm / 9000) * S.check * (1 - TUNE.shapeRoll * f.release),
+            extraDecel: backing ? 0 : CHIP.checkDecel * (f.rpm / 9000) * S.check * (1 - TUNE.shapeRoll * f.release),
           };
         }
       }
@@ -8688,7 +8721,7 @@
       const holeTrees = [];          // [{ x, z, h, r, hidden }]
       const treeGrid = new Map();    // 10 m cells -> tree indices, so a flying ball only checks the trees near it
       const TREE_CELL = 10;
-      let holeTreeMesh = null, holeTreeGhost = null, treeClearAt = null;
+      let holeTreeMesh = null, holeTreeGhost = null, holeTrunkMesh = null, treeClearAt = null;
       // The camera must never sit inside a tree, so trees near the ball and between it and the cameras (behind you for the
       // scout view, to your right for the face-on address view) are drawn see-through. They are STILL obstacles — only the
       // tree whose canopy the ball is actually lying under is not (you are playing out from under it).
@@ -8708,10 +8741,23 @@
             ps.set(t.x, 0, t.z);
             sc.set(t.r * (ghost ? 0 : 1), t.h * (ghost ? 0 : 1), t.r * (ghost ? 0 : 1)); holeTreeMesh.setMatrixAt(i, m4.compose(ps, q, sc));
             sc.set(t.r * (ghost ? 1 : 0), t.h * (ghost ? 1 : 0), t.r * (ghost ? 1 : 0)); holeTreeGhost.setMatrixAt(i, m4.compose(ps, q, sc));
+            if (holeTrunkMesh) { const k = ghost ? 0 : 1; sc.set(TREE.trunkR * k, t.h * (TREE.base + 0.05) * k, TREE.trunkR * k); holeTrunkMesh.setMatrixAt(i, m4.compose(ps, q, sc)); }
           }
         });
-        if (changed) { holeTreeMesh.instanceMatrix.needsUpdate = true; holeTreeGhost.instanceMatrix.needsUpdate = true; }
+        if (changed) { holeTreeMesh.instanceMatrix.needsUpdate = true; holeTreeGhost.instanceMatrix.needsUpdate = true; if (holeTrunkMesh) holeTrunkMesh.instanceMatrix.needsUpdate = true; }
         treeClearAt = { x: bx, z: bz, aim: aimDeg };
+      }
+      // Swing audit S3.5: a tree is a trunk with its canopy raised off the ground (it was a solid cone from the ground up,
+      // so there was no punching out under the branches). The canopy is a cone from TREE.base of the tree's height to its
+      // top, as wide at its base as the old cone was at the ground; below it only the trunk is in the way.
+      const TREE = { base: 0.28, trunkR: 0.25 };
+      // which part of tree t a ball at (x, y, z) is inside: 'trunk', 'canopy' or null
+      function treePart(t, x, y, z) {
+        if (y > t.h || y < -0.5) return null;
+        const dx = x - t.x, dz = z - t.z, d2 = dx * dx + dz * dz, yb = t.h * TREE.base;
+        if (y < yb) return d2 < (TREE.trunkR + 0.02) ** 2 ? 'trunk' : null;          // (+ the ball's radius)
+        const r = t.r * (1 - (y - yb) / (t.h - yb));
+        return d2 < r * r ? 'canopy' : null;
       }
       // the tree a ball at hole position (x, y, z) is inside, or -1
       function treeAt(x, y, z) {
@@ -8721,9 +8767,7 @@
           if (!cell) continue;
           for (const k of cell) {
             const t = holeTrees[k];
-            if (t.hidden || y > t.h || y < -0.5) continue;
-            const r = t.r * (1 - Math.max(0, y) / t.h), dx = x - t.x, dz = z - t.z;
-            if (dx * dx + dz * dz < r * r) return k;
+            if (!t.hidden && treePart(t, x, y, z)) return k;
           }
         }
         return -1;
@@ -8871,7 +8915,9 @@
         holeGreenG.add(pole, flagM, beam);
 
         // trees line the hole and fill the inside of the dogleg. A ball that flies into one hits it (see treeAt / treeDeflect).
-        const r = rng32(2026 + idx * 101), cone = new THREE.ConeGeometry(1, 1, 7); cone.translate(0, 0.5, 0);
+        // (swing audit S3.5: the canopy starts TREE.base of the way up, over a trunk; treePart is the same shape)
+        const r = rng32(2026 + idx * 101), cone = new THREE.ConeGeometry(1, 1 - TREE.base, 7); cone.translate(0, TREE.base + (1 - TREE.base) / 2, 0);
+        const trunkGeo = new THREE.CylinderGeometry(0.8, 1, 1, 6); trunkGeo.translate(0, 0.5, 0);
         treeGrid.clear(); treeClearAt = null;
         const COUNT = Math.round(clamp(hole.length * 0.85, 220, 440) * (def.treeMult || 1)), trees = new THREE.InstancedMesh(cone, new THREE.MeshLambertMaterial({ color: 0x2c5d2e }), COUNT);
         const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), ps = new THREE.Vector3(), col = new THREE.Color();
@@ -8892,6 +8938,9 @@
           holeTrees.push({ x, z, h, r: h * 0.3, hidden: false, ghost: false }); placed++;
         }
         trees.count = placed; trees.frustumCulled = false; holeCourseG.add(trees); holeTreeMesh = trees;
+        holeTrunkMesh = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: 0x4a3626 }), Math.max(1, placed));
+        holeTrees.forEach((t, i) => holeTrunkMesh.setMatrixAt(i, m4.compose(ps.set(t.x, 0, t.z), q, sc.set(TREE.trunkR, t.h * (TREE.base + 0.05), TREE.trunkR))));
+        holeTrunkMesh.count = placed; holeTrunkMesh.frustumCulled = false; holeCourseG.add(holeTrunkMesh);
         // the see-through copies of the trees near the ball and the camera (see updateTreeClearance)
         holeTreeGhost = new THREE.InstancedMesh(cone, new THREE.MeshLambertMaterial({ color: 0x2c5d2e, transparent: true, opacity: 0.2, depthWrite: false }), Math.max(1, placed));
         for (let i = 0; i < placed; i++) holeTreeGhost.setMatrixAt(i, m4.compose(ps.set(0, -999, 0), q, sc.set(0, 0, 0)));
@@ -9005,8 +9054,8 @@
       function updateShapeLine() {
         let tr = null;
         if (!onGreenView() && (state.view === 'scout' || isPeeking()) && !swing.active) {
-          const s = stockShot(state.club);
-          if (s.track && s.track.some((p) => Math.abs(p.x) > 0.8 * YD)) tr = s.track;
+          const ptr = previewTrack(state.club);      // (swing audit S9.3: to the shots' mean finish)
+          if (ptr && ptr.some((p) => Math.abs(p.x) > 0.8 * YD)) tr = ptr;
         }
         shapeLine.visible = !!tr;
         if (tr && tr !== shapeTrack) {
@@ -9157,7 +9206,7 @@
       function beginSwing(noLock = false) {
         if (lastTrace) ghostTrace = lastTrace;
         lastTrace = null; swingReplay = null;
-        Object.assign(swing, { active: true, phase: 'ready', S: [], x: 0, y: 0, iTop: 0, iImp: -1, impactAt: 0, locked: false, jit: 0, lockAt: 0, lastT: 0, spikes: 0, rates: [], backStart: 0, backLocked: false, scripted: noLock });
+        Object.assign(swing, { active: true, phase: 'ready', S: [], x: 0, y: 0, hx: 0, iTop: 0, iImp: -1, impactAt: 0, locked: false, jit: 0, lockAt: 0, lastT: 0, spikes: 0, rates: [], backStart: 0, backLocked: false, scripted: noLock });
         clubPhiTarget = 0; clubReturnAt = 0;
         if (noLock) return;
         // Unadjusted movement = raw counts with OS pointer acceleration off, so a swing feels the same every time.
@@ -9203,17 +9252,22 @@
         if (s.phase === 'ready') {                  // waiting for the takeaway; the origin stays glued to the ball
           s.x = Math.min(0, s.x + dx);
           if (s.x > -Math.max(3, px * 0.01)) return;
-          S.push({ t: t - 1, x: 0, y: 0 }); s.y = 0; s.phase = 'back'; s.backStart = t; s.backLocked = false;
+          S.push({ t: t - 1, x: 0, y: 0 }); s.y = 0; s.hx = s.x; s.phase = 'back'; s.backStart = t; s.backLocked = false;
           S.push({ t, x: s.x, y: 0 }); s.iTop = 1;
           return;
         }
         if (s.phase === 'through') { s.x += dx; s.y += dy; S.push({ t, x: s.x, y: s.y }); return; }
         if (s.phase !== 'back' && s.phase !== 'down') return;
 
-        s.x += dx; s.y += dy;
         // Backswing clock: once it runs out the top is locked — moving further back adds nothing. (Not while calibrating.)
+        // Swing audit S1.10: the hand's own position (hx) is kept, and while it is beyond the locked top the swing is held
+        // AT the top, sideways too: it starts down when the hand comes back past the top, so the stroke's line and where
+        // it crosses the ball are the hand's (a 10° stroke after a 1.6 s backswing read 9.5° and missed the ring by 3.8%).
         if (!s.backLocked && !state.calibrating && t - s.backStart > TUNE.backswingTimeMs) s.backLocked = true;
-        if (s.backLocked) s.x = Math.max(s.x, S[s.iTop].x);
+        s.hx += dx;
+        const beyond = s.backLocked && s.hx < S[s.iTop].x;
+        s.x = s.backLocked ? Math.max(s.hx, S[s.iTop].x) : s.hx;
+        if (!beyond) s.y += dy;
         S.push({ t, x: s.x, y: s.y });
         const i = S.length - 1, topX = S[s.iTop].x;
         if (s.x < topX) { s.iTop = i; s.phase = 'back'; return; }          // still (or again) going back
@@ -9221,7 +9275,7 @@
           const lenient = state.calibrating, putt = isPutt();          // a putt can be a very short stroke
           const minBack = lenient ? 30 : px * (putt ? PUTT.minBack : isChip() ? TUNE.minBackswing : TUNE.minBackswingFull);
           const hyst = lenient ? 8 : putt ? Math.max(4, px * PUTT.topHyst) : Math.max(6, px * TUNE.topHysteresis);
-          if (s.x >= 0) { s.phase = 'ready'; s.S = []; s.x = 0; s.y = 0; return; }     // drifted back without a real backswing
+          if (s.x >= 0) { s.phase = 'ready'; s.S = []; s.x = 0; s.y = 0; s.hx = 0; return; }     // drifted back without a real backswing
           if (-topX >= minBack && s.x > topX + hyst) s.phase = 'down';
           return;
         }
@@ -9749,6 +9803,7 @@
           ballSpeed: res.ballSpeed, vla: res.vla, dir, spin: res.spin, axis: res.axis, release: res.release,
           ground: hb ? (x, z) => SURF[surfaceAt(hb.x + x, hb.z + z)] : null,
           obstacle: hb ? (x, y, z) => treeAt(hb.x + x, y, hb.z + z) : null,      // the trees on the hole
+          obstaclePart: hb ? (id, x, y, z) => treePart(holeTrees[id], hb.x + x, y, hb.z + z) : null,      // (S3.5: trunk or branches)
           green: hb ? fullShotGreen(hb) : null,                                  // a landing on the green plays as a chip's (S8.1)
         }, windVector(state.windMph, state.windDir), Math.max(0, ballLift()));
         const tracer = newTracer();
@@ -13285,10 +13340,9 @@
           }
           const mx = P.reduce((s, p) => s + p.x, 0) / P.length, mz = P.reduce((s, p) => s + p.z, 0) / P.length;
           const sd = (k, m) => Math.sqrt(P.reduce((s, p) => s + (p[k] - m) ** 2, 0) / P.length) * 2 * SPREAD.sigmas / YD;
-          // (swing audit S5.9: the stock shot leaves out a used club's bent lie, a pure push or pull, so turn its finish by it
-          // here: the Curve column is where the player sees which clubs pull and which push)
-          const bb = (c.lieBias || 0) * D2R, side = f.p.x * Math.cos(bb) - f.p.z * Math.sin(bb);
-          const out = { loft: c.loft, carry: f.carry / YD, total: Math.hypot(f.p.x, f.p.z) / YD, side: side / YD, speed: r.ballSpeed, vla: r.vla, spin: r.spin, apex: f.apex / YD, wide: sd('x', mx), deep: sd('z', mz) };
+          // (swing audit S5.9 / S2.11: the stock shot includes a used club's bent lie, so the Curve column shows which clubs
+          // pull and which push)
+          const out = { loft: c.loft, carry: f.carry / YD, total: Math.hypot(f.p.x, f.p.z) / YD, side: f.p.x / YD, speed: r.ballSpeed, vla: r.vla, spin: r.spin, apex: f.apex / YD, wide: sd('x', mx), deep: sd('z', mz) };
           if (bagNumCache.size > 200) bagNumCache.clear();
           bagNumCache.set(key, out);
           return out;
@@ -14960,7 +15014,8 @@
             g.restore();
           }
           g.strokeStyle = '#ffffff'; g.lineWidth = 1.5; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(bx, by);
-          if (st.track) for (const p of st.track) { toWorld(tv.set(p.x * k2, 0, p.z * k2)); g.lineTo(X(ball.x + tv.x, ball.z + tv.z), Y(ball.x + tv.x, ball.z + tv.z)); }
+          const ptr = previewTrack(state.club);      // (S9.3: to the shots' mean finish, as the landing area is)
+          if (ptr) for (const p of ptr) { toWorld(tv.set(p.x * k2, 0, p.z * k2)); g.lineTo(X(ball.x + tv.x, ball.z + tv.z), Y(ball.x + tv.x, ball.z + tv.z)); }
           else g.lineTo(X(ex, ez), Y(ex, ez));
           g.stroke(); g.setLineDash([]);
           if (!r.exact) {
@@ -15143,7 +15198,7 @@
       // no miss), so with a real one the ellipse held 60–70% of iron shots instead of about 86%. (S1.7: the wobble is now
       // shake only, an arm's arc no longer counts, so the estimate fell from 1.5–5.5 px and the history's key changed:
       // swings recorded before then counted the arc.)
-      const SPREAD = { n: 60, nDriver: 100, mouseDeg: 1.2, wobbleLo: 1, wobble: 2, missSd: 0.02, backswing: 0.05, sigmas: 2, own: 8, keep: 30 };
+      const SPREAD = { n: 60, nDriver: 100, fine: 200, fineDriver: 300,mouseDeg: 1.2, wobbleLo: 1, wobble: 2, missSd: 0.02, backswing: 0.05, sigmas: 2, own: 8, keep: 30 };
       const SWING_HIST_KEY = 'golfSwingHist2';
       try { localStorage.removeItem('golfSwingHist'); } catch { /* storage unavailable: fine */ }
       const swingHist = (() => { try { const h = JSON.parse(localStorage.getItem(SWING_HIST_KEY) || '[]'); return Array.isArray(h) ? h.slice(-SPREAD.keep) : []; } catch { return []; } })();
@@ -15165,12 +15220,14 @@
         return { ...base, thetaMouse: SPREAD.mouseDeg * 2 * bell(), sigma: SPREAD.wobbleLo + SPREAD.wobble * rnd(), miss: SPREAD.missSd * gauss() };
       }
       const spreadCache = new Map();
-      function landSpread(ci) {
+      // fine (swing audit S9.3): the selected club's own area and preview, from SPREAD.fine swings (fineDriver for the
+      // driver), so their mean is good to a yard or so; a 100-swing driver mean wandered ±2 yds. The bag's rows keep n.
+      function landSpread(ci, fine = false) {
         const club = CLUBS[ci], teed = isTeed(club), su = setup();
         const env0 = { lie: state.lie, slope: state.slope, power: state.power, dex: state.dex, composure: state.composure, badStreak: state.badStreak, teed };
-        const key = [ci, club.model || '', JSON.stringify(su), JSON.stringify(env0), swingHistVer].join('|');     // (the model: a demo shares its slot)
+        const key = [ci, club.model || '', JSON.stringify(su), JSON.stringify(env0), swingHistVer, fine].join('|');     // (the model: a demo shares its slot)
         if (spreadCache.has(key)) return spreadCache.get(key);
-        const rnd = rng32(90210), P = [], n = ci === 0 ? SPREAD.nDriver : SPREAD.n;
+        const rnd = rng32(90210), P = [], n = fine ? (ci === 0 ? SPREAD.fineDriver : SPREAD.fine) : ci === 0 ? SPREAD.nDriver : SPREAD.n;
         for (let i = 0; i < n; i++) {
           const sw = spreadSwing(rnd);
           const r = computeImpact(sw, su, club, env0, rnd);
@@ -15192,7 +15249,7 @@
       function landArea(ball = hp.ball) {                    // (ball: where it's hit from — the hole's ball, or the range's tee)
         // (k2 is only the read's bias: the spread's own mean already includes the lie, which lieRead's centre now does too)
         const r = lieRead(state.club), st = stockShot(state.club), k2 = st.total > 0 ? r.totalMid / (st.total * (r.lieK ? r.lieK.total : 1)) : 1;
-        const sp = landSpread(state.club), tot = r.totalMid * YD;
+        const sp = landSpread(state.club, true), tot = r.totalMid * YD;
         const [a1, a2] = spreadAxes(sp.sxx, sp.szz + (r.exact ? 0 : (r.half * tot / 2) ** 2), sp.sxz);
         const tv = new THREE.Vector3(), w = (x, z) => { toWorld(tv.set(x * k2, 0, z * k2)); return { x: tv.x, z: tv.z }; };
         const c = w(sp.mx, sp.mz);
@@ -15204,6 +15261,24 @@
         const a = SPREAD.sigmas * Math.sqrt(Math.max(0, m + d)), b = SPREAD.sigmas * Math.sqrt(Math.max(0, m - d));
         return [{ x: Math.cos(th) * a, z: Math.sin(th) * a }, { x: -Math.sin(th) * b, z: Math.cos(th) * b }];
       }
+      // Swing audit S9.3: the shot preview's path bent to finish where the shots really average sideways (landSpread's mean,
+      // the landing ellipse's centre), not where a perfect swing finishes. A scatter error that opens the face adds more
+      // curve than one that closes it takes away, so the average fade bends further: the driver's 5 yds. The bend grows
+      // with the square of the distance (like a curve's); the length stays the read's.
+      const previewCache = new WeakMap();
+      function previewTrack(ci = state.club) {
+        const st = stockShot(ci);
+        if (!st.track || isChip()) return st.track;
+        const sp = landSpread(ci, ci === state.club), e = st.track[st.track.length - 1], dx = sp.mx - e.x, L = Math.hypot(e.x, e.z);
+        if (Math.abs(dx) < 0.3 * YD || L < 1) return st.track;
+        const c = previewCache.get(st.track);
+        if (c && Math.abs(c.dx - dx) < 1e-6) return c.tr;
+        const tr = st.track.map((p) => ({ x: p.x + dx * (Math.hypot(p.x, p.z) / L) ** 2, z: p.z }));
+        previewCache.set(st.track, { dx, tr });
+        return tr;
+      }
+      // where the shot finishes sideways on average (yds, + right): the preview's end
+      const previewSide = (ci = state.club) => (isChip() ? stockShot(ci).side : landSpread(ci, ci === state.club).mx / YD);
       function stockShot(ci, bs = 1) {
         const club = CLUBS[ci], teed = isTeed(club), chip = isChip();
         // the selected club uses the live setup (tweaks included); every other bag row uses ITS OWN solved shape with the
@@ -16028,7 +16103,7 @@
         const read = lieRead(state.club);
         const fitNow = clubFit(club, state.lie, isTeed(club));
         const fitTxt = fitNow.s > 0.02 ? `  ·  ${fitNow.s >= 0.5 ? '✕ WRONG CLUB FOR THIS LIE' : '⚠ risky from this lie'} (${Math.round(fitNow.mishit * 100)}% mishit, −${Math.round((1 - fitNow.power) * 100)}% speed)` : '';
-        const stk = chip ? null : stockShot(state.club), sideTxt = stk && Math.abs(stk.side) >= 1 ? ` · finishes ${Math.abs(stk.side).toFixed(0)} yd ${stk.side > 0 ? 'R' : 'L'}` : '';
+        const pSide = chip ? 0 : previewSide(state.club), sideTxt = !chip && Math.abs(pSide) >= 1 ? ` · finishes ${Math.abs(pSide).toFixed(0)} yd ${pSide > 0 ? 'R' : 'L'}` : '';     // (S9.3: the average finish)
         const demoTxt = careerOn && demo && demo.model && demo.idx === state.club ? (demo.on ? ' (DEMO)' : ' (yours)') : '';       // a pro-shop demo in this slot
         setText('tbClub', chip ? `${club.name}${demoTxt} · ${CHIP_TYPES[state.chipType].name}${fitTxt}`
           : `${club.name}${demoTxt}${shotName() !== 'Stock' ? ` · ${shotName()}` : ''} · ${read.carryTxt} yd carry / ${read.totalTxt} total${sideTxt}${fitTxt}`);
@@ -16600,7 +16675,7 @@
           ring(rx, ry, swing.phase === 'down' ? '#ff9a3d' : swing.phase === 'back' ? (swing.backLocked ? '#ffc24a' : '#35e0ff') : '#ffffff');
           if (swing.phase === 'back' || swing.phase === 'down') {
             const top = swing.S[swing.iTop], len = Math.min(1.10, Math.abs(top.x) / px), tx = X(top.x);
-            // backswing clock: an arc around the ring that empties over 1.5 s (not shown while calibrating)
+            // backswing clock: an arc around the ring that empties over TUNE.backswingTimeMs (not shown while calibrating)
             if (swing.phase === 'back' && !state.calibrating) {
               const left = swing.backLocked ? 0 : clamp(1 - (performance.now() - swing.backStart) / TUNE.backswingTimeMs, 0, 1);
               g.lineWidth = 4; g.strokeStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.arc(rx, ry, ringR + 7, 0, 7); g.stroke();
@@ -16697,11 +16772,26 @@
           return puttTel;
         }
         for (let i = 1; i <= 60; i++) { const u = 0.5 - 0.5 * Math.cos(Math.PI * i / 60); feed(top * u, yTop * u, t += 8); }
-        const T = 2 * Math.abs(top) / vT, n = Math.max(16, Math.round(T / 4));
+        // Swing audit S1.12: the downswing accelerates evenly and the game reads its speed over the last speedWindowMs, so
+        // its time T is set for the AVERAGE over that window to be the tempo asked for: L(2T − W) / T² = v (it read 95% at
+        // tempo 1). The wobble is a shake with no line, curve or offset in it (sin(3πs), s = 0..1 down the swing, less
+        // its least-squares fit of 1, s, s²), so it adds no path (a wobble of 10 added 0.76°) and S1.7's fit keeps it all.
+        const L = Math.abs(top), W = TUNE.speedWindowMs, disc = L * L - vT * L * W;
+        const T = disc > 0 ? (L + Math.sqrt(disc)) / vT : L / Math.max(1e-3, vT), n = Math.max(32, Math.round(T / 2));
+        const shake = (() => {
+          if (!wobble) return () => 0;
+          const K = 64, w0 = (s) => Math.sin(3 * Math.PI * s), A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], b = [0, 0, 0];
+          for (let k = 0; k < K; k++) { const s = k / (K - 1), p = [1, s, s * s]; for (let r = 0; r < 3; r++) { b[r] += p[r] * w0(s); for (let c = 0; c < 3; c++) A[r][c] += p[r] * p[c]; } }
+          for (let r = 0; r < 3; r++) for (let q = r + 1; q < 3; q++) { const m = A[q][r] / A[r][r]; for (let c = 0; c < 3; c++) A[q][c] -= m * A[r][c]; b[q] -= m * b[r]; }
+          const cf = [0, 0, 0];
+          for (let r = 2; r >= 0; r--) { let v = b[r]; for (let c = r + 1; c < 3; c++) v -= A[r][c] * cf[c]; cf[r] = v / A[r][r]; }
+          return (s) => wobble * (w0(s) - cf[0] - cf[1] * s - cf[2] * s * s);
+        })();
         for (let i = 1; i <= n + 6 && swing.phase !== 'through'; i++) {
-          const u = i / n, dx = Math.abs(top) * u * u;
-          feed(top + dx, yTop - slope * dx + wobble * Math.sin(u * Math.PI * 3), t += T / n);
+          const u = i / n, dx = L * u * u;
+          feed(top + dx, yTop - slope * dx + shake(Math.min(1, dx / L)), t += T / n);
         }
+        endSwing('silent');           // (S1.12: it used to stay active, so the next call returned null)
         return telemetry;
       }
       window.__golf = {
@@ -16709,7 +16799,7 @@
         analyzeSwing, computeImpact, swingSample, beginSwing, endSwing, onPointerMove, isSpike, tempoTarget, powerFromBackswing, powerFromTempo,
         LIES, SLOPES, AERO, windVector, clubFit, solveShape, powerMult, runChip, computePutt, analyzePutt, CADDIES,
         createPutt, stepPutt, puttTarget, rollDecel, puttGate, rng32, shopStats, SHOP, withClubModel, setup, careerStats,
-        fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock,
+        fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock, flatChipView, treeDeflect, treePart, TREE, previewTrack, previewSide,
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },

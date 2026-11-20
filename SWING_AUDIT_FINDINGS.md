@@ -329,6 +329,9 @@ this section).
   and shows "BACKSWING LOCKED".
 - **Why it matters:** 93% costs a driver about 30 yds. Whether 1 second is the right limit is your call; it reads as
   intended. A stale comment in `drawSwingFx` says the arc "empties over 1.5 s".
+- **✅ Fixed 2026-11-20:** `TUNE.backswingTimeMs` is now 1,500, and the ring's clock (which reads it) empties over 1.5 s.
+  The stale comment now names the TUNE value. A full backswing taken in 0.5 / 1.1 / 1.3 / 1.5 / 1.6 s reads 100%;
+  2.0 s reads 91.7%, 2.5 s 74.6% (`tools/test/swing-fix14.js`).
 
 ### S1.10 [Low, bug] After the backswing clock locks, an angled swing misses the ball
 - **Where:** `swingSample`: once locked, `x` is frozen at the top but `y` keeps following the hand.
@@ -336,6 +339,11 @@ this section).
   **miss −3.8%** of the swing length, just outside the ring's free 3.5%. At 1.3 s: miss −1.1%. A straight stroke is
   unaffected.
 - **Fix (S):** freeze `y` with `x` while the hand is beyond the locked top.
+- **✅ Fixed 2026-11-20:** `swingSample` keeps the hand's own position (`swing.hx`). While the hand is beyond the locked
+  top, the swing is held at the top, sideways too. It starts down when the hand comes back past the top, so the
+  stroke's line and where it crosses the ball are the hand's. (Before, the downswing started as soon as the hand
+  turned, still beyond the top.) A 10° stroke read 9.52°, 1.62 px of wobble and a −3.8% miss; after a 1.6, 2.0 or
+  2.5 s backswing, and after one that travels 140% back over 2 s, it now reads 10.00°, 0.00 px and +0.2%.
 
 ### S1.11 [Low, realism] The path is the average direction of the whole downswing
 - **Measured:** a stroke that starts 8° out-to-in at the top and is square at the ball reads **−4.02°**; square at
@@ -350,6 +358,15 @@ this section).
   null until the caller sets it false.
 - **Why it matters:** only for tests. The 5% is the speed window, the same for a real hand. **For later sections:**
   call `computeImpact` directly with exact swing numbers; use `debugSwing` only to exercise the input path.
+- **✅ Fixed 2026-11-20:** `debugSwing` now does what it's asked:
+  - **The tempo:** the downswing's time is set so the speed averaged over the last `speedWindowMs` is the tempo asked
+    for, by solving `L(2T − W) / T² = v`.
+  - **The wobble:** it is a shake with its least-squares fit of 1, s and s² removed, so it adds no line, curve or
+    offset.
+  - **The swing:** it ends the swing afterwards (full swings; putts as before).
+
+  Asked → read: tempo 1.0 → 99.6% (99.4% at a half swing, 99.1% at a quarter), 1.15 → 114.5%, 0.7 → 70.0%. A wobble
+  of 10 → 1.65 px and −0.13° of path (was +0.76°). `swing.active` is false afterwards.
 
 ### Checked and fine
 - **Report-rate independence.** One stroke (100% backswing, 4° path, a 6-count wobble) at 1,000 to 30 reports a
@@ -665,19 +682,46 @@ table says "with scatter", it used 4,000 seeded shots and the swing the game its
 - **Expected:** on a real iron the small gear effect partly cancels the twist, so the miss is about half this. The
   driver is right: a toe hit starts right and draws back (8 mm: starts 1.2° right, finishes 4.4 yds left).
 - **Why it matters little:** on a fairway the average strike is 1.6–2.4 mm, worth 2–4 yds.
+- **✅ Fixed 2026-11-20:** the irons have a horizontal gear effect (`bulge`), as the woods do. It is −0.7 at gear 1.2 and
+  work 1, scaled with gear × work (the same scaling `modelMods` gives a career model since S5.5):
+  - 4–8 iron −0.7, 9 iron −0.64, PW and GW −0.53, sand and lob wedge −0.5, the comparison GI 7 iron −0.13.
+
+  A toe hit starts right and curves a little more right. Finishes, 4 / 8 / 14 mm toe (`tools/test/swing-fix14.js`):
+  - 7 iron +2.6 / +5.8 / +11.1 yds. It was 6.0 / 11.6 / 18.2, and 6.8 / 13.2 / 21.1 after S2.7, so about half.
+  - 4 iron +4.1 / +9.2 / +18.0 (14 mm was 29–31).
+  - PW +1.7 / +3.6 / +6.2.
+  - The GI 7 iron +1.2 / +2.4 / +4.1.
+  - Heel hits mirror these. The driver is unchanged (an 8 mm toe hit finishes 5.6 L).
 
 ### S2.9 [Low, realism] The ball starts 75% toward the face with every club
 - **Where:** `hla = 0.75 × face + 0.25 × path`. Measured 75% for all 14 clubs. A driver is nearer 85 / 15, so a
   square face on a 5° path starts 1.25° offline here and about 0.75° in reality.
+- **✅ Fixed 2026-11-20:** the face's share is `clamp(0.85 − 0.0125 × (delivered loft − 12°), 0.75, 0.85)`: 85% for the
+  driver, falling to 75% from about 20° of loft (the 7 iron) on. A square face on a 5° path now starts: driver 0.80°
+  (84%), 3 wood 0.75° (85%), 3 hybrid 0.91° (82%), 4 iron 0.84° (83%), 6 iron 1.08° (78%), 7 iron to wedges 1.25° (75%).
+  The shape solver works the presets out from the flight, so they adjust by themselves (its sweep still has 0
+  failures).
 
 ### S2.10 [Low, realism] Spin follows the backswing but not the Power stat
 - **Measured:** 7 iron at Power 1 / 5 / 10: club speed 81 / 90 / 99 mph, spin 7,000 / 7,000 / 7,000. A 75% backswing
   gives 5,250. More club speed makes more spin in reality (about 7,700 at 99 mph).
+- **✅ Fixed 2026-11-20:** spin × `powerMult(Power)` ^ `TUNE.spinPowerExp` (1). The 7 iron at Power 1 / 5 / 10 spins
+  6,300 / 7,000 / 7,700. Carry and total move a little (Power 1 / 5 / 10, before → after):
+  - Driver 230 / 266 / 298 → 226 / 266 / 300 carry, totals 250 / 283 / 314 → 248 / 283 / 314.
+  - 7 iron 151 / 176 / 199 → 152 / 176 / 197 carry, totals 157 / 181 / 204 → 159 / 181 / 201.
+  - PW totals 119 / 138 / 156 → 121 / 138 / 153.
+
+  Low Power now spins less and runs a touch further; Power 10 stops sooner and loses 1–3 yds of total with the irons.
+  The More-spin cap (S2.2) is judged on the new spin.
 
 ### S2.11 [Low, bug] The no-scatter preview leaves out a used club's bent lie
 - **Measured:** a 7 iron with a bent lie of +1.5° and an offset of 0.9°: the preview's path is 0.00° and it finishes
   4.6 yds left (the offset only); real shots average a path of 1.53°. The bag's numbers and the shape line come from
   the preview. If the bent lie is meant to be a hidden flaw, this is as intended. **For S9.**
+- **✅ Fixed 2026-11-20:** the bent lie is part of the no-scatter shot too, so the aim line, the bag's numbers, the
+  locker room's Curve column and the shape presets all show it. (Since S5.9 the locker room already did, by turning
+  the stock finish; that turn is gone, as the stock shot now has it.) The same club: preview path 1.50°, finishes 0.3 L.
+  400 real shots average 0.0. The campaign plan's "the player finds it on the course" is updated to match.
 
 ### Checked and fine
 - **Impact numbers against the tour table** (stock swing, all stats 5; game / tour):
@@ -894,6 +938,24 @@ try other lift curves; it reproduces the game's carries exactly.
 - **Where:** the first bounce keeps between −12% and 88% of the ball's speed; −12% is the floor.
 - **Why it matters:** past about 13,000 rpm more spin does nothing on the ground. A tour wedge into a soft green can
   come back 5 yds or more. Together with S2.2: the spin numbers go very high, but the ball doesn't act on them.
+- **✅ Fixed 2026-11-20:** in both landings (the range's ground and the hole green's `chipBounce`):
+  - **The bite:** the first bounce of a steep, high-spin landing draws back harder (`backUp`). Past `TUNE.backFrom`
+    (0.8) of spin × steepness (spin in 9,000s of rpm), each 0.1 more takes `TUNE.backKeep` × 0.1 (1.5) off the keep,
+    and the floor moves down with it.
+  - **Spinning back:** a ball that bites back stays down and rolls back instead of hopping. On a hole green the check
+    braking, meant for a ball still going forward, no longer brakes it on the way back.
+
+  Roll in yds, range green / Stimp 11 hole green (`tools/test/swing-fix14.js`):
+
+  | | Stock | More spin | High 2 | High 2 + More |
+  |---|---|---|---|---|
+  | 9 Iron | 2.3 / 2.5 | 0.7 / 0.7 | 0.6 / 0.6 | −0.1 / −0.2 |
+  | PW | 1.6 / 1.7 | −0.1 / −0.4 | 0.2 / 0.2 | −1.0 / −2.4 |
+  | Sand Wedge | 0.6 / 0.6 | −1.0 / −2.4 | −0.8 / −2.0 | −2.2 / −4.3 |
+  | Lob Wedge | 0.2 / 0.2 | −1.9 / −3.9 | −2.5 / −4.7 | −3.2 / −5.5 |
+
+  Before, nothing came back more than 1.0 yd on either green. Stock shots and everything under about 11,000 rpm
+  are unchanged, and so are chips: they spin far less (`swing-fix9.js`).
 
 ### S3.5 [Low, realism] A tree hit sends 1 ball in 4 back toward the player
 - **Where:** `treeDeflect`: the ball keeps 12–37% of its speed and turns up to 137° either way.
@@ -909,6 +971,21 @@ try other lift curves; it reproduces the game's carries exactly.
   rolling ball passes through trees.
 - **Why it matters:** a hit costs the whole shot, which is fair. Coming back 20 m behind the tree a quarter of the
   time is harsher than real trees, where most balls drop or carry on.
+- **✅ Fixed 2026-11-20:** both parts.
+  - **The shape:** a tree is now a trunk (0.25 m in radius) with its canopy raised to start 28% of the way up
+    (`TREE`, `treePart`). The canopy is as wide at its base as the old cone was at the ground. The drawing matches: a
+    raised cone over a brown trunk, which is hidden with its canopy when the tree goes see-through.
+  - **Branch hits:** most go on or drop, knocked up to ~50° off line. 15% meet a big branch and can turn up to ~140°.
+  - **Trunk hits:** they kick the ball back the way it came, keeping 25–45% of its pace. The flight learns which part
+    it hit through `obstaclePart`.
+
+  One 15 m tree, 3,000 shots each (`tools/test/swing-fix14.js`; beyond / back toward the player / to the side, of the
+  hits):
+  - 7 iron 88% / 4% / 7% (was 47 / 27 / 25).
+  - Drive 94 / 4 / 2 (was 60 / 26 / 14). 63% of these drives are caught now (the canopy starts higher).
+  - Wedge 35 / 5 / 23, with 33% dropping under the tree (was 24 / 24 / 38).
+  - A low punch from 15 m (4° launch) under the branches is caught only by the trunk, 18% of the time, and those come
+    straight back.
 
 ### S3.6 [Low, realism] Short irons land a few degrees shallow
 - **Measured:** 6 iron to PW land at 47–49° against the tour's 50–52° (table in S3.1). The slower LPGA rows fly 6–10%
@@ -1773,6 +1850,20 @@ bites) is 5% / 4% / 1% / 0% / 0% at Dexterity 1 / 2 / 5 / 8 / 10.
   Dexterity 10 hits it straighter than anyone real. This is a judgment call: a maxed stat may be meant to feel
   superhuman.
 - **Fix (S):** a floor on `dexSpread` (about 0.25 instead of 0.08) keeps Dexterity 10 at about tour level.
+- **✅ Fixed 2026-11-20, as suggested; but it no longer reaches tour level.**
+  - **The change:** `dexSpread` is floored at `TUNE.dexSpreadMin` (0.25). Dexterity 1–8 are unchanged (Dex 8 is
+    0.28), and Dex 9 and 10 both sit at the floor.
+  - **Measured** (`tools/test/swing-fix14.js`, ± half the 2σ width, before → after):
+
+    | | Robot swing, Dex 9 / 10 | Default hand, Dex 9 / 10 |
+    |---|---|---|
+    | 7 iron | ±1.4 / 0.6 → ±2.0 / 2.0 | ±3.2 / 2.8 → ±3.5 / 3.5 |
+    | Driver | ±4.7 / 2.1 → ±6.5 / 6.5 | ±9.8 / 7.9 → ±11.5 / 11.4 |
+
+  - **Still tighter than tour:** a tour pro is about ±8–10 with the 7 iron and ±30–35 with the driver. The finding's
+    numbers used the old assumed hand (wobble 1.5–5.5 px). S1.7 took the arm's arc out of the wobble, so the hand is
+    now 1–3 px, and even Dex 8 is ±3.8 / ±12.5. Reaching tour level at Dex 10 would mean more scatter through Dex 6–8
+    as well: a balance call, not part of this fix. A real player's own swings (`golfSwingHist2`) add their own shake.
 
 ### S6.5 [Low, feel / balance] Tilt acts in three places, so its numbers understate it
 - **Where:** tilt multiplies the mouse path (×1 + min(0.6, 0.8 × tilt)), multiplies the strike the same way, and
@@ -2334,6 +2425,26 @@ measurements.
 - **Fix (S):** draw the preview to the mean finish of `landSpread`'s shots (already computed for the ellipse), or
   accept a few yards. The ellipse itself is centred on that mean, so the line and the ellipse disagree by those
   5 yds.
+- **✅ Fixed 2026-11-20:** the first suggestion, with a larger sample.
+  - **The path:** `previewTrack` bends the stock path to finish at the shots' mean side (`landSpread`'s, the ellipse's
+    centre). The bend grows with the square of the distance, like a curve's, and the length stays the read's. The
+    minimap's path, the 3D shape line and the club bar's "finishes N yd L/R" (`previewSide`) all use it.
+  - **The sample:** the selected club's spread (its ellipse and preview) is now taken from 200 swings (300 for the
+    driver; `SPREAD.fine` / `fineDriver`). A 100-swing driver mean on one seed wandered ±2 yds: it read −6.8 where
+    1,600 shots average −4.1. The bag's rows keep 60 / 100.
+  - **The cost:** a fresh preview takes 28–47 ms, once per setup change.
+
+  Preview against 1,600 more shots (4 seeds, Dex 5; stock finish → preview → the shots):
+
+  | | Draw | Fade |
+  |---|---|---|
+  | Driver | +0.1 → −5.5 → −4.1 | −0.3 → +1.2 → +2.2 |
+  | 3 Hybrid | −0.2 → −4.0 → −2.7 | −0.1 → +0.8 → +1.4 |
+  | 7 Iron | +0.1 → −1.9 → −1.2 | +0.2 → +1.0 → +1.1 |
+
+  The preview is now within 0.1–1.4 yds of the average, about its sampling error; the stock finish was 1–4 yds off.
+  (The driver's fade now averages 2.2 R, not the finding's 5.7, after S1.7's steadier hand and S2.7's straighter
+  driver.)
 
 ### Checked and fine
 - **The bag's yardages** (fairway; shown → real mean carry / total, human swing):
