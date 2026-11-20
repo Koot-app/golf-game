@@ -526,7 +526,7 @@
     .bag-head,
     .bag-row {
       display: grid;
-      grid-template-columns: 26px 1fr 68px 68px;
+      grid-template-columns: 26px 1fr 54px 54px;
       align-items: center;
       gap: 6px;
       padding: 3.5px 14px;
@@ -15522,6 +15522,7 @@
           exact: false, half, bias,
         };
       }
+      const WEDGE_SHORT = { 'Pitching Wedge': 'PW', 'Approach Wedge': 'AW', 'Gap Wedge': 'GW', 'Sand Wedge': 'SW', 'Lob Wedge': 'LW' };
       function renderBag() {
         let h = '';
         $('bagTag').textContent = state.lie === 'fairway' ? 'full swing, yds' : `${LIES[state.lie].name.toLowerCase()} · per ${state.perception}, yds`;
@@ -15539,7 +15540,11 @@
             : fit.s > 0.02 ? ` title="${model ? `${model} · ` : ''}From this lie: ${Math.round(fit.mishit * 100)}% chance of a topped or fat shot, about ${Math.round((1 - fit.power) * 100)}% less ball speed, much wider dispersion"`
             : model ? ` title="${model}: ${CLUB_MODELS[career.bag[i]].note}"` : '';
           const lux = careerOn && isLux(career.bag[i]) && !(demo && demo.idx === i && demo.on);
-          h += `<div class="bag-row${i === state.club ? ' on' : ''}${risk}${snapped ? ' snapped' : ''}${lux ? ' lux' : ''}" data-i="${i}"${tip}><kbd>${CLUB_KEYS[pos] || '·'}</kbd><span>${lux ? '✦ ' : ''}${c.name}${snapped ? ' ✕ snapped' : fit.s >= 0.5 ? ' ✕' : fit.s > 0.02 ? ' ⚠' : ''}</span><b>${snapped ? '—' : r.carryTxt}</b><i>${snapped ? '—' : r.totalTxt}</i></div>`;
+          // (user request, 2026-11-20: the make and model beside each club, on a hole and on the range; the year is left off)
+          const shown = careerOn && demo && demo.idx === i && demo.on ? demo.model : careerOn ? career.bag[i] : null;
+          const make = shown && CLUB_MODELS[shown] ? `<em class="bag-tag">${CLUB_MODELS[shown].brand} ${CLUB_MODELS[shown].name.replace(/ \(\d{4}\)/, '')}</em>` : '';
+          const cname = make ? WEDGE_SHORT[c.name] || c.name : c.name;      // (with the make beside it, a wedge is PW / AW / GW / SW / LW)
+          h += `<div class="bag-row${i === state.club ? ' on' : ''}${risk}${snapped ? ' snapped' : ''}${lux ? ' lux' : ''}" data-i="${i}"${tip}><kbd>${CLUB_KEYS[pos] || '·'}</kbd><span>${lux ? '✦ ' : ''}${cname}${snapped ? ' ✕ snapped' : fit.s >= 0.5 ? ' ✕' : fit.s > 0.02 ? ' ⚠' : ''}${make}</span><b>${snapped ? '—' : r.carryTxt}</b><i>${snapped ? '—' : r.totalTxt}</i></div>`;
         });
         $('bagList').innerHTML = h;
         // keep the selected club in view when the list is short (on a hole the map shares the column)
