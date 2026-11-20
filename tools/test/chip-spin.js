@@ -17,7 +17,8 @@
   };
   out.push(`CHIP SIDE SPIN (TUNE.chipRelease ${TU.chipRelease}, chipKickMs ${TU.chipKickMs}, chipKickRpm ${TU.chipKickRpm}); mouse path: − out-to-in (cut), + in-to-out (hook)`,
     '   path: total yds (× the straight chip) · stops yds sideways · of which after landing (the kick) · difficulty');
-  for (const [ci, type, bs, lie] of [[12, 'stock', 0.3], [12, 'high', 0.38], [13, 'stock', 0.32], [10, 'low', 0.25], [7, 'low', 0.2], [12, 'stock', 0.36, 'light']]) {
+  // (the flops: a 60% one spun 12,000 rpm, bit back 8 yds and kicked 8 yds sideways before CHIP.flopSpin and chipKickShare)
+  for (const [ci, type, bs, lie] of [[12, 'stock', 0.3], [12, 'high', 0.38], [13, 'stock', 0.32], [10, 'low', 0.25], [7, 'low', 0.2], [12, 'stock', 0.36, 'light'], [13, 'flop', 0.4], [13, 'flop', 0.6], [12, 'flop', 0.6]]) {
     const base = chip(ci, type, bs, 0, lie);
     out.push(`   ${C[ci].name} ${type} ${bs * 100}%${lie ? ` from ${lie} rough` : ''} (straight: ${base.total.toFixed(1)} yds, ${Math.round(base.r.spin)} rpm)`);
     out.push('      ' + [-10, -5, 5, 10].map((th) => { const c = chip(ci, type, bs, th, lie); return `${th > 0 ? '+' : ''}${th}°: ${c.total.toFixed(1)} (×${(c.total / base.total).toFixed(2)}) · ${f(c.side, 2)} · kick ${f(c.kick, 2)} · cx ${c.r.complexity.toFixed(2)}`; }).join('   '));
