@@ -86,6 +86,8 @@ The sections can be run in any order. S4–S9 are quicker if S2 and S3 are done 
 11. **Luxury clubs are never better than the best ordinary club:** the money buys the look, not strokes.
 12. **The test round is the same for everyone:** all stats 5, the base bag, each hole's fixed wind and green speed.
 13. **Putting:** the marker's power read deliberately ignores slope; Perception sets how accurate the reads are.
+14. **A career starts as a beginner and climbs to the tour** (user, 2026-11-20). For Dexterity: Dex 1–2 a beginner,
+    Dex 8–9 a tour pro's average, Dex 10 the very best (S6.4's re-done table). Power is not yet on this scale (S4.4).
 
 ## Benchmarks
 
@@ -404,12 +406,12 @@ Check:
 
 | # | Section | Done | Findings | Fixed |
 |---|---|---|---|---|
-| S1 | The mouse swing | ✅ 2026-11-20 | 12 (2 high, 6 medium, 4 low) | S1.1–S1.10, S1.12 (2026-11-20) |
+| S1 | The mouse swing | ✅ 2026-11-20 | 12 (2 high, 6 medium, 4 low) | S1.1–S1.10, S1.12 (2026-11-20); S1.11 closed, kept as designed |
 | S2 | Impact | ✅ 2026-11-20 | 11 (4 medium, 7 low) | S2.1–S2.5, S2.7–S2.11 (2026-11-20); S2.6 closed, range-only by choice |
-| S3 | Ball flight, wind, bounce and roll | ✅ 2026-11-20 | 6 (3 medium, 3 low) | S3.1, S3.3–S3.5 (2026-11-20); S3.2 mostly (S8.1) |
+| S3 | Ball flight, wind, bounce and roll | ✅ 2026-11-20 | 6 (3 medium, 3 low) | S3.1–S3.5 (2026-11-20); S3.6 closed, resolved by S3.1 |
 | S4 | The base bag | ✅ 2026-11-20 | 5 (2 medium, 3 low) | S4.1, S4.2, S4.5 (2026-11-20); S4.3 by S3.1's speeds |
 | S5 | The club catalogue | ✅ 2026-11-20 | 9 (1 high, 6 medium, 2 low) | S5.1–S5.5, S5.7–S5.9 (2026-11-20); S5.6 mostly |
-| S6 | Stats, lies, dispersion and difficulty | ✅ 2026-11-20 | 5 (3 medium, 2 low); S2.1 raised to high | S6.1–S6.4 (2026-11-20; S9.2 partly) |
-| S7 | Shot shaping, height and spin | ✅ 2026-11-20 | 5 (2 medium, 3 low) | S7.1–S7.4 (2026-11-20) |
-| S8 | Chipping and putting | ✅ 2026-11-20 | 3 (2 medium, 1 low) | S8.1, S8.3, part-swing spin (2026-11-20; S8.2 largely, S3.2 mostly) |
-| S9 | What the player is shown vs what happens | ✅ 2026-11-20 | 3 (2 medium, 1 low) | S9.1, S9.3 (2026-11-20); S9.2 partly (S6.1) |
+| S6 | Stats, lies, dispersion and difficulty | ✅ 2026-11-20 | 5 (3 medium, 2 low); S2.1 raised to high | S6.1–S6.4 (2026-11-20; S6.4 re-done as a beginner-to-tour scale); S6.5 closed, kept as designed |
+| S7 | Shot shaping, height and spin | ✅ 2026-11-20 | 5 (2 medium, 3 low) | S7.1–S7.4 (2026-11-20); S7.5 closed, resolved by S2.4 / S2.7 |
+| S8 | Chipping and putting | ✅ 2026-11-20 | 3 (2 medium, 1 low) | S8.1–S8.3, part-swing spin (2026-11-20) |
+| S9 | What the player is shown vs what happens | ✅ 2026-11-20 | 3 (2 medium, 1 low) | S9.1–S9.3 (2026-11-20) |

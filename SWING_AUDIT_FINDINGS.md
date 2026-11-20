@@ -351,6 +351,9 @@ this section).
   wobble).
 - **Expected:** in golf the path is the club's direction through the ball. For a mouse the average is steadier and
   easier to control, so this may be the better choice. Noted, not a recommendation.
+- **Closed 2026-11-20, kept as designed:** the average is the steadier read for a mouse. Since S1.7 the stroke is fitted
+  with a curve, so the direction through the ball (that curve's slope at the ball) would be easy to read if wanted. It
+  would be more realistic and twitchier.
 
 ### S1.12 [Low, test tool] `debugSwing` doesn't deliver the tempo it's asked for
 - **Measured:** asked for tempo 1.0 it reads 95.0% (93.9% at a half swing, 90.0% at a quarter); asked for 1.15 it
@@ -898,6 +901,15 @@ try other lift curves; it reproduces the game's carries exactly.
 ### S3.2 [Medium, realism] A full shot's roll on a green ignores the green's speed and slope
 - **Mostly fixed with S8.1 (2026-11-20):** a full shot that comes down on the green now rolls by the green's Stimp and
   slopes. One that lands short and runs on keeps the old roll.
+- **✅ Fixed 2026-11-20 (the rest):** a ball rolling on the fairway or rough that crosses onto the hole's green is handed
+  to the green's own roll, as one that lands on it is: its Stimp, its slopes and the cup. Measured with a test green
+  starting 8 yds past the landing (`tools/test/swing-fix16.js`; total yds):
+  - **The stock driver:** 283 on fairway all the way, and onto a green 297 / 302 / 307 at Stimp 9 / 11.5 / 14.
+  - **A 7 iron Low 2:** 190, and 200 / 204 / 208.
+  - **Slope:** a 2% cross-slope breaks them 3.7 and 2.8 yds downhill.
+
+  Greens roll about half as hard as the fairway's turf, so a run-on releases further, and on the country club's fast
+  greens further still. A run-on can now drop in the cup.
 - **Where:** `stepFlight`'s roll: a straight line slowing at `rollDecel × SURF[…].roll`. For a green that is always
   2.2 × 0.45 = 0.99 m/s². The hole's Stimp and the green's contours are not read.
 - **Measured:** rolling friction (m/s²): a full shot on any green **0.99**; a putt or chip on a green at Stimp 9 /
@@ -1007,6 +1019,8 @@ try other lift curves; it reproduces the game's carries exactly.
 ### S3.6 [Low, realism] Short irons land a few degrees shallow
 - **Measured:** 6 iron to PW land at 47–49° against the tour's 50–52° (table in S3.1). The slower LPGA rows fly 6–10%
   low. Both mean slightly more roll than real for a short iron. To be fixed with S3.1's refit, not separately.
+- **✅ Closed 2026-11-20, resolved by S3.1:** the 6 iron to the PW now land at 49–52° (tour 50–52°; S3.1's table).
+  Only the 4 and 5 irons still land 2–4° flat, noted under S3.1.
 
 ### Checked and fine
 - **Step size.** Carry and total at 1/30, 1/60, 1/120, 1/240 and 1/1000 s: driver 269.3 / 270.3 / **271.0** / 271.3 /
@@ -1223,6 +1237,15 @@ either way.
   42°, against the LPGA's 47°) because spin doesn't follow Power (S2.10).
 - **What else it would move:** every course's difficulty for a new career, and the hustlers' handicaps, if they're
   set against the player's distances.
+- **Still open (2026-11-20):** the user's direction is that a career starts as a beginner and climbs to the tour. That
+  was applied to Dexterity (S6.4) but not yet to Power.
+  - **Now:** Power 1 drives about 226 carry at 102 mph (S2.10's spin moved it a little). A new career's Power 2 is
+    about 237.
+  - **The fix:** widen the bottom of `powerMult` (about 0.82 at Power 1, roughly a typical amateur's 93 mph).
+  - **The catch:** it shortens every new career's tee shots, and the first circuit's holes and hustlers were tuned
+    for today's start.
+  - **A second question:** Power 5 is the tour average today (the base bag, the test round), whereas on the new
+    Dexterity scale the tour is 8–9. Matching that would retune distances throughout.
 
 ### S4.5 [Low, realism] Hybrids miss like irons: a toe hit finishes right
 - **✅ Fixed 2026-11-20:** the 2 and 3 hybrids' `bulge` is −0.6 (was −0.3). A toe hit now draws back, as with a small
@@ -1881,6 +1904,40 @@ bites) is 5% / 4% / 1% / 0% / 0% at Dexterity 1 / 2 / 5 / 8 / 10.
     numbers used the old assumed hand (wobble 1.5–5.5 px). S1.7 took the arm's arc out of the wobble, so the hand is
     now 1–3 px, and even Dex 8 is ±3.8 / ±12.5. Reaching tour level at Dex 10 would mean more scatter through Dex 6–8
     as well: a balance call, not part of this fix. A real player's own swings (`golfSwingHist2`) add their own shake.
+  - **Correction (2026-11-20, later):** the "±" in that table is 1σ, but the tour figures are ±2σ (half the 2σ
+    width), so the gap was overstated. In σ, a tour pro is about 17–19 yds with the driver (about 60% of 32-yd
+    fairways) and about 4.5–5 with the 7 iron. The floored scale gave 11.4 / 3.5 at Dex 10: still tighter than tour,
+    but by about a third, not two-thirds.
+- **✅ Re-done 2026-11-20 (the user's direction: a career starts as a beginner and climbs to the tour, with Dex 8–9 a
+  tour pro's average and Dex 10 the very best):**
+  - **The table:** the game's own scatter is now a table by level, `TUNE.dexSpreadByDex` [1.2, 1.0, 0.9, 0.82, 0.74,
+    0.66, 0.58, 0.5, 0.45, 0.36] (interpolated; `dexSpreadAt`). It replaces the floored line. Measured with the
+    default hand: at a given table value the scatter barely depends on Dexterity otherwise, so the table alone sets
+    the curve.
+  - **Measured** (`tools/test/swing-fix16.js`; sideways σ in yds, 600 swings; the driver's share inside a 32-yd
+    fairway):
+
+    | Dex | Driver, before → after | 7 iron, before → after |
+    |---|---|---|
+    | 1 | 33.8 (38%) → 39.5 (34%) | 9.6 → 11.3 |
+    | 2 (a new career) | 31.5 (43%) → 34.6 (39%) | 8.9 → 9.8 |
+    | 5 | 22.3 (60%) → 27.6 (50%) | 6.4 → 7.7 |
+    | 7 | 15.6 (74%) → 22.2 (61%) | 4.6 → 6.2 |
+    | 8 | 12.4 (81%) → 19.3 (66%) | 3.8 → 5.5 |
+    | 9 | 11.4 (84%) → 17.6 (69%) | 3.5 → 5.0 |
+    | 10 | 11.3 (84%) → 14.5 (76%) | 3.5 → 4.2 |
+
+    Before, Dex 5 already scattered like a tour pro and Dex 8–10 were superhuman. Now Dex 1 is a beginner, Dex 5 a
+    mid-handicap amateur (half the fairways), Dex 8–9 the tour, and Dex 10 the best player there is.
+  - **What it moves:**
+    - **The start:** a new career (Dex 2) is about 10% wider than before, kept small to protect the start's tuning.
+    - **The middle:** Dex 4–7 are 15–40% wider, so the middle of a career is harder.
+    - **The test round** (all stats 5) is about 24% wider for everyone alike.
+    - **The hustlers:** their skills were tuned against the old curve. The muni's should be close (the start barely
+      moved); the resort's and the country club's may now be too strong for a mid-career player. Watch that in
+      play.
+    - **Everything else** that reads Dexterity follows on its own: the minimap's ellipse, the bag's spread and the
+      lie read. Dexterity's discount on asks and the shaping range are unchanged.
 
 ### S6.5 [Low, feel / balance] Tilt acts in three places, so its numbers understate it
 - **Where:** tilt multiplies the mouse path (×1 + min(0.6, 0.8 × tilt)), multiplies the strike the same way, and
@@ -1901,6 +1958,8 @@ bites) is 5% / 4% / 1% / 0% / 0% at Dexterity 1 / 2 / 5 / 8 / 10.
   delivered. The note is that a tilt of 0.34 already means +50% width, because of the three places.
 - **Fix:** none needed if the user likes the feel. If the ladder's numbers should mean what they say, drop the path
   and strike multipliers and re-tune the ladder.
+- **Closed 2026-11-20, kept as designed:** design direction 10 (forgiving at first, then compounding, eased by
+  Composure) is delivered. The three places are how it compounds.
 
 ### S2.1 re-measured with a human hand
 Off hardpan, with the human swing and the longest club that fits, 75% of shots are bladed or chunked at Dexterity 2
@@ -2117,6 +2176,10 @@ range shows up as less risk for the same curve (`cx.shape`), not more curve.
 - **Why it matters:** a hand-made curve is a driver-only skill, and too sensitive to control there. Shaping a wedge
   needs the preset. This is the trend real golf has, but steeper. S2.4 (`work` counted twice) and S2.7 (the driver's
   extra curve) are the parts that make it steeper; fixing those is the fix.
+- **✅ Closed 2026-11-20, resolved by S2.4 and S2.7:** both are fixed. The tilt per degree now follows the D-plane, and
+  a 5° stroke bends the driver about 60 yds, the 7 iron about 24 and the sand wedge about 6. That is what a 5°
+  face-to-path does in real golf. Easier hand shaping with long clubs would be a feel choice (a gentler path response
+  for the woods), not a correction.
 
 ### Checked and fine
 - **The solver** (1,260 solves): one failure, a draw from heavy rough with an 8 iron at Low 2 (2.5 yds of curve
@@ -2260,6 +2323,22 @@ and less spin to 7.9.
 ### S8.2 [Medium, feel / realism] A low runner or stock chip with a long club is far too hot
 - **Largely fixed by S8.1 (2026-11-20):** the 7 iron low runner is about 1.3 yds per 1% of backswing (was 5), and
   rises steadily. Its ratio at a 25% swing is still 1:6 (rule of thumb about 1:4).
+- **✅ Fixed 2026-11-20 (the rest):** the low runner's height follows the club (`lowRunnerHeight`): Low 1 under 44° of
+  loft (the 7 to 9 iron), Low 2 with the wedges. It is set when the preset is chosen and again on a club change.
+  - **The clubs:** at a 25% backswing on a Stimp 11.5 green (carry, roll, ratio; `tools/test/swing-fix16.js`):
+
+    | Club | Before | After |
+    |---|---|---|
+    | 7 iron | 6.9, 42.4, 1:6.1 | 8.8, 38.8, 1:4.4 (rule ~1:4) |
+    | 8 iron | 7.6, 39.2, 1:5.2 | 9.2, 35.6, 1:3.9 |
+    | 9 iron | 8.6, 34.3, 1:4.0 | 9.6, 31.9, 1:3.3 (rule ~1:3) |
+    | PW | 9.9, 27.7, 1:2.8 | unchanged |
+
+  - **Steadiness:** each 1% of backswing adds 1.1–1.2 yds; the 7 iron's had a dip (−0.4).
+  - **Chip totals that fall as the backswing grows** (swing-fix9's check, at the heights the game now uses): 35 → 28.
+    The worst fell from 20.7 yds to 9.2.
+  - **Remainder:** the worst is now a 7 iron low runner at an 18% backswing, where the landing crosses from bouncing
+    to rolling. A small remainder for another day.
 - **Measured:** the 7 iron low runner carries 6.5 yds and rolls 62 at a 25% backswing. At 35% it's 13 and 109. That
   is about 5 yds of total for each 1% of backswing. The 9 iron low runner is 1:5.4 and the PW 1:3.5. The 7 iron stock
   chip is 1:3.7, which is about right.
@@ -2430,6 +2509,26 @@ measurements.
 - **Fix:** S6.1's fix (`lowSpinMult` from the club's stock spin) should bring these into line. Re-measure with
   section 5 of `swing-shown.js`. If a gap remains, the read-out could show the landing area's real width against the
   stock shot's.
+- **Re-measured 2026-11-20** (after S6.1, S2.2, S2.3, S2.7 and the new Dexterity scale; `tools/test/swing-fix16.js`,
+  800 swings with the default hand; read-out → real sideways σ as × the stock shot's):
+  - **Power, spin:** within ~10%.
+  - **Height, iron:** the 7 iron at Dex 5: High 2 1.62 → 1.49, Low 2 1.62 → 2.21. The read-out still makes High and
+    Low look the same, and Low is 50% wider.
+  - **Height, driver:** the opposite. Low 2 1.62 → 1.39, High 2 → 1.57.
+  - **Shapes at high Dexterity:** the 7 iron draw at Dex 8 1.04 → 1.42, the PW draw 1.06 → 1.86. Dexterity widens
+    the shaping range (design direction 5), which amplifies a shaped shot's face errors as well as its curve, while
+    Dexterity's discount (direction 8) shrinks the read-out.
+
+  The difficulty figure is the ask, a mechanic the Difficulty page explains. The spread also depends on what the ask
+  does to the flight, so no reweighting of the asks could match both clubs.
+- **✅ Fixed 2026-11-20 (the second suggestion):** before the swing, the card's difficulty line adds "spreads N× the
+  stock shot" (`spreadRatio`): this setup's landing area against the same club's stock shot. It uses the ratio of
+  their RMS radii, from the same seeded ordinary swings as the minimap's area (landSpread, now able to take another
+  setup), and only appears when it differs from 1 by 5% or more.
+  - **Accuracy:** against 800 other swings it is within 0–0.11 for every ask (Dex 5): 7 iron Low 2 says 2.12×, real
+    2.20; High 2 1.45, real 1.47; draw 1.27, real 1.25; driver Low 2 1.44, real 1.43; PW High 1 draw 1.84, real 1.85.
+  - **The cost:** 20–60 ms, once per setup change.
+  - **Unchanged:** the difficulty figure and its parts.
 
 ### S9.3 [Low, realism] The driver's fade preview finishes on the aim line; real fades average 5.7 yds right
 - **Measured** (preview finish, stock shot, against the mean of 400 real shaped shots, human, Dex 5):

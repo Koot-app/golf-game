@@ -7045,7 +7045,11 @@
         spinMoreSpeed: 0.02,                       // ball speed lost to the steeper strike
         sideLiftMaxDeg: 25,                        // swing audit S3.3: a curving ball's extra lift stops at this spin-axis tilt
         backKeep: 1.5, backFrom: 0.8,            // swing audit S3.4: a high-spin landing backs up (see backUp)
-        dexSpreadMin: 0.25,                       // swing audit S6.4: the game's own scatter never falls below 25% of Dexterity 1's
+        // swing audit S6.4: the game's own scatter at Dexterity 1..10 (× the base path / face / strike scatter). Set with
+        // the default hand (tools/test/swing-fix16.js) so a driver's sideways σ runs from a beginner's ~40 yds (Dex 1) to
+        // a tour pro's 17-19 (Dex 8-9, about 60% of fairways) and the best player's ~15 (Dex 10); the 7 iron's from ~11 to
+        // 5 and 4. (It was a straight line from 1.0 to 0.08, floored at 0.25: Dex 5 was already near tour scatter.)
+        dexSpreadByDex: [1.2, 1.0, 0.9, 0.82, 0.74, 0.66, 0.58, 0.5, 0.45, 0.36],
         spinPowerExp: 1,                           // swing audit S2.10: spin × powerMult(Power)^this (0 = Power doesn't move spin)
         spinAskMax: 1.35, spinMaxRpm: 12000,       // swing audit S2.2: height + More spin add at most +35%, and never past 12,000 rpm
         cxSpinMore: 0.35, cxSpinLess: 0.15,        // difficulty at full authority: the steep strike is the riskier one
@@ -7176,8 +7180,11 @@
           hardpan: { e: 1.10, keep: 1.05, check: 0.50, drag: 2.2 },
         },
       };
+      const lowRunnerHeight = (club) => (club.loft < 44 ? -1 : -2);
       const CHIP_TYPES = {
-        low: { key: 'Digit1', name: 'Low Runner', ballPos: -0.6, face: -2.0, stance: 2.0, height: -2 },
+        // (swing audit S8.2: the low runner's height is lowRunnerHeight(club): Low 1 under 44° of loft, Low 2 with the wedges.
+        // Its full −9° of de-loft took a 7 iron to its loft floor, so it launched at ~9° with half its spin and ran 1:6.)
+        low: { key: 'Digit1', name: 'Low Runner', ballPos: -0.6, face: -2.0, stance: 2.0, height: -2, heightFor: (c) => lowRunnerHeight(c) },
         stock: { key: 'Digit2', name: 'Stock Chip', ballPos: 0, face: 0, stance: 0, height: 0 },
         high: { key: 'Digit3', name: 'High Soft', ballPos: 0.5, face: 2.5, stance: -2.5, height: 1 },
         flop: { key: 'Digit4', name: 'Flop Shot', ballPos: 0.8, face: 7.0, stance: -7.0, height: 2, flop: true },
@@ -7202,6 +7209,11 @@
         down: { name: 'Downhill', axis: 0, launch: -4.5, strike: 0 },
       };
 
+      // the game's own scatter at Dexterity d (1..10, fractional allowed), from TUNE.dexSpreadByDex (swing audit S6.4)
+      const dexSpreadAt = (d) => {
+        const t = TUNE.dexSpreadByDex, x = clamp((d || 5) - 1, 0, t.length - 1), i = Math.min(t.length - 2, Math.floor(x));
+        return lerp(t[i], t[i + 1], x - i);
+      };
       const powerMult = (p) => p <= 5 ? 0.90 + (p - 1) * 0.025 : 1.0 + (p - 5) * 0.02;   // 1 -> 0.90, 5 -> 1.00, 10 -> 1.10
       // Composure (1..10 stat points) offsets the behind-the-scenes Tilt penalty stacked by consecutive bad shots.
       const compOffset = (c) => {
@@ -7329,9 +7341,10 @@
         const comp = tilt > 0.005 ? 'tilted' : 'neutral';
         const dexF = (env.dex - 1) / 9;
         const bell = () => rnd() + rnd() - 1;              // random in [-1, 1], weighted toward 0
-        // (swing audit S6.4: floored at dexSpreadMin, so Dexterity 9-10 is about tour level, not tighter than anyone real;
-        // Dexterity 1-8 are unchanged)
-        const dexSpread = env.stock ? 0 : Math.max(TUNE.dexSpreadMin, lerp(1.0, 0.08, dexF));
+        // Swing audit S6.4 (the user's direction: a career starts as a beginner and climbs to the tour): the game's own
+        // scatter by Dexterity is a table, TUNE.dexSpreadByDex (Dex 1..10, interpolated). It is set so that, with the
+        // default hand, Dex 1-2 scatter like a beginner, Dex 8-9 like a tour pro and Dex 10 like the best there is.
+        const dexSpread = env.stock ? 0 : dexSpreadAt(env.dex);
         const flags = [];
         // CHIPPING: a shot-type preset's face and stance are aligned to the target, so only the player's tweaks on top of
         // them steer the ball (setup.align = the preset's own face / stance). The full values still set loft and spin.
@@ -7632,6 +7645,15 @@
           if (ns <= 0.15) { v.x = v.z = 0; f.phase = 'stopped'; return; }
           v.x *= ns / s; v.z *= ns / s;
           p.x += v.x * dt; p.z += v.z * dt;
+          // swing audit S3.2: a ball that lands short and runs onto the hole's green rolls on by the green's own rules
+          // (its Stimp and slopes, and the cup), as one that lands on it does; it used to keep the fairway's roll
+          if (f.green && f.green.surfAt(p.x, p.z) === 'green') {
+            f.g = f.green;
+            f.q = {
+              green: f.g, p: { x: p.x, z: p.z }, v: { x: v.x, z: v.z }, dir: Math.atan2(v.x, -v.z), skid: 0, t: 0, rolled: 0,
+              phase: 'roll', holed: false, lip: false, inCup: false, maxBreak: 0, holeSpeed: null, landed: 0, extraDecel: 0,
+            };
+          }
           return;
         }
 
@@ -9632,7 +9654,7 @@
         const t = CHIP_TYPES[k];
         if (!t || swing.active || state.view === 'flight') return;
         if ((k === 'high' || k === 'flop') && shotLocked(k)) { if (!quiet) lockedToast(k); return; }     // (career: learned from the coach)
-        state.chipType = k; state.ballPos = t.ballPos; state.face = t.face; state.stance = t.stance; state.height = t.height; telemetry = null;
+        state.chipType = k; state.ballPos = t.ballPos; state.face = t.face; state.stance = t.stance; state.height = t.heightFor ? t.heightFor(CLUBS[state.club]) : t.height; telemetry = null;
         if (t.flop && CLUBS[state.club].loft < CHIP.flopMinLoft) {
           const w = [CI_LW, CI_SW, CI_GW].find((i) => canUseClub(i) && CLUBS[i].loft >= CHIP.flopMinLoft);
           if (w === undefined) {                             // a career bag may have no 50°+ wedge
@@ -15171,6 +15193,8 @@
         if (isChip() && CHIP_TYPES[state.chipType].flop && CLUBS[state.club].loft < CHIP.flopMinLoft) {     // the flop needs real loft
           applyChipType('stock', true); toast('A flop needs a 50°+ wedge\nBack to a stock chip', 1800);
         }
+        const ct = isChip() && CHIP_TYPES[state.chipType];
+        if (ct && ct.heightFor) state.height = ct.heightFor(CLUBS[state.club]);      // (S8.2: the low runner's height follows the club)
         refreshShotType();          // a draw / fade is re-solved for the new club
         renderBag();
       }
@@ -15225,8 +15249,8 @@
       const spreadCache = new Map();
       // fine (swing audit S9.3): the selected club's own area and preview, from SPREAD.fine swings (fineDriver for the
       // driver), so their mean is good to a yard or so; a 100-swing driver mean wandered ±2 yds. The bag's rows keep n.
-      function landSpread(ci, fine = false) {
-        const club = CLUBS[ci], teed = isTeed(club), su = setup();
+      function landSpread(ci, fine = false, suIn = null) {         // (suIn: another setup, e.g. the stock shot's for S9.2)
+        const club = CLUBS[ci], teed = isTeed(club), su = suIn || setup();
         const env0 = { lie: state.lie, slope: state.slope, power: state.power, dex: state.dex, composure: state.composure, badStreak: state.badStreak, teed };
         const key = [ci, club.model || '', JSON.stringify(su), JSON.stringify(env0), swingHistVer, fine].join('|');     // (the model: a demo shares its slot)
         if (spreadCache.has(key)) return spreadCache.get(key);
@@ -15257,6 +15281,15 @@
         const tv = new THREE.Vector3(), w = (x, z) => { toWorld(tv.set(x * k2, 0, z * k2)); return { x: tv.x, z: tv.z }; };
         const c = w(sp.mx, sp.mz);
         return { c: { x: ball.x + c.x, z: ball.z + c.z }, u: w(a1.x, a1.z), v: w(a2.x, a2.z), exact: r.exact };
+      }
+      // swing audit S9.2: the set-up shot's landing area against the same club's stock shot (no shape, height or spin),
+      // as the ratio of their RMS radii; 1 for a stock setup. From the same seeded ordinary swings as the minimap's area.
+      const STOCK_SU = { face: 0, ballPos: 0, stance: 0, traj: 0, spinCtl: 0 };
+      function spreadRatio(ci) {
+        const su = setup();
+        if (!su.face && !su.ballPos && !su.stance && !su.traj && !su.spinCtl) return 1;
+        const a = landSpread(ci, ci === state.club), b = landSpread(ci, ci === state.club, STOCK_SU);
+        return Math.sqrt((a.sxx + a.szz) / Math.max(1e-6, b.sxx + b.szz));
       }
       // the 2-sigma axes of a covariance, as two vectors
       function spreadAxes(sxx, szz, sxz) {
@@ -16243,6 +16276,11 @@
               x.contact > 0.005 && `Contact <b>${pc(x.contact)}</b>`,
               x.pastTop > 0.005 && `Past the top <b>${pc(x.pastTop)}</b>`,
             ].filter(Boolean).join(' × ') || 'Stock shot — no added risk';
+            // swing audit S9.2: before the swing, how wide this setup really spreads against the club's stock shot (the
+            // difficulty is the ask; the spread also follows what the ask does to the flight: a Low 2 iron's lower spin
+            // curves its misses more, and a shaped shot's range amplifies its face errors)
+            const sr = !showRes && !chip ? spreadRatio(state.club) : null;
+            if (sr !== null && Math.abs(sr - 1) >= 0.05) parts += ` · <span title="How wide this shot's landing area is against the stock shot's, from the same ordinary swings as the minimap's area">spreads <b>${sr.toFixed(1)}×</b> the stock shot</span>`;
           }
           if (txtCache.get('tmCx') !== parts) { txtCache.set('tmCx', parts); $('tmCx').innerHTML = parts; }
           // did the swing ring come back through the ball?
@@ -16802,7 +16840,7 @@
         analyzeSwing, computeImpact, swingSample, beginSwing, endSwing, onPointerMove, isSpike, tempoTarget, powerFromBackswing, powerFromTempo,
         LIES, SLOPES, AERO, windVector, clubFit, solveShape, powerMult, runChip, computePutt, analyzePutt, CADDIES,
         createPutt, stepPutt, puttTarget, rollDecel, puttGate, rng32, shopStats, SHOP, withClubModel, setup, careerStats,
-        fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock, flatChipView, treeDeflect, treePart, TREE, previewTrack, previewSide,
+        fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock, flatChipView, treeDeflect, treePart, TREE, previewTrack, previewSide, spreadRatio, dexSpreadAt, lowRunnerHeight,
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
