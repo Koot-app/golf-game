@@ -8556,11 +8556,22 @@
         const hy = green.h(green.hole.x, green.hole.z);
         cup.position.set(green.hole.x, hy + 0.004, green.hole.z); cupRim.position.set(green.hole.x, hy + 0.005, green.hole.z);
         pinPole.position.set(green.hole.x, hy + 1.05, green.hole.z); pinFlag.position.set(green.hole.x, hy + 1.94, green.hole.z);
+        pinBaseY = hy;
         rollTrailN = 0; rollTrail.geometry.setDrawRange(0, 0);
       }
 
       // per frame: slide the beads, position the marker, redraw the aim line along the surface
+      let pinBaseY = 0;          // the cup's ground height (buildGreen)
+      // (user request, 2026-11-20) chipping looks at the flag from 20-40 m: a pole three times as thick and a flag almost
+      // twice the size (its top still at the pole's), so it reads; putting keeps the regular flagstick
+      const PIN_CHIP = { pole: 3, flag: 1.9 };
       function animateGreen(now) {
+        {
+          const big = isChip(), fk = big ? PIN_CHIP.flag : 1;
+          pinPole.scale.set(big ? PIN_CHIP.pole : 1, 1, big ? PIN_CHIP.pole : 1);
+          pinFlag.scale.set(fk, fk, 1);
+          pinFlag.position.y = pinBaseY + 2.1 - 0.14 * fk - (big ? 0 : 0.02);
+        }
         const perF = (state.perception - 1) / 9, n = Math.floor(beadBase.length * lerp(0.25, 1, perF));
         const reading = state.view !== 'address' || isPeeking();
         const ovh = state.view === 'overhead';
