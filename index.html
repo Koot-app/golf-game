@@ -14127,6 +14127,9 @@
         if (!confirm(`Leaving now forfeits the ${m.format === 'skins' ? 'skins game' : 'match'}: ${owe > 0 ? `you pay ${npcById(m.npc).nick} ${money(owe)}` : 'every bet still in play goes to him'}.${short ? ` You can't cover ${money(short)} of it — he'll take that out of your hide and snap a club.` : ''} Leave?`)) return false;
         toast(settleMatch('forfeit'), 3200);
         archiveRound();                                      // (its card, marked forfeited)
+        // (user request, 2026-11-20) once you've walked off, back to the clubhouse, not the driving range. A forfeit you
+        // couldn't pay gets there after the beating (closeBeating); leaving for the home screen stays there.
+        if (!m.unpaid) setTimeout(() => { if (careerOn && !clubOpen && !round.on && !homeOpen && !beatOpen) openClubhouse(); }, 200);
         return true;
       }
       function matchToClubhouse() {

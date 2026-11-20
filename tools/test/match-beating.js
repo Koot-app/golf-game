@@ -44,10 +44,16 @@
   $('btGo').click(); await sleep(600);
   say(beat && $('clubhouse').classList.contains('on') ? 'ok' : 'PROBLEM', `forfeited with $0 (leaving the course): beating ${beat} · under the beating: ${before} · after "Pick yourself up": ${where()}`);
 
-  // ---- 3. a forfeit you can pay: no beating, and (as before) you're left where leaving puts you
+  // ---- 3. a forfeit you can pay: no beating, and (user request, 2026-11-20) the clubhouse too
   g.career.snapped = []; g.career.cash = 100000; m = await tee(20);
   await play(m, 0, -1); g.scorecardNext(); await sleep(150);
   g.leaveHole(); await sleep(900);
-  say(!$('beating').classList.contains('on') ? 'ok' : 'PROBLEM', `forfeited with the cash to pay: no beating · ${where()}`);
+  say(!$('beating').classList.contains('on') && $('clubhouse').classList.contains('on') ? 'ok' : 'PROBLEM', `forfeited with the cash to pay: no beating · ${where()}`);
+  // ---- 4. the same, leaving through the round's own Leave (quitRound)
+  key('Escape'); await sleep(200);
+  m = await tee(20);
+  await play(m, 0, -1); g.scorecardNext(); await sleep(150);
+  g.quitRound(); await sleep(900);
+  say($('clubhouse').classList.contains('on') ? 'ok' : 'PROBLEM', `forfeited with the cash to pay, through Leave the round: ${where()}`);
   return out.join('\n');
 })()
