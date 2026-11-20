@@ -5642,6 +5642,49 @@
       margin-left: 0;
     }
 
+    /* the admin's money (user request): a gold row, only shown to the admin */
+    .ch-admin {
+      display: none;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 7px 10px;
+      border: 1px solid rgba(243, 220, 160, .45);
+      border-radius: 8px;
+      background: rgba(243, 220, 160, .07);
+      font-size: 12px;
+    }
+
+    .ch-admin.on {
+      display: flex;
+    }
+
+    .ch-admin b {
+      color: #f3dca0;
+    }
+
+    .ch-admin button {
+      width: auto;
+      margin: 0;
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    .ch-admin input {
+      width: 120px;
+      padding: 5px 8px;
+      font-size: 12px;
+    }
+
+    #chAdminMsg {
+      color: #5ee08a;
+    }
+
+    .ch-admin .ch-admin-rep {
+      margin-left: 8px;
+    }
+
     /* change a password (audit 3.7) */
     .ch-pw {
       display: none;
@@ -6755,6 +6798,11 @@
         <div class="ch-msg" id="chMsg"></div>
         <div class="ch-foot"><button id="chLeave">Leave career</button><button id="chSwitch">Switch player</button><button id="chPw">Change password</button><button id="chRetire">Retire (start over)</button><span
             id="chSync">J opens the clubhouse any time</span></div>
+        <!-- the admin's money (user request, 2026-11-20): only for the admin profile, for testing what costs a lot -->
+        <div class="ch-admin" id="chAdmin"><b>👑 Admin</b><span>Add money:</span><button data-add="1000">+$1,000</button><button
+            data-add="10000">+$10,000</button><button data-add="100000">+$100,000</button><button data-add="1000000">+$1,000,000</button><input
+            id="chAdminAmt" type="number" min="1" max="10000000" step="1" placeholder="Other amount"><button id="chAdminGo">Add</button><span
+            class="ch-admin-rep">Reputation:</span><button data-rep="10">+10</button><button data-rep="50">+50</button><button data-rep="200">+200</button><span id="chAdminMsg"></span></div>
         <!-- change a profile's password (audit 3.7) -->
         <div class="ch-pw" id="chPwForm"><input id="chPwOld" type="password" maxlength="128" placeholder="Current password" autocomplete="current-password"><input
             id="chPwNew" type="password" maxlength="128" placeholder="New password" autocomplete="new-password"><button id="chPwGo">Change it (Enter)</button><span id="chPwMsg"></span></div>
@@ -10946,6 +10994,7 @@
         if (!career) return;
         setText('chWho', career.name);
         $('chPw').style.display = session && !adminOk ? '' : 'none';
+        $('chAdmin').classList.toggle('on', !!session && adminOk);      // (the server says who the admin is, never the browser)
         if (!session) $('chPwForm').classList.remove('on');
         setText('chMedal', career.name.slice(0, 2).toUpperCase());
         const colv = collectionOf(career.trophies).value;
@@ -11151,6 +11200,28 @@
         closeClubhouse();
         openHome();                                          // who's playing: the profile list
       }
+      // ---- THE ADMIN'S MONEY (user request, 2026-11-20): the admin profile can add cash to its own career, to test what
+      // costs a lot. Only when the server has said this is the admin (adminOk); it's saved and synced like any other
+      // change. No history line (a $1,000 one would count as "the big score" trophy); the total is kept in adminAdded.
+      function adminAddMoney(n) {
+        if (!session || !adminOk || !career) return;
+        n = Math.round(+n);
+        if (!Number.isFinite(n) || n < 1 || n > 10000000) return setText('chAdminMsg', 'Amounts are $1 to $10,000,000');
+        career.cash = (career.cash || 0) + n;
+        career.adminAdded = (career.adminAdded || 0) + n;
+        careerSave(); updateCareerUI();
+        setText('chAdminMsg', `Added ${money(n)} · cash now ${money(career.cash)}`);
+      }
+      // ... and reputation, which the circuits and invitationals ask for (the total is kept in adminRep)
+      function adminAddRep(n) {
+        if (!session || !adminOk || !career) return;
+        n = Math.round(+n);
+        if (!Number.isFinite(n) || n < 1 || n > 1000) return;
+        career.rep = (career.rep || 0) + n;
+        career.adminRep = (career.adminRep || 0) + n;
+        careerSave(); updateCareerUI();
+        setText('chAdminMsg', `Added ${n} reputation · now ${career.rep} (${rankOf(career.rep)})`);
+      }
       // change a profile's password (audit 3.7): the clubhouse's footer, signed in and not the admin (whose is on the server)
       function togglePwForm(on = !$('chPwForm').classList.contains('on')) {
         $('chPwForm').classList.toggle('on', on);
@@ -11248,6 +11319,10 @@
           return;
         }
         const typing = e.target === $('chName') || e.target === $('siPw');
+        if (e.target === $('chAdminAmt')) {                                   // the admin's amount box: Enter adds it, the rest types
+          if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); adminAddMoney($('chAdminAmt').value); }
+          return;
+        }
         if (e.target === $('chPwOld') || e.target === $('chPwNew')) {         // the change-password form: its own keys
           if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); changePassword(); }
           else if (e.code === 'Escape') { e.preventDefault(); togglePwForm(false); }
@@ -11965,6 +12040,7 @@
       function applyDevTools() {
         const on = devOn();
         document.body.classList.toggle('dev', on);
+        $('chAdmin').classList.toggle('on', !!session && adminOk && !!career);   // (the admin's money: also when the rights arrive late)
         if (!on && !careerOn && !round.on && typeof setStats === 'function') {        // everyone else plays the standard game
           setStats(ROUND_STATS);
           state.windMph = 0; state.windDir = 0; $('inWind').value = 0; $('inWindDir').value = 0;
@@ -15318,6 +15394,13 @@
         $('siTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { b.blur(); siMode = b.dataset.si; renderSignIn(); } });
         $('chSwitch').addEventListener('click', (e) => { e.currentTarget.blur(); switchPlayer(); });
         $('chPw').addEventListener('click', (e) => { e.currentTarget.blur(); togglePwForm(); });
+        $('chAdmin').addEventListener('click', (e) => {
+          const b = e.target.closest('button[data-add], button[data-rep]');
+          if (!b) return;
+          b.blur();
+          if (b.dataset.add) adminAddMoney(+b.dataset.add); else adminAddRep(+b.dataset.rep);
+        });
+        $('chAdminGo').addEventListener('click', (e) => { e.currentTarget.blur(); adminAddMoney($('chAdminAmt').value); });
         $('chPwGo').addEventListener('click', (e) => { e.currentTarget.blur(); changePassword(); });
         $('chCancel').addEventListener('click', (e) => { e.currentTarget.blur(); closeClubhouse(); });
         $('chLeave').addEventListener('click', (e) => { e.currentTarget.blur(); leaveCareer(); });
