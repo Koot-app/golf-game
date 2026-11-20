@@ -8363,7 +8363,12 @@
         const mDot = new THREE.Mesh(new THREE.CircleGeometry(0.024, 16), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })); mDot.rotation.x = -Math.PI / 2;
         const mPost = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.5, 6).translate(0, 0.25, 0), new THREE.MeshBasicMaterial({ color: 0x35e0ff }));
         mPost.name = 'post';               // (hidden when chipping: the ring alone marks the landing spot, user request 2026-11-20)
-        markerG.add(mHalo, mRing, mDot, mPost);
+        // chipping's own thinner ring and halo (user request, 2026-11-20); the marker is scaled up there, so the putting
+        // ring's band came out thick
+        const cHalo = new THREE.Mesh(new THREE.RingGeometry(0.088, 0.132, 32), new THREE.MeshBasicMaterial({ color: 0x06140a, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide })); cHalo.rotation.x = -Math.PI / 2; cHalo.position.y = -0.002;
+        const cRing = new THREE.Mesh(new THREE.RingGeometry(0.100, 0.120, 32), new THREE.MeshBasicMaterial({ color: 0x35e0ff, side: THREE.DoubleSide })); cRing.rotation.x = -Math.PI / 2;
+        mHalo.name = 'pHalo'; mRing.name = 'pRing'; cHalo.name = 'cHalo'; cRing.name = 'cRing';
+        markerG.add(mHalo, mRing, mDot, mPost, cHalo, cRing);
       }
       const AIM_PTS = 80, ROLL_PTS = 3000;
       const aimLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 }));
@@ -8606,14 +8611,14 @@
             }
             mesh.geometry.attributes.position.needsUpdate = true;
           };
-          fill(rollPrevBack, 0.13, 0.014); fill(rollPrev, 0.08, 0.018);
+          fill(rollPrevBack, 0.09, 0.014); fill(rollPrev, 0.05, 0.018);     // (half widths: a 10 cm ribbon, an 18 cm edge)
           const ex = sx * (L + R), ez = sz * (L + R);
           rollEnd.position.set(ex, green.h(ex, ez) + 0.015, ez);
         }
         const mx = Math.sin(aim) * L, mz = -Math.cos(aim) * L;
         markerG.position.set(mx, green.h(mx, mz) + 0.012, mz);
         markerG.scale.setScalar(isChip() ? 3.5 : 1);
-        markerG.getObjectByName('post').visible = !isChip();          // (user request, 2026-11-20: the landing ring readable from the chipping camera)
+        for (const [n, v] of [['post', !isChip()], ['pHalo', !isChip()], ['pRing', !isChip()], ['cHalo', isChip()], ['cRing', isChip()]]) markerG.getObjectByName(n).visible = v;         // (user request, 2026-11-20: the landing ring readable from the chipping camera)
         markerG.visible = state.view !== 'flight';
         aimLine.visible = false;          // removed at the player's request: the marker itself shows where you are aiming
         for (let i = 0; i < AIM_PTS; i++) {
@@ -16313,8 +16318,9 @@
             if (isPeeking()) { toWorld(goalPos.set(-club.stand + 0.26, 1.64, state.ballPos * 0.16)); onGround(toWorld(goalLook.set(0, 0, -L))); fovGoal = 48; }
             else addressPose();
           } else if (state.view === 'overhead') overheadPose(dist, 240, 0.4);
-          // (user request, 2026-11-20: higher, looking down on the green more steeply for a better read; was 1.9 m up, 4.6 back)
-          else { toWorld(goalPos.set(0, 4.2, 5.0)); onGround(toWorld(goalLook.set(0, 0, -Math.min(dist, Math.max(L, dist * 0.7))))); fovGoal = 50; }
+          // (user requests, 2026-11-20: higher, looking down on the green more steeply for a better read (was 1.9 m up, 4.6
+          // back); then 4.2 m was a little too high and steep, so between the two)
+          else { toWorld(goalPos.set(0, 3.0, 4.8)); onGround(toWorld(goalLook.set(0, 0, -Math.min(dist, Math.max(L, dist * 0.7))))); fovGoal = 50; }
         } else if (state.view === 'flight' && shot) {
           const b = ball.position, dist = Math.hypot(b.x, b.z);
           if (shot.age < 0.15) addressPose();                    // hold on the turf, then go with the ball
