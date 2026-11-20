@@ -611,6 +611,9 @@ table says "with scatter", it used 4,000 seeded shots and the swing the game its
 - **Measured (what they would do):** ball above feet: 7 iron finishes 6.0 yds left, driver 7.8; below feet: 8.7 and
   6.7 right (with a 2 mm toe strike); uphill: launch +3.8°; downhill: −3.9° and the driver loses 17 yds of carry.
 - **Why it matters:** the holes have no slopes off the green, so this is a dormant feature, not a bug in play.
+- **Closed 2026-11-20 (the user's choice):** slopes stay a range-practice feature. The holes have no terrain
+  (elevation isn't modelled), so a slope lie there would have nothing visible under it. The options weighed were
+  seeded hidden slope lies, the same plus a tilted golfer, and real rolling terrain. None was taken.
 
 ### S2.7 [Low, realism] The driver curves about a third more than physics for the same face error
 - **Measured:** spin-axis tilt per degree of face-to-path, against the D-plane estimate (`atan(tan 1° / tan spin
@@ -931,6 +934,20 @@ try other lift curves; it reproduces the game's carries exactly.
   from rough. Those end 90–140 yds offline instead of 55.
 - **Fix (S):** cap the boost at what a tilt of about 25° gets. **What else it would move:** how often a miss goes out
   of bounds (S6). Solved draws and fades sit below the cap and wouldn't change.
+- **Why "deliberate":** the boost was put in on purpose, as the code comment says (it has been there since the
+  initial commit, two days after the request for dramatic draws and fades, design direction 5). It keeps a shaped shot
+  curving. The finding is that it also kept big misses flying.
+- **✅ Fixed 2026-11-20 (the user's choice: cap it):** `sideLift = 1 / max(cos(TUNE.sideLiftMaxDeg), cos tilt)` with
+  `sideLiftMaxDeg` 25, so the boost stops at ×1.10. Measured (`tools/test/swing-fix15.js`; carry, yds sideways at
+  landing, before → after):
+  - **Driver:** unchanged to 25°. 30° 263, 58.7 → 260, 54.7 (rule 54.7). 40° 258, 82.3 → 250, 63.7 (rule 70). 60°
+    233, 138.6 → 218, 62.3 (rule 91; without any boost it was 52.5).
+  - **7 iron:** unchanged to 25°. 40° 63.3 → 51.7. 60° 101.7 → 55.9.
+  - **Set-up shapes:** every solved draw and fade (Dex 1 / 5 / 10, driver to PW) tilts 4.6–7.9° and finishes exactly
+    where it did.
+  - **Ordinary swings** (1,000, the default hand): only 1–3% of driver swings tilt past 25°, so the 2σ width and the
+    share 40+ yds offline barely move. The very worst miss shrinks: a Dex 1 driver 112 → 93 yds offline, Dex 3
+    92 → 83. Physics fuzz passes.
 
 ### S3.4 [Low, realism] No shot backs up more than about 1.5 yds
 - **Measured (onto a green):** sand wedge with More spin (13,130 rpm): rolls −1.0 yd; High 2 (14,140): −1.4; High 2 +
