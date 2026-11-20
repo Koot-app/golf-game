@@ -19,7 +19,7 @@
   $('cmGo').click(); await sleep(500); $('riStart').click();
   for (let k = 0; k < 40 && !g.tossOpen; k++) await sleep(50);
   const m = g.career.match; m.toss = 'me'; g.closeToss(); await sleep(150);
-  for (let i = 0; i < 9; i++) { g.npc.done = true; g.hp.strokes = g.HOLES[i].par + (i % 3); g.hp.putts = 2; g.finishHole(); await sleep(40); if (i < 8) { g.scorecardNext(); await sleep(100); } }
+  for (let i = 0; i < 9; i++) { g.npc.done = true; g.hp.strokes = g.HOLES[i].par + (i % 3); g.hp.putts = 2; g.finishHole(); await sleep(40); if (i < 8) { g.scorecardNext(); await sleep(100); if ($('outcome').classList.contains('on') && $('ocCard_on')) { $('ocCard_on').click(); await sleep(100); } } }
   await sleep(700); if ($('outcome').classList.contains('on')) $('ocCard_home').click(); else $('scClose').click(); await sleep(2500);
   const card = g.career.cards[0], hist = g.career.history[0];
   out.oneScorecard = len(card); out.oneHistoryLine = len(hist); out.oneHandicapRound = len(g.career.rounds[0]);
@@ -39,10 +39,25 @@
   out.tabHidingSaveOver64KB = { bytes: len(g.career), syncState: g.sync.state, serverVersionMoved: g.sync.ver !== v0, retryQueued: !!g.sync.again };
   await g.syncNow(); await sleep(300);
   out.normalSaveSameCareer = { syncState: g.sync.state, serverVersionMoved: g.sync.ver !== v0 };
-  // ---- over the server's limit
-  grow(out.matchesToPass250000 + 20); g.careerSave(); await sleep(2800);
+  // ---- 2.6: the history is trimmed on the next save (the last 300 lines, plus what's kept for good: the first hustler
+  // win, the first $1,000 win, the best finish in each invitational, every friend challenge)
+  grow(out.matchesToPass250000 + 20);
+  g.career.history.splice(10, 0, { friend: 'pal', friendName: 'Pal', ch: 'a'.repeat(16), format: 'match', stake: 50, result: 'won · You win 3 & 2', net: 50, date: hist.date + 10.5 },
+    { tour: 'muniopen', format: 'stroke', stake: 250, place: 2, result: '2nd in the Muni Open', net: 450, date: hist.date + 10.6 },
+    { npc: 'dale', format: 'match', stake: 40, result: 'won 2 & 1', net: 40, date: hist.date + 10.7 },
+    { npc: 'gus', format: 'match', stake: 250, result: 'won 5 & 4', net: 1250, date: hist.date + 10.8 });
+  for (const x of g.career.history) if (x.npc === hist.npc && x.net > 0 && x !== g.career.history[12]) x.net = -Math.abs(x.net);   // (only the lines above are wins)
+  const before = { lines: g.career.history.length, chars: len(g.career) };
   const v1 = g.sync.ver;
   g.career.cash += 1; g.careerSave(); await sleep(2800);
-  out.over250000 = { chars: len(g.career), syncState: g.sync.state, whatThePlayerSees: $('chSync').textContent, serverVersionMoved: g.sync.ver !== v1, stillUnsent: g.sync.dirty };
+  const h = g.career.history;
+  out.trimmedOnSave = { before, after: { lines: h.length, chars: len(g.career) }, keptFriendLine: h.some((x) => x.friend === 'pal'), keptBestTour: h.some((x) => x.tour === 'muniopen' && x.place === 2),
+    keptFirstWin: h.some((x) => x.npc === 'dale' && x.net === 40), keptFirstBigWin: h.some((x) => x.npc === 'gus' && x.net === 1250), syncState: g.sync.state, serverVersionMoved: g.sync.ver !== v1 };
+  // ---- something else makes it too big: the save is refused, and the player is told so (not "offline")
+  g.career.junk = 'x'.repeat(260000); const v2 = g.sync.ver;
+  g.careerSave(); await sleep(2800);
+  out.over250000 = { chars: len(g.career), syncState: g.sync.state, whatThePlayerSees: $('chSync').textContent, serverVersionMoved: g.sync.ver !== v2, stillUnsent: g.sync.dirty };
+  delete g.career.junk; g.careerSave(); await sleep(2800);
+  out.afterRemovingIt = { syncState: g.sync.state };
   return JSON.stringify(out, null, 1);
 })()

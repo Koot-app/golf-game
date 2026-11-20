@@ -10465,10 +10465,41 @@
       const SAVE_IDS = 60;                                   // save ids kept in the career (about 1 KB)
       function upgradeCareer(c) {
         if (!(c && c.v === 1 && typeof c.name === 'string' && c.stats)) return null;
-        c.out = c.out || []; c.putters = c.putters || [c.putter || CAREER.putter]; c.tierMax = c.tierMax || c.tier || 1;      // (older saves)
-        c.history = c.history || []; c.rounds = c.rounds || []; c.pvpSeen = c.pvpSeen || []; c.trophies = c.trophies || []; c.titles = c.titles || [];
+        // Audit 2.7: every field a new career has, from the same defaults (newCareer), so a save from any earlier version
+        // opens: the first ones had no bag or putter, then no snapped clubs, then no coach's unlocks. A field of the
+        // wrong kind is replaced; stats and unlocks get any key they're missing; a bag is only filled in if there's none
+        // (a player's bag can have more slots than the starter one).
+        if (typeof c.putter !== 'string') c.putter = CAREER.putter;
+        if (!Array.isArray(c.putters)) c.putters = [c.putter];
+        if (!Number.isFinite(c.tierMax)) c.tierMax = Number.isFinite(c.tier) ? c.tier : 1;
+        const d = newCareer(c.name), isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+        for (const k of Object.keys(d)) {
+          if (k === 'match') continue;                                   // (null until a match is teed off)
+          if (Array.isArray(d[k])) { if (!Array.isArray(c[k])) c[k] = d[k]; }
+          else if (k === 'bag') { if (!isObj(c.bag) || !Object.keys(c.bag).length) c.bag = d.bag; }
+          else if (isObj(d[k])) c[k] = { ...d[k], ...(isObj(c[k]) ? c[k] : {}) };
+          else if (typeof c[k] !== typeof d[k] || (typeof d[k] === 'number' && !Number.isFinite(c[k]))) c[k] = d[k];
+        }
         c.debt = Math.max(0, Math.round(+c.debt || 0));      // the marker (audit 7.1)
+        trimHistory(c);
         return c;
+      }
+      // Audit 2.6: the history used to grow for ever (about 170 characters a match), and at about 1,160 matches the
+      // career passed the server's 250,000-character limit: every save was refused from then on. It keeps the last
+      // HIST_KEEP lines, plus every line something reads for all time: each friend challenge (your record against them,
+      // the rivalry wall), the first hustler win and the first $1,000 win (trophies), and your best finish in each
+      // invitational. The rest (old hustler matches, entries, sales) goes. Nothing adds the old lines up: no screen reads
+      // a total from them (the Scorecards tab counts its own archived cards).
+      const HIST_KEEP = 300;
+      function trimHistory(c) {
+        const h = c && c.history;
+        if (!Array.isArray(h) || h.length <= HIST_KEEP) return;
+        const keep = new Set([h.find((x) => x && x.npc && x.net > 0), h.find((x) => x && x.net >= 1000 && !x.sale)]);
+        const best = {};
+        for (const x of h) if (x && x.tour && (!best[x.tour] || (x.place || 99) < (best[x.tour].place || 99))) best[x.tour] = x;
+        for (const x of Object.values(best)) keep.add(x);
+        const cut = h.length - HIST_KEEP;
+        c.history = h.filter((x, i) => i >= cut || (x && x.friend) || keep.has(x));
       }
       function readCareer(key) { try { return upgradeCareer(JSON.parse(lsGet(key) || 'null')); } catch { return null; } }
       // A profile's copy on this PC is stored in ONE key together with its sync state ({ c: career, s: { ver, base, dirty } }),
@@ -10486,6 +10517,7 @@
       function careerSave() {
         if (!career) return;
         career.stamp = Date.now();
+        if (career.history && career.history.length > HIST_KEEP + 20) trimHistory(career);    // (in batches: audit 2.6)
         if (session) sync.dirty = true;
         // written in a moment, once (audit 8.1): this career, under this profile's key, with the sync state as it is now
         // (a sync reply or a merge in between writes at once with saveSyncMeta, which replaces this pending write)
@@ -10511,8 +10543,8 @@
       function setSync(s) {
         sync.state = s;
         const el = $('chSync');
-        el.textContent = !session ? 'Playing on this PC only' : `Signed in as ${session.name}${adminOk ? ' 👑 admin' : ''} · ${{ ok: '✓ saved', saving: 'saving…', offline: '⚠ not synced (offline) — will retry', signedout: '⚠ your sign-in has expired — sign in again (home screen)', '': '✓' }[s] || ''}`;
-        el.className = s === 'ok' ? 'ok' : s === 'offline' || s === 'signedout' ? 'bad' : '';
+        el.textContent = !session ? 'Playing on this PC only' : `Signed in as ${session.name}${adminOk ? ' 👑 admin' : ''} · ${{ ok: '✓ saved', saving: 'saving…', offline: '⚠ not synced (offline) — will retry', signedout: '⚠ your sign-in has expired — sign in again (home screen)', refused: `⚠ not saved online: the server turned it down${sync.why ? ` (${sync.why})` : ''}. It's kept on this PC`, '': '✓' }[s] || ''}`;
+        el.className = s === 'ok' ? 'ok' : s === 'offline' || s === 'signedout' || s === 'refused' ? 'bad' : '';
       }
       // the server no longer accepts this sign-in (it expired, it was signed out, or the admin password changed): say so,
       // drop anything admin, and let the home screen offer "Sign in again"
@@ -10543,6 +10575,7 @@
             saveSyncMeta(); setSync('ok');
           } else if (r.status === 409 && r.data.career) { mergeServer(r.data.career, r.data.ver); sync.again = true; }
           else if (r.status === 401) signInExpired();
+          else if (r.status === 400 || r.status === 413) { sync.why = r.data.error || ''; setSync('refused'); }    // turned down, not offline (audit 2.6)
           else setSync('offline');
         } catch { setSync('offline'); }
         sync.busy = false;
@@ -10562,6 +10595,7 @@
         const seen = new Set(), hist = [];
         for (const h of [...(srv.history || []), ...(career.history || [])]) { const k = `${h.date}|${h.npc || h.friend}|${h.net}`; if (!seen.has(k)) { seen.add(k); hist.push(h); } }
         career.history = hist.sort((a, b) => a.date - b.date);
+        trimHistory(career);                                 // (the server's copy can still have lines this PC trimmed)
         // what was bought off your wall (on the server, by a visitor) stays destroyed, whatever this PC had
         const gone = [...new Set([...((srv.showcase && srv.showcase.destroyed) || []), ...((career.showcase && career.showcase.destroyed) || [])])];
         if (gone.length) {

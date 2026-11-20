@@ -183,6 +183,8 @@ module.exports = async (req, res) => {
     if (action === 'save') {
       const [name] = await redis([['HGET', `golf:user:${id}`, 'name']]);
       const data = cleanCareer(b.career, name || id);
+      // (audit 2.6: a career over the size limit says so, and the game shows it, not "offline")
+      if (!data && b.career && typeof b.career === 'object' && !Array.isArray(b.career)) return send(413, { error: 'This career is too big to save online' });
       if (!data || !Number.isInteger(b.ver) || b.ver < 0) return send(400, { error: 'Bad save' });
       const [ver] = await redis([['EVAL', CAS, 1, `golf:career:${id}`, String(b.ver), data]]);
       if (ver === -1) {

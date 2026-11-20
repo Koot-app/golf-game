@@ -408,6 +408,22 @@ The probe scripts are `tools/test/sync-*.js`. Each one's header says how to run 
   (offline) — will retry" · serverVersionMoved false · stillUnsent true`.
 - **Fix (S–M):** keep the last few hundred history lines, and fold older ones into running totals (the records and
   trophies that read history need those totals). Show a refused save as its own message, not as "offline".
+- **✅ Fixed 2026-11-20:** both, but with kept lines instead of running totals.
+  - **The trim (`trimHistory`):** the history keeps its last 300 lines, plus every line that something reads for all
+    time: each friend challenge (your record against them, the rivalry wall and its sales), the first hustler win and
+    the first $1,000 win (their trophies), and the best finish in each invitational. Only old hustler matches, entries
+    and sales go.
+  - **Why no running totals:** nothing on screen adds up the old lines (the Scorecards tab counts its own archived
+    cards), so there was nothing for totals to feed.
+  - **When it runs:** on loading a career, after a merge, and on a save once the history is 20 lines over.
+  - **A refused save:** the server answers 413 "This career is too big to save online" when that's the reason. The
+    game shows any refused save as "⚠ not saved online: the server turned it down (…). It's kept on this PC", not as
+    "offline".
+
+  `sync-size.js`: 1,424 lines (255,758 characters) became 304 lines (90,015) on the next save, which went through;
+  the friend line, the best invitational finish, the first win and the first $1,000 win were all kept. A career made
+  too big another way shows the new message. Friend lines aren't trimmed, so thousands of challenges could still add
+  up; that's far beyond any real player.
 
 ### 2.7 [Low] Careers from the game's earliest versions crash the clubhouse
 - **Where:** `upgradeCareer` (about line 10420). It fills in `out`, `putters`, `tierMax`, `history`, `rounds`,
@@ -427,6 +443,13 @@ The probe scripts are `tools/test/sync-*.js`. Each one's header says how to run 
   ok     · no reputation or seed
   ```
 - **Fix (S):** have `upgradeCareer` fill every field `newCareer` creates, from the same defaults.
+- **✅ Fixed 2026-11-20:** `upgradeCareer` now fills every field `newCareer` has, from a fresh career's defaults:
+  - a missing field, or one of the wrong kind, is replaced;
+  - `stats` and `unlocks` get any key they're missing;
+  - a bag is only filled in if there's none (a bag can have more slots than the starter one);
+  - `putters` starts from the career's own putter, and `tierMax` from its tier.
+
+  `sync-old-saves.js`: all eight shapes, back to the very first save, open with no errors.
 
 ### 2.8 [Low] Guest careers: two tabs overwrite each other, and storage failures are silent
 - **Where:** `careerSave` (about line 10439); `lsSet` (about line 10407); `readCareer`.
