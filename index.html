@@ -7006,6 +7006,7 @@
         backswingTimeMs: 1000,  // from the takeaway, this long to set the backswing; after that its length is locked in
         topHysteresis: 0.03,    // fraction of swing length the mouse must return before "transition" is declared
         speedWindowMs: 24,      // AUDIT 10: speeds are averaged over this window, not read from one event
+        downAvgShare: 0.4,      // swing audit S1.1: the whole downswing's average speed must reach this share of full tempo
         strikeMmPerPx: 1.0,     // mm of heel/toe miss per (spec-normalised) px of RMS wobble
         strikeMaxMm: 15,        // AUDIT 12
         // HARDPAN (swing audit S2.1): a tight lie punishes a mishit by degree. Below hardpanMm off-centre the strike is
@@ -7231,7 +7232,16 @@
         const vImpact = Math.max(0, speedAt(iImp, false));
         let vPeak = vImpact;
         for (let i = iTop + 1; i < iImp; i++) vPeak = Math.max(vPeak, speedAt(i, true));
-        const ds = Math.min(1.15, vImpact / tempoTarget(bsRaw, cal));      // tempo, relative to this backswing's length
+        const vT = tempoTarget(bsRaw, cal), dsImpact = Math.min(1.15, vImpact / vT);      // tempo, relative to this backswing's length
+        // Swing audit S1.1: the WHOLE downswing has to be a swing, not only the last 24 ms. Its average speed, from when the
+        // club starts down (a pause at the top doesn't count) to the ball, against downAvgShare of full tempo: an ordinary
+        // accelerating swing averages about half its impact speed and reads above 1 here, so the impact reading stands. A
+        // slow trace with a flick at the end averages a fraction of it, and that becomes the tempo (a crawl is a duff).
+        let iGo = iTop + 1;
+        while (iGo < iImp && S[iGo].x - top.x < Math.abs(top.x) * TUNE.topHysteresis) iGo++;
+        const tDown = S[iImp].t - S[Math.max(iTop, iGo - 1)].t, xDown = -S[Math.max(iTop, iGo - 1)].x;
+        const dsWhole = tDown > 0 ? (xDown / tDown) / (TUNE.downAvgShare * vT) : dsImpact;
+        const ds = Math.min(dsImpact, dsWhole);
 
         // Resample the downswing at even X spacing so slow parts of the stroke aren't over-weighted.
         const mono = [top];
@@ -7261,7 +7271,7 @@
         }
         const sigmaRaw = Math.sqrt(ss / N);
         return {
-          bs, ds, vImpact, vPeak,
+          bs, ds, dsImpact, dsWhole, vImpact, vPeak,
           // AUDIT 15: the path reads the way it LOOKS in the face-on view. Up the screen is toward the golfer (inside),
           // down is toward the camera (outside). So swinging down-and-right through the ball travels from inside to
           // outside = in-to-out = positive = draw; up-and-right is out-to-in = fade. (The spec had these reversed.)
@@ -7936,7 +7946,7 @@
       };
       try {
         const saved = JSON.parse(localStorage.getItem('golfSwingCal') || 'null');
-        if (saved && saved.swingPx > 0 && saved.vTarget > 0) state.cal = saved;
+        if (saved && saved.swingPx > 0 && saved.vTarget > 0) { state.cal = saved; state.calSaved = true; }
       } catch { /* storage unavailable — defaults are fine */ }
 
       const swing = { active: false, phase: 'idle', S: [], x: 0, y: 0, iTop: 0, iImp: -1, impactAt: 0, locked: false };
@@ -9160,7 +9170,8 @@
           const vT = clamp(Math.round(sw.vImpact * 10) / 10, 0.5, 30);
           state.cal = { swingPx: px, vTarget: vT }; saveCal(); syncPanel();
           state.calibrating = false; $('btnCal').classList.remove('armed'); $('btnCal').textContent = 'Calibrate to my next swing';
-          toast(`Calibrated\n100% = ${px} counts · ${vT.toFixed(1)} counts/ms`, 2600);
+          toast(state.calFirst ? `Swing set\nThat swing is now 100%. Swing again to play.\n(⚙ Settings → Calibrate to redo it)` : `Calibrated\n100% = ${px} counts · ${vT.toFixed(1)} counts/ms`, state.calFirst ? 3600 : 2600);
+          state.calFirst = false;
           clubPhiTarget = isPutt() ? 0.45 : 3.3; clubReturnAt = performance.now() + 900;
           return;
         }
@@ -9607,6 +9618,7 @@
           return;
         }
         if (e.button !== 0 || state.view !== 'address' || isPeeking() || swing.active || (hp.on && hp.done)) return;
+        if (!state.calSaved && !state.calibrating && !isPutt() && !isChip()) offerFirstCalibration();      // (S1.2)
         beginSwing();
       });
       window.addEventListener('pointerup', (e) => {
@@ -10298,6 +10310,8 @@
           '<b style="color:#35e0ff">Down-right</b> through the ball (in-to-out): curves it right to left — <b>more draw</b>',
           '<b style="color:#ffc24a">Up-right</b> through the ball (out-to-in): curves it left to right — <b>more fade</b>',
           'The steeper the angle, the bigger the curve · a steady line keeps the strike centred',
+          'Swing <b>through</b> at a steady pace: a slow trace with a flick at the end reads as a crawl and comes up short',
+          `<b>Feel off?</b> ⚙ Settings → <b>Calibrate to my next swing</b>, then make one comfortable, full swing${state.calSaved ? '' : ' · <span class="con">not calibrated yet</span>'}`,
         ], '', tipsGuideSvg());
         sec('The swing card', 'bottom right', [
           `${n(1)}<b>Backswing:</b> how far you pull back — this sets the distance. The white line is a full swing; past it adds a little distance and difficulty`,
@@ -15385,7 +15399,17 @@
         }
       });
 
-      function saveCal() { try { localStorage.setItem('golfSwingCal', JSON.stringify(state.cal)); } catch { /* ignore */ } }
+      function saveCal() { state.calSaved = true; try { localStorage.setItem('golfSwingCal', JSON.stringify(state.cal)); } catch { /* ignore */ } }
+      // Swing audit S1.2: the default calibration expects a stroke of an inch or less, so a new player's natural swing read
+      // as the maximum over-swing every time. The first full swing ever made on this computer (with no saved calibration)
+      // sets the calibration instead of hitting the ball, and says so. Offered once; Settings and the tips can redo it.
+      function offerFirstCalibration() {
+        try { if (localStorage.getItem('golfCalOffered')) return false; localStorage.setItem('golfCalOffered', '1'); } catch { return false; }
+        state.calibrating = true; state.calFirst = true;
+        $('btnCal').classList.add('armed'); $('btnCal').textContent = 'Armed — make one full swing';
+        toast('First, your swing\nMake one comfortable, FULL swing: the game learns its length and speed.\nThis one doesn\'t hit the ball.', 4200);
+        return true;
+      }
       const windFromWords = (d) => ['head', 'head-right', 'from right', 'tail-right', 'tail', 'tail-left', 'from left', 'head-left'][Math.round(d / 45) % 8];
       // the wind dial at the top centre: rel = where the wind comes from, relative to your aim (0 = into you). The arrow shows
       // where it blows (up the screen = toward the target); its colour and the pulse's pace follow the strength.

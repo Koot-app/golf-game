@@ -41,6 +41,24 @@ this section).
 | S1.12 | Low | Test tool | `debugSwing` doesn't deliver the tempo it's asked for, and leaves the swing active | S |
 
 ### S1.1 [High, feel / balance] The downswing can be traced as slowly as you like and still be full power
+- **✅ Fixed 2026-11-20:** `analyzeSwing` also reads tempo from the whole downswing, and uses the lower reading. That
+  is its average speed from when the club starts down (a pause at the top doesn't count) to the ball, against
+  `TUNE.downAvgShare` (40%) of full tempo. An ordinary accelerating swing averages about half its impact speed, so it
+  reads above 100% and its impact reading stands. Measured (`tools/test/swing-fix6.js`, and section 10 of
+  `swing-input.js`):
+
+  | The downswing | Tempo read: before → after | Club speed: before → after |
+  |---|---|---|
+  | An ordinary accelerating swing (with or without a 300 ms pause at the top) | 96% → 96% | ×0.996 → ×0.996 |
+  | A smooth swing 25% slower | 72% → 72% | ×0.976 → ×0.976 |
+  | Crawl at 10%, full tempo for the last 20% | **100% → 31%** | ×1.000 → ×0.711 |
+  | Crawl at 10%, full tempo for the last 10% | 60% → 28% | ×0.964 → ×0.662 |
+  | Crawl at 5%, then 70% for the last 10% | 51% → 14% | ×0.929 → ×0.394 |
+  | Crawl at 10% all the way | 10% → 10% | ×0.308 → ×0.308 |
+
+  The telemetry's tempo shows the lower reading, so the player sees why. A tip says it: "a slow trace with a flick at
+  the end reads as a crawl and comes up short". Partial swings and chips use the same rule (their full tempo already
+  scales with the backswing). Putts keep their own rhythm reading.
 - **Where:** `analyzeSwing` (about line 7202): tempo is the mouse speed over the last 24 ms before the ball
   (`speedWindowMs`). `swingSample`: the backswing has a 1-second clock, the downswing has none. The calibration's
   Speed slider goes down to 0.5 counts/ms.
@@ -79,6 +97,18 @@ this section).
   rule, partial shots (their full tempo scales with the square root of the backswing), and `debugSwing`.
 
 ### S1.2 [High, feel] The default calibration expects a tiny, slow stroke, and nothing tells a new player to calibrate
+- **✅ Fixed 2026-11-20:** the first full swing made on a computer with no saved calibration sets the calibration
+  instead of hitting the ball. It's offered once (`golfCalOffered` in local storage), only on a real mouse swing, and
+  not on a chip or a putt. Measured in a fresh browser profile (`tools/test/swing-fix6.js`):
+  - **Mouse down:** calibration arms and the game says "First, your swing: make one comfortable, FULL swing: the game
+    learns its length and speed. This one doesn't hit the ball."
+  - **A natural stroke** (1,260 counts back): sets 100% to 1,260 counts and 16.6 counts/ms, launches no ball, and says
+    "Swing set: that swing is now 100%. Swing again to play. (⚙ Settings → Calibrate to redo it)".
+  - **The next mouse down:** an ordinary swing.
+
+  The swing tips also point to ⚙ Settings → Calibrate, and say "not calibrated yet" until it's done. Moving either
+  calibration slider counts as calibrating. S1.3 (calibration's limits for high-DPI mice) is still open: a 3,200 DPI
+  player's first swing will clamp at 3,000 counts.
 - **Where:** `state.cal` default `{ swingPx: 800, vTarget: 5.76 }` (about line 7884); calibration lives in a collapsed
   "⚙ Settings · swing calibration" fold in the side panel. No tip, toast or first-run step mentions it.
 - **Measured:** what the default means in hand travel:
