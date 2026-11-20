@@ -56,7 +56,11 @@ global.fetch = async (url, opts) => {
   return { ok: true, status: 200, json: async () => out };
 };
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.md': 'text/plain' };
+// the live site's headers (vercel.json: the content security policy and the rest, audit 3.9), so the tests run under them
+let SITE_HEADERS = [];
+try { SITE_HEADERS = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8')).headers.filter((h) => h.source === '/(.*)').flatMap((h) => h.headers); } catch { /* none */ }
 http.createServer(async (req, res) => {
+  for (const h of SITE_HEADERS) res.setHeader(h.key, h.value);
   const u = new URL(req.url, 'http://x');
   if (u.pathname.startsWith('/api/')) {
     const name = u.pathname.slice(5).replace(/[^a-z_]/g, '');

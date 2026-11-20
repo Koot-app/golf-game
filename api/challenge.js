@@ -47,6 +47,15 @@ async function getCh(cid) {
   const [s] = await redis([['GET', `golf:ch:${cid}`]]);
   return parse(s);
 }
+// many at once, in one round trip (audit 3.9: the list read them one call each, so a flooded player's Friends page
+// slowed down and could time out); a bad id gives null
+async function getChs(cids) {
+  const ok = cids.filter((c) => /^[a-f0-9]{16}$/.test(String(c)));
+  const rows = ok.length ? await redis(ok.map((c) => ['GET', `golf:ch:${c}`])) : [];
+  const by = new Map(ok.map((c, i) => [c, parse(rows[i])]));
+  return cids.map((c) => by.get(c) || null);
+}
+const isActive = (c) => c && (c.status === 'pending' || c.status === 'open');
 const putCh = (ch) => redis([['SET', `golf:ch:${ch.id}`, JSON.stringify(ch)]]);
 // do fn(challenge) while holding its lock (another request on the same challenge waits its turn or is told to retry)
 async function withLock(cid, fn) {
@@ -232,9 +241,10 @@ module.exports = async (req, res) => {
       const E = stake * (format === 'skins' ? HOLES : 1);
       if ((cMe.cash || 0) < E) return send(400, { error: `You need $${E} to put that up` });
       if ((cTo.cash || 0) < E) return send(400, { error: `${cTo.name} can't cover $${E}` });
-      const [mine] = await redis([['SMEMBERS', `golf:chs:${me}`]]);
-      const list = (await Promise.all((mine || []).map(getCh))).filter(Boolean);
-      if (list.filter((c) => c.status === 'pending' || c.status === 'open').length >= MAX_ACTIVE) return send(400, { error: `You're in ${MAX_ACTIVE} challenges already — finish some first` });
+      const [mine, theirs] = await redis([['SMEMBERS', `golf:chs:${me}`], ['SMEMBERS', `golf:chs:${to}`]]);
+      if ((await getChs(mine || [])).filter(isActive).length >= MAX_ACTIVE) return send(400, { error: `You're in ${MAX_ACTIVE} challenges already — finish some first` });
+      // (audit 3.9: and a cap on the other side too, so nobody can be flooded with challenges)
+      if ((await getChs(theirs || [])).filter(isActive).length >= MAX_ACTIVE) return send(400, { error: `${cTo.name} has ${MAX_ACTIVE} challenges on already — try again later` });
       const ch = { id: crypto.randomBytes(8).toString('hex'), from: me, to, names: { [me]: cMe.name, [to]: cTo.name }, format, stake, tier, hcp, status: 'pending', created: Date.now(), cards: {}, held: {} };
       ch.strokes = strokesFor(ch, cMe, cTo);                  // a preview: fixed for good when it's accepted
       // the challenger's stake is held from now, not from the accept: otherwise their own PC, which doesn't hear about
@@ -252,9 +262,9 @@ module.exports = async (req, res) => {
     if (action === 'list') {
       if (!(await rateLimit(`golf:rl:chlist:${me}`, 60, 60))) return send(429, { error: 'Too many requests — wait a minute' });     // (audit 3.3)
       const [ids] = await redis([['SMEMBERS', `golf:chs:${me}`]]);
-      const out = [], drop = [];
-      for (const cid of ids || []) {
-        let ch = await getCh(cid);
+      const out = [], drop = [], all = await getChs(ids || []);
+      for (const [k, cid] of (ids || []).entries()) {
+        let ch = all[k];
         if (!ch) { drop.push(cid); continue; }
         const stale = ch.status === 'pending' && Date.now() > ch.created + DAYS;
         const due = (ch.status === 'open' && Date.now() > ch.deadline) || (ch.status === 'done' && ch.result && owed(ch)) || (ch.status === 'closed' && owed(ch));

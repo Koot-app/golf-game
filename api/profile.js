@@ -24,7 +24,7 @@
 // people reuse passwords. Saves are compare-and-set on `ver`, so a copy that's out of date never overwrites a newer one.
 
 const crypto = require('crypto');
-const { redis, readBody, clientIp, rateLimit, sessionId, sessionValue, SESSION_S, CAS, updateCareer } = require('./_redis');
+const { redis, readBody, clientIp, rateLimit, sessionId, sessionValue, tokenOf, SESSION_S, CAS, updateCareer } = require('./_redis');
 const { isAdmin, adminCred } = require('./_admins');
 const { arr, num, tierOf, plain, goodRounds, handicapOf, normCareer, outcomeFor } = require('./_career');
 const FORMATS = ['match', 'stroke', 'skins'];
@@ -83,7 +83,15 @@ const tro = (c) => (Array.isArray(c.trophies) ? c.trophies.filter((x) => typeof 
 // (sessionId lives in _redis.js)
 async function newSession(id) {
   const token = crypto.randomBytes(32).toString('hex');
-  await redis([['SET', `golf:sess:${token}`, sessionValue(id), 'EX', SESSION_S]]);     // (an admin's is tied to the current credential)
+  await redis([['SET', `golf:sess:${token}`, sessionValue(id), 'EX', SESSION_S],      // (an admin's is tied to the current credential)
+    ['SADD', `golf:sessions:${id}`, token]]);                                          // (the profile's sessions, audit 3.9)
+  // (sessions that have run out drop off the list, now and then, so it doesn't grow with every sign-in)
+  const [all] = await redis([['SMEMBERS', `golf:sessions:${id}`]]);
+  if ((all || []).length > 20) {
+    const live = await redis(all.map((t) => ['GET', `golf:sess:${t}`]));
+    const dead = all.filter((_, i) => !live[i]);
+    if (dead.length) await redis(dead.map((t) => ['SREM', `golf:sessions:${id}`, t]));
+  }
   return token;
 }
 // a new profile: its name, salt, hash and creation time, all at once, unless the name is taken by a profile that has a
@@ -91,10 +99,11 @@ async function newSession(id) {
 const SIGNUP = `if redis.call('HSETNX', KEYS[1], 'name', ARGV[1]) == 0 and redis.call('HEXISTS', KEYS[1], 'hash') == 1 then return 0 end
 redis.call('HSET', KEYS[1], 'name', ARGV[1], 'salt', ARGV[2], 'hash', ARGV[3], 'created', ARGV[4])
 return 1`;
-// ---- AUDIT 3.7: passwords. New ones are at least PW_MIN characters. Every profile name is public, so wrong guesses are
-// limited per profile as well as per address: PW_FAILS wrong ones in an hour, then that profile can't be signed in to
-// until the hour is up (whoever is guessing, from wherever). `password` changes a password.
-const PW_MIN = 8, PW_FAILS = 10, PW_WINDOW_S = 3600;
+// ---- AUDIT 3.7: passwords. Their length is up to the player (any length from 1 to 128: the user's decision, 2026-11-20).
+// Every profile name is public, so wrong guesses are limited per profile as well as per address: PW_FAILS wrong ones in
+// an hour, then that profile can't be signed in to until the hour is up (whoever is guessing, from wherever).
+// `password` changes a password.
+const PW_MIN = 1, PW_FAILS = 10, PW_WINDOW_S = 3600;
 const pwMatches = async (pw, user) => crypto.timingSafeEqual(Buffer.from(await hashPw(pw, user.salt), 'hex'), Buffer.from(user.hash, 'hex'));
 async function pwLocked(id) {
   const [n, ttl] = await redis([['GET', `golf:rl:pwfail:${id}`], ['TTL', `golf:rl:pwfail:${id}`]]);
@@ -169,11 +178,10 @@ module.exports = async (req, res) => {
         if (cd && data) await putSummary(id, parse(cd));
         return send(200, { token: await newSession(id), name: admin.name, career: parse(cd), ver: +cv || 0, admin: true });
       }
-      // (audit 3.7: a new profile's password is at least 8 characters; one made before that, shorter, still signs in)
-      if (!pw || pw.length > 128) return send(action === 'signup' ? 400 : 401, { error: action === 'signup' ? `Passwords are ${PW_MIN}–128 characters` : 'Wrong password' });
+      // (a password's length is up to the player: anything from 1 to 128 characters)
+      if (!pw || pw.length > 128) return send(action === 'signup' ? 400 : 401, { error: action === 'signup' ? (pw ? 'Passwords are at most 128 characters' : 'Type a password') : 'Wrong password' });
 
       if (action === 'signup') {
-        if (pw.length < PW_MIN) return send(400, { error: `Passwords are at least ${PW_MIN} characters` });
         // (audit 3.3: a few new profiles a day from one address, and a ceiling for everyone)
         if (!(await rateLimit(`golf:rl:signup:${clientIp(req)}`, SIGNUPS_PER_IP, 86400))) return send(429, { error: 'Too many new profiles from here today — try again tomorrow' });
         if (!(await rateLimit('golf:rl:signup:all', SIGNUPS_PER_DAY, 86400))) return send(429, { error: 'No more new profiles today — try again tomorrow' });
@@ -227,8 +235,8 @@ module.exports = async (req, res) => {
     if (PER_MIN[action] && !(await rateLimit(`golf:rl:${action}:${id}`, PER_MIN[action], 60))) return send(429, { error: 'Too many requests — wait a minute' });
 
     if (action === 'logout') {
-      const m = /^Bearer ([a-f0-9]{64})$/.exec(req.headers.authorization);
-      await redis([['DEL', `golf:sess:${m[1]}`]]);
+      const tok = tokenOf(req);
+      await redis([['DEL', `golf:sess:${tok}`], ['SREM', `golf:sessions:${id}`, tok]]);
       return send(200, { ok: true });
     }
     if (action === 'load') {
@@ -330,10 +338,14 @@ module.exports = async (req, res) => {
       if (locked) return send(429, { error: locked });
       const user = await userOf(id), old = String(b.old || '').slice(0, 128), pw = String(b.password || '');
       if (!user.hash || !(await pwMatches(old, user))) { await pwFailed(id); return send(401, { error: 'Your current password is wrong' }); }
-      if (pw.length < PW_MIN || pw.length > 128) return send(400, { error: `Passwords are ${PW_MIN}–128 characters` });
+      if (pw.length < PW_MIN || pw.length > 128) return send(400, { error: pw ? 'Passwords are at most 128 characters' : 'Type a new password' });
       const salt = crypto.randomBytes(16).toString('hex');
       await redis([['HSET', `golf:user:${id}`, 'salt', salt, 'hash', await hashPw(pw, salt)]]);
-      return send(200, { ok: true });
+      // every other sign-in of this profile ends (audit 3.9): this one stays
+      const tok = tokenOf(req), [all] = await redis([['SMEMBERS', `golf:sessions:${id}`]]);
+      const others = (all || []).filter((t) => t !== tok);
+      if (others.length) await redis([...others.map((t) => ['DEL', `golf:sess:${t}`]), ...others.map((t) => ['SREM', `golf:sessions:${id}`, t])]);
+      return send(200, { ok: true, signedOut: others.length });
     }
     return send(400, { error: 'Unknown action' });
   } catch (e) {

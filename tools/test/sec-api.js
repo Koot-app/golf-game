@@ -30,8 +30,9 @@ const play = async (tok, id, card) => { for (let i = 0; i < card.length; i++) aw
   const trent = await P(null, 'signup', { name: 'Tr' + tag, password: 'testpass1', career: career('Tr' + tag) });
   if (!alice.token || !mal.token || !trent.token) { console.log('sign-ups failed (auth rate limit? restart the dev server):', alice.status, mal.status, trent.status); return; }
   const A = alice.token, M = mal.token, T = trent.token, aId = ('Al' + tag).toLowerCase(), mId = ('Ma' + tag).toLowerCase();
-  r = await P(null, 'signup', { name: 'Sh' + tag, password: 'aaaa', career: career('Sh' + tag) });
-  say(r.status === 400 ? 'ok' : 'FINDING 3.7', `a new profile with a 4-character password ("aaaa") -> ${r.status} ${r.error || ''}`);
+  // (a password's length is the player's choice: the user's decision, 2026-11-20; an empty one is still refused)
+  r = await P(null, 'signup', { name: 'Sh' + tag, password: '', career: career('Sh' + tag) });
+  say(r.status === 400 ? 'ok' : 'FINDING', `a new profile with no password -> ${r.status} ${r.error || ''}`);
   say(alice.admin || mal.admin ? 'FINDING' : 'ok', `a new profile is not an admin -> admin ${!!alice.admin}`);
   r = await change(M, (c) => { c.name = 'Al' + tag; c.cash = 1000; }); const who = (await P(M, 'load')).career.name;
   say(who === 'Ma' + tag ? 'ok' : 'FINDING', `save a career under another player's name -> stored as ${who}`);

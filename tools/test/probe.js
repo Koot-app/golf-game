@@ -27,10 +27,12 @@ const [W, H] = (process.env.PROBE_SIZE || '1600x900').split('x').map(Number);
   for (let i = 0; i < 200 && !target; i++) { await sleep(250); try { target = (await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json()).find((t) => t.type === 'page'); } catch { } }
   const ws = new WebSocket(target.webSocketDebuggerUrl); await new Promise((r) => ws.addEventListener('open', r));
   let id = 0; const pending = new Map(), problems = [];
-  ws.addEventListener('message', (e) => { const d = JSON.parse(e.data); if (d.id && pending.has(d.id)) { pending.get(d.id)(d.result || d); pending.delete(d.id); } if (d.method === 'Runtime.exceptionThrown') problems.push(d.params.exceptionDetails.exception?.description || d.params.exceptionDetails.text); });
+  ws.addEventListener('message', (e) => { const d = JSON.parse(e.data); if (d.id && pending.has(d.id)) { pending.get(d.id)(d.result || d); pending.delete(d.id); } if (d.method === 'Runtime.exceptionThrown') problems.push(d.params.exceptionDetails.exception?.description || d.params.exceptionDetails.text);
+    // anything the content security policy blocked, or a resource that failed its integrity check (audit 3.9)
+    if (d.method === 'Log.entryAdded' && (d.params.entry.source === 'security' || /Content Security Policy|integrity/i.test(d.params.entry.text))) problems.push('SECURITY ' + d.params.entry.text); });
   const send = (method, params = {}) => new Promise((r) => { pending.set(++id, r); ws.send(JSON.stringify({ id, method, params })); });
   const ev = async (x) => { const r = await send('Runtime.evaluate', { expression: x, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) problems.push('EVAL ' + (r.exceptionDetails.exception?.description || r.exceptionDetails.text)); return r.result?.value; };
-  await send('Runtime.enable'); await send('Page.enable');
+  await send('Runtime.enable'); await send('Page.enable'); await send('Log.enable');
   await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 1, mobile: false });
   await send('Page.navigate', { url });
   for (let i = 0; i < 40; i++) { await sleep(300); if (await ev('!!window.__golf')) break; }

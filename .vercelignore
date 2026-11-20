@@ -1,0 +1,3 @@
+# Not served on the live site (audit 3.9): the plans, the audit, and the dev tools and tests
+*.md
+tools/

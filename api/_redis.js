@@ -38,13 +38,17 @@ async function redis(commands) {
   return out.map((x) => x.result);
 }
 
+// the request's JSON body, always as an object ({} for anything else). (Audit 3.9: Vercel parses the body itself, and a
+// body that wasn't an object, say a bare number, fell through to reading the stream it had already read, so the
+// function waited until it timed out.)
+const asObj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
 function readBody(req, limit = 300000) {
-  if (req.body && typeof req.body === 'object') return Promise.resolve(req.body);
-  if (typeof req.body === 'string') return Promise.resolve(JSON.parse(req.body || '{}'));
+  if (req.body !== undefined && req.body !== null && typeof req.body !== 'string') return Promise.resolve(asObj(req.body));
+  if (typeof req.body === 'string') return Promise.resolve(asObj(JSON.parse(req.body || '{}')));
   return new Promise((resolve, reject) => {
     let s = '';
     req.on('data', (c) => { s += c; if (s.length > limit) reject(new Error('too large')); });
-    req.on('end', () => { try { resolve(JSON.parse(s || '{}')); } catch (e) { reject(e); } });
+    req.on('end', () => { try { resolve(asObj(JSON.parse(s || '{}'))); } catch (e) { reject(e); } });
     req.on('error', reject);
   });
 }
@@ -63,18 +67,24 @@ async function rateLimit(key, max, windowS) {
 // A session lasts SESSION_S from its last use, not from the sign-in (audit 2.1: a fixed 30 days signed every regular
 // player out in the middle of playing): each request that uses it pushes the expiry out again. (EXPIRE on a key that
 // has gone is a no-op, so a dead session stays dead.)
-const SESSION_S = 30 * 24 * 3600;
+// Audit 3.9: a session also ends SESSION_MAX_MS after it was made, however much it's used (a stolen token used to work
+// for ever), and each profile keeps a set of its sessions (golf:sessions:<id>), so changing the password can sign the
+// others out. The value is "<id>[#<fp>]~<made, ms>"; one made before this has no "~", and gets one (now) when next used.
+const SESSION_S = 30 * 24 * 3600, SESSION_MAX_MS = 180 * 24 * 3600 * 1000;
+const tokenOf = (req) => { const m = /^Bearer ([a-f0-9]{64})$/.exec((req.headers && req.headers.authorization) || ''); return m ? m[1] : null; };
 async function sessionId(req) {
-  const m = /^Bearer ([a-f0-9]{64})$/.exec((req.headers && req.headers.authorization) || '');
-  if (!m) return null;
-  const [v] = await redis([['GET', `golf:sess:${m[1]}`], ['EXPIRE', `golf:sess:${m[1]}`, SESSION_S]]);
+  const tok = tokenOf(req);
+  if (!tok) return null;
+  const [v] = await redis([['GET', `golf:sess:${tok}`], ['EXPIRE', `golf:sess:${tok}`, SESSION_S]]);
   if (!v) return null;
-  const [id, fp] = String(v).split('#');
+  const [main, made] = String(v).split('~'), [id, fp] = main.split('#');
+  if (made && Date.now() - +made > SESSION_MAX_MS) { await redis([['DEL', `golf:sess:${tok}`], ['SREM', `golf:sessions:${id}`, tok]]); return null; }
+  if (!made) await redis([['SET', `golf:sess:${tok}`, `${main}~${Date.now()}`, 'EX', SESSION_S], ['SADD', `golf:sessions:${id}`, tok]]);
   if (isAdmin(id)) { const c = adminCred(id); if (!c || fp !== c.fp) return null; }
   return id;
 }
 // what to store for a new session of this profile
-const sessionValue = (id) => (isAdmin(id) && adminCred(id) ? `${id}#${adminCred(id).fp}` : id);
+const sessionValue = (id) => `${isAdmin(id) && adminCred(id) ? `${id}#${adminCred(id).fp}` : id}~${Date.now()}`;
 
 // A career is golf:career:<id> = { data (JSON), ver }. Writes are compare-and-set on ver (this Lua script), so a copy
 // that's out of date never overwrites a newer one; it returns the new version, or -1.
@@ -105,4 +115,4 @@ async function updateCareer(id, fn) {
 const { isAdmin, adminCred } = require('./_admins');
 const { normCareer, summaryOf } = require('./_career');
 
-module.exports = { findCreds, redis, readBody, clientIp, rateLimit, sessionId, sessionValue, SESSION_S, CAS, updateCareer };
+module.exports = { findCreds, redis, readBody, clientIp, rateLimit, sessionId, sessionValue, tokenOf, SESSION_S, CAS, updateCareer };

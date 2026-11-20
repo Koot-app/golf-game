@@ -807,8 +807,10 @@ fixed before this section was first pushed.)
   (`14 wrong passwords in a row -> 401 ×5 then 429`).
 - **Fix (S):** a longer minimum (8), a limit per profile as well as per address (for example 10 wrong tries an hour,
   then a wait), and a way to change a password.
-- **✅ Fixed 2026-11-20:** all three.
-  - **Minimum length:** a new profile's password is at least 8 characters. Older, shorter ones still sign in.
+- **✅ Fixed 2026-11-20:** two of three, by the user's choice.
+  - **Minimum length: not set (the user's decision, 2026-11-20).** A password's length is up to the player: anything
+    from 1 to 128 characters. The 8-character minimum briefly added here was taken out. The per-profile limit below is
+    what stops guessing.
   - **Per-profile limit:** 10 wrong passwords for one profile in an hour, from anywhere, and it can't be signed in to
     until the hour is up ("Too many wrong passwords for this profile — try again in N minutes"). The 10 a minute per
     address stays. The trade-off: someone can lock a friend out for an hour on purpose.
@@ -818,7 +820,7 @@ fixed before this section was first pushed.)
     is part of 3.9.
 
   `sec-limits.js`: 10 wrong passwords from 10 addresses, then the right one → 429, while another profile still signs
-  in. The password change: wrong current 401, too short 400, right 200, then the old one 401 and the new one 200.
+  in. The password change: wrong current 401, empty 400, right 200, then the old one 401 and the new one 200.
   The form was also checked in the game.
 
 ### 3.8 [Medium] The admin password's hash is public, so its length is the only protection
@@ -845,6 +847,39 @@ fixed before this section was first pushed.)
   test tools. Fix: a `.vercelignore` for `*.md` and `tools/`.
 - **Leaderboard when storage isn't set up** answers with the names (never the values) of storage settings it can see.
 - **A request body that isn't an object** (a bare number, for example) makes a function wait until it times out.
+- **✅ Fixed 2026-11-20:** all six.
+  - **Flooding:** the challenge list reads all of a player's challenges in one batched call (`getChs`). A player
+    can't be in more than 12 open or pending challenges from either side: the 13th challenger is told "X has 12
+    challenges on already". `sec-limits.js`: 12 → 200, the 13th → 400.
+  - **Sign-ins that never end:**
+    - a session now also ends 180 days after it was made, however much it's used;
+    - each profile keeps a list of its sessions, and changing the password signs out all the others (the page
+      says how many);
+    - a session from before this change gets its start time when it's next used, and joins the list then;
+    - dead sessions are pruned from the list at sign-in.
+
+    `session-slide.js`: 30 days again after use; a 181-day-old session ends and leaves the list; an old-format one
+    is stamped and listed. `sec-limits.js`: a password change on one PC → the other 3 sessions get 401, this one
+    still works.
+  - **Security headers:** `vercel.json` sends a content security policy:
+    - scripts only from the page and the one three.js file;
+    - `connect-src 'self'`: the page can't send anything to another site;
+    - no plugins, no `<base>`, no framing.
+
+    Plus `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin` and a `Permissions-Policy`. Inline
+    scripts and styles are still allowed (the game is one inline file with no build step, so a hash would change with
+    every edit); the policy's main gain is that an injected script couldn't send data anywhere.
+
+    **three.js** now loads through an import map with its SHA-384 hash (`integrity`), checked against two CDNs. A
+    changed file is refused, and the game shows its "could not load" message (tested with a wrong hash). Browsers
+    without import-map integrity ignore it and load as before.
+
+    The dev server sends the same headers, and `probe.js` reports anything they block as "SECURITY …". Every in-game
+    probe run since shows none, apart from the test's own deliberate request to another site.
+  - **Repo files:** `.vercelignore` keeps `*.md` and `tools/` off the live site.
+  - **The leaderboard** says only "storage is not configured", with no names of settings.
+  - **A body that isn't an object** is read as an empty request (`readBody` always gives an object), and answered
+    at once: a body of `5` → 401 in 15 ms.
 
 ### Checked and fine
 - **Acting as someone else.** Every signed-in action takes the player from the session, never from the request. A

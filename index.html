@@ -6375,7 +6375,7 @@
         <div class="hm-newform">
           <div class="hm-h2">New profile</div>
           <input id="hmNewName" maxlength="12" placeholder="Profile name (3–12 letters)" autocomplete="off" spellcheck="false">
-          <input id="hmNewPw" type="password" maxlength="64" placeholder="Password (at least 8 characters)" autocomplete="new-password">
+          <input id="hmNewPw" type="password" maxlength="64" placeholder="Password" autocomplete="new-password">
           <label class="hm-bring" id="hmBringBox"><input type="checkbox" id="hmBring" checked> <span id="hmBringL"></span></label>
           <div class="hm-row"><button id="hmNewGo" class="go">Create profile (Enter)</button><button id="hmNewCancel">Cancel</button></div>
         </div>
@@ -6757,7 +6757,7 @@
             id="chSync">J opens the clubhouse any time</span></div>
         <!-- change a profile's password (audit 3.7) -->
         <div class="ch-pw" id="chPwForm"><input id="chPwOld" type="password" maxlength="128" placeholder="Current password" autocomplete="current-password"><input
-            id="chPwNew" type="password" maxlength="128" placeholder="New password (8+ characters)" autocomplete="new-password"><button id="chPwGo">Change it (Enter)</button><span id="chPwMsg"></span></div>
+            id="chPwNew" type="password" maxlength="128" placeholder="New password" autocomplete="new-password"><button id="chPwGo">Change it (Enter)</button><span id="chPwMsg"></span></div>
       </div>
       <div id="chShop">
         <div class="sh-top"><div class="ch-lead">Pro shop</div><span class="sh-cash" id="shCash"></span></div>
@@ -6921,8 +6921,16 @@
       }, 9000);
     </script>
 
+    <!-- three.js from the CDN, checked against its hash (audit 3.9: a changed file on the CDN won't run). If three is ever
+         upgraded, the hash changes with it: sha384 of the exact file, base64. -->
+    <script type="importmap">
+      {
+        "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" },
+        "integrity": { "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js": "sha384-61S/Nu32S3E5+n+KpCOTb2eRYps6fVKm+9Gz1QBvSePFthb46f063Aa/qe/lykFZ" }
+      }
+    </script>
     <script type="module">
-      import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+      import * as THREE from 'three';
 
       //#region PHYSICS  — pure math, no THREE / DOM (so it can be unit-tested headless)
       const YD = 0.9144, MPH = 0.44704, D2R = Math.PI / 180, R2D = 180 / Math.PI, RPM2RAD = Math.PI / 30;
@@ -11037,7 +11045,7 @@
         setText('siNameL', siMode === 'local' ? 'Your golfer\'s name' : 'Profile name');
         if (local) setText('siBringL', `Bring ${local.name}'s career from this PC (${money(local.cash)}) into the new profile`);
         $('chCreate').textContent = siMode === 'in' ? 'Sign in (Enter)' : siMode === 'new' ? 'Create profile (Enter)' : local ? 'Continue (Enter)' : 'Start career (Enter)';
-        $('siPw').placeholder = siMode === 'new' ? 'at least 8 characters' : 'your password';      // (audit 3.7: 8 for a new profile)
+        $('siPw').placeholder = siMode === 'new' ? 'pick a password' : 'your password';
         setText('chErr', msg);
         if (!(siMode === 'local' && local)) setTimeout(() => $('chName').focus(), 0);
       }
@@ -11118,14 +11126,15 @@
       async function changePassword() {
         const old = $('chPwOld').value, pw = $('chPwNew').value;
         if (!old) return setText('chPwMsg', 'Type your current password');
-        if (pw.length < 8) return setText('chPwMsg', 'The new one needs at least 8 characters');
+        if (!pw) return setText('chPwMsg', 'Type the new password');
         setText('chPwMsg', 'Changing it…'); $('chPwGo').disabled = true;
         let r;
         try { r = await profileApi('password', { old, password: pw }); } catch { r = { status: 0, data: { error: 'Can\'t reach the server' } }; }
         $('chPwGo').disabled = false;
         if (r.status !== 200) return setText('chPwMsg', r.data.error || `Something went wrong (${r.status})`);
         $('chPwOld').value = $('chPwNew').value = '';
-        setText('chPwMsg', '✓ Changed. Use the new one next time you sign in.');
+        const n = r.data.signedOut || 0;
+        setText('chPwMsg', `✓ Changed. Use the new one next time you sign in.${n ? ` ${n === 1 ? 'One other device was' : `${n} other devices were`} signed out.` : ''}`);
       }
       // the practice range with the career's game (Esc, or the button)
       function careerToRange() {
@@ -12024,7 +12033,7 @@
       async function homeNewProfile() {
         const name = $('hmNewName').value.trim(), pw = $('hmNewPw').value;
         if (!/^[A-Za-z0-9 _-]{3,12}$/.test(name)) return setText('hmErr', 'Names are 3–12 letters, numbers, spaces, - or _');
-        if (pw.length < 8) return setText('hmErr', 'Passwords are at least 8 characters');
+        if (!pw) return setText('hmErr', 'Type a password');
         const bring = !!readCareer(CAREER.key) && $('hmBring').checked;
         setText('hmErr', 'Creating your profile…'); $('hmNewGo').disabled = true;
         const err = await profileSignIn('new', name, pw, bring);

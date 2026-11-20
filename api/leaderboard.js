@@ -49,11 +49,8 @@ function clean(member) {
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const send = (code, obj) => res.status(code).json(obj);
-  if (!findCreds()) {
-    // names only (never values) of anything that looks like storage settings, to show what the server can see
-    const seen = Object.keys(process.env).filter((k) => /KV|REDIS|UPSTASH/i.test(k)).sort();
-    return send(503, { error: 'Leaderboard storage is not configured', storageVarsSeen: seen });
-  }
+  // (audit 3.9: this used to answer with the names of the storage settings the server could see; it says nothing more now)
+  if (!findCreds()) return send(503, { error: 'Leaderboard storage is not configured' });
 
   try {
     if (req.method === 'GET') {
