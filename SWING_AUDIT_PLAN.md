@@ -405,11 +405,11 @@ Check:
 | # | Section | Done | Findings | Fixed |
 |---|---|---|---|---|
 | S1 | The mouse swing | ✅ 2026-11-20 | 12 (2 high, 6 medium, 4 low) | |
-| S2 | Impact | ✅ 2026-11-20 | 11 (4 medium, 7 low) | |
+| S2 | Impact | ✅ 2026-11-20 | 11 (4 medium, 7 low) | S2.1 (2026-11-20) |
 | S3 | Ball flight, wind, bounce and roll | ✅ 2026-11-20 | 6 (3 medium, 3 low) | |
-| S4 | The base bag | ✅ 2026-11-20 | 5 (2 medium, 3 low) | |
+| S4 | The base bag | ✅ 2026-11-20 | 5 (2 medium, 3 low) | S4.1 (2026-11-20) |
 | S5 | The club catalogue | ✅ 2026-11-20 | 9 (1 high, 6 medium, 2 low) | |
-| S6 | Stats, lies, dispersion and difficulty | ✅ 2026-11-20 | 5 (3 medium, 2 low); S2.1 raised to high | |
+| S6 | Stats, lies, dispersion and difficulty | ✅ 2026-11-20 | 5 (3 medium, 2 low); S2.1 raised to high | S6.1 (2026-11-20; S9.2 partly) |
 | S7 | Shot shaping, height and spin | ✅ 2026-11-20 | 5 (2 medium, 3 low) | |
 | S8 | Chipping and putting | ✅ 2026-11-20 | 3 (2 medium, 1 low) | |
 | S9 | What the player is shown vs what happens | ✅ 2026-11-20 | 3 (2 medium, 1 low) | |

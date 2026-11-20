@@ -329,6 +329,11 @@ table says "with scatter", it used 4,000 seeded shots and the swing the game its
 | S2.11 | Low | Bug | The no-scatter preview leaves out a used club's bent lie | S |
 
 ### S2.1 [Medium → High after S6, feel / balance] On hardpan, a strike 3 mm off-centre is a cliff
+- **✅ Fixed 2026-11-20:** the chance of a bladed or chunked shot now grows in a straight line from 0 at 3 mm to
+  certain at 8 mm (`TUNE.hardpanMm`, `TUNE.hardpanFullMm`). At a set strike: 2.9 mm 1%, 4 mm 20%, 5.5 mm 49%, 7 mm 81%,
+  8 mm 99%. With the human hand, a 7 iron off hardpan goes wrong 53 / 49 / 27 / 5 / 0% of the time at Dexterity 1 / 2
+  / 5 / 8 / 10 (it was 75% at Dexterity 2 and 65% at 5). The flop's own hardpan rule (S8) is unchanged.
+  `tools/test/swing-fix1.js` re-measures it.
 - **Where:** `computeImpact` step 6 (about line 7395): `if (env.lie === 'hardpan' && (mm >= 3 || flopSkull))` sets ball
   speed to 70% and spin to 30%, then a coin flip makes it BLADED (launch × 0.45) or CHUNKED.
 - **Measured:** a 7 iron off hardpan, no scatter:
@@ -774,6 +779,9 @@ rows they stand in for. The apex errors are S3.1, and the shallow iron landings 
 either way.
 
 ### S4.1 [Medium, bug] The test round's bag includes the comparison 7 iron, a 15th club that beats the 6 iron
+- **✅ Fixed 2026-11-20:** the comparison club is range-only. `rangeOnly(i)` leaves it out of `bagOrder()` and
+  `canUseClub()` whenever a hole is in play. Measured: on the range the bag has 15 rows. On a hole and in a test round
+  it has 14, `setClub(14)` does nothing, and [ ] cycling visits 14 clubs. Leaving the hole brings it back.
 - **Where:** `CLUBS` index 14, "7 Iron · Game Improvement" (about line 7109), "kept for comparing the two equipment
   archetypes". Outside a career, `bagOrder()` lists every club in `CLUBS` and `canUseClub()` returns true for every
   one (about line 12325). The test round never runs in a career (about line 10383).
@@ -1209,6 +1217,27 @@ level, close to the tour ratio. With the human hand, the share of drives whose s
 bites) is 5% / 4% / 1% / 0% / 0% at Dexterity 1 / 2 / 5 / 8 / 10.
 
 ### S6.1 [Medium, bug] Low spin is counted twice, so Low 2 is 3× as wide as stock while High 2 adds nothing
+- **✅ Fixed 2026-11-20:** `lowSpinMult` is read from the club's own spin off the lie (`club.spin × lie.spin`), not
+  the spin after the height and spin asks. The spin-loft term in `axisGainFor` is kept. Before → after (2σ width, Dex
+  5, human swing):
+
+  | Club | Low 2 | Low 1 | Mid | High 1 | High 2 | More / Less spin |
+  |---|---|---|---|---|---|---|
+  | 7 Iron | ±56 → **±36** | ±28 → ±23 | ±16 | ±16 → ±18 | ±17 → **±21** | ±16 / ±21 → ±18 / ±19 |
+  | 4 Iron | ±53 → ±34 | ±40 → ±33 | ±27 | ±25 → ±29 | ±26 → ±33 | ±27 / ±29 → ±28 / ±28 |
+  | 3 Wood | ±49 → ±31 | ±40 → ±31 | ±29 | ±32 → ±38 | ±34 → ±47 | |
+  | Driver | ±72 → ±49 | ±60 → ±45 | ±49 | ±63 → ±78 | ±69 → **±99** | ±50 / ±49 → ±52 / ±48 |
+  | Sand Wedge | ±13 → ±10 | ±7 | ±5 | ±6 | ±7 | |
+
+  Low and High now both widen the shot, and the read-out is closer to the truth (7 iron, Dex 5: Low 2 reads 1.62× and
+  is 2.2× wide, was 3.5×; High 2 reads 1.62× and is 1.26×, was 1.11×). Low is still somewhat wider than High: that's
+  the spin-loft term (a de-lofted shot really does tilt more per degree), which the fix keeps on purpose.
+
+  **A side effect to know about:** a high driver or 3 wood is now wider than before (driver High 2 ±69 → ±99). Its
+  extra spin used to cancel the longer hang time; now only the spin-loft term does, and for the driver that term sits
+  at its cap (`axisGainMax`), so it barely moves. A High 2 drive is a poor shot anyway (281 total against 286). If it
+  should be gentler, lower its complexity or let `axisGainMax` follow the spin loft. The draw / fade solver re-solves
+  itself: 0 of 140 fairway solves fail. `tools/test/swing-fix1.js` re-measures it.
 - **Where:** `computeImpact` steps 2 and 8. Taking loft off (Low) lowers the spin loft, which `axisGainFor` already
   turns into more spin-axis tilt per degree (`1 / sin(spin loft)`). It also lowers the backspin, which raises
   `lowSpinMult`. That multiplies the axis gain again, the baseline face and strike scatter (`clubSpread`), and the
@@ -1703,6 +1732,8 @@ measurements.
   for the driver. **What else it would move:** the minimap only. The yardages don't change.
 
 ### S9.2 [Medium, bug] The difficulty read-out misreports height and spin
+- **Partly fixed by S6.1 (2026-11-20):** for the 7 iron at Dex 5, Low 2 now reads 1.62× and is 2.2× wide (was 3.5×),
+  and High 2 reads 1.62× and is 1.26× (was 1.11×). See S6.1.
 - **Where:** the "1.xx×" figure and bar (`updateHUD`, about line 15834) show `1 + complexity`. That's right for what
   `complexity` includes, but S6.1's low-spin effects never reach it.
 - **Measured** (7 iron, Dexterity 5, human swing; read-out → real 2σ width, and that width as × the stock shot's):

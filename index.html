@@ -7008,6 +7008,10 @@
         speedWindowMs: 24,      // AUDIT 10: speeds are averaged over this window, not read from one event
         strikeMmPerPx: 1.0,     // mm of heel/toe miss per (spec-normalised) px of RMS wobble
         strikeMaxMm: 15,        // AUDIT 12
+        // HARDPAN (swing audit S2.1): a tight lie punishes a mishit by degree. Below hardpanMm off-centre the strike is
+        // clean; the chance of a bladed / chunked shot then grows in a straight line to certain at hardpanFullMm.
+        // (Was a cliff: 2.9 mm clean, 3.0 mm always bladed or chunked.)
+        hardpanMm: 3, hardpanFullMm: 8,
         gearDegPerMm: 0.25,
         // --- POWER MODEL (AUDIT 9): the BACKSWING sets distance; the downswing only has to be a committed swing.
         backswingExp: 1.0,      // club speed = backswing^exp below 100%. 1.0 = linear speed (spec). ~0.6 makes DISTANCE roughly linear.
@@ -7113,6 +7117,8 @@
       const CLUB_CODES = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'Digit0', 'Minus', 'Equal'];
       const clubIdx = (name) => CLUBS.findIndex((c) => c.name === name);
       const CI_PW = clubIdx('Pitching Wedge'), CI_GW = clubIdx('Gap Wedge'), CI_SW = clubIdx('Sand Wedge'), CI_LW = clubIdx('Lob Wedge');
+      // the comparison club is for the range only (swing audit S4.1): on a hole, and so in a test round, the bag is the 14
+      const CI_GI = clubIdx('7 Iron · Game Improvement');
 
       // =====================================================================================================
       //  CHIPPING.  The full swing, close to the green. Shot-type presets set up the address (ball, face, stance, spin);
@@ -7305,9 +7311,12 @@
         const spinAuth = clamp((club.loft - TUNE.spinAuthLoLoft) / (TUNE.spinAuthHiLoft - TUNE.spinAuthLoLoft), TUNE.spinAuthMin, 1);
         const spinGain = spinCtl > 0 ? 1 + TUNE.spinMore * spinAuth * (lie.spinCap ?? 1) : spinCtl < 0 ? 1 - TUNE.spinLess * spinAuth : 1;
         if (spinCtl) flags.push(spinCtl > 0 ? 'MORE SPIN' : 'LESS SPIN');
-        const rawSpin = club.spin * setupSpin * lie.spin * spinGain;
-        // Lower backspin means a given sideways force tilts the spin axis much further toward a slice/hook.
-        const lowSpinMult = clamp(Math.pow(TUNE.refSpin / Math.max(1400, rawSpin), TUNE.lowSpinExp), 0.72, 2.85);
+        // Lower backspin means a given sideways force tilts the spin axis much further toward a slice/hook. Swing audit S6.1:
+        // read from the club's own spin off this lie, NOT the spin after the height / spin asks. A lower (de-lofted) shot
+        // already curves more through the spin-loft term in axisGainFor, and its risk is in the complexity number; counting
+        // its lower spin here as well made Low 2 three times as wide as stock while High 2 cost nothing.
+        const clubLieSpin = club.spin * lie.spin;
+        const lowSpinMult = clamp(Math.pow(TUNE.refSpin / Math.max(1400, clubLieSpin), TUNE.lowSpinExp), 0.72, 2.85);
         const clubSpread = clamp(0.45 + 0.40 * lowSpinMult, 0.55, 1.55);
         // AUDIT 7: degrees of spin-axis tilt per degree of face-to-path grows as loft drops (~1/sin(spin loft)) and as backspin drops.
         const axisGainFor = (dyn) => (club.curve || 1) * lowSpinMult * clamp(TUNE.axisK / Math.sin(Math.max(8, dyn - club.aoa) * D2R), TUNE.axisGainMin, TUNE.axisGainMax);
@@ -7392,7 +7401,9 @@
           flags.push('FLIER'); liePower = Math.max(liePower, 0.97); lieSpin *= 0.6; lieLaunch += 2;
         }
         const flopSkull = flop && env.lie === 'hardpan' && !env.stock && (mm >= CHIP.flopHardpanMm || rnd() < CHIP.flopBladeChance);
-        if (env.lie === 'hardpan' && (mm >= 3 || flopSkull)) {
+        const thinChance = clamp((mm - TUNE.hardpanMm) / (TUNE.hardpanFullMm - TUNE.hardpanMm), 0, 1);
+        const thinHit = env.lie === 'hardpan' && (env.stock ? thinChance >= 1 : thinChance > 0 && rnd() < thinChance);
+        if (thinHit || flopSkull) {
           liePower = 0.70; lieSpin = 0.30;
           if (rnd() < 0.5) { flags.push('BLADED'); vlaMult = 0.45; }
           else { flags.push('CHUNKED'); lieLaunch = 3; }
@@ -12322,7 +12333,8 @@
       // which clubs can be used: all of them outside a career; in one, the owned clubs in the bag (not the locker) that
       // aren't snapped, plus a demo club
       const inBag = (i) => !!career.bag[i] && !career.out.includes(i);
-      const canUseClub = (i) => !careerOn || (demo && demo.idx === i && demo.on) || (inBag(i) && !career.snapped.includes(i));
+      const rangeOnly = (i) => i === CI_GI && hp.on;
+      const canUseClub = (i) => !careerOn ? !rangeOnly(i) : (demo && demo.idx === i && demo.on) || (inBag(i) && !career.snapped.includes(i));
       // can you swap between the demo and your own club in its slot? (you own one there, in the bag and not snapped)
       const demoCanSwap = () => !!(demo && demo.model && inBag(demo.idx) && !career.snapped.includes(demo.idx));
       function toggleDemo(on = !demo.on) {
@@ -12339,7 +12351,7 @@
         if (id && CLUB_MODELS[id]) Object.assign(c, modelMods(CLUB_MODELS[id], i), { model: id });
         try { return fn(); } finally { for (const f of Object.keys(c)) delete c[f]; Object.assign(c, saved); }
       }
-      const bagOrder = () => CLUBS.map((_, i) => i).filter((i) => careerOn ? inBag(i) || (demo && demo.idx === i) : true);
+      const bagOrder = () => CLUBS.map((_, i) => i).filter((i) => careerOn ? inBag(i) || (demo && demo.idx === i) : !rangeOnly(i));
       const usableOrder = () => bagOrder().filter(canUseClub);
       // the first usable club from a list of preferences, else the most lofted usable one below a lob wedge's loft
       function usableClub(...prefs) {
