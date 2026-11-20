@@ -7017,6 +7017,7 @@
         // --- POWER MODEL (AUDIT 9): the BACKSWING sets distance; the downswing only has to be a committed swing.
         backswingExp: 1.0,      // club speed = backswing^exp below 100%. 1.0 = linear speed (spec). ~0.6 makes DISTANCE roughly linear.
         backswingGain: 0.30,    // each % of backswing above 100 adds 0.3% club speed (110% -> +3%)
+        partSpin: 1.2,          // a part swing's extra spin (see computeImpact step 10)
         tempoExp: 0.5,          // full-tempo mouse speed scales with sqrt(backswing): the same hand effort reads 100% at any length
         tempoFloor: 0.65,       // any tempo from here up to 100% costs at most tempoSag of club speed
         tempoSag: 0.03,
@@ -7481,8 +7482,11 @@
         if (flop) ballSpeed *= CHIP.flopSpeed;                 // the open face glances under the ball: lots of swing, little speed
         if (spinCtl > 0) ballSpeed *= 1 - TUNE.spinMoreSpeed * spinAuth;    // the steep, trapping strike costs a little speed
 
-        // 10. Backspin.  AUDIT 6 + 8
-        const spin = club.spin * setupSpin * lieSpin * speedFrac * (1 + TUNE.shapeSpin * shapeAir) * flubSpin * spinGain;
+        // 10. Backspin.  AUDIT 6 + 8. Swing audit (part-swing spin): a part swing keeps more of its spin than its speed, as
+        // a pitch is played steeper; spin follows speedFrac × (1 + partSpin × speedFrac × (1 − speedFrac)), the same at a
+        // full swing, +30% at a half swing, +22% at a quarter (a 40 yd PW pitch spins about 6,000 rpm, not 4,700)
+        const spinFrac = speedFrac * (1 + TUNE.partSpin * speedFrac * Math.max(0, 1 - speedFrac));
+        const spin = club.spin * setupSpin * lieSpin * spinFrac * (1 + TUNE.shapeSpin * shapeAir) * flubSpin * spinGain;
 
         return {
           thetaMouse: thM, path, faceDyn, ftp, hla, vla, axis, strike, dynLoft, smash, clubSpeed, ballSpeed, spin,
@@ -12384,15 +12388,18 @@
         'w-rosegold': { kind: 'wedge', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Rose Gold', price: 4000, add: {}, x: { spin: 1.0, sweet: 1.0, gear: 1.0, work: 1.05 }, set: { consist: 1.0, bounce: 12 }, note: 'Rose-gold plating over a soft forging. It will scuff in the first bunker, and you\'ll buy another' },
         'w-damascus': { kind: 'wedge', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Damascus', price: 7500, add: {}, x: { spin: 1.02, sweet: 1.0, gear: 1.0, work: 1.1 }, set: { consist: 1.0, bounce: 10, flopX: 0.95 }, note: 'Hand-folded Damascus steel: no two faces have the same ripples. Spins like a tour wedge' },
       };
-      // putters: added to PUTTERS (the range's own blade / mallet stay as they are)
+      // putters: added to PUTTERS (the range's own blade / mallet stay as they are). Swing audit S5.7: the OZ.1's start line
+      // (pathGain 0.18 → 0.22) and rhythm window (0.045 → 0.03, now the strictest) and the blades' wider windows (Newport
+      // 0.11, Anser 0.10) make a trade: the zero-torque mallet holes more from 20 ft, the blades leave long putts closer
+      // (a third as many lag putts finish more than 4 ft away). The luxury mallet plays just below the Spider.
       Object.assign(PUTTERS, {
-        'p-wh2': { name: 'Odyssey White Hot Pro 2.0 #1 (2016)', model: true, gate: 0.028, pathGain: 0.42, sweet: 3.5, tempoZone: 0.07 },
-        'p-newport': { name: 'Scotty Cameron Newport 2', model: true, gate: 0.030, pathGain: 0.40, sweet: 4, tempoZone: 0.09 },
-        'p-pldanser': { name: 'Ping PLD Anser', model: true, gate: 0.031, pathGain: 0.38, sweet: 4.5, tempoZone: 0.085 },
+        'p-wh2': { name: 'Odyssey White Hot Pro 2.0 #1 (2016)', model: true, gate: 0.028, pathGain: 0.42, sweet: 3.5, tempoZone: 0.085 },
+        'p-newport': { name: 'Scotty Cameron Newport 2', model: true, gate: 0.030, pathGain: 0.40, sweet: 4, tempoZone: 0.11 },
+        'p-pldanser': { name: 'Ping PLD Anser', model: true, gate: 0.031, pathGain: 0.38, sweet: 4.5, tempoZone: 0.10 },
         'p-spider': { name: 'TaylorMade Spider Tour', model: true, gate: 0.050, pathGain: 0.27, sweet: 10, tempoZone: 0.04 },
-        'p-oz1': { name: 'LAB Golf OZ.1', model: true, gate: 0.046, pathGain: 0.18, sweet: 8, tempoZone: 0.045 },
-        'p-circlet': { name: 'Scotty Cameron Circle T tour putter', model: true, lux: true, gate: 0.030, pathGain: 0.40, sweet: 4, tempoZone: 0.09 },
-        'p-atelier': { name: 'Hawthorne Atelier platinum mallet', model: true, lux: true, gate: 0.048, pathGain: 0.25, sweet: 9, tempoZone: 0.06 },
+        'p-oz1': { name: 'LAB Golf OZ.1', model: true, gate: 0.046, pathGain: 0.22, sweet: 8, tempoZone: 0.03 },
+        'p-circlet': { name: 'Scotty Cameron Circle T tour putter', model: true, lux: true, gate: 0.030, pathGain: 0.40, sweet: 4, tempoZone: 0.11 },
+        'p-atelier': { name: 'Hawthorne Atelier platinum mallet', model: true, lux: true, gate: 0.048, pathGain: 0.27, sweet: 9, tempoZone: 0.04 },
       });
       const modelName = (id) => (CLUB_MODELS[id] ? `${CLUB_MODELS[id].brand} ${CLUB_MODELS[id].name}` : '');
       // what a model does to one club (index i) of the bag

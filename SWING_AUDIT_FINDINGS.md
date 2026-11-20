@@ -1321,6 +1321,23 @@ the ZXi7 and the 620 CB. The full rows, with spin and landing angle, are the scr
   (17 → about 12), and S4.2's wedge speeds.
 
 ### S5.7 [Medium, feel / balance] One putter is best for everyone: the OZ.1
+- **✅ Fixed 2026-11-20:** OZ.1 `pathGain` 0.22 (was 0.18) and `tempoZone` 0.03 (0.045, now the strictest, as its
+  note says). The blades' rhythm windows are wider: Newport 2 and Circle T 0.11 (0.09), PLD Anser 0.10 (0.085), White
+  Hot 0.085 (0.07). The luxury Atelier mallet now has the Spider's start line and window (0.27, 0.04), just below it.
+  The same 1,500 putts each (`tools/test/swing-fix9.js`; % holed, and at 40 ft the share left more than 4 ft away):
+
+  | Putter | 10 ft | 20 ft | 40 ft | 40 ft misses past 4 ft |
+  |---|---|---|---|---|
+  | OZ.1 (zero-torque) | 94 → 91% | **79 → 70%** | 43 → 34% | 15 → 20% |
+  | Spider Tour (mallet) | 93 → 92% | 70% | 31 → 32% | 19 → 18% |
+  | PLD Anser (blade) | 94 → 95% | 60 → 64% | 29 → 27% | 10 → **7%** |
+  | Newport 2 (blade) | 93 → 94% | 58 → 60% | 27 → 26% | 10 → **6%** |
+  | White Hot #1 (starter) | 89 → 91% | 53 → 54% | 24 → 23% | 12 → 10% |
+  | Atelier mallet (luxury) | 95 → 93% | 75 → 68% | 35 → 32% | 13 → 18% |
+
+  It's now a trade. The mallets hole more from mid range, and the blades leave long putts close (a third as many
+  three-putt-length leaves). By a rough count of expected strokes from 40 ft they come out about even. These numbers
+  still rest on the assumed stroke errors.
 - **Measured** (2,000 putts each, flat Stimp 11, Dexterity 5, the same stroke errors for every putter: path ±1° sd,
   tempo ±8% sd, gate excursion |0.03| sd, wobble 1–4 px, length ±6% sd; % holed and the average leave of a miss in ft):
 
@@ -1905,7 +1922,17 @@ and less spin to 7.9.
       | Sand Wedge | 1 | 1.0 at every Stimp |
 
       About 1.4× before, within S3.2's own estimate ("about double").
-  - **Not reached:** the finding's 5–10 yds for a 40 yd pitch. Most of what's left happens while the ball is still
+  - **Later (2026-11-20), the part-swing spin fix:** a part swing now keeps more of its spin than its speed (TUNE
+    `partSpin` 1.2: spin follows speedFrac × (1 + 1.2 × speedFrac × (1 − speedFrac)), the same at a full swing, +30% at
+    a half). Measured (`tools/test/swing-fix9.js`):
+    - **A 40 yd PW pitch:** spins 5,900 rpm (was about 4,700) and rolls **10.3 yds** (was 12.9).
+    - **A 40 yd sand wedge pitch:** rolls 4.5 (was 7.0).
+    - **The cost:** short chips check a little more. Roll ÷ carry at a 25% swing is now sand wedge 0.6, PW 1.5, 9 iron
+      2.0 and 7 iron 2.5 (the rules of thumb are 1, 2, 3 and 4). The chip read shows it, since its table is computed
+      live.
+    - **Unchanged:** chip totals still rise with the backswing (34 drops over a yard, the worst 21), and the backswing
+      marks barely move (7 iron 11 / 48 / 111 at 25 / 50 / 75%).
+  - **Not reached (before the part-swing spin fix):** the finding's 5–10 yds for a 40 yd pitch. Most of what's left happens while the ball is still
     hopping. The deeper cause is that a part swing carries too little spin, because spin follows the backswing in a
     straight line (S2's note on partial swings). That would be its own fix.
   - **Side effect:** S8.2 is largely fixed. The 7 iron low runner now totals 48 / 61 / 85 / 104 yds at a 25 / 35 / 50
