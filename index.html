@@ -8080,7 +8080,7 @@
         power: 5, dex: 5, composure: 5, badStreak: 0,
         practice: false, calibrating: false,
         mouseLock: '',                 // swing audit S1.8: '' not asked yet · 'raw' unadjusted movement · 'accel' the OS's
-        flightCam: 'chase',            // chase | tee  (V toggles)
+        flightCam: 'chase',            // chase | player | tee  (V cycles; remembered in localStorage golfFlightCam)
         cal: { swingPx: 800, vTarget: 800 / 139 },     // AUDIT 11 (spec tempo: 250 px / 1.8 px/ms = 139 ms)
         peekKey: false, peekMouse: false,
       };
@@ -8088,6 +8088,10 @@
         const saved = JSON.parse(localStorage.getItem('golfSwingCal') || 'null');
         if (saved && saved.swingPx > 0 && saved.vTarget > 0) { state.cal = saved; state.calSaved = true; }
       } catch { /* storage unavailable — defaults are fine */ }
+      // the full-swing flight cameras, in the order V cycles them (user request, 2026-11-20: 'player', from where you stand)
+      const FLIGHT_CAMS = [['chase', 'Chase'], ['player', 'From where you stand'], ['tee', 'Tee tracer']];
+      const flightCamName = (k = state.flightCam) => (FLIGHT_CAMS.find(([x]) => x === k) || FLIGHT_CAMS[0])[1];
+      try { const fc = localStorage.getItem('golfFlightCam'); if (FLIGHT_CAMS.some(([k]) => k === fc)) state.flightCam = fc; } catch { /* storage unavailable: fine */ }
 
       const swing = { active: false, phase: 'idle', S: [], x: 0, y: 0, iTop: 0, iImp: -1, impactAt: 0, locked: false };
       let telemetry = null;      // { sw, res } of the last completed swing
@@ -15671,9 +15675,11 @@
         if (c === 'KeyP' && !e.repeat) return togglePractice();
         if (c === 'KeyT' && !e.repeat) return clearTrails();
         if (c === 'KeyR' && !e.repeat) return resetShot();
-        if (c === 'KeyV' && !e.repeat) {
-          state.flightCam = state.flightCam === 'chase' ? 'tee' : 'chase';
-          return toast(`Flight cam: ${state.flightCam === 'tee' ? 'Tee tracer view' : 'Chase'}`, 1200);
+        if (c === 'KeyV' && !e.repeat) {          // the flight camera: chase → from where you stand → tee tracer (any time)
+          const i = FLIGHT_CAMS.findIndex(([k]) => k === state.flightCam);
+          state.flightCam = FLIGHT_CAMS[(i + 1) % FLIGHT_CAMS.length][0];
+          try { localStorage.setItem('golfFlightCam', state.flightCam); } catch { /* storage unavailable: fine */ }
+          return toast(`Flight cam: ${flightCamName()}\nV switches views`, 1400);
         }
         if (swing.active || state.view === 'flight') return;
         if (c === 'KeyF' && !e.repeat) {             // F cycles the shape (Shift+F goes back); in chip mode F is the marker
@@ -16099,7 +16105,15 @@
         } else if (state.view === 'flight' && shot) {
           const b = ball.position, dist = Math.hypot(b.x, b.z);
           if (shot.age < 0.15) addressPose();                    // hold on the turf, then go with the ball
-          else if (state.flightCam === 'tee') {                  // broadcast tracer view: stay behind the tee, pan + zoom
+          else if (state.flightCam === 'player') {               // (user request, 2026-11-20) from where you stand: a third-person view
+            // just behind the golfer, down the line, at about eye height; it stays put and turns (and gently zooms) to keep the
+            // ball in view, so you watch it fly the way you would on the tee
+            // (it looks a little below the ball, so the ball rides in the upper part of the frame with the horizon and the
+            // golfer still in view, and it zooms only so far: the game already keeps a far ball readable)
+            toWorld(goalPos.set(0.15, 2.0, 5.0)); goalLook.set(b.x, b.y * 0.55, b.z);
+            fovGoal = clamp(50 * 80 / Math.max(80, dist), 30, 50);
+            kp = 2.2; kq = 8;
+          } else if (state.flightCam === 'tee') {                  // broadcast tracer view: stay behind the tee, pan + zoom
             toWorld(goalPos.set(0.5, 2.4, 5.5)); goalLook.copy(b);
             fovGoal = clamp(55 * 45 / Math.max(45, dist), 13, 55);
             kp = 5; kq = 9;
@@ -16244,7 +16258,7 @@
         else if (chip && !swing.active) hint = 'Hold <kbd>Left-Click</kbd>: pull the ring back into the <b>LANDING</b> band, swing it back through the ball · <kbd>1</kbd>–<kbd>4</kbd> shot type · tweak: <kbd>Q</kbd><kbd>E</kbd> face · <kbd>A</kbd><kbd>D</kbd> ball · <kbd>Z</kbd><kbd>C</kbd> stance · <kbd>W</kbd><kbd>S</kbd> height · <kbd>B</kbd> spin · <kbd>X</kbd> preset · <kbd>Shift</kbd> peek · <kbd>Space</kbd> back';
         else if (state.view === 'scout' && hp.on) hint = '<kbd>A</kbd><kbd>D</kbd> aim · <kbd>Tab</kbd> aim at the pin / down the fairway · <kbd>1</kbd>–<kbd>=</kbd> or <kbd>[</kbd><kbd>]</kbd> or wheel: club · <kbd>F</kbd> shape · <kbd>B</kbd> spin · <kbd>Space</kbd> step in to the ball · <kbd>H</kbd> leave';
         else if (state.view === 'scout') hint = '<kbd>A</kbd><kbd>D</kbd> aim · <kbd>Tab</kbd> next pin · <kbd>1</kbd>–<kbd>=</kbd> or <kbd>[</kbd><kbd>]</kbd> or wheel: club · <kbd>F</kbd> shape · <kbd>B</kbd> spin · <kbd>Space</kbd> step in to the ball · <kbd>C</kbd> chipping green';
-        else if (state.view === 'flight') hint = `<kbd>R</kbd> ${hp.on ? 'walk to the ball' : 'next shot'} · <kbd>V</kbd> ${state.flightCam === 'tee' ? 'chase cam' : 'tee tracer cam'} · <kbd>T</kbd> clear trails`;
+        else if (state.view === 'flight') hint = `<kbd>R</kbd> ${hp.on ? 'walk to the ball' : 'next shot'} · <kbd>V</kbd> camera: ${flightCamName()} → ${flightCamName(FLIGHT_CAMS[(FLIGHT_CAMS.findIndex(([k]) => k === state.flightCam) + 1) % FLIGHT_CAMS.length][0])} · <kbd>T</kbd> clear trails`;
         else if (swing.active) {
           const tjTxt = state.height || state.spinCtl ? ` · <b>${[state.height && heightName(state.height), state.spinCtl && SPIN_CTL[state.spinCtl]].filter(Boolean).join(', ')}</b> set` : '';
           hint = (swing.phase === 'ready' || swing.phase === 'back' ? (swing.backLocked ? 'Backswing <b>locked</b> — swing it back through the ball' : `Pull the ring <b>LEFT</b> to load the backswing — you have ${TUNE.backswingTimeMs / 1000} s`) : 'Bring the ring back <b>through the ball</b> — don\'t quit on it') + tjTxt;
