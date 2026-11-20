@@ -269,6 +269,27 @@ this section).
 - **Fix (S):** take the wobble around a fitted curve (a quadratic), so only shake counts. **What else it would
   move:** every player's wobble falls, so strike scatter and dispersion fall (S6), and the landing ellipse's assumed
   wobble (`SPREAD.wobble`) should fall with it.
+- **✅ Fixed 2026-11-20:** `analyzeSwing` takes the wobble around a fitted curve: a quadratic, made orthogonal to the
+  line, so the path is still the chord's slope. The curve is free up to a bulge of `TUNE.arcFree` (10% of the swing
+  length). A stroke bent more than that counts the excess as wobble, so a wild hook of a stroke isn't free. It also
+  returns the fitted bulge (`bulge`). Measured (`tools/test/swing-fix11.js`, an 800-count swing at 1,000 reports a
+  second):
+
+  | Stroke | Wobble before | Wobble after |
+  |---|---|---|
+  | An arc bulging 1% / 2% / 4% / 6% | 0.80 / 1.59 / 3.15 / 4.78 px | 0 / 0 / 0 / 0 |
+  | An arc bulging 8% / 10% | (about 6.4 / 8) | 0 / 0 |
+  | An arc bulging 12% / 15% / 20% | — | 1.58 / 3.96 / 7.92 px (the part past 10%) |
+  | A 6-count shake, straight / on a 5% arc | — | 1.09 / 1.09 px |
+
+  The path is unchanged: a 5° line reads 5.00° with or without an arc. A stroke that curves from square to 8°
+  in-to-out reads 4.02° (its chord), now with no wobble.
+  - **What else moved:** the minimap's assumed hand (`SPREAD`) is now wobble 1–3 px, S1's estimate of shake alone (it
+    was 1.5–5.5, shake plus an arc). The player's own swing history moved to a new storage key (`golfSwingHist2`),
+    because swings recorded before the fix counted the arc. The locker room's spread uses the same 1–3 px.
+  - Strike spread on the 7 iron (mm sd) at wobble 0 / 1.6 / 3.2 / 4.8 px: Dex 1 2.2 / 3.1 / 5.1 / 7.3; Dex 5
+    1.3 / 2.0 / 3.4 / 4.9; Dex 10 0.2 / 0.7 / 1.4 / 2.2. So a 4% arc used to cost a Dex 5 player about 3.4 mm sd of
+    strike, and now costs the base 1.3.
 
 ### S1.8 [Medium, bug (modelled)] Without raw mouse movement, distance depends on how fast you take the club back
 - **Where:** `beginSwing` asks for a pointer lock with `unadjustedMovement`, and falls back to an ordinary lock if
@@ -287,6 +308,19 @@ this section).
   Firefox, Safari and Chrome on Linux don't. Worth checking on the browsers your friends use.
 - **Fix (S):** remember which lock was granted and say so in Settings ("this browser speeds up fast mouse movement:
   turn off the system's pointer acceleration, or use Chrome or Edge"). **What else it would move:** nothing.
+
+- **✅ Fixed 2026-11-20:** `beginSwing` records the lock in `state.mouseLock`:
+  - `'raw'` when the unadjusted lock's promise resolves.
+  - `'accel'` when it is refused and the plain lock is used, or when the browser's lock returns no promise (an older
+    lock that takes no options).
+
+  Settings (under the calibration) says which. With raw movement: "Mouse: raw movement ✓ the same hand movement
+  always gives the same swing." Without it: "Mouse: this browser speeds up fast mouse movement, so a quick takeaway
+  reads as a longer swing. Turn off the system's pointer acceleration (Windows: Mouse settings → Enhance pointer
+  precision; macOS: Mouse → Pointer acceleration), or play in Chrome or Edge." The swing tips add the warning too.
+  Checked with `tools/test/swing-fix11.js`: a headless browser refuses the raw lock and reads `'accel'`.
+  - **Still not tested:** a browser that silently ignores the option and grants an ordinary lock would read as raw.
+    Nothing tells the two apart from inside the page.
 
 ### S1.9 [Low, feel] A backswing slower than 1 second is cut short
 - **Where:** `TUNE.backswingTimeMs` (1,000); `swingSample`.
@@ -1407,6 +1441,30 @@ the ZXi7 and the 620 CB. The full rows, with spin and landing angle, are the scr
   and the worst bent lie moves the ball 1.3 yds.
 - **Why it matters little:** the first upgrade is still felt (+11 yds, 96% against 68%). If the starter set should
   be clearly the worst, `consist` about 2.2 and a bias of about ±3° would do it.
+- **✅ Fixed 2026-11-20:**
+  - **The model:** a bent lie tilts the face's loft, so `lieBias` now turns the face as well as the path. The ball starts
+    off line and flies straight, a true push or pull. On the path alone, the curve the face added mostly cancelled it.
+  - **The starter set:** AP1 716 `consist` 2.2 (was 1.8) and bent lies up to ±2° (was ±1.2°). That is less than the
+    ±3° suggested, because a push on the face and path together moves the ball about three times as far.
+  - **The locker room's Curve column** now shows each club's bent lie. The stock shot leaves it out, so it is turned
+    by it there. The page's note already said "see Curve", and before this the column showed nothing. The cache key
+    includes the bias.
+
+  Measured with the finding's sampler (wobble 0–4 px, path ±2.4°, backswing ±5%) on the 7 iron at Dexterity 2,
+  `tools/test/swing-fix11.js`. Other fixes since the finding moved every row's depth, so compare within the table:
+
+  | | Mean, side | 2σ | Within 10 yds |
+  |---|---|---|---|
+  | AP1 as sold, no bent lie | 178, 3.7 L | 25.3 × 10.0 | 49% |
+  | + a typical bent lie (+1°) | 178, 0.6 L | 25.3 × 10.1 | 49% |
+  | + the worst push (+2°) / pull (−2°) | 178, 2.5 R / 9.8 L | 25.6 × 10.4 / 25.9 × 10.1 | 44% / 39% |
+  | A new Staff Model Blade | 177, 0.3 R | 19.3 × 10.2 | 59% |
+  | A new 101 MKII | 192, 3.3 L | 10.6 × 7.6 | 88% |
+  | A used M2 (2016), its worst bent lie (1.5°) | 190, 0.3 R | 23.1 × 9.1 | 49% |
+
+  The starter set is now 31% wider than a blade (the plan's "~35%"), and its worst club finishes 6 yds off where its
+  straight shot would. A +2° club with no scatter finishes 2.7 yds right; the Curve column's turned stock shot says
+  2.7. The M2 is unchanged, so the $200 used set is now a real step up in accuracy as well as distance.
 
 ### Checked and fine
 - **Lofts against the makers' pages:**
@@ -1812,6 +1870,18 @@ range shows up as less risk for the same curve (`cx.shape`), not more curve.
   promised.
 - **Fix (S):** raise `shapeRoll` for low-lofted clubs, or let the in-air part (`shapeAirMin`) count more below
   20° of loft. Re-measure this table.
+- **✅ Fixed 2026-11-20:** low-lofted clubs get less of the in-air part (`shapeAir`), so now they get more of the ground
+  part:
+  - **The change:** the release grows to `TUNE.shapeRollLow` (1.7×) at `shapeLoftLo` (10.5° delivered) and back to 1×
+    at `shapeLoftHi` (20°). So clubs from the 7 iron down are unchanged. The in-air part is untouched, since the
+    comment says a driver draw "falls out of the sky" with more of it.
+  - **Measured** (`tools/test/swing-fix11.js`, draw − fade at Dexterity 5, total along the flight; before → after):
+    - Driver +6.0 → +10.2, with the draw rolling 25 yds against the fade's 12.
+    - 3 wood +5.8 → +9.4.
+    - Hybrids +5.5 → +7.5–7.7.
+    - 4 / 5 / 6 iron +5.7 / +6.0 / +7.0 → +8.2 / +7.7 / +7.9.
+    - 7 iron to lob wedge unchanged at +7.4 to +4.9.
+  - **Unchanged:** carry, spin and launch differences.
 
 ### S7.4 [Low, feel / balance] More spin from rough costs its full risk for almost no extra spin
 - **Where:** the spin gain is capped by `lie.spinCap` (light rough 0.35, heavy 0.1), but `cx.spin` is not.
@@ -1826,6 +1896,17 @@ range shows up as less risk for the same curve (`cx.shape`), not more curve.
   From light rough, More spin stops a 7 iron 0.1 yds sooner, costs 5 yds of carry, and adds its full complexity.
 - **Fix (S):** scale the More-spin complexity by the lie's `spinCap`, or warn "little effect from this lie" as the
   toast already does for low-lofted clubs.
+- **✅ Fixed 2026-11-20:** both.
+  - **The difficulty:** `cx.spin` for More is now scaled by the lie's `spinCap`, as its spin is.
+  - **The toast:** from a lie that caps it below 0.6 (rough, either bunker), choosing More says "Little extra spin from
+    the light rough: the grass gets between the face and the ball" ("the sand" from a bunker).
+  - **Measured** (`tools/test/swing-fix11.js`, stock; complexity for Less / Normal / More):
+    - 7 iron, fairway: 0.10 / 0 / 0.24, unchanged.
+    - 7 iron, light rough: 0.45 / 0.31 / 0.42 (More cost +0.11 over Normal; it was the full +0.24 on top of the lie's).
+    - 7 iron, heavy rough: 1.13 / 0.93 / 0.98.
+    - PW and sand wedge from light rough: More adds +0.17 (it was +0.48).
+    - The carry still drops 3–4 yds and the spin still barely rises. That's the steep, trapping strike, and now it's
+      cheap to try and the toast says what to expect.
 
 ### S7.5 [Low, feel] By hand, one 5° stroke curves a driver 5× its preset and a sand wedge half its preset
 - **Measured** (square setup; curve away from the start line, finish, total, complexity):

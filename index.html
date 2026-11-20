@@ -6570,6 +6570,7 @@
           <button id="btnCal">Calibrate to my next swing</button>
           <div class="note">Length = mouse travel for a 100% backswing — this sets distance. Speed = full-tempo mouse
             speed at impact; anything from 65% up is close to full power.</div>
+          <div class="note" id="mouseLockNote">Mouse: checked on your first swing.</div>
 
           <div class="sec">Session</div>
           <div class="btn2"><button id="btnPractice">Practice: Off</button><button id="btnClear"
@@ -7008,6 +7009,7 @@
         backswingTimeMs: 1000,  // from the takeaway, this long to set the backswing; after that its length is locked in
         topHysteresis: 0.03,    // fraction of swing length the mouse must return before "transition" is declared
         speedWindowMs: 24,      // AUDIT 10: speeds are averaged over this window, not read from one event
+        arcFree: 0.10,          // swing audit S1.7: a downswing may bow this share of its length off its line before it counts as wobble
         downAvgShare: 0.4,      // swing audit S1.1: the whole downswing's average speed must reach this share of full tempo
         strikeMmPerPx: 1.0,     // mm of heel/toe miss per (spec-normalised) px of RMS wobble
         strikeMaxMm: 15,        // AUDIT 12
@@ -7085,6 +7087,7 @@
         //     for a fade"), spin ~100-200 rpm less with woods and ~900-1700 less with irons and wedges, launch ~0.5-1.5 deg lower.
         shapeFullDeg: 8, shapeFullPerLoft: 0.45, shapeLaunchDeg: 1.0, shapeSpin: 0.10, shapeKeep: 0.10, shapeRoll: 0.35,
         shapeLoftLo: 10.5, shapeLoftHi: 20, shapeAirMin: 0.4,    // in-air launch/spin part fades out below shapeLoftHi of delivered loft
+        shapeRollLow: 1.7,      // swing audit S7.3: ...and the ground part (the release) grows to this many times as much
         trajLoftDeg: 3,         // degrees of loft per spin level: W takes it off (forward spin, lower), S adds it (backspin, higher)
         lowWoodLoft: 16, lowWoodDeg: 1.5,   // ...but a club under 16° of loft is only lowered 1.5° a level (swing audit S7.2)
         // Deceleration only counts when the club is clearly quitting on the shot, and the penalty scales with how badly.
@@ -7267,10 +7270,24 @@
         let sxx = 0, sxy = 0;
         for (let n = 0; n < N; n++) { sxx += (xs[n] - mx) ** 2; sxy += (xs[n] - mx) * (ys[n] - my); }
         const slope = sxx > 0 ? sxy / sxx : 0;
+        // Swing audit S1.7: the wobble is the scatter around a fitted CURVE, not the line. A hand pivots at the wrist or
+        // elbow, so a smooth stroke is an arc, and an arc is repeatable, not shake. q = x^2 made orthogonal to the line's
+        // terms, so the line's slope (the path) stays the chord's. The curve is free up to a bulge of TUNE.arcFree of the
+        // swing length at mid-stroke (an arm's arc is ~2-8%); a stroke bent more than that counts the excess as wobble.
+        const L = Math.abs(top.x);
+        let sxq = 0;
+        const q = xs.map((x) => (x - mx) ** 2);
+        const mq = q.reduce((s, v) => s + v, 0) / N;
+        for (let n = 0; n < N; n++) { q[n] -= mq; sxq += (xs[n] - mx) * q[n]; }
+        for (let n = 0; n < N; n++) q[n] -= (sxx > 0 ? sxq / sxx : 0) * (xs[n] - mx);
+        let sqq = 0, sqy = 0;
+        for (let n = 0; n < N; n++) { sqq += q[n] * q[n]; sqy += q[n] * (ys[n] - my); }
+        const aFit = sqq > 0 ? sqy / sqq : 0, aMax = L > 0 ? 4 * TUNE.arcFree / L : 0;     // bulge = |a| L^2 / 4
+        const curve = clamp(aFit, -aMax, aMax);
         let ss = 0, late = 0;
         const lateFrom = Math.floor(N * 0.75);
         for (let n = 0; n < N; n++) {
-          const r = ys[n] - (my + slope * (xs[n] - mx));
+          const r = ys[n] - (my + slope * (xs[n] - mx) + curve * q[n]);
           ss += r * r;
           if (n >= lateFrom) late += r;
         }
@@ -7285,6 +7302,7 @@
           lateSign: late < 0 ? 1 : -1,                               // drifting up (toward the golfer) late -> toe (+ mm)
           miss: S[iImp].y / cal.swingPx,                             // where the stroke crossed the ball's line: - above, + below
           fit: { slope, x0: mx, y0: my },
+          bulge: L > 0 ? aFit * L / 4 : 0,                           // the fitted arc's bulge, a fraction of the swing (+ = the middle bows up the screen)
         };
       }
 
@@ -7316,7 +7334,11 @@
         // Swing audit S2.4: a club's `work` acts once, on the curve (step 8). The mouse path is the path: a 5° stroke is a 5°
         // path with every club. (It used to be multiplied by `work` here too, so a forgiving head shrank a 5° stroke's miss to
         // a twentieth of a blade's; S5.1 had already fixed that for career models with a pathWork field, now gone.)
-        const path = stanceDir + thM + (!env.stock ? (club.lieBias || 0) + TUNE.basePathDeg * dexSpread * consist * bell() : 0);
+        // Swing audit S5.9: a bent lie angle tilts the face's loft, so it turns the face AND the swing's line: the ball starts
+        // off line and flies straight, a true push or pull (it was on the path alone, which the face mostly cancelled, so
+        // the worst club moved its 7 iron 1.3 yds).
+        const bent = !env.stock ? club.lieBias || 0 : 0;
+        const path = stanceDir + thM + (!env.stock ? bent + TUNE.basePathDeg * dexSpread * consist * bell() : 0);
 
         // 2. Loft the player is asking for.  AUDIT 6: the club's spin floor also limits how far it can be de-lofted.
         //    setup.traj is the HEIGHT level chosen at address: -2 / -1 = lower (de-lofted: less backspin, more run),
@@ -7389,7 +7411,9 @@
             const L = Math.min(3, Math.abs(traj + (setup.ballPos - (align ? align.ballPos || 0 : 0)) * 3 / TUNE.trajLoftDeg)), i = Math.floor(L);
             return i >= 3 ? TUNE.cxHeight[3] : lerp(TUNE.cxHeight[i], TUNE.cxHeight[i + 1], L - i);
           })(),
-          spin: spinCtl > 0 ? TUNE.cxSpinMore * spinAuth : spinCtl < 0 ? TUNE.cxSpinLess * spinAuth : 0,
+          // swing audit S7.4: More spin's difficulty is capped by the lie as its spin is (light rough adds 35% of it), so
+          // asking for spin the lie can't give no longer costs the full risk for almost nothing
+          spin: spinCtl > 0 ? TUNE.cxSpinMore * spinAuth * (lie.spinCap ?? 1) : spinCtl < 0 ? TUNE.cxSpinLess * spinAuth : 0,
           // a bad lie is one more thing to manage; it compounds with everything else asked. A high-bounce wedge skims
           // through sand and thick grass instead of digging, so it takes part of that out.
           lie: (lie.cx || 0) * (1 - bounceK),
@@ -7462,7 +7486,7 @@
 
         // 7. Face, launch direction.  Baseline dexterity & complexity spread face timing (amplified on low-spin clubs).
         const faceErr = !env.stock ? (TUNE.baseFaceDeg * dexSpread * clubSpread * consist + TUNE.cxFaceDeg * complexity) * bell() : 0;
-        const faceDyn = faceDir + twist + strike * TUNE.gearDegPerMm * club.gear + faceErr - (club.offset || 0);
+        const faceDyn = faceDir + twist + strike * TUNE.gearDegPerMm * club.gear + faceErr - (club.offset || 0) + bent;
         const hla = 0.75 * faceDyn + 0.25 * path;
         const ftp = faceDyn - path;
 
@@ -7497,7 +7521,11 @@
 
         return {
           thetaMouse: thM, path, faceDyn, ftp, hla, vla, axis, strike, dynLoft, smash, clubSpeed, ballSpeed, spin,
-          twist, decel, overswing, comp, flags, shape, release: -shape, complexity, cx, asked, dexRisk, fit, flop, spinCtl, spinAuth
+          twist, decel, overswing, comp, flags, shape, complexity, cx, asked, dexRisk, fit, flop, spinCtl, spinAuth,
+          // swing audit S7.3: a low-lofted club gets less of the in-air part (shapeAir), so it gets more of the ground part:
+          // up to shapeRollLow x the release below shapeLoftLo, fading to 1x at shapeLoftHi. A driver's draw runs ~15 yds
+          // past its fade and finishes ~10 past it, as the tuning comment says (was 4-6).
+          release: -shape * lerp(TUNE.shapeRollLow, 1, clamp((dynLoft - TUNE.shapeLoftLo) / (TUNE.shapeLoftHi - TUNE.shapeLoftLo), 0, 1)),
         };
       }
 
@@ -7953,6 +7981,7 @@
         lie: 'fairway', lieSeed: 7, slope: 'flat', windMph: 0, windDir: 0,
         power: 5, dex: 5, composure: 5, badStreak: 0,
         practice: false, calibrating: false,
+        mouseLock: '',                 // swing audit S1.8: '' not asked yet · 'raw' unadjusted movement · 'accel' the OS's
         flightCam: 'chase',            // chase | tee  (V toggles)
         cal: { swingPx: 800, vTarget: 800 / 139 },     // AUDIT 11 (spec tempo: 250 px / 1.8 px/ms = 139 ms)
         peekKey: false, peekMouse: false,
@@ -9097,10 +9126,22 @@
         clubPhiTarget = 0; clubReturnAt = 0;
         if (noLock) return;
         // Unadjusted movement = raw counts with OS pointer acceleration off, so a swing feels the same every time.
+        // Swing audit S1.8: remember which lock the browser gave, and say so in Settings. Without raw movement the OS
+        // speeds up fast mouse movement, so a quick takeaway reads as a longer backswing.
+        const plain = () => { setMouseLock('accel'); try { const p2 = canvas.requestPointerLock(); if (p2 && p2.catch) p2.catch(() => { }); } catch { /* no lock; still playable */ } };
         try {
           const p = canvas.requestPointerLock({ unadjustedMovement: true });
-          if (p && p.catch) p.catch(() => { try { const p2 = canvas.requestPointerLock(); if (p2 && p2.catch) p2.catch(() => { }); } catch { /* no lock; still playable */ } });
-        } catch { try { canvas.requestPointerLock(); } catch { /* no lock; still playable */ } }
+          if (p && p.then) p.then(() => setMouseLock('raw'), plain);
+          else setMouseLock('accel');          // an older lock that takes no options and says nothing: movement is the OS's
+        } catch { plain(); }
+      }
+      // which pointer lock this browser granted: '' (not asked yet), 'raw' (unadjusted movement) or 'accel' (the OS's)
+      function setMouseLock(kind) {
+        if (state.mouseLock === kind) return;
+        state.mouseLock = kind;
+        const el = $('mouseLockNote');
+        if (el) el.innerHTML = kind === 'raw' ? 'Mouse: <b>raw movement</b> ✓ the same hand movement always gives the same swing.'
+          : '<span class="con">Mouse: this browser speeds up fast mouse movement</span>, so a quick takeaway reads as a longer swing. Turn off the system\'s pointer acceleration (Windows: Mouse settings → Enhance pointer precision; macOS: Mouse → Pointer acceleration), or play in Chrome or Edge.';
       }
 
       function endSwing(reason) {
@@ -10339,7 +10380,7 @@
           '<b style="color:#ffc24a">Up-right</b> through the ball (out-to-in): curves it left to right — <b>more fade</b>',
           'The steeper the angle, the bigger the curve · a steady line keeps the strike centred',
           'Swing <b>through</b> at a steady pace: a slow trace with a flick at the end reads as a crawl and comes up short',
-          `<b>Feel off?</b> ⚙ Settings → <b>Calibrate to my next swing</b>, then make one comfortable, full swing${state.calSaved ? '' : ' · <span class="con">not calibrated yet</span>'}`,
+          `<b>Feel off?</b> ⚙ Settings → <b>Calibrate to my next swing</b>, then make one comfortable, full swing${state.calSaved ? '' : ' · <span class="con">not calibrated yet</span>'}${state.mouseLock === 'accel' ? ' · <span class="con">this browser speeds up fast mouse movement</span>: see Settings' : ''}`,
         ], '', tipsGuideSvg());
         sec('The swing card', 'bottom right', [
           `${n(1)}<b>Backswing:</b> how far you pull back — this sets the distance. The white line is a full swing; past it adds a little distance and difficulty`,
@@ -12357,7 +12398,7 @@
         //      the Wilson blade: GI +11 to +14 yds, 1,200–1,500 rpm less spin, 0–1.2° flatter, 6.5–7.3 yds of roll on a green
         //      against 4.8; in-between +3 to +8, 300–1,000 rpm less. (The research target of 3–5° flatter needs the flight's
         //      lift refit, swing audit S3.1: at 7-iron speeds the lift is at its ceiling, so less spin barely lowers it.)
-        'i-ap1': { kind: 'iron', cat: 'Used', brand: 'Titleist', name: 'AP1 716 (2015)', price: 0, bias: 1.2, add: { loft: -4, dynLoft: -0.3 }, x: { spin: 0.95, speed: 0.96, sweet: 1.6, gear: 0.67, work: 0.65 }, set: { floor: 0.7, offset: 0.9, consist: 1.8, groove: 0.8 }, note: 'A forgiving 2015 cavity, now tired: worn grooves, mismatched shafts, the odd one pulls or pushes' },
+        'i-ap1': { kind: 'iron', cat: 'Used', brand: 'Titleist', name: 'AP1 716 (2015)', price: 0, bias: 2, add: { loft: -4, dynLoft: -0.3 }, x: { spin: 0.95, speed: 0.96, sweet: 1.6, gear: 0.67, work: 0.65 }, set: { floor: 0.7, offset: 0.9, consist: 2.2, groove: 0.8 }, note: 'A forgiving 2015 cavity, now tired: worn grooves, mismatched shafts, the odd one pulls or pushes' },
         'i-m2': { kind: 'iron', cat: 'Used', brand: 'TaylorMade', name: 'M2 (2016)', price: 200, bias: 1.5, add: { loft: -5.5, dynLoft: -1.0 }, x: { spin: 0.9, speed: 0.99, sweet: 1.8, gear: 0.58, work: 0.55 }, set: { floor: 0.8, offset: 1.1, consist: 1.9, groove: 0.75 }, note: 'Famously long and strong-lofted, but this set is beaten up, wild and won\'t stop' },
         'i-qimax': { kind: 'iron', cat: 'Game improvement', brand: 'TaylorMade', name: 'Qi Max', price: 1100, add: { loft: -5.5, dynLoft: -1.6 }, x: { spin: 0.87, speed: 1.01, sweet: 2.4, gear: 0.42, work: 0.45 }, set: { floor: 0.85, offset: 1.1, consist: 0.85 }, note: 'The most forgiving and highest launching; holds greens best of the GIs' },
         'i-jpxhm': { kind: 'iron', cat: 'Game improvement', brand: 'Mizuno', name: 'JPX 925 Hot Metal', price: 1050, add: { loft: -6, dynLoft: -2.8 }, x: { spin: 0.82, speed: 1.006, sweet: 2.0, gear: 0.5, work: 0.5 }, set: { floor: 0.85, offset: 0.9, consist: 0.9 }, note: 'The longest; lands flattest and runs' },
@@ -13191,7 +13232,7 @@
       // =====================================================================================================
       const bagNumCache = new Map();
       function bagClubNumbers(i) {
-        const c = CLUBS[i], key = `${i}|${c.model || ''}|${state.power}|${state.dex}|${state.composure}`;
+        const c = CLUBS[i], key = `${i}|${c.model || ''}|${c.lieBias || 0}|${state.power}|${state.dex}|${state.composure}`;
         if (bagNumCache.has(key)) return bagNumCache.get(key);
         const saved = [state.lie, state.slope];
         state.lie = 'fairway'; state.slope = 'flat';
@@ -13201,7 +13242,7 @@
           const teed = isTeed(c), env0 = { lie: 'fairway', slope: 'flat', power: state.power, dex: state.dex, composure: state.composure, badStreak: 0, teed };
           const rnd = rng32(90210), bell = () => rnd() + rnd() - 1, P = [];
           for (let k = 0; k < SPREAD.n; k++) {
-            const sw = { bs: 1 + SPREAD.backswing * bell(), ds: 1, thetaMouse: SPREAD.mouseDeg * 2 * bell(), sigma: SPREAD.wobble * rnd(), lateSign: rnd() < 0.5 ? 1 : -1, vImpact: 1, vPeak: 1, miss: 0 };
+            const sw = { bs: 1 + SPREAD.backswing * bell(), ds: 1, thetaMouse: SPREAD.mouseDeg * 2 * bell(), sigma: SPREAD.wobbleLo + SPREAD.wobble * rnd(), lateSign: rnd() < 0.5 ? 1 : -1, vImpact: 1, vPeak: 1, miss: 0 };
             const rr = computeImpact(sw, su, c, env0, rnd);
             const ff = createFlight({ ballSpeed: rr.ballSpeed, vla: rr.vla, dir: rr.hla, spin: rr.spin, axis: rr.axis, release: rr.release }, { x: 0, z: 0 }, teed ? 0.04 : 0);
             for (let n = 0; ff.phase !== 'stopped' && n < 20000; n++) stepFlight(ff, 1 / 120);
@@ -13209,7 +13250,10 @@
           }
           const mx = P.reduce((s, p) => s + p.x, 0) / P.length, mz = P.reduce((s, p) => s + p.z, 0) / P.length;
           const sd = (k, m) => Math.sqrt(P.reduce((s, p) => s + (p[k] - m) ** 2, 0) / P.length) * 2 * SPREAD.sigmas / YD;
-          const out = { loft: c.loft, carry: f.carry / YD, total: Math.hypot(f.p.x, f.p.z) / YD, side: f.p.x / YD, speed: r.ballSpeed, vla: r.vla, spin: r.spin, apex: f.apex / YD, wide: sd('x', mx), deep: sd('z', mz) };
+          // (swing audit S5.9: the stock shot leaves out a used club's bent lie, a pure push or pull, so turn its finish by it
+          // here: the Curve column is where the player sees which clubs pull and which push)
+          const bb = (c.lieBias || 0) * D2R, side = f.p.x * Math.cos(bb) - f.p.z * Math.sin(bb);
+          const out = { loft: c.loft, carry: f.carry / YD, total: Math.hypot(f.p.x, f.p.z) / YD, side: side / YD, speed: r.ballSpeed, vla: r.vla, spin: r.spin, apex: f.apex / YD, wide: sd('x', mx), deep: sd('z', mz) };
           if (bagNumCache.size > 200) bagNumCache.clear();
           bagNumCache.set(key, out);
           return out;
@@ -15059,17 +15103,21 @@
       // swing-line and strike errors, no wind. Returns the mean finish and the 2-sigma ellipse (about 85% of shots) in the
       // shot's own frame (x right, -z down the aim line), in metres. Seeded, so it holds still while nothing changes.
       // Swing audit S9.1: the swing errors are a real hand's. Until the player has made enough full swings, S1's estimate
-      // (wobble 1.5–5.5 px, a ring miss of ±2% sd, the mouse path ±2.4°); after that, sampled from their own last swings
+      // (wobble 1–3 px, a ring miss of ±2% sd, the mouse path ±2.4°); after that, sampled from their own last swings
       // (their wobble, their ring miss, their path's spread about its own average). It was a steadier hand (wobble 0–2.5,
-      // no miss), so with a real one the ellipse held 60–70% of iron shots instead of about 86%.
-      const SPREAD = { n: 60, nDriver: 100, mouseDeg: 1.2, wobbleLo: 1.5, wobble: 4, missSd: 0.02, backswing: 0.05, sigmas: 2, own: 8, keep: 30 };
-      const swingHist = (() => { try { const h = JSON.parse(localStorage.getItem('golfSwingHist') || '[]'); return Array.isArray(h) ? h.slice(-SPREAD.keep) : []; } catch { return []; } })();
+      // no miss), so with a real one the ellipse held 60–70% of iron shots instead of about 86%. (S1.7: the wobble is now
+      // shake only, an arm's arc no longer counts, so the estimate fell from 1.5–5.5 px and the history's key changed:
+      // swings recorded before then counted the arc.)
+      const SPREAD = { n: 60, nDriver: 100, mouseDeg: 1.2, wobbleLo: 1, wobble: 2, missSd: 0.02, backswing: 0.05, sigmas: 2, own: 8, keep: 30 };
+      const SWING_HIST_KEY = 'golfSwingHist2';
+      try { localStorage.removeItem('golfSwingHist'); } catch { /* storage unavailable: fine */ }
+      const swingHist = (() => { try { const h = JSON.parse(localStorage.getItem(SWING_HIST_KEY) || '[]'); return Array.isArray(h) ? h.slice(-SPREAD.keep) : []; } catch { return []; } })();
       let swingHistVer = swingHist.length;
       function recordSwing(sw) {          // a full swing's own errors: [path °, wobble px, ring miss]
         swingHist.push([Math.round(sw.thetaMouse * 100) / 100, Math.round(sw.sigma * 100) / 100, Math.round(sw.miss * 1000) / 1000]);
         while (swingHist.length > SPREAD.keep) swingHist.shift();
         swingHistVer++;
-        try { localStorage.setItem('golfSwingHist', JSON.stringify(swingHist)); } catch { /* storage unavailable: fine */ }
+        try { localStorage.setItem(SWING_HIST_KEY, JSON.stringify(swingHist)); } catch { /* storage unavailable: fine */ }
       }
       // one ordinary swing's errors, for the minimap and the lie read
       function spreadSwing(rnd) {
@@ -15227,7 +15275,8 @@
         refreshShotType(); renderBag();
         if (!quiet) {
           const auth = clamp((CLUBS[state.club].loft - TUNE.spinAuthLoLoft) / (TUNE.spinAuthHiLoft - TUNE.spinAuthLoLoft), TUNE.spinAuthMin, 1);
-          toast(`${SPIN_CTL[state.spinCtl]}${state.spinCtl ? `\n${auth < 0.25 ? `Little effect with the ${CLUBS[state.club].name}` : auth < 0.75 ? `Some effect with the ${CLUBS[state.club].name}` : `Full effect with the ${CLUBS[state.club].name}`}` : ''}`, 1600);
+          const cap = LIES[state.lie].spinCap ?? 1;        // (swing audit S7.4: the lie caps More spin)
+          toast(`${SPIN_CTL[state.spinCtl]}${state.spinCtl > 0 && cap < 0.6 ? `\nLittle extra spin from the ${LIES[state.lie].name.toLowerCase()}: ${LIES[state.lie].rough ? 'the grass' : 'the sand'} gets between the face and the ball` : state.spinCtl ? `\n${auth < 0.25 ? `Little effect with the ${CLUBS[state.club].name}` : auth < 0.75 ? `Some effect with the ${CLUBS[state.club].name}` : `Full effect with the ${CLUBS[state.club].name}`}` : ''}`, 1600);
         }
       }
       // Swing audit S6.2: from a bad lie the read is centred on what shots from it really average. A perfect strike (the
@@ -16610,7 +16659,7 @@
         analyzeSwing, computeImpact, swingSample, beginSwing, endSwing, onPointerMove, isSpike, tempoTarget, powerFromBackswing, powerFromTempo,
         LIES, SLOPES, AERO, windVector, clubFit, solveShape, powerMult, runChip, computePutt, analyzePutt, CADDIES,
         createPutt, stepPutt, puttTarget, rollDecel, puttGate, rng32, shopStats, SHOP, withClubModel, setup, careerStats,
-        fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag,
+        fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock,
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },

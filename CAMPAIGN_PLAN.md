@@ -170,7 +170,7 @@ and range don't change):
 - The three baseline scatter terms (`basePathDeg`, `baseFaceDeg`, `baseStrikeMm` × `dexSpread`) × `club.consist || 1`.
 - `spin *= g`, and from a rough or sand lie `spin *= g` once more, where `g = club.groove || 1`; flier chance
   `lie.flier × (1 + 2 × (1 − g))`.
-- `path += club.lieBias || 0`.
+- `path += club.lieBias || 0` and `faceDyn += club.lieBias || 0`: a true push or pull (swing audit S5.9; it was on the path alone, which the face mostly cancelled). The locker room's Curve column shows it.
 - Flop difficulty `CHIP.flopCx × (club.flopX || 1)` (wide-soled cavity wedges, see Wedges).
 
 ### Iron models (deltas on the base irons 4i–PW; loft deltas shown for the 7 iron, ×0.8 for 4i–5i)
@@ -179,7 +179,7 @@ loft Δ = the model's real 7-iron loft − 34° (the base 7 iron).
 
 | Id | Model | Category | 7i loft | Price (set) | loft Δ | dynLoft Δ | spin × | speed × | sweet × | gear | work | floor | offset | consist | groove | lieBias |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `i-ap1` | Titleist AP1 716 (2015, hand-me-down) | Used | ≈30° | starter | −4 | −0.3 | 0.95 | 0.96 | 1.6 | 0.8 | 0.65 | 0.7 | 0.9 | 1.8 | 0.8 | ±1.2° |
+| `i-ap1` | Titleist AP1 716 (2015, hand-me-down) | Used | ≈30° | starter | −4 | −0.3 | 0.95 | 0.96 | 1.6 | 0.8 | 0.65 | 0.7 | 0.9 | 2.2 | 0.8 | ±2° |
 | `i-m2` | TaylorMade M2 (2016, pawn shop) | Used | 28.5° | $200 | −5.5 | −1.0 | 0.9 | 0.99 | 1.8 | 0.7 | 0.55 | 0.8 | 1.1 | 1.9 | 0.75 | ±1.5° |
 | `i-qimax` | TaylorMade Qi Max | Game improvement | 28° | $1,100 | −5.5 | −1.6 | 0.87 | 1.01 | 2.4 | 0.5 | 0.45 | 0.85 | 1.1 | 0.85 | 1 | 0 |
 | `i-jpxhm` | Mizuno JPX 925 Hot Metal | Game improvement | 28° | $1,050 | −6 | −2.8 | 0.82 | 1.006 | 2.0 | 0.6 | 0.5 | 0.85 | 0.9 | 0.9 | 1 | 0 |
@@ -332,8 +332,8 @@ range (shorter drives). Leave career → your own stats are back. The test round
 As built: `BASE_CLUBS`, `CLUB_MODELS` (`add` / `x` / `set` per model, `bias` for used sets), the five putters added to
 `PUTTERS` (flagged `model`, kept out of the range's putter list), `modelMods()`, `applyCareerClubs()`, `canUseClub()`,
 `bagOrder()` / `usableOrder()` (number keys follow the bag's order in a career), `usableClub()`, `setClub(i, dir)`.
-Physics hooks in `computeImpact`: `consist`, `lieBias` (not in the stock / bag numbers, so the player finds it on the
-course), `offset`, `groove` (clean lie × `1 − (1 − g) × 0.4`, rough or sand × `g²`, flier chance × `1 + 2(1 − g)`),
+Physics hooks in `computeImpact`: `consist`, `lieBias` (not in the stock numbers, so the player finds it on the
+course or in the locker room's Curve column), `offset`, `groove` (clean lie × `1 − (1 − g) × 0.4`, rough or sand × `g²`, flier chance × `1 + 2(1 − g)`),
 `flopX`. `suggestClub`, `suggestChipClub` and the flop switch only pick clubs the career has.
 
 **Tuning (measured, 7 iron at Power 5 vs the Wilson blade):** GI +8 to +13 yds carry, landing 3–4.5° flatter, landing
