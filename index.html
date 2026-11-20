@@ -7024,7 +7024,9 @@
         tempoDuff: 2.2,         // below the floor the loss grows with the square of the shortfall — only a crawl is a duff
         // --- SHOT COMPLEXITY: each extra ask adds a factor; the factors MULTIPLY into one complexity number
         //     ((1+power)(1+shape)(1+spin) - 1). A stock shot is 0.
-        cxBack: 0.50, cxTempo: 0.35,    // at 110% backswing / 115% tempo (each ramps in from 100%)
+        // at 110% backswing / 115% tempo (each ramps in from 100%). Swing audit S6.3: were 0.50 / 0.35, which made 110% plus
+        // 115% about twice as wide as a stock shot, far more than design direction 2's "slightly wider"
+        cxBack: 0.25, cxTempo: 0.18,
         cxShape: 0.60, cxShapeDeg: 20,  // at cxShapeDeg of spin-axis tilt or more; scales with how much curve is asked for
         // HEIGHT: how many levels (of trajLoftDeg) the loft is changed by, from the W/S height ladder PLUS ball position
         // (a full ball-position move is one level, so it is not a free way to change height). 0 / 1 / 2 / 3 levels:
@@ -9080,7 +9082,7 @@
       function beginSwing(noLock = false) {
         if (lastTrace) ghostTrace = lastTrace;
         lastTrace = null; swingReplay = null;
-        Object.assign(swing, { active: true, phase: 'ready', S: [], x: 0, y: 0, iTop: 0, iImp: -1, impactAt: 0, locked: false, jit: 0, lockAt: 0, lastT: 0, spikes: 0, backStart: 0, backLocked: false, scripted: noLock });
+        Object.assign(swing, { active: true, phase: 'ready', S: [], x: 0, y: 0, iTop: 0, iImp: -1, impactAt: 0, locked: false, jit: 0, lockAt: 0, lastT: 0, spikes: 0, rates: [], backStart: 0, backLocked: false, scripted: noLock });
         clubPhiTarget = 0; clubReturnAt = 0;
         if (noLock) return;
         // Unadjusted movement = raw counts with OS pointer acceleration off, so a swing feels the same every time.
@@ -9595,6 +9597,9 @@
         for (const c of evs) {
           if (!swing.active) break;
           if (isSpike(c)) { swing.spikes++; continue; }
+          const dtR = swing.lastT ? Math.max(1, c.timeStamp - swing.lastT) : 16;          // (the recent rates, for isSpike)
+          (swing.rates || (swing.rates = [])).push(Math.hypot(c.movementX, c.movementY) / dtR);
+          if (swing.rates.length > SPIKE.keep) swing.rates.shift();
           swing.lastT = c.timeStamp;
           swingSample(c.movementX, c.movementY, c.timeStamp);
         }
@@ -9611,8 +9616,14 @@
         // while calibrating, the swing being measured may be far faster than the old calibration: judge it by the
         // fastest calibration allowed, or a high-DPI mouse's calibrating swing is thrown away (swing audit S1.3)
         const d = Math.hypot(c.movementX, c.movementY), limit = Math.max(120, (state.calibrating ? CAL_MAX.v : state.cal.vTarget) * 6 * dt);
-        return d > limit;
+        if (d <= limit) return false;
+        // Swing audit S1.4: past that, a report is only a spike if it is an OUTLIER: far faster than the reports just
+        // before it (a real hand speeds up over several reports; the lock's fake jump arrives all at once), or faster than
+        // any hand could move. A brisk real swing on a high-DPI mouse used to lose reports here and fall short of the ball.
+        const rate = d / dt, ref = Math.max(state.cal.vTarget, ...(swing.rates || []));
+        return rate > SPIKE.jump * ref || rate > SPIKE.maxRate;
       }
+      const SPIKE = { jump: 8, maxRate: CAL_MAX.v * 3, keep: 3 };     // × the recent rate · counts/ms no hand reaches · reports kept
 
       canvas.addEventListener('pointerdown', (e) => {
         canvas.focus();

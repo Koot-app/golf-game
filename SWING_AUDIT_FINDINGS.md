@@ -175,6 +175,14 @@ this section).
   old limits.
 
 ### S1.4 [Medium, bug] The spike filter can drop real, fast hand movement
+- **✅ Fixed 2026-11-20:** past the old size limit, a report is now dropped only if it is an outlier. That means more than
+  8× the rate of the last 3 reports (floored at the calibrated tempo), or faster than 450 counts/ms, which no hand
+  reaches (`SPIKE`). The 45 ms after the lock engages are still dropped. A natural stroke (40 mm back, through at
+  60 cm/s, default calibration) through the real `onPointerMove`, measured by `tools/test/swing-fix8.js`:
+  - **800, 1,600 and 3,200 DPI, at 1,000, 125 and 60 reports a second:** it fires every time and drops nothing. At
+    3,200 DPI and 125 a second it used to drop 12 reports and never fire; at 1,600 and 125 it dropped 6.
+  - **A fake 2,000-count jump in the middle of the backswing** (800 DPI, 125 Hz): 1 report dropped, and the backswing
+    reads the same as the stroke without it.
 - **Where:** `isSpike` (about line 9542): a report is dropped when it moves more than
   `max(120 counts, 6 × calibrated tempo × time since the last report)`.
 - **Measured:** with the default calibration, that drops movement faster than 110 cm/s at 800 DPI, **55 cm/s at
@@ -1546,6 +1554,19 @@ bites) is 5% / 4% / 1% / 0% / 0% at Dexterity 1 / 2 / 5 / 8 / 10.
   else it would move:** the bag's yardages in rough and sand, the minimap ellipse, `suggestClub`, and S9.
 
 ### S6.3 [Medium, feel / balance] Overswing is 40–100% wider, and gains nothing at low Dexterity
+- **✅ Fixed 2026-11-20:** `TUNE.cxBack` 0.25 (was 0.50) and `TUNE.cxTempo` 0.18 (0.35). S1's human hand, 500 shots
+  (`tools/test/swing-fix8.js`; the "before" widths are S6's, under the older flight):
+
+  | 7 Iron | 110% backswing: width × stock, total | 115% tempo | 110% + 115% |
+  |---|---|---|---|
+  | Dex 2: before → after | 1.43× → **1.26×**; total +3 → **+6** | 1.34×, **+0** → 1.19×, **+2** | 1.92× → **1.51×**; +2 → +6 |
+  | Dex 5 | 1.42× → 1.25×; +5 → +6 | 1.33× → 1.18×; +1 → +2 | 1.95× → 1.50×; +5 → +8 |
+  | Dex 8 | 1.29× → 1.19×; +6 → +7 | 1.22× → 1.12× | 1.68× → 1.36×; +9 → +10 |
+  | **Driver** Dex 2 / 5 / 8 | 1.27× / 1.29× / 1.23× (was 1.47× / 1.50×) | 1.20× / 1.21× / 1.15× | 1.53× / 1.56× / 1.43× (was 1.99× / 2.11×) |
+
+  Over 100% is now a smooth, noticeable cost with a small reward at every Dexterity: a quarter wider at the maximum
+  backswing, half again with both maxed. The complexity read-out tracks it (110% at Dex 5 reads 1.28×, and is 1.25×
+  as wide).
 - **Measured** (human swing; complexity · width × depth · mean total):
 
   | | Dex 2 | Dex 5 | Dex 8 |
