@@ -6563,9 +6563,9 @@
 
           <details class="pn-more"><summary>⚙ Settings · swing calibration</summary>
           <div class="sec">Mouse swing calibration</div>
-          <label class="row"><span>Length</span><input type="range" id="inSwingPx" min="100" max="3000" step="10"
+          <label class="row"><span>Length</span><input type="range" id="inSwingPx" min="100" max="12000" step="10"
               value="800"><b id="outSwingPx"></b></label>
-          <label class="row"><span>Speed</span><input type="range" id="inVTarget" min="0.5" max="30" step="0.1"
+          <label class="row"><span>Speed</span><input type="range" id="inVTarget" min="0.5" max="150" step="0.1"
               value="5.8"><b id="outVTarget"></b></label>
           <button id="btnCal">Calibrate to my next swing</button>
           <div class="note">Length = mouse travel for a 100% backswing — this sets distance. Speed = full-tempo mouse
@@ -7683,7 +7683,7 @@
         decelTwistDeg: 1.5,              // ...with up to this much random face twist
         railTwistDeg: 0.8, railTwistMax: 2.0,     // random face twist per gate-width the stroke strays outside the rails
         strikeLossMin: 0.05, strikeLossMax: 0.12, // rollout lost to a heel/toe strike outside the putter's sweet spot
-        captureSpeed: 1.3,               // m/s: fastest a dead-centre putt can be going and still drop
+        captureSpeed: 1.6,               // m/s: fastest a dead-centre putt can be going and still drop (swing audit S8.3: was 1.3; Holmes 1991 ≈ 1.6)
         diePastFt: 1.5,                  // the target pace finishes this far past the hole
         fringeDrag: 2.5, roughDrag: 6,   // friction multipliers on the collar and rough off the green
         maxSlope: 0.038, maxSlopeAtPin: 0.022,    // safety caps so a ball can always come to rest on any legal stimp
@@ -9080,7 +9080,7 @@
       function beginSwing(noLock = false) {
         if (lastTrace) ghostTrace = lastTrace;
         lastTrace = null; swingReplay = null;
-        Object.assign(swing, { active: true, phase: 'ready', S: [], x: 0, y: 0, iTop: 0, iImp: -1, impactAt: 0, locked: false, jit: 0, lockAt: 0, lastT: 0, spikes: 0, backStart: 0, backLocked: false });
+        Object.assign(swing, { active: true, phase: 'ready', S: [], x: 0, y: 0, iTop: 0, iImp: -1, impactAt: 0, locked: false, jit: 0, lockAt: 0, lastT: 0, spikes: 0, backStart: 0, backLocked: false, scripted: noLock });
         clubPhiTarget = 0; clubReturnAt = 0;
         if (noLock) return;
         // Unadjusted movement = raw counts with OS pointer acceleration off, so a swing feels the same every time.
@@ -9166,8 +9166,10 @@
       function onImpact() {
         const sw = analyzeSwing(swing.S, swing.iTop, swing.iImp, state.cal);
         if (state.calibrating) {
-          const px = clamp(Math.round(Math.abs(swing.S[swing.iTop].x) / 10) * 10, 100, 3000);
-          const vT = clamp(Math.round(sw.vImpact * 10) / 10, 0.5, 30);
+          // (swing audit S1.3: the limits were 3,000 counts and 30 counts/ms, which a 1,600–3,200 DPI mouse passes with an
+          // ordinary swing; now about 95 mm and 95 cm/s at 3,200 DPI)
+          const px = clamp(Math.round(Math.abs(swing.S[swing.iTop].x) / 10) * 10, 100, CAL_MAX.px);
+          const vT = clamp(Math.round(sw.vImpact * 10) / 10, 0.5, CAL_MAX.v);
           state.cal = { swingPx: px, vTarget: vT }; saveCal(); syncPanel();
           state.calibrating = false; $('btnCal').classList.remove('armed'); $('btnCal').textContent = 'Calibrate to my next swing';
           toast(state.calFirst ? `Swing set\nThat swing is now 100%. Swing again to play.\n(⚙ Settings → Calibrate to redo it)` : `Calibrated\n100% = ${px} counts · ${vT.toFixed(1)} counts/ms`, state.calFirst ? 3600 : 2600);
@@ -9178,6 +9180,7 @@
         // freeze the swing where it was drawn, so it can stay on screen after the camera leaves the address view
         if (fxGeom) swingReplay = { S: swing.S, iTop: swing.iTop, iImp: swing.iImp, sw, putt: isPutt(), g: { ...fxGeom }, t0: performance.now() };
         if (isPutt()) return onPuttImpact();
+        if (!isChip() && !swing.scripted) recordSwing(sw);     // the player's own hand, for the minimap's landing area (swing audit S9.1; not debugSwing)
         const res = computeImpact(sw, setup(), CLUBS[state.club], env());
         telemetry = { sw, res, practice: state.practice };
         clubPhiTarget = 3.3;
@@ -9600,11 +9603,14 @@
       // cursor), and occasionally at other times. A jump like that would add phantom length to the backswing, so the
       // downswing never got back to the ball and the shot never fired. Drop movement right after the lock engages, and
       // any single event far faster than a human hand can move a mouse.
+      const CAL_MAX = { px: 12000, v: 150 };          // calibration's limits (swing audit S1.3)
       function isSpike(c) {
         const now = c.timeStamp;
         if (swing.lockAt && now - swing.lockAt < 45) return true;
         const dt = swing.lastT ? Math.max(1, now - swing.lastT) : 16;
-        const d = Math.hypot(c.movementX, c.movementY), limit = Math.max(120, state.cal.vTarget * 6 * dt);
+        // while calibrating, the swing being measured may be far faster than the old calibration: judge it by the
+        // fastest calibration allowed, or a high-DPI mouse's calibrating swing is thrown away (swing audit S1.3)
+        const d = Math.hypot(c.movementX, c.movementY), limit = Math.max(120, (state.calibrating ? CAL_MAX.v : state.cal.vTarget) * 6 * dt);
         return d > limit;
       }
 
@@ -15027,16 +15033,38 @@
       // the game's own scatter (Dexterity, the difficulty of the setup, the lie, tilt) plus an ordinary player's small
       // swing-line and strike errors, no wind. Returns the mean finish and the 2-sigma ellipse (about 85% of shots) in the
       // shot's own frame (x right, -z down the aim line), in metres. Seeded, so it holds still while nothing changes.
-      const SPREAD = { n: 36, mouseDeg: 1.2, wobble: 2.5, backswing: 0.05, sigmas: 2 };
+      // Swing audit S9.1: the swing errors are a real hand's. Until the player has made enough full swings, S1's estimate
+      // (wobble 1.5–5.5 px, a ring miss of ±2% sd, the mouse path ±2.4°); after that, sampled from their own last swings
+      // (their wobble, their ring miss, their path's spread about its own average). It was a steadier hand (wobble 0–2.5,
+      // no miss), so with a real one the ellipse held 60–70% of iron shots instead of about 86%.
+      const SPREAD = { n: 60, nDriver: 100, mouseDeg: 1.2, wobbleLo: 1.5, wobble: 4, missSd: 0.02, backswing: 0.05, sigmas: 2, own: 8, keep: 30 };
+      const swingHist = (() => { try { const h = JSON.parse(localStorage.getItem('golfSwingHist') || '[]'); return Array.isArray(h) ? h.slice(-SPREAD.keep) : []; } catch { return []; } })();
+      let swingHistVer = swingHist.length;
+      function recordSwing(sw) {          // a full swing's own errors: [path °, wobble px, ring miss]
+        swingHist.push([Math.round(sw.thetaMouse * 100) / 100, Math.round(sw.sigma * 100) / 100, Math.round(sw.miss * 1000) / 1000]);
+        while (swingHist.length > SPREAD.keep) swingHist.shift();
+        swingHistVer++;
+        try { localStorage.setItem('golfSwingHist', JSON.stringify(swingHist)); } catch { /* storage unavailable: fine */ }
+      }
+      // one ordinary swing's errors, for the minimap and the lie read
+      function spreadSwing(rnd) {
+        const bell = () => rnd() + rnd() - 1, gauss = () => (rnd() + rnd() + rnd() + rnd() + rnd() + rnd() - 3) / Math.SQRT1_2;
+        const base = { bs: 1 + SPREAD.backswing * bell(), ds: 1, lateSign: rnd() < 0.5 ? 1 : -1, vImpact: 1, vPeak: 1 };
+        if (swingHist.length >= SPREAD.own) {
+          const h = swingHist[Math.floor(rnd() * swingHist.length)], mean = swingHist.reduce((s, x) => s + x[0], 0) / swingHist.length;
+          return { ...base, thetaMouse: h[0] - mean, sigma: h[1], miss: h[2] };
+        }
+        return { ...base, thetaMouse: SPREAD.mouseDeg * 2 * bell(), sigma: SPREAD.wobbleLo + SPREAD.wobble * rnd(), miss: SPREAD.missSd * gauss() };
+      }
       const spreadCache = new Map();
       function landSpread(ci) {
         const club = CLUBS[ci], teed = isTeed(club), su = setup();
         const env0 = { lie: state.lie, slope: state.slope, power: state.power, dex: state.dex, composure: state.composure, badStreak: state.badStreak, teed };
-        const key = [ci, club.model || '', JSON.stringify(su), JSON.stringify(env0)].join('|');     // (the model: a demo shares its slot)
+        const key = [ci, club.model || '', JSON.stringify(su), JSON.stringify(env0), swingHistVer].join('|');     // (the model: a demo shares its slot)
         if (spreadCache.has(key)) return spreadCache.get(key);
-        const rnd = rng32(90210), bell = () => rnd() + rnd() - 1, P = [];
-        for (let i = 0; i < SPREAD.n; i++) {
-          const sw = { bs: 1 + SPREAD.backswing * bell(), ds: 1, thetaMouse: SPREAD.mouseDeg * 2 * bell(), sigma: SPREAD.wobble * rnd(), lateSign: rnd() < 0.5 ? 1 : -1, vImpact: 1, vPeak: 1, miss: 0 };
+        const rnd = rng32(90210), P = [], n = ci === 0 ? SPREAD.nDriver : SPREAD.n;
+        for (let i = 0; i < n; i++) {
+          const sw = spreadSwing(rnd);
           const r = computeImpact(sw, su, club, env0, rnd);
           const f = createFlight({ ballSpeed: r.ballSpeed, vla: r.vla, dir: r.hla, spin: r.spin, axis: r.axis, release: r.release }, { x: 0, z: 0 }, teed ? 0.04 : 0);
           for (let n = 0; f.phase !== 'stopped' && n < 20000; n++) stepFlight(f, 1 / 120);
@@ -15054,7 +15082,8 @@
       // The minimap's landing area in WORLD coordinates: centre and the two axis vectors, scaled to the read like the path
       // (k2), and stretched down the line by a rough lie's read uncertainty.
       function landArea(ball = hp.ball) {                    // (ball: where it's hit from — the hole's ball, or the range's tee)
-        const r = lieRead(state.club), st = stockShot(state.club), k2 = st.total > 0 ? r.totalMid / st.total : 1;
+        // (k2 is only the read's bias: the spread's own mean already includes the lie, which lieRead's centre now does too)
+        const r = lieRead(state.club), st = stockShot(state.club), k2 = st.total > 0 ? r.totalMid / (st.total * (r.lieK ? r.lieK.total : 1)) : 1;
         const sp = landSpread(state.club), tot = r.totalMid * YD;
         const [a1, a2] = spreadAxes(sp.sxx, sp.szz + (r.exact ? 0 : (r.half * tot / 2) ** 2), sp.sxz);
         const tv = new THREE.Vector3(), w = (x, z) => { toWorld(tv.set(x * k2, 0, z * k2)); return { x: tv.x, z: tv.z }; };
@@ -15176,6 +15205,37 @@
           toast(`${SPIN_CTL[state.spinCtl]}${state.spinCtl ? `\n${auth < 0.25 ? `Little effect with the ${CLUBS[state.club].name}` : auth < 0.75 ? `Some effect with the ${CLUBS[state.club].name}` : `Full effect with the ${CLUBS[state.club].name}`}` : ''}`, 1600);
         }
       }
+      // Swing audit S6.2: from a bad lie the read is centred on what shots from it really average. A perfect strike (the
+      // stock shot) from heavy rough flew about 10% past the real average: the lie pushes the strike off the sweet spot and
+      // twists the face. The factor is a seeded batch of ordinary swings from the lie against the same batch from the
+      // fairway, so the fairway's own number (a perfect strike) stays the reference.
+      const lieFactorCache = new Map();
+      function lieFactor(ci) {
+        const club = CLUBS[ci], key = [ci, club.model || '', state.lie, state.power, state.dex, state.composure, state.badStreak, state.height, state.spinCtl, swingHistVer].join('|');
+        if (lieFactorCache.has(key)) return lieFactorCache.get(key);
+        const su = { face: 0, ballPos: 0, stance: 0, traj: state.height, spinCtl: state.spinCtl };
+        const batch = (lie, stock) => {
+          const fkey = lie === 'fairway' ? `fw|${key.split('|').slice(0, 2).join('|')}|${[state.power, state.dex, state.composure, state.badStreak, state.height, state.spinCtl, swingHistVer, stock].join('|')}` : null;
+          if (fkey && lieFactorCache.has(fkey)) return lieFactorCache.get(fkey);       // the fairway half is the same for every lie
+          const rnd = rng32(31415 + ci), env0 = { lie, slope: 'flat', power: state.power, dex: state.dex, composure: state.composure, badStreak: state.badStreak, teed: false, stock };
+          let c = 0; const n = stock ? 1 : 100;          // (carry only: each flight stops where it lands)
+          for (let i = 0; i < n; i++) {
+            const sw = stock ? { bs: 1, ds: 1, thetaMouse: 0, sigma: 0, lateSign: 1, vImpact: 1, vPeak: 1, miss: 0 } : spreadSwing(rnd);
+            const r = computeImpact(sw, su, club, env0, stock ? () => 0.5 : rnd);
+            const f = createFlight({ ballSpeed: r.ballSpeed, vla: r.vla, dir: r.hla, spin: r.spin, axis: r.axis, release: r.release }, { x: 0, z: 0 }, 0);
+            for (let k = 0; f.carry === null && f.phase !== 'stopped' && k < 20000; k++) stepFlight(f, 1 / 120);
+            c += (f.carry || 0);
+          }
+          const res = { c: c / n };
+          if (fkey) lieFactorCache.set(fkey, res);
+          return res;
+        };
+        const L = batch(state.lie, false), Ls = batch(state.lie, true), F = batch('fairway', false), Fs = batch('fairway', true);
+        const k = clamp((L.c / Ls.c) / (F.c / Fs.c), 0.5, 1.2), out = { carry: k, total: k };     // (the roll from a bad lie is small: the same factor)
+        if (lieFactorCache.size > 300) lieFactorCache.clear();
+        lieFactorCache.set(key, out);
+        return out;
+      }
       function lieRead(ci, bs = 1) {
         const s = stockShot(ci, bs);
         if (state.lie === 'fairway') {
@@ -15188,12 +15248,13 @@
         const half = baseSpread * lerp(1.0, 0.12, perF);
         const u = rng32((state.lieSeed ^ (ci * 7919)) + 17)();
         const bias = (u * 2 - 1) * baseSpread * 0.5 * lerp(1.0, 0, perF);
-        const carryLo = Math.max(1, Math.round(s.carry * (1 + bias - half)));
-        const carryHi = Math.max(carryLo + 1, Math.round(s.carry * (1 + bias + half)));
-        const totalLo = Math.max(1, Math.round(s.total * (1 + bias - half)));
-        const totalHi = Math.max(totalLo + 1, Math.round(s.total * (1 + bias + half)));
+        const lf = lieFactor(ci), ac = s.carry * lf.carry, at = s.total * lf.total;     // the lie's real average (S6.2)
+        const carryLo = Math.max(1, Math.round(ac * (1 + bias - half)));
+        const carryHi = Math.max(carryLo + 1, Math.round(ac * (1 + bias + half)));
+        const totalLo = Math.max(1, Math.round(at * (1 + bias - half)));
+        const totalHi = Math.max(totalLo + 1, Math.round(at * (1 + bias + half)));
         return {
-          carry: s.carry, total: s.total, carryLo, carryHi, totalLo, totalHi,
+          carry: s.carry, total: s.total, carryLo, carryHi, totalLo, totalHi, lieK: lf,
           carryMid: (carryLo + carryHi) / 2, totalMid: (totalLo + totalHi) / 2,
           carryTxt: `${carryLo}–${carryHi}`, totalTxt: `${totalLo}–${totalHi}`,
           exact: false, half, bias,
@@ -16523,7 +16584,7 @@
         analyzeSwing, computeImpact, swingSample, beginSwing, endSwing, onPointerMove, isSpike, tempoTarget, powerFromBackswing, powerFromTempo,
         LIES, SLOPES, AERO, windVector, clubFit, solveShape, powerMult, runChip, computePutt, analyzePutt, CADDIES,
         createPutt, stepPutt, puttTarget, rollDecel, puttGate, rng32, shopStats, SHOP, withClubModel, setup, careerStats,
-        fullShotGreen, holeStimp, heightCapBallPos, COACH,
+        fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag,
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },

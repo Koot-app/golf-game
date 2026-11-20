@@ -139,6 +139,20 @@ this section).
   in the model; every player's own numbers.
 
 ### S1.3 [Medium, bug] Calibration's limits are too low for high-DPI mice, and the spike filter distorts the calibrating swing
+- **✅ Fixed 2026-11-20:** the limits are 12,000 counts and 150 counts/ms (`CAL_MAX`), on the calibrating clamp and the
+  Settings sliders. While a calibrating swing is made, the spike filter judges it by the fastest calibration allowed.
+  The same natural stroke, calibrating (section 7 of `swing-input.js`):
+
+  | DPI, reports a second | Before | After |
+  |---|---|---|
+  | 800, 1,000 or 125 | 1,260, 17.2 | 1,260, 17.2 |
+  | 1,600, 1,000 | 2,520, **30.0** (the limit) | 2,520, 34.3 |
+  | 1,600, 125 | 2,520, 23.6 (2 dropped) | 2,520, 34.2 (none dropped) |
+  | 3,200, 1,000 | 3,000, 30.0 (both limits) | 5,040, 68.7 |
+  | 3,200, 125 | **not calibrated** (12 dropped) | 5,040, 68.4 (none dropped) |
+
+  This also lets S1.2's first-swing step work on any mouse. Before calibrating, a 3,200 DPI mouse's ordinary swing
+  at 125 reports a second still doesn't fire; that is S1.4, still open.
 - **Where:** `onImpact` (about line 9108): length clamped to 100–3,000 counts, speed to 0.5–30 counts/ms; the sliders
   have the same limits. `isSpike` uses the **old** calibration while the calibrating swing is made.
 - **Measured:** the same natural stroke (40 mm, 60 cm/s), calibrating:
@@ -1490,6 +1504,23 @@ bites) is 5% / 4% / 1% / 0% / 0% at Dexterity 1 / 2 / 5 / 8 / 10.
   wind play.
 
 ### S6.2 [Medium, bug] From a bad lie the bag's range is centred on a perfect strike
+- **✅ Fixed 2026-11-20:** `lieRead` now centres a bad lie's band on that lie's real average. The factor (`lieFactor`)
+  is a seeded batch of 100 ordinary swings from the lie, against their perfect strike, divided by the same ratio from
+  the fairway. So the fairway's number (a perfect strike) stays the reference, and Perception's band and bias work
+  as before. The minimap's landing area no longer applies the lie twice. Measured against 600 real shots (Dex 5,
+  the human hand; `tools/test/swing-fix7.js`):
+
+  | Lie, club | True mean (10th–90th) | Per 10 band: before → after | True mean inside, Per 1 / 5 / 10: before → after |
+  |---|---|---|---|
+  | Light rough, 7 iron | 152 (134–169) | — → 151–155 | → 100 / 100 / 100% |
+  | Heavy rough, 7 iron | 98 (75–124) | 119–125 (vs 109) → **97–102** | 100 / 65 / **0%** → 100 / 100 / **100%** |
+  | Heavy rough, PW | 87 (69–106) | 87–92 (vs 84) → 85–89 | 100 / 100 / 0% → 100 / 100 / 100% |
+  | Fairway bunker, 7 iron | 140 (123–157) | 148–153 (vs 144) → 139–143 | 100 / 100 / 0% → 100 / 100 / 100% |
+  | Fairway bunker, PW | 112 (101–124) | 107–111 (vs 106) → 111–114 | 100 / 100 / 0% → 100 / 100 / 100% |
+
+  (The true means differ a little from S6's table because the flight and club speeds changed since.) The cost: about
+  250 ms of computing the first time the lie changes (every club's batch), then cached. The flights stop where they
+  land, and the fairway half is kept for every lie.
 - **Where:** `lieRead` (about line 15069) centres its band on `stockShot`, a shot with no scatter: an average lie,
   the strike at the lie's fixed offset, no twist. Perception then narrows the band (to 12% of its width at
   Perception 10) and shrinks a random bias.
@@ -1902,6 +1933,8 @@ and less spin to 7.9.
   marker read for those clubs, and chip-ins.
 
 ### S8.3 [Low, realism] The cup holds a centred putt only up to 1.3 m/s
+- **✅ Fixed 2026-11-20:** `PUTT.captureSpeed` is 1.6 m/s. The fastest ball that drops (Stimp 11): centred 1.60 m/s (it
+  would have run 8.4 ft past; was 5.5), 50% off centre 1.38 (6.3 ft), 75% off 1.06 (3.7 ft), 90% off 0.73 (1.8 ft).
 - **Measured** (the fastest ball that drops, by how far from centre it crosses the cup; Stimp 11): centred 1.30 m/s
   (a ball that would have finished 5.5 ft past), 25% off 1.27, 50% off 1.12 (4.1 ft past), 75% off 0.89 (2.6 ft),
   90% off 0.60 (1.2 ft). From 6 ft with ordinary errors, 0.2% of putts lip out.
@@ -1988,6 +2021,28 @@ measurements.
 | S9.3 | Low | Realism | The driver's fade preview finishes on the aim line; real fades average 5.7 yds right of it | S |
 
 ### S9.1 [Medium, feel / balance] The landing area assumes a steadier hand than S1's estimate
+- **✅ Fixed 2026-11-20:**
+  - **The default hand:** `landSpread`'s swing errors (`spreadSwing`) are now S1's estimate of a real hand: wobble
+    1.5–5.5 px, a ring miss of ±2% sd, and the mouse path ±2.4°.
+  - **The player's own hand:** once they've made 8 full swings, it samples their own last 30 (`golfSwingHist` in local
+    storage). That uses their wobble, their ring miss, and their path's spread about its own average. Chips, putts and
+    `debugSwing` aren't recorded.
+  - **More shots:** 60 instead of 36, and 100 for the driver.
+
+  Share of 600 real shots (S1's human hand) inside the drawn 2σ ellipse:
+
+  | Case | Driver | 3 Hybrid | 7 Iron | PW | Sand Wedge |
+  |---|---|---|---|---|---|
+  | Fairway, Dex 5: before → after | 78 → **91%** | 78 → 89% | 62 → **92%** | 65 → 89% | 71 → 88% |
+  | Fairway, Dex 1 | 78 → 89% | 81 → 89% | 61 → 92% | 65 → 91% | 70 → 91% |
+  | Fairway, Dex 10 | 78 → 91% | 75 → 90% | 60 → 90% | 51 → 89% | **39 → 89%** |
+  | Light rough, Dex 5 | 81 → 91% | 89 → 92% | 83 → 92% | 84 → 88% | 86 → 92% |
+  | Heavy rough, Dex 5 | 89 → 75% | 83 → 86% | 86 → 87% | 83 → 81% | 82 → 95% |
+  | Tilted (3 bad shots), Dex 5 | 75 → 91% | 74 → 92% | 70 → 92% | 67 → 90% | 77 → 90% |
+
+  A true 2σ ellipse holds about 86%; the area now runs slightly generous. The exception is a driver from heavy rough,
+  whose topped and fat shots don't fit an ellipse. With 12 steady swings of the player's own (wobble 1 px, path
+  ±0.5°), the 7 iron's area narrows from ±18 to ±11 yds, so a steadier player sees a tighter area.
 - **Where:** `landSpread` (about line 14924) flies 36 seeded shots with `SPREAD`'s errors: mouse path ±2.4° (bell),
   wobble 0–2.5 px, backswing ±5%, no ring miss. `landArea` widens it down the line by the lie read's band.
 - **Measured** (share of 600 real shots inside the drawn 2σ ellipse; a true 2σ ellipse holds about 86%):
