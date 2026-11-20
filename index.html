@@ -60,7 +60,7 @@
      so every camera, rig and swing system from the range works unchanged.
    - The lie is read from the surface the ball finishes on: fairway, first cut (light rough), heavy rough,
      hardpan inside the dogleg, fairway bunkers, greenside bunkers, green. Each surface also changes how the
-     ball bounces and rolls when it lands.
+     ball bounces and rolls when it lands. Greenside bunkers are bowls with a face and a lip (search "BUNKER").
    - On the green the existing putting mode takes over, with break and uphill/downhill worked out from the
      green's fixed tilt and which side of the cup the ball is on.
    - Out of bounds (white stakes, a set distance from each hole's centre line) is stroke and distance. Trees are hazards:
@@ -7226,7 +7226,7 @@
           fairway: { e: 0.70, keep: 0.88, check: 0.70, drag: 3.6 },
           light: { e: 0.50, keep: 0.70, check: 0.45, drag: 7 },
           heavy: { e: 0.32, keep: 0.45, check: 0.25, drag: 13 },
-          bunker: { e: 0.10, keep: 0.20, check: 0, drag: 40 },
+          bunker: { e: 0.10, keep: 0.20, check: 0, drag: 40 },    // (its roll is BUNKER's sand roll in stepPutt, not this drag)
           hardpan: { e: 1.10, keep: 1.05, check: 0.50, drag: 2.2 },
         },
       };
@@ -7599,7 +7599,7 @@
 
         // 8. Spin axis, then what the shape does to the flight: a draw comes out lower with less spin and releases
         //    on landing; a fade climbs, spins more and sits down.  shape: -1 = full draw ... +1 = full fade.
-        const dynLoft = Math.max(4, club.dynLoft + loftDelta + lieLaunch + slope.launch);
+        const dynLoft = Math.max(4, club.dynLoft + loftDelta + lieLaunch + (env.slopeLaunch ?? slope.launch));     // (BUNKER: a face's own slope)
         const axis = clamp(ftp * club.work * axisGainFor(dynLoft) * shapeBoost(ftp) + slope.axis + strike * club.bulge * lowSpinMult, -TUNE.axisMax, TUNE.axisMax);
         // a full shape is reached at shapeFullDeg of axis tilt, more for lofted clubs (a wedge needs far more tilt to bend
         // the same share of its carry), so a solved draw has a similar character with every club
@@ -7702,7 +7702,8 @@
           p.x += v.x * dt; p.z += v.z * dt;
           // swing audit S3.2: a ball that lands short and runs onto the hole's green rolls on by the green's own rules
           // (its Stimp and slopes, and the cup), as one that lands on it does; it used to keep the fairway's roll
-          if (f.green && f.green.surfAt(p.x, p.z) === 'green') {
+          // (BUNKER: and one that runs into a greenside bunker's bowl, or onto its lip, takes its slopes and its sand)
+          if (f.green && (f.green.surfAt(p.x, p.z) === 'green' || (f.green.bowl && f.green.bowl(p.x, p.z)))) {
             f.g = f.green;
             f.q = {
               green: f.g, p: { x: p.x, z: p.z }, v: { x: v.x, z: v.z }, dir: Math.atan2(v.x, -v.z), skid: 0, t: 0, rolled: 0,
@@ -7720,12 +7721,15 @@
         }
 
         // Ground: steep, high-spin landings check up; shallow, low-spin ones skip forward.
-        if (p.y <= 0 && v.y < 0) {
-          p.y = 0;
+        // (BUNKER: the ground is 0 but in a greenside bunker's bowl and on its lip, f.green.h)
+        const gy = f.green && f.green.bowl && f.green.bowl(p.x, p.z) ? f.green.h(p.x, p.z) : 0;
+        if (p.y <= gy && (v.y < 0 || gy > 0)) {               // (a low ball can run into a lip still climbing)
+          p.y = gy;
           // swing audit S8.1 / S3.2: on a hole, a full shot that comes down on the green lands and rolls as a chip does,
           // on the hole's own green (its Stimp and slopes), so the same pitch plays alike either side of CHIP.maxYd
-          if (f.green && f.green.surfAt(p.x, p.z) === 'green') {
-            f.g = f.green; chipBounce(f, 'green');
+          // (BUNKER: and so does one that comes down in a greenside bunker's bowl or on its lip: its slopes, its sand)
+          if (f.green && (f.green.surfAt(p.x, p.z) === 'green' || gy !== 0 || (f.green.bowl && f.green.bowl(p.x, p.z)))) {
+            f.g = f.green; chipBounce(f, f.green.surfAt(p.x, p.z));
             if (f.phase === 'holed') f.phase = 'stopped';
             return;
           }
@@ -7808,7 +7812,8 @@
         }
         airStep(f, dt);
         const gy = g.h(p.x, p.z);
-        if (p.y <= gy && v.y < 0) { p.y = gy; chipBounce(f, g.surfAt(p.x, p.z)); }
+        // (BUNKER: a ball still climbing can fly into a bunker's face, once it's clear of its own spot)
+        if (p.y <= gy && (v.y < 0 || p.x * p.x + p.z * p.z > 0.09)) { p.y = gy; chipBounce(f, g.surfAt(p.x, p.z)); }
         if (f.t > 30) f.phase = 'stopped';
       }
       // One landing on the chip's surfaces (key = CHIP.surf key). Also used by a full shot that comes down on the green
@@ -7816,10 +7821,17 @@
       function chipBounce(f, key) {
         const p = f.p, v = f.v, g = f.g, S = CHIP.surf[key] || CHIP.surf.fairway;
         if (f.carry === null) { f.carry = Math.hypot(p.x, p.z); f.land = { x: p.x, z: p.z }; f.landSurf = key; f.landV = Math.hypot(v.x, v.y, v.z); }
-        const vy = -v.y, vh = Math.hypot(v.x, v.z);
-        if (Math.hypot(p.x - g.hole.x, p.z - g.hole.z) < HOLE_R * 0.9 && vh < CHIP.dunkSpeed) {      // straight in the cup
+        if (Math.hypot(p.x - g.hole.x, p.z - g.hole.z) < HOLE_R * 0.9 && Math.hypot(v.x, v.z) < CHIP.dunkSpeed) {      // straight in the cup
           p.x = g.hole.x; p.z = g.hole.z; v.x = v.y = v.z = 0; f.phase = 'holed'; f.holed = true; return;
         }
+        // BUNKER: on ground steeper than bounceSlope (a bunker's face, its lip) the ball bounces off the slope itself: the
+        // speed into the ground (n, the ground's normal) is what bounces, the speed along it is what's kept. Flatter than
+        // that it is the flat ground's rule exactly (n straight up), so greens and chips play as they did.
+        const gr = g.grad ? g.grad(p.x, p.z) : null, gm = gr ? Math.hypot(gr.x, gr.z) : 0;
+        const n = gm > BUNKER.bounceSlope ? { x: -gr.x / Math.hypot(gm, 1), y: 1 / Math.hypot(gm, 1), z: -gr.z / Math.hypot(gm, 1) } : { x: 0, y: 1, z: 0 };
+        const vn = v.x * n.x + v.y * n.y + v.z * n.z;
+        if (vn >= 0) return;                                   // (grazing away from a slope: no bounce)
+        const vy = -vn, tx = v.x - vn * n.x, ty = v.y - vn * n.y, tz = v.z - vn * n.z, vh = Math.hypot(tx, ty, tz);
         const steep = Math.sin(Math.atan2(vy, vh)), spinN = f.rpm / 9000;
         const e = clamp(0.52 - 0.014 * vy, 0.18, 0.5) * S.e;
         const bk = f.bounces === 0 ? backUp(spinN * steep * S.check) : 0;      // (swing audit S3.4)
@@ -7835,14 +7847,15 @@
         // bites back still kicks the spin's way (it was flipped with the reversal), and it is at most chipKickShare of the
         // ball's speed after the bounce: a steep ball that all but stops can only drift a little (a flop shot 8 yds sideways)
         const vh0 = Math.hypot(v.x, v.z), kx = vh0 > 1e-3 ? -v.z / vh0 : 0, kz = vh0 > 1e-3 ? v.x / vh0 : 0;     // to the right of the travel
-        v.x *= keep; v.z *= keep; v.y = backing ? 0 : e * vy;
+        const vOut = backing ? 0 : e * vy;                     // (off the slope: along it × keep, out of it × e)
+        v.x = tx * keep + n.x * vOut; v.y = ty * keep + n.y * vOut; v.z = tz * keep + n.z * vOut;
         if (f.chip && f.bounces === 0 && f.axisDeg && vh0 > 1e-3) {
           const want = TUNE.chipKickMs * clamp(f.axisDeg / 20, -1, 1) * Math.min(1.2, (Math.max(0, f.rpm) / TUNE.chipKickRpm) ** 2);     // (spin squared: a runner's ~1,500 rpm barely kicks)
           const lim = TUNE.chipKickShare * Math.hypot(v.x, v.z), dv = clamp(want, -lim, lim);
           v.x += kx * dv; v.z += kz * dv;
         }
         f.rpm *= 0.35; f.bounces++;
-        if (v.y < 0.7 || key === 'bunker') {
+        if (vOut < 0.7 || key === 'bunker') {
           v.y = 0; f.phase = 'roll';
           f.q = {
             green: g, p: { x: p.x, z: p.z }, v: { x: v.x, z: v.z }, dir: Math.atan2(v.x, -v.z), skid: 0, t: 0, rolled: 0,
@@ -8094,16 +8107,20 @@
       function stepPutt(q, dt) {
         if (q.phase !== 'roll') return;
         const g = q.green, p = q.p, v = q.v, k = (5 / 7) * GRAV;
-        const drag = g.drag ? g.drag(p.x, p.z) : !g.inside ? 1 : g.inside(p.x, p.z) ? 1 : g.inside(p.x, p.z, 1.3) ? PUTT.fringeDrag : PUTT.roughDrag;
+        // (a chip's ground names its surface: CHIP.surf's drag, and BUNKER's sand roll below; one lookup for both)
+        const key = g.surfAt && g.drag ? g.surfAt(p.x, p.z) : null, sand = key === 'bunker';
+        const drag = key ? (CHIP.surf[key] || CHIP.surf.fairway).drag : g.drag ? g.drag(p.x, p.z) : !g.inside ? 1 : g.inside(p.x, p.z) ? 1 : g.inside(p.x, p.z, 1.3) ? PUTT.fringeDrag : PUTT.roughDrag;
         const s = Math.hypot(v.x, v.z), fast = q.landed ? 1 + q.landed * CHIP.fastDrag * clamp((s - CHIP.fastV) / CHIP.fastSpan, 0, 1) : 1;     // (a landed ball skidding: CHIP)
-        const decel = g.decel * drag * fast + (q.extraDecel || 0);       // extraDecel: a chip's leftover backspin gripping
+        // (BUNKER: sand ploughs, slowing a fast ball hard and a slow one gently, so a ball on a steep face trickles down it
+        // instead of sticking where it landed; it holds on a slope only while the slope's pull is under sandDecel)
+        const decel = (sand ? BUNKER.sandDecel + BUNKER.sandVisc * s : g.decel * drag * fast) + (q.extraDecel || 0);       // extraDecel: a chip's leftover backspin gripping
         const gr = g.grad(p.x, p.z), pull = Math.hypot(gr.x, gr.z) * k;
         const skidding = q.rolled < q.skid;                    // a skidding ball has not started to take the break
         let ax = skidding ? 0 : -k * gr.x, az = skidding ? 0 : -k * gr.z;
         if (s > 1e-4) { ax -= decel * v.x / s; az -= decel * v.z / s; }
         v.x += ax * dt; v.z += az * dt;
         const ns = Math.hypot(v.x, v.z);
-        if (ns < 0.02 && pull < decel) { v.x = v.z = 0; q.phase = 'stopped'; return; }
+        if (ns < 0.02 && pull < (sand ? BUNKER.sandDecel + (q.extraDecel || 0) : decel)) { v.x = v.z = 0; q.phase = 'stopped'; return; }
         p.x += v.x * dt; p.z += v.z * dt; q.rolled += ns * dt; q.t += dt;
         const side = p.x * Math.cos(q.dir) + p.z * Math.sin(q.dir);          // sideways from the start line (+ right)
         if (Math.abs(side) > Math.abs(q.maxBreak)) q.maxBreak = side;
@@ -8141,6 +8158,8 @@
         face: 0, ballPos: 0, stance: 0,
         height: 0,                     // height level set at address: -2 / -1 lower (W), +1 / +2 higher (S)
         lie: 'fairway', lieSeed: 7, slope: 'flat', windMph: 0, windDir: 0,
+        slopeLaunch: null,             // BUNKER: on a greenside bunker's slope, the launch it adds (deg) in place of SLOPES' fixed one
+
         power: 5, dex: 5, composure: 5, badStreak: 0,
         practice: false, calibrating: false,
         mouseLock: '',                 // swing audit S1.8: '' not asked yet · 'raw' unadjusted movement · 'accel' the OS's
@@ -8195,7 +8214,7 @@
       const isPeeking = () => state.view === 'address' && !swing.active && (state.peekKey || state.peekMouse);
       // A club is teed up only if it is a tee club on a fairway lie — and, on the hole, only on the tee box.
       const isTeed = (club) => !!club.tee && state.lie === 'fairway' && !isChip() && (!hp.on || hp.onTee);
-      const env = () => ({ lie: state.lie, slope: state.slope, power: state.power, dex: state.dex, composure: state.composure, badStreak: state.badStreak, teed: isTeed(CLUBS[state.club]) });
+      const env = () => ({ lie: state.lie, slope: state.slope, slopeLaunch: state.slopeLaunch, power: state.power, dex: state.dex, composure: state.composure, badStreak: state.badStreak, teed: isTeed(CLUBS[state.club]) });
       const heightName = (h) => h === 0 ? 'Mid' : `${h < 0 ? 'Low' : 'High'} ${Math.abs(h)}`;
       const SPIN_CTL = { '-1': 'Less spin', 0: 'Normal spin', 1: 'More spin' };
       // In chip mode the preset's face and stance are aligned to the target (see CHIPPING in PHYSICS), and the flop opens the blade.
@@ -8684,8 +8703,8 @@
             { x: 25, z: -262, rx: 11, rz: 16, rot: 0.2, type: 'fbunker' },         // outside of the corner: catches a drive that runs through
             { x: -24, z: -236, rx: 9, rz: 13, rot: -0.4, type: 'fbunker' },        // inside of the corner: guards the short cut
             { x: -74, z: -422, rx: 9, rz: 12, rot: 0.6, type: 'fbunker' },         // pinches the lay-up zone on the right
-            { x: -122, z: -490, rx: 8, rz: 10, rot: 0.3, type: 'bunker' },         // greenside, front right
-            { x: -160, z: -499, rx: 7, rz: 11, rot: -0.2, type: 'bunker' },        // greenside, left
+            { x: -122, z: -490, rx: 8, rz: 10, rot: 0.3, type: 'bunker', depth: 3 },         // greenside, front right
+            { x: -160, z: -499, rx: 7, rz: 11, rot: -0.2, type: 'bunker', depth: 3.5 },        // greenside, left
           ],
           hardpan: [{ x: -60, z: -297, rx: 22, rz: 36, rot: 0.6 }],                // bare ground under the trees inside the dogleg
         },
@@ -8699,9 +8718,9 @@
             tiers: [{ x: 0, z: -1, ang: -1.2, rise: 4, width: 5 }], bumps: [{ x: 7, z: 4, amp: -3, sigma: 4 }]
           },
           bunkers: [
-            { x: 20, z: -165, rx: 9, rz: 12, rot: -0.3, type: 'bunker' },          // front-right pot bunker guarding the tucked pin
-            { x: -9, z: -174, rx: 8, rz: 11, rot: 0.25, type: 'bunker' },          // left greenside bunker
-            { x: 14, z: -193, rx: 10, rz: 7, rot: 0.1, type: 'bunker' },           // back bunker catching long iron shots
+            { x: 20, z: -165, rx: 9, rz: 12, rot: -0.3, type: 'bunker', depth: 6 },          // front-right pot bunker guarding the tucked pin
+            { x: -9, z: -174, rx: 8, rz: 11, rot: 0.25, type: 'bunker', depth: 3.5 },          // left greenside bunker
+            { x: 14, z: -193, rx: 10, rz: 7, rot: 0.1, type: 'bunker', depth: 3 },           // back bunker catching long iron shots
           ],
           hardpan: [{ x: -16, z: -120, rx: 15, rz: 22, rot: -0.2 }],
         },
@@ -8717,8 +8736,8 @@
           bunkers: [
             { x: -23, z: -252, rx: 10, rz: 15, rot: -0.15, type: 'fbunker' },      // outside of corner: catches drives through the fairway
             { x: 18, z: -228, rx: 9, rz: 13, rot: 0.35, type: 'fbunker' },         // inside of corner: guards the dogleg cut
-            { x: 82, z: -382, rx: 8, rz: 10, rot: -0.3, type: 'bunker' },          // front-left greenside
-            { x: 114, z: -394, rx: 8, rz: 12, rot: 0.25, type: 'bunker' },         // right greenside guarding the pin
+            { x: 82, z: -382, rx: 8, rz: 10, rot: -0.3, type: 'bunker', depth: 3.5 },          // front-left greenside
+            { x: 114, z: -394, rx: 8, rz: 12, rot: 0.25, type: 'bunker', depth: 4.5 },         // right greenside guarding the pin
           ],
           hardpan: [{ x: 42, z: -265, rx: 20, rz: 30, rot: -0.5 }],
         },
@@ -8734,8 +8753,8 @@
           bunkers: [
             { x: -14, z: -255, rx: 8, rz: 14, rot: 0.1, type: 'fbunker' },        // left side of the landing zone
             { x: 30, z: -285, rx: 9, rz: 13, rot: -0.15, type: 'fbunker' },       // right side, a little further on
-            { x: -2, z: -405, rx: 7, rz: 9, rot: 0.3, type: 'bunker' },           // greenside, front left
-            { x: 37, z: -422, rx: 7, rz: 11, rot: -0.2, type: 'bunker' },         // greenside, right
+            { x: -2, z: -405, rx: 7, rz: 9, rot: 0.3, type: 'bunker', depth: 3 },           // greenside, front left
+            { x: 37, z: -422, rx: 7, rz: 11, rot: -0.2, type: 'bunker', depth: 3.5 },         // greenside, right
           ],
           hardpan: [{ x: 40, z: -200, rx: 14, rz: 24, rot: 0.1 }],
         },
@@ -8750,9 +8769,9 @@
             bumps: [{ x: -8, z: 2, amp: -2, sigma: 3.5 }]
           },
           bunkers: [
-            { x: -6, z: -188, rx: 12, rz: 5, rot: 0, type: 'bunker' },             // across the front
-            { x: -29, z: -207, rx: 5, rz: 9, rot: 0.2, type: 'bunker' },           // left
-            { x: 19, z: -212, rx: 6, rz: 8, rot: -0.1, type: 'bunker' },           // right
+            { x: -6, z: -188, rx: 12, rz: 5, rot: 0, type: 'bunker', depth: 4 },             // across the front
+            { x: -29, z: -207, rx: 5, rz: 9, rot: 0.2, type: 'bunker', depth: 3 },           // left
+            { x: 19, z: -212, rx: 6, rz: 8, rot: -0.1, type: 'bunker', depth: 3 },           // right
           ],
           hardpan: [],
         },
@@ -8770,8 +8789,8 @@
             { x: 62, z: -250, rx: 9, rz: 13, rot: -0.3, type: 'fbunker' },        // inside of the first bend
             { x: 28, z: -300, rx: 8, rz: 12, rot: 0.2, type: 'fbunker' },         // through the first bend
             { x: 66, z: -420, rx: 8, rz: 12, rot: 0.1, type: 'fbunker' },         // right of the lay-up
-            { x: -5, z: -532, rx: 7, rz: 10, rot: 0.3, type: 'bunker' },          // greenside, left
-            { x: 36, z: -548, rx: 6, rz: 10, rot: -0.2, type: 'bunker' },         // greenside, right
+            { x: -5, z: -532, rx: 7, rz: 10, rot: 0.3, type: 'bunker', depth: 3.5 },          // greenside, left
+            { x: 36, z: -548, rx: 6, rz: 10, rot: -0.2, type: 'bunker', depth: 3.5 },         // greenside, right
           ],
           hardpan: [{ x: 18, z: -380, rx: 12, rz: 22, rot: 0.3 }],                 // bare ground inside the second bend
         },
@@ -8787,8 +8806,8 @@
           bunkers: [
             { x: -22, z: -262, rx: 8, rz: 6, rot: 0.1, type: 'fbunker' },          // pot bunkers across the fairway: lay up short or carry them
             { x: -4, z: -268, rx: 7, rz: 6, rot: -0.1, type: 'fbunker' },
-            { x: -47, z: -336, rx: 6, rz: 10, rot: -0.3, type: 'bunker' },         // greenside, left
-            { x: -15, z: -325, rx: 6, rz: 7, rot: 0.3, type: 'bunker' },           // greenside, front right
+            { x: -47, z: -336, rx: 6, rz: 10, rot: -0.3, type: 'bunker', depth: 4 },         // greenside, left
+            { x: -15, z: -325, rx: 6, rz: 7, rot: 0.3, type: 'bunker', depth: 5 },           // greenside, front right
           ],
           hardpan: [{ x: 20, z: -180, rx: 12, rz: 20, rot: 0.2 }],
         },
@@ -8802,10 +8821,10 @@
             tiers: [{ x: 0, z: -1, ang: Math.PI, rise: 4, width: 3 }],              // two tiers: the left half sits higher
           },
           bunkers: [
-            { x: 6, z: -141, rx: 10, rz: 4, rot: 0, type: 'bunker' },              // front
-            { x: -9, z: -157, rx: 4, rz: 8, rot: 0, type: 'bunker' },              // left
-            { x: 21, z: -153, rx: 4, rz: 8, rot: 0, type: 'bunker' },              // right
-            { x: 6, z: -169, rx: 9, rz: 3.5, rot: 0, type: 'bunker' },             // back
+            { x: 6, z: -141, rx: 10, rz: 4, rot: 0, type: 'bunker', depth: 4 },              // front
+            { x: -9, z: -157, rx: 4, rz: 8, rot: 0, type: 'bunker', depth: 3 },              // left
+            { x: 21, z: -153, rx: 4, rz: 8, rot: 0, type: 'bunker', depth: 3 },              // right
+            { x: 6, z: -169, rx: 9, rz: 3.5, rot: 0, type: 'bunker', depth: 2.5 },             // back
           ],
           hardpan: [],
         },
@@ -8822,12 +8841,55 @@
           bunkers: [
             { x: -18, z: -285, rx: 10, rz: 15, rot: 0.15, type: 'fbunker' },     // outside of the corner: catches the drive that runs through
             { x: 28, z: -262, rx: 8, rz: 12, rot: -0.3, type: 'fbunker' },        // inside of the corner: guards the cut
-            { x: 69, z: -422, rx: 6, rz: 10, rot: -0.5, type: 'bunker' },         // greenside, front left
-            { x: 110, z: -440, rx: 6, rz: 9, rot: -0.4, type: 'bunker' },         // greenside, right
+            { x: 69, z: -422, rx: 6, rz: 10, rot: -0.5, type: 'bunker', depth: 4 },         // greenside, front left
+            { x: 110, z: -440, rx: 6, rz: 9, rot: -0.4, type: 'bunker', depth: 4.5 },         // greenside, right
           ],
           hardpan: [{ x: 40, z: -300, rx: 16, rz: 24, rot: -0.5 }],                // bare ground inside the dogleg
         },
       ];
+      // =====================================================================================================
+      //  GREENSIDE BUNKERS have depth (user request, 2026-11-20). Each is a bowl cut below the grass round it: a flat
+      //  sand floor, deepest under the FACE (the side toward the green), where the sand climbs a steep wall to a turf lip
+      //  a little above the grass; the back is a gentle ramp in. `depth` (ft, in the hole) is the floor under the face.
+      //  The bowl is part of the hole's ground: chips fly into its walls and roll down them, a ball under the face has to
+      //  get up quickly to clear the lip, a ball that lands on the lip or the bank above it can fall back in, and a full
+      //  shot that comes down near one plays by the same rules (stepFlight hands it to chipBounce, as it does on the green).
+      //  Fairway bunkers stay flat.
+      // =====================================================================================================
+      const BUNKER = {
+        gapYd: 1.5,                     // the collar between a greenside bunker and its green (bunkers that overlapped it are moved out)
+        depthFt: 3.5,                   // a bunker's depth if its hole doesn't give one
+        lipShare: 0.2, lipMaxFt: 1,     // the lip rises this share of the depth above the grass (at most lipMaxFt)...
+        lipOut: 1.2,                    // ...and its bank falls back to the grass this many metres outside the sand
+        lipGreenFade: 0.6,              // m: the bank is gone this far before the green's edge (the green itself is never changed)
+        faceFloor: 0.74, backFloor: 0.3,   // the floor runs this share of the way to the edge on the face side / the back
+        backDepth: 0.65,                // the floor rises toward the back: its depth there, as a share of the face side's
+        sandDecel: 3.0, sandVisc: 6.0,  // a ball in sand slows by sandDecel m/s² + sandVisc × its speed, and stays put on a slope
+        //                                 only while the slope pulls less than sandDecel (it trickles down a steep face)
+        bounceSlope: 0.08,              // a landing on ground steeper than this bounces off the slope itself (flat below it)
+        slopeLie: 0.12,                 // a bunker lie steeper than this plays as uphill / downhill / ball above / below the feet
+      };
+      // Audit fix (user request, 2026-11-20): most greenside bunkers overlapped their green, which played as green but was
+      // drawn as sand. Each is moved straight out from the green's centre until a BUNKER.gapYd collar separates them.
+      (function seatGreensideBunkers() {
+        for (const h of HOLES) {
+          const gr = { rot: 0, ...h.green }, k = 1 + BUNKER.gapYd / Math.min(gr.rx, gr.rz);
+          for (const b of h.bunkers) {
+            if (b.type !== 'bunker') continue;
+            const dx = b.x - gr.x, dz = b.z - gr.z, d = Math.hypot(dx, dz) || 1, ux = dx / d, uz = dz / d;
+            const clear = () => {
+              const c = Math.cos(b.rot || 0), s = Math.sin(b.rot || 0);
+              for (let a = 0; a < 6.2832; a += 0.05) {
+                const u = Math.cos(a) * b.rx, v = Math.sin(a) * b.rz;
+                if (inEllipse(gr, b.x + u * c - v * s, b.z - (u * s + v * c), k) < 1) return false;
+              }
+              return true;
+            };
+            for (let i = 0; i < 200 && !clear(); i++) { b.x += ux * 0.25; b.z += uz * 0.25; }
+            b.x = Math.round(b.x * 4) / 4; b.z = Math.round(b.z * 4) / 4;
+          }
+        }
+      })();
       let HOLE = HOLES[0];
       // How each surface plays when the ball lands and rolls on it (multipliers on the range-turf bounce model), and the lie it gives.
       const SURF = {
@@ -8927,6 +8989,83 @@
         for (const h of hole.hardpan) if (inEllipse(h, x, z) < 1) return 'hardpan';
         return n.d <= hole.halfW + hole.cut ? 'light' : 'heavy';
       }
+      // ---- the greenside bunkers' bowls (see BUNKER). hole.dips: one per greenside bunker, built in buildHole.
+      const smooth01 = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+      function makeDips(bunkers, green, depthMult = 1) {
+        return bunkers.filter((b) => b.type === 'bunker').map((b) => {
+          const dx = green.x - b.x, dz = green.z - b.z, d = Math.hypot(dx, dz) || 1, R = Math.min(b.rx, b.rz);
+          const D = (b.depth || BUNKER.depthFt) * depthMult * FT;
+          return {
+            ...b, gx: dx / d, gz: dz / d, D, L: Math.min(BUNKER.lipMaxFt * FT, BUNKER.lipShare * D),
+            qOut: 1 + BUNKER.lipOut / R, reach2: (Math.max(b.rx, b.rz) + BUNKER.lipOut + 0.5) ** 2,
+          };
+        });
+      }
+      // height (m) the bunkers add to the ground at hole point (x, z): below 0 in the sand, a little above it on the lips
+      function bunkerH(x, z) {
+        const dips = hole.dips;
+        if (!dips || !dips.length) return 0;
+        let y = 0;
+        for (const d of dips) {
+          const dx = x - d.x, dz = z - d.z;
+          if (dx * dx + dz * dz > d.reach2) continue;
+          const q = Math.sqrt(inEllipse(d, x, z));
+          if (q >= d.qOut) continue;
+          const r = Math.hypot(dx, dz), a = r > 1e-6 ? (dx * d.gx + dz * d.gz) / r : 0;
+          const fw = smooth01(-0.35, 0.75, a * smooth01(0, 0.35, q));          // 0 at the back, 1 under the face
+          const qg = Math.sqrt(inEllipse(hole.green, x, z)), gR = Math.min(hole.green.rx, hole.green.rz);
+          const L = d.L * fw * fw * smooth01(1, 1 + BUNKER.lipGreenFade / gR, qg);     // (never on the green)
+          if (q < 1) {
+            const D = d.D * lerp(BUNKER.backDepth, 1, fw), s = smooth01(lerp(BUNKER.backFloor, BUNKER.faceFloor, fw), 1, q);
+            y += lerp(-D, L, s);
+          } else y += L * (1 - smooth01(1, d.qOut, q));
+        }
+        return y;
+      }
+      function bunkerGrad(x, z) {
+        if (!hole.dips || !hole.dips.length) return { x: 0, z: 0 };
+        const e = 0.03;
+        return { x: (bunkerH(x + e, z) - bunkerH(x - e, z)) / (2 * e), z: (bunkerH(x, z + e) - bunkerH(x, z - e)) / (2 * e) };
+      }
+      // The flat course (full shots) draws each bowl as its own mesh, shaded by hand to match the unlit ground round it.
+      // The ground doesn't write depth, so the bowl shows below it; the far wall faces the camera, and the inside of the
+      // near wall (seen from behind) is coloured like the grass at the rim, so it hides what the near bank would.
+      const BOWL_SUN = new THREE.Vector3(0.35, 1, 0.25).normalize();
+      const GROUND_COL = { green: 0x86d96a, collar: 0x5cae48, fairway: 0x57a844, tee: 0x5cae48, light: 0x3f8232, heavy: 0x2f6a29, ob: 0x2f6a29, hardpan: 0x8d7c57, bunker: 0xe9dcaa, fbunker: 0xe9dcaa };
+      function groundColAt(x, z) {
+        const k = surfaceAt(x, z);
+        return k === 'fairway' && inEllipse(hole.green, x, z, 1.3) < 1 ? GROUND_COL.collar : (GROUND_COL[k] ?? GROUND_COL.heavy);
+      }
+      function bowlMeshes(d) {
+        const qs = [], NS = 72, c = Math.cos(d.rot), s = Math.sin(d.rot);
+        for (let i = 0; i <= 30; i++) qs.push(i / 30);                          // the sand, to the crest at q = 1
+        for (let i = 1; i <= 8; i++) qs.push(1 + (d.qOut - 1) * i / 8);         // the lip's bank
+        const pos = [], fc = [], bc = [], idx = [], col = new THREE.Color(), rim = [];
+        const at = (q, a) => { const u = Math.cos(a) * d.rx * q, v = Math.sin(a) * d.rz * q; return [d.x + u * c - v * s, d.z - (u * s + v * c)]; };
+        for (let j = 0; j < NS; j++) { const [x, z] = at(d.qOut + 0.02, j / NS * Math.PI * 2); rim.push(groundColAt(x, z)); }
+        qs.forEach((q) => {
+          for (let j = 0; j < NS; j++) {
+            const [x, z] = at(q, j / NS * Math.PI * 2), y = bunkerH(x, z), g = bunkerGrad(x, z), nl = Math.hypot(g.x, 1, g.z);
+            const lit = clamp(0.62 + 0.38 * ((-g.x * BOWL_SUN.x + BOWL_SUN.y - g.z * BOWL_SUN.z) / nl) / BOWL_SUN.y, 0.5, 1.1);
+            pos.push(x, y, z);
+            col.setHex(q < 0.999 ? GROUND_COL.bunker : groundColAt(x, z)).multiplyScalar(lit); fc.push(col.r, col.g, col.b);
+            col.setHex(rim[j]); bc.push(col.r, col.g, col.b);
+          }
+        });
+        for (let i = 0; i < qs.length - 1; i++) for (let j = 0; j < NS; j++) {
+          const a = i * NS + j, b = i * NS + (j + 1) % NS, c2 = a + NS, e = b + NS;
+          idx.push(a, c2, b, b, c2, e);
+        }
+        const P = new THREE.Float32BufferAttribute(pos, 3);
+        const mk = (cols, side) => {
+          const geo = new THREE.BufferGeometry(); geo.setAttribute('position', P); geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3)); geo.setIndex(idx);
+          const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side })); m.renderOrder = 8;
+          return m;
+        };
+        return [mk(fc, THREE.FrontSide), mk(bc, THREE.BackSide)];
+      }
+      // inside a greenside bunker's bowl or its lip's bank (a full shot coming down here plays by the chip's rules)
+      const inBowl = (x, z) => !!hole.dips && hole.dips.some((d) => { const dx = x - d.x, dz = z - d.z; return dx * dx + dz * dz <= d.reach2 && inEllipse(d, x, z) < d.qOut * d.qOut; });
       const holeRoughTex = canvasTex(64, 64, (g, w, h) => {
         g.fillStyle = '#2f6a29'; g.fillRect(0, 0, w, h);
         const r = rng32(11);
@@ -8954,9 +9093,10 @@
       // wind, the resort's holes mirrored left to right, the country club's tighter OB, more trees. courseV = the course being
       // played (null = the holes as written: the range, free play, the test round).
       const TIERS = {
-        1: { course: 'Rolling Pines Muni', stimpAdd: -1, windMult: 0.7, mirror: false, obMult: 1, treeMult: 1, rep: 0, entry: 0, desc: 'Public tracks, scruffy slow greens, small-time hustlers' },
-        2: { course: 'Palm Crest Resort', stimpAdd: 1, windMult: 1.0, mirror: true, obMult: 1, treeMult: 1.5, rep: 40, entry: 0, desc: 'Every hole turned the other way, faster greens, more trees, bigger money' },
-        3: { course: 'Hawthorne Country Club', stimpAdd: 2.5, windMult: 1.3, mirror: false, obMult: 0.8, treeMult: 1.3, rep: 120, entry: 500, desc: 'Lightning greens, stronger wind, tight out of bounds, high rollers' },
+        // (bunkerDepth: the greenside bunkers' depth × this: shallow muni traps, the country club's deep faces)
+        1: { course: 'Rolling Pines Muni', stimpAdd: -1, windMult: 0.7, mirror: false, obMult: 1, treeMult: 1, bunkerDepth: 0.75, rep: 0, entry: 0, desc: 'Public tracks, scruffy slow greens, small-time hustlers' },
+        2: { course: 'Palm Crest Resort', stimpAdd: 1, windMult: 1.0, mirror: true, obMult: 1, treeMult: 1.5, bunkerDepth: 1, rep: 40, entry: 0, desc: 'Every hole turned the other way, faster greens, more trees, bigger money' },
+        3: { course: 'Hawthorne Country Club', stimpAdd: 2.5, windMult: 1.3, mirror: false, obMult: 0.8, treeMult: 1.3, bunkerDepth: 1.3, rep: 120, entry: 500, desc: 'Lightning greens, stronger wind, tight out of bounds, high rollers' },
       };
       let courseV = null;
       function variantDef(def, v = courseV) {
@@ -8977,7 +9117,7 @@
             bumps: (gs.bumps || []).map((b) => ({ ...b, x: b.x * mx })),
             tiers: (gs.tiers || []).map((t) => ({ ...t, x: t.x * mx, ang: v.mirror ? Math.PI - (t.ang || 0) : t.ang })),
           },
-          treeMult: v.treeMult,
+          treeMult: v.treeMult, bunkerDepth: v.bunkerDepth,
         };
       }
       function setCourse(tier) {                             // a career match's course, or back to the plain holes
@@ -9004,6 +9144,10 @@
           cl, length: cl[N].s, halfW: def.halfWidth * YD, cut: def.firstCut * YD, from: def.fairwayFrom * YD,
           green: grn, pin, bunkers: def.bunkers.map(m), hardpan: def.hardpan.map(m), surface, ob: (def.ob || 45) * YD,
         });
+        // the greenside bunkers' bowls are part of the hole's ground (BUNKER): added on top of the green's height field
+        // (which runs on out under the surrounds), after its slopes were fitted, and nothing on the green itself changes
+        hole.dips = makeDips(hole.bunkers, grn, def.bunkerDepth || 1);
+        { const h0 = surface.h, g0 = surface.grad; surface.h = (x, z) => h0(x, z) + bunkerH(x, z); surface.grad = (x, z) => { const a = g0(x, z), b = bunkerGrad(x, z); return { x: a.x + b.x, z: a.z + b.z }; }; }
 
         let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
         const addPt = (x, z, r = 0) => { u0 = Math.min(u0, -z - r); u1 = Math.max(u1, -z + r); v0 = Math.min(v0, x - r); v1 = Math.max(v1, x + r); };
@@ -9016,7 +9160,8 @@
         holeTrees.length = 0;
 
         // ---- ground: heavy rough everywhere, with the first cut, hardpan, fairway, sand and green laid on top
-        const base = new THREE.Mesh(new THREE.PlaneGeometry(2600, 2600), new THREE.MeshLambertMaterial({ map: holeRoughTex }));
+        // (it doesn't write depth, so the greenside bunkers' bowls, drawn after the ground, show below it: bowlMeshes)
+        const base = new THREE.Mesh(new THREE.PlaneGeometry(2600, 2600), new THREE.MeshLambertMaterial({ map: holeRoughTex, depthWrite: false }));
         base.rotation.x = -Math.PI / 2; base.position.set((mapFullBounds.v0 + mapFullBounds.v1) / 2, 0, -(mapFullBounds.u0 + mapFullBounds.u1) / 2);
         holeCourseG.add(base);
 
@@ -9048,7 +9193,8 @@
         holeCourseG.add(ribbon(hole.halfW, hole.from, [0x57a844, 0x4d9a3c], 3));                       // fairway, striped
         holeCourseG.add(flat(new THREE.PlaneGeometry(7, 7), overlayMat(0x5cae48, 1, 3), 0, 0, 3));     // tee box
         for (const sx of [-2.6, 2.6]) { const mk = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), new THREE.MeshLambertMaterial({ color: 0xf2f2f2 })); mk.position.set(sx, 0.1, 0.3); holeCourseG.add(mk); }
-        hole.bunkers.forEach((b) => { oval(b, 0xcab57c, 5, 1.08); oval(b, 0xe9dcaa, 6); });       // lip, then sand
+        hole.bunkers.forEach((b) => { if (b.type !== 'bunker') { oval(b, 0xcab57c, 5, 1.08); oval(b, 0xe9dcaa, 6); } });       // lip, then sand
+        hole.dips.forEach((d) => holeCourseG.add(...bowlMeshes(d)));          // the greenside bunkers: 3D bowls (BUNKER)
         oval(hole.green, 0x5cae48, 4, 1.3, holeGreenG); oval(hole.green, 0x86d96a, 5, 1, holeGreenG);  // collar, green
         const cupM = flat(new THREE.CircleGeometry(HOLE_R * 1.6, 20), overlayMat(0x0c0f12, 1, 7), hole.pin.x, hole.pin.z, 7); holeGreenG.add(cupM);
         const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.6, 6), new THREE.MeshBasicMaterial({ color: 0xf4f4f4 })); pole.position.set(hole.pin.x, 1.3, hole.pin.z);
@@ -9638,20 +9784,22 @@
       // the ground around the green: the green's own height field, fading down to chipBase at the edge so it meets the
       // course (or the range) without a step
       function buildChipGround() {
-        const b = green.bounds, step = 0.8, fade = 26;
+        const b = green.bounds, step = 0.5, fade = 26;          // (0.5 m, was 0.8: fine enough for a bunker's face)
         const ix0 = Math.min(b.xMin, -8) - 12, ix1 = Math.max(b.xMax, 8) + 12, iz0 = Math.min(b.zMin, -4) - 12, iz1 = Math.max(b.zMax, 10) + 12;
         let hMin = 0;
         for (let x = ix0; x <= ix1; x += 3) for (let z = iz0; z <= iz1; z += 3) hMin = Math.min(hMin, green.h(x, z));
         chipBase = hMin - 0.35;
         const x0 = ix0 - fade, z0 = iz0 - fade, nx = Math.ceil((ix1 - ix0 + 2 * fade) / step), nz = Math.ceil((iz1 - iz0 + 2 * fade) / step);
         const pos = new Float32Array((nx + 1) * (nz + 1) * 3), col = new Float32Array((nx + 1) * (nz + 1) * 3), idx = [];
-        const c = new THREE.Color(), r = rng32(31);
+        const c = new THREE.Color(), r = rng32(31), onHoleDips = hp.on && !!hole.dips && hole.dips.length > 0;
         for (let j = 0, o = 0; j <= nz; j++) for (let i = 0; i <= nx; i++, o += 3) {
           const x = x0 + i * step, z = z0 + j * step;
           const out = Math.max(ix0 - x, x - ix1, iz0 - z, z - iz1, 0), w = clamp(out / fade, 0, 1), s = w * w * (3 - 2 * w);
           const inG = green.inside(x, z);
           pos[o] = x; pos[o + 1] = lerp(green.h(x, z) - (inG ? 0.03 : 0), chipBase, s); pos[o + 2] = z;
-          c.setHex(CHIP_COL[s > 0.5 ? 'heavy' : green.surfAt(x, z)] || CHIP_COL.light).multiplyScalar(0.93 + 0.1 * r());
+          // (BUNKER: the sand darkens with depth, so the bowl reads from above as well as by its lit walls)
+          const P = onHoleDips ? green.toSurface(x, z) : null, bh = P ? bunkerH(P.x, P.z) : 0;
+          c.setHex(CHIP_COL[s > 0.5 ? 'heavy' : green.surfAt(x, z)] || CHIP_COL.light).multiplyScalar((0.93 + 0.1 * r()) * (bh < 0 ? lerp(1, 0.72, clamp(-bh / 1.8, 0, 1)) : 1));
           col[o] = c.r; col[o + 1] = c.g; col[o + 2] = c.b;
         }
         for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
@@ -9669,7 +9817,7 @@
       //      type, setup and lie; the marker's carry is looked up in it. Perception (and a bad lie) fuzz what the player sees.
       const chipCache = new Map();
       const stockSwing = (bs) => ({ bs, ds: 1, thetaMouse: 0, sigma: 0, lateSign: 1, vImpact: 1, vPeak: 1, miss: 0 });
-      const chipKeyOf = () => { const s = setup(); return [state.club, CLUBS[state.club].model || '', CLUBS[state.club].loft, state.power, state.lie, state.slope, s.face, s.ballPos, s.stance, s.traj, s.spinCtl, state.chipType, green.stimp].join('|'); };
+      const chipKeyOf = () => { const s = setup(); return [state.club, CLUBS[state.club].model || '', CLUBS[state.club].loft, state.power, state.lie, state.slope, state.slopeLaunch, s.face, s.ballPos, s.stance, s.traj, s.spinCtl, state.chipType, green.stimp].join('|'); };
       function chipLaunch(bs) {
         const r = computeImpact(stockSwing(bs), setup(), CLUBS[state.club], { ...env(), stock: true }, () => 0.5);
         return { ballSpeed: r.ballSpeed, vla: r.vla, dir: 0, spin: r.spin, axis: 0, release: 0 };
@@ -9716,7 +9864,23 @@
         chipRead = {
           carryM: c, lo, hi, bsTrue: t.bs, bsLo: a.bs, bsHi: b.bs, reach: t.reach, reachHi: b.reach, bias, half, mult, surf, rows,
           rollM: Math.max(0, Math.hypot(f.p.x, f.p.z) - (f.carry || 0)), pinLo: d * (1 + bias - half), pinHi: d * (1 + bias + half),
+          face: bunkerFaceRead(t),
         };
+      }
+      // BUNKER: in a greenside bunker on a hole, how high the face in front of the ball stands, and whether this chip
+      // (the marker's true backswing, a stock strike, no wind) gets out: the read a player gets by looking at the lip
+      function bunkerFaceRead(t) {
+        if (!hp.on || state.lie !== 'bunker' || !green.chip || !t.reach) return null;
+        const hd = heading(state.aim);
+        let top = 0;
+        for (let k = 0.25; k <= 20; k += 0.25) {                // along the aim line, to where the bowl's lip runs out
+          const P = green.toSurface(hd.x * k, hd.z * k);
+          if (!inBowl(P.x, P.z)) break;
+          top = Math.max(top, green.h(hd.x * k, hd.z * k));
+        }
+        if (top < 0.3) return null;
+        const f = runChip(green, { ...chipLaunch(t.bs), dir: state.aim });
+        return { ft: top / FT, stays: green.surfAt(f.p.x, f.p.z) === 'bunker' };
       }
       // Where a stock chip from here would land to finish at the pin on a flat green (where the marker starts).
       function chipSuggestM() {
@@ -10134,7 +10298,7 @@
         shot = null; puttRun = null; telemetry = null; puttTel = null; lastNumbers = null;
         $('toast').classList.remove('on'); $('btnHole').textContent = `Play ${HOLE.name} — par ${HOLE.par} (H)`;
         if (state.mode !== 'range') setMode('range');
-        state.lie = 'fairway'; state.lieSeed = (state.lieSeed * 1664525 + 1013904223) >>> 0; $('inLie').value = 'fairway'; state.aim = PINS[state.pin].brg; state.view = 'scout'; camReady = false;
+        state.lie = 'fairway'; state.slopeLaunch = null; state.lieSeed = (state.lieSeed * 1664525 + 1013904223) >>> 0; $('inLie').value = 'fairway'; state.aim = PINS[state.pin].brg; state.view = 'scout'; camReady = false;
         layoutWorld(); syncPanel(); renderBag(); txtCache.clear();
         $('tbPinL').textContent = 'Target pin'; $('panelTitle').textContent = '🎯 Driving range';
         if (leftPvp) toast('Left the round\nResume it from 🤝 Friends in the clubhouse (J)', 2400);
@@ -10148,13 +10312,32 @@
         if (!hp.onTee && hp.mapZoom === 0) hp.mapZoom = 1;    // automatically zoom minimap in on shot 2+
         const surf = surfaceAt(hp.ball.x, hp.ball.z);
         if (surf === 'green') return enterHolePutt();
-        state.lie = SURF[surf].lie; state.lieSeed = (state.lieSeed * 1664525 + 1013904223) >>> 0; state.slope = 'flat'; $('inLie').value = state.lie; $('inSlope').value = 'flat';
+        state.lie = SURF[surf].lie; state.lieSeed = (state.lieSeed * 1664525 + 1013904223) >>> 0; state.slope = surf === 'bunker' ? bunkerSlopeLie() : 'flat'; $('inLie').value = state.lie; $('inSlope').value = state.slope;
+        state.slopeLaunch = surf === 'bunker' ? bunkerSlopeLaunch() : null;
         if (pinDist() <= CHIP.maxYd * YD) { state.club = suggestChipClub(); return enterHoleChip(); }     // close to the green: chip it
         if (state.mode !== 'range') setMode('range');          // rolled off the green, or a chip ran a long way
         state.club = suggestClub(); refreshShotType(); renderBag();
         autoGreenRead();                                       // the green read: open once the green is in reach
         hp.aimPin = false; state.aim = holeAim(); state.view = 'scout'; clubPhi = clubPhiTarget = 0;
         layoutWorld(); syncPanel();
+      }
+      // BUNKER: a ball resting on a greenside bunker's slope plays off that slope: up or down the face toward the pin, or
+      // above or below the feet across it (a right-hander stands on the left of the line, so ground rising to the right
+      // puts the ball above the feet)
+      function bunkerSlopeLie() {
+        const b = hp.ball, g = bunkerGrad(b.x, b.z), d = pinDist() || 1, ux = (hole.pin.x - b.x) / d, uz = (hole.pin.z - b.z) / d;
+        const along = g.x * ux + g.z * uz, across = g.x * -uz + g.z * ux;
+        if (Math.max(Math.abs(along), Math.abs(across)) < BUNKER.slopeLie) return 'flat';
+        return Math.abs(along) >= Math.abs(across) ? (along > 0 ? 'up' : 'down') : (across > 0 ? 'above' : 'below');
+      }
+      // ...and up or down the face, the swing follows the slope: the launch changes by 0.8 of its angle (SLOPES' fixed
+      // ±4.5° is a 5.6° slope), so a ball lying on a steep face comes out steeply. null: the lie isn't up or down a slope
+      function bunkerSlopeLaunch() {
+        const s = bunkerSlopeLie();
+        if (s !== 'up' && s !== 'down') return null;
+        const b = hp.ball, g = bunkerGrad(b.x, b.z), d = pinDist() || 1;
+        const along = (g.x * (hole.pin.x - b.x) + g.z * (hole.pin.z - b.z)) / d;
+        return clamp(0.8 * Math.atan(along) * R2D, -20, 30);
       }
       // On the green: build the putt from the ball to the cup. The green's tilt is fixed, so break and uphill/downhill
       // follow from which side of the hole the ball is on.
@@ -10177,13 +10360,15 @@
       }
 
       // The hole's green as a chip view in a full shot's own frame (the ball at the origin, world-aligned axes), for
-      // stepFlight's hand-off when the shot comes down on it. Flat for the bounces (the full flight's ground is y = 0);
-      // the green's real slopes, its Stimp and the collar's drag for the roll, as a putt or chip gets.
+      // stepFlight's hand-off when the shot comes down on it. Flat for the bounces (the full flight's ground is y = 0)
+      // but for the greenside bunkers' bowls (BUNKER), which the full flight's world has too; the green's real slopes, its
+      // Stimp and the collar's drag for the roll, as a putt or chip gets.
       function fullShotGreen(hb) {
         const S = hole.surface, surfAt = (x, z) => holeChipSurf(hb.x + x, hb.z + z);
         return {
           decel: rollDecel(holeStimp()), stimp: holeStimp(), hole: { x: hole.pin.x - hb.x, z: hole.pin.z - hb.z },
-          h: () => 0, grad: (x, z) => S.grad(hb.x + x, hb.z + z), surfAt, drag: (x, z) => (CHIP.surf[surfAt(x, z)] || CHIP.surf.fairway).drag,
+          h: (x, z) => bunkerH(hb.x + x, hb.z + z), grad: (x, z) => S.grad(hb.x + x, hb.z + z), surfAt, drag: (x, z) => (CHIP.surf[surfAt(x, z)] || CHIP.surf.fairway).drag,
+          bowl: (x, z) => inBowl(hb.x + x, hb.z + z),
         };
       }
       function checkHoleOut(s) {             // a chip or pitch that rolls into the cup
@@ -10559,7 +10744,7 @@
             ['light', 'Light rough', 'less power and spin · sometimes a <b>flier</b> that jumps and runs · hybrids cope better than long irons'],
             ['heavy', 'Heavy rough', 'much less power, very unpredictable · long clubs can\'t get through — take loft, get back in play'],
             ['fbunker', 'Fairway sand', 'some power lost · needs enough loft to clear the lip'],
-            ['bunker', 'Greenside sand', 'pops out with much less power · use a lofted wedge'],
+            ['bunker', 'Greenside sand', 'pops out with much less power · use a lofted wedge · on the course it\'s a bowl, its face highest on the green side: under the face, open it up (High or Flop)'],
             ['hardpan', 'Hardpan', 'fine if struck cleanly · a mishit thins or chunks it'],
           ];
           const surf = hp.on ? (SURF[surfaceAt(hp.ball.x, hp.ball.z)] || SURF.heavy).name : `${LIES[state.lie].name} (practice)`;
@@ -13492,7 +13677,7 @@
         const c = CLUBS[i], key = `${i}|${c.model || ''}|${c.loft}|${c.lieBias || 0}|${state.power}|${state.dex}|${state.composure}`;     // (loft: S5.6's approach wedge)
         if (bagNumCache.has(key)) return bagNumCache.get(key);
         const saved = [state.lie, state.slope];
-        state.lie = 'fairway'; state.slope = 'flat';
+        state.lie = 'fairway'; state.slope = 'flat'; state.slopeLaunch = null;
         try {
           const su = { face: 0, ballPos: 0, stance: 0, traj: 0, spinCtl: 0 }, { r, f } = stockFlightOf(i, su);
           // the spread: SPREAD.n ordinary swings, as the minimap's landing area (no tilt, no wind)
@@ -14447,10 +14632,10 @@
       // a point on the hole -> the world (the ball is the origin; on the green views the green's own frame)
       function npcWorld(hx, hz, out) {
         if (onGreenView() && green && hp.frame) {
-          const p = green.fromSurface(hx, hz), onG = isPutt() || inEllipse(hole.green, hx, hz, 1.35) < 1;
+          const p = green.fromSurface(hx, hz), onG = isPutt() || inEllipse(hole.green, hx, hz, 1.35) < 1 || (isChip() && inBowl(hx, hz));
           return out.set(p.x, onG ? green.h(p.x, p.z) : holeG.position.y, p.z);
         }
-        return out.set(hx - hp.ball.x, 0, hz - hp.ball.z);
+        return out.set(hx - hp.ball.x, bunkerH(hx, hz), hz - hp.ball.z);          // (in a greenside bunker: down in its bowl)
       }
       const npcClubFor = (yd, tee, par) => (tee && par > 3 && yd > 190 ? 'driver'
         : [[215, '3 wood'], [195, 'hybrid'], [180, '4 iron'], [170, '5 iron'], [160, '6 iron'], [150, '7 iron'], [140, '8 iron'], [128, '9 iron'], [112, 'pitching wedge'], [95, 'gap wedge'], [0, 'sand wedge']].find(([d]) => yd >= d)[1]);
@@ -16049,7 +16234,7 @@
         bind('inCDist', (v) => { state.chipCfg.pinYd = +v; if (isChip() && !hp.on) applyChipGreen(true); });
         $('chipTypeRow').addEventListener('click', (e) => { const p = e.target.closest('.chip-pill'); if (p && isChip()) applyChipType(p.dataset.ct); });
         $('shotTypeRow').addEventListener('click', (e) => { const p = e.target.closest('.chip-pill'); if (!p || isPutt()) return; if (p.dataset.shape && !isChip()) applyShot(p.dataset.shape); else if (p.dataset.spinctl !== undefined) setSpinCtl(+p.dataset.spinctl); });
-        bind('inSlope', (v) => { state.slope = v; telemetry = null; }, 'change');
+        bind('inSlope', (v) => { state.slope = v; state.slopeLaunch = null; telemetry = null; }, 'change');
         bind('inWind', (v) => { state.windMph = +v; orientFlags(); });
         bind('inWindDir', (v) => { state.windDir = +v; orientFlags(); });
         bind('inPower', (v) => { state.power = +v; renderBag(); });
@@ -16341,6 +16526,8 @@
           // (user requests, 2026-11-20: higher, looking down on the green more steeply for a better read (was 1.9 m up, 4.6
           // back); then 4.2 m was a little too high and steep, so between the two)
           else { toWorld(goalPos.set(0, 3.0, 4.8)); onGround(toWorld(goalLook.set(0, 0, -Math.min(dist, Math.max(L, dist * 0.7))))); fovGoal = 50; }
+          // (BUNKER: never inside a bunker's wall or bank: from deep in one the cameras ride up over the grass behind)
+          if (state.view !== 'overhead') goalPos.y = Math.max(goalPos.y, green.h(goalPos.x, goalPos.z) + 0.6);
         } else if (state.view === 'flight' && shot) {
           const b = ball.position, dist = Math.hypot(b.x, b.z);
           if (shot.age < 0.15) addressPose();                    // hold on the turf, then go with the ball
@@ -16448,8 +16635,9 @@
         setText('tbLie', `${LIES[state.lie].name.replace(/ \(.*/, '')} · ${SLOPES[state.slope].name}`);
         if (chip) {
           setText('tbSetup', !cr ? '—' : !cr.reach ? `Land ${fmtBandYd(cr.lo, cr.hi)} yd · out of reach for this club and shot · take more club`
-            : `Land ${fmtBandYd(cr.lo, cr.hi)} yd · backswing ${fmtBandBs(cr.bsLo, cr.bsHi)} · flat roll ~${fmtYd(cr.rollM)} yd · read the slope${state.lie !== 'fairway' ? ` · ${LIES[state.lie].name.toLowerCase()} blurs it` : ''}`);
-          $('tbSetup').style.color = state.lie !== 'fairway' || (cr && !cr.reach) ? 'var(--amber)' : '';
+            : `Land ${fmtBandYd(cr.lo, cr.hi)} yd · backswing ${fmtBandBs(cr.bsLo, cr.bsHi)} · flat roll ~${fmtYd(cr.rollM)} yd · read the slope${state.lie !== 'fairway' ? ` · ${LIES[state.lie].name.toLowerCase()} blurs it` : ''}`
+              + (cr.face ? ` · face ${cr.face.ft.toFixed(1)} ft${cr.face.stays ? ': this one won\'t clear it, get it up quicker' : ', this one clears it'}` : ''));
+          $('tbSetup').style.color = cr && cr.face && cr.face.stays ? 'var(--red, #ff6b6b)' : state.lie !== 'fairway' || (cr && !cr.reach) ? 'var(--amber)' : '';
         } else if (state.lie === 'fairway') {
           setText('tbSetup', 'Clean lie · 100% power & spin · exact yardage');
           $('tbSetup').style.color = '';
@@ -17126,6 +17314,7 @@
         LIES, SLOPES, AERO, windVector, clubFit, solveShape, powerMult, runChip, computePutt, analyzePutt, CADDIES,
         createPutt, stepPutt, puttTarget, rollDecel, puttGate, rng32, shopStats, SHOP, withClubModel, setup, careerStats,
         fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock, flatChipView, treeDeflect, treePart, TREE, previewTrack, previewSide, spreadRatio, dexSpreadAt, lowRunnerHeight, fitApproachWedge, APPROACH, bagClubNumbers, greenInReach, setGreenRead, get greenReadOpen() { return greenRead.open; },
+        BUNKER, bunkerH, bunkerGrad, inBowl, bunkerSlopeLie, stepChip, createChip, chipBounce, env,
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
