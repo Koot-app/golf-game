@@ -128,10 +128,12 @@ confirm against a current source and note any difference. Carry is at sea level,
   `spreadAxes`, `SPREAD`, `createFlight`, `stepFlight`, `debugSwing`, `setHeight`, `setSpinCtl`, `applyShot`,
   `setComposure`, `setBadStreak`, `tiltPenalty`, `compOffset`, `CHIP`, `CHIP_TYPES`, `chipTable`, `PUTT`, `PUTTERS`,
   `SURF`, `telemetry`, `shot`, `puttRun`, `puttTel`.
-- **Not exposed yet, and most sections need them:** `analyzeSwing`, `computeImpact`, `swingSample`, `beginSwing`,
-  `LIES`, `SLOPES`, `AERO`, `windVector`, `clubFit`, `solveShape`, `powerMult`, `runChip`, `computePutt`,
-  `analyzePutt`, `CADDIES`. Adding these names to `window.__golf` is the one edit to `index.html` this audit allows.
-  The first section to run adds them all, once.
+- **Added by S1 (2026-11-20), so they're there now:** `analyzeSwing`, `computeImpact`, `swingSample`, `beginSwing`,
+  `endSwing`, `onPointerMove`, `isSpike`, `tempoTarget`, `powerFromBackswing`, `powerFromTempo`, `LIES`, `SLOPES`,
+  `AERO`, `windVector`, `clubFit`, `solveShape`, `powerMult`, `runChip`, `computePutt`, `analyzePutt`, `CADDIES`.
+  Adding names to `window.__golf` is the one edit to `index.html` this audit allows.
+- **From S1:** `debugSwing` reads about 95% tempo when asked for 100% and leaves the swing active. For exact numbers,
+  call `computeImpact` directly with the swing numbers you want (`tools/test/swing-input.js` shows how).
 - `debugSwing({ back, tempo, angle, wobble, miss, traj })` plays a scripted swing through the real input path.
   `stockFlightOf(clubIndex, setup, backswing)` gives a club's no-scatter shot: `{ r, f }` = launch numbers and the
   finished flight (`f.carry`, `f.apex`, `f.p` in metres; `r.ballSpeed` mph, `r.vla`, `r.spin`, `r.axis`).
@@ -400,7 +402,7 @@ Check:
 
 | # | Section | Done | Findings | Fixed |
 |---|---|---|---|---|
-| S1 | The mouse swing | | | |
+| S1 | The mouse swing | ✅ 2026-11-20 | 12 (2 high, 6 medium, 4 low) | |
 | S2 | Impact | | | |
 | S3 | Ball flight, wind, bounce and roll | | | |
 | S4 | The base bag | | | |
