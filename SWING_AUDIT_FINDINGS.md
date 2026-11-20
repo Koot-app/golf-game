@@ -1203,6 +1203,21 @@ the ZXi7 and the 620 CB. The full rows, with spin and landing angle, are the scr
   (×1.012) is the other knob. **Re-measure:** this table and the fairway woods (same lines at half strength).
 
 ### S5.5 [Medium, realism] A forgiving driver's toe hit hooks 20–30 yds; a low-spin one's slices up to 36
+- **✅ Fixed 2026-11-20:** in `modelMods` a driver or wood model's `bulge` is scaled by its `gear` × `work`. The gear
+  is the face twist, and the work turns that twist into curve, so the two still cancel as on the base club. Where a
+  drive finishes, relative to the same model's centred drive (yds, + right; toe 8 / toe 14 / heel 8 / heel 14):
+
+  | Driver | Before | After |
+  |---|---|---|
+  | Base / Qi4D | −4 / −3 / +5 / +4 | −3 / −2 / +4 / +2 |
+  | G440 K (forgiving) | −14 / **−24** / +13 / +21 | −1 / −2 / +2 / 0 |
+  | Quantum Max D | −10 / −17 / +7 / +9 | −2 / −2 / −2 / −6 |
+  | Qi4D LS (low spin) | +2 / +11 / −4 / −13 | −5 / −2 / +5 / +2 |
+  | Triple Diamond (low spin) | +8 / +21 / −7 / −16 | −2 / +4 / +8 / +6 |
+
+  (The Max D's and Triple Diamond's centred drives still sit 17 yds left and 12 right: their built-in draw and fade,
+  S5.8.) A forgiving head now shows its forgiveness as a straighter miss and more carry kept (G440 K 262 at 14 mm,
+  against 252 for the Qi4D). The fairway woods and hybrids follow at half strength. `tools/test/swing-fix5.js`.
 - **Where:** `modelMods` multiplies `gear` (the face twist) but leaves `bulge` alone. The base driver's twist and
   bulge nearly cancel (toe 8 mm: 4 yds left). On a G440 K (gear ×0.75) the bulge wins: 20 yds left, 30 at 14 mm. On a
   Triple Diamond (gear ×1.25) the twist wins: 23 and 36 yds right. The same happens in the woods: a G440 K 3 wood's
@@ -1216,6 +1231,22 @@ the ZXi7 and the 620 CB. The full rows, with spin and landing angle, are the scr
   dispersion (S6), and the fairway percentages above.
 
 ### S5.6 [Medium, feel / balance] A game-improvement set leaves a 23–27 yd hole between its PW and the gap wedge
+- **✅ Mostly fixed 2026-11-20:** an iron set's loft change now tapers toward the wedge. The 9 iron gets 75% of it and
+  the PW 40% (the 4 and 5 irons still 80%). The strong-lofted sets' PWs are now 43.6–44.4° (Takomo's spec page: 43°;
+  they were 40–41°). After (with S4.2's speeds; base gap wedge 122):
+
+  | Set | PW loft | 9 iron → PW | PW → GW |
+  |---|---|---|---|
+  | Base, blades, 620 CB | 46° | 14 | 13–14 |
+  | ZXi7 | 45.2° | 15 | 16 |
+  | Ai200, M2 | 43.8–44.4° | 17 | 18 |
+  | 101 MKII | 44.0° | 17 | 20 |
+  | Qi Max, JPX 925 HM | 43.6–43.8° | 18 | **22** (was 25–27) |
+
+  **What's left:** a strong-lofted PW still carries 140–145, so it leaves about 20 yds before a 50° gap wedge. Real
+  sets of this kind leave the same gap, which is why they're sold with an approach wedge (about 48°). If the game
+  should close it, a model option for the gap wedge's loft (48° with a GI set) is the next step. A stronger taper was
+  tried: it gained about 2 yds and pushed the PW lofts past the real ones.
 - **Measured** (carry gaps; base gap wedge 113, 3 hybrid 223):
 
   | Set | 3 hybrid → 4 iron | 9 iron → PW | PW → GW |

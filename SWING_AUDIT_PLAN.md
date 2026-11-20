@@ -408,7 +408,7 @@ Check:
 | S2 | Impact | ✅ 2026-11-20 | 11 (4 medium, 7 low) | S2.1, S2.4 (2026-11-20) |
 | S3 | Ball flight, wind, bounce and roll | ✅ 2026-11-20 | 6 (3 medium, 3 low) | S3.1 (2026-11-20); S3.2 mostly (S8.1) |
 | S4 | The base bag | ✅ 2026-11-20 | 5 (2 medium, 3 low) | S4.1, S4.2 (2026-11-20); S4.3 by S3.1's speeds |
-| S5 | The club catalogue | ✅ 2026-11-20 | 9 (1 high, 6 medium, 2 low) | S5.1, S5.2, S5.3, S5.4 (2026-11-20) |
+| S5 | The club catalogue | ✅ 2026-11-20 | 9 (1 high, 6 medium, 2 low) | S5.1–S5.5 (2026-11-20); S5.6 mostly |
 | S6 | Stats, lies, dispersion and difficulty | ✅ 2026-11-20 | 5 (3 medium, 2 low); S2.1 raised to high | S6.1 (2026-11-20; S9.2 partly) |
 | S7 | Shot shaping, height and spin | ✅ 2026-11-20 | 5 (2 medium, 3 low) | S7.1, S7.2 (2026-11-20) |
 | S8 | Chipping and putting | ✅ 2026-11-20 | 3 (2 medium, 1 low) | S8.1 (2026-11-20; S8.2 largely, S3.2 mostly) |

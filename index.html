@@ -12366,10 +12366,17 @@
       const modelName = (id) => (CLUB_MODELS[id] ? `${CLUB_MODELS[id].brand} ${CLUB_MODELS[id].name}` : '');
       // what a model does to one club (index i) of the bag
       function modelMods(m, i) {
-        const b = BASE_CLUBS[i], k = m.kind === 'iron' && i <= 5 ? 0.8 : 1, out = {};
+        // an iron set's loft change is shown for the 7 iron: the 4 and 5 irons get 80% of it, and it tapers off toward the
+        // wedge, 75% on the 9 iron and 40% on the PW, as real strong-lofted sets do (swing audit S5.6: a GI set's PW is about
+        // 43–44°, not 40°; the full change left a 23–27 yd hole before the gap wedge)
+        const b = BASE_CLUBS[i], k = m.kind !== 'iron' ? 1 : i <= 5 ? 0.8 : i === CI_PW ? 0.4 : i === CI_PW - 1 ? 0.75 : 1, out = {};
         for (const [f, v] of Object.entries(m.add || {})) out[f] = b[f] + v * k;
         for (const [f, v] of Object.entries(m.x || {})) out[f] = b[f] * v;
         for (const [f, v] of Object.entries(m.set || {})) if (f !== 'bounce' || b.bounce) out[f] = v;
+        // swing audit S5.5: a wood's bulge (the toe-hit draw) is scaled with its gear (the face twist) and its work (which
+        // turns that twist into curve), so the two still cancel as on the base club: a forgiving head's toe hit flies
+        // straighter instead of hooking 20–30 yds, and a low-spin head's no longer slices
+        if (m.x && m.x.gear && b.bulge) out.bulge = b.bulge * m.x.gear * (m.x.work || 1);
         if (out.work !== undefined && out.work !== b.work) out.shapeCx = b.work / out.work;     // (swing audit S5.1: see computeImpact)
         if (m.bias && career) out.lieBias = Math.round((rng32((career.seed ^ (i * 2654435761)) >>> 0)() * 2 - 1) * m.bias * 10) / 10;   // bent lie: fixed for the career
         return out;
