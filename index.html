@@ -8362,8 +8362,8 @@
         const mRing = new THREE.Mesh(new THREE.RingGeometry(0.085, 0.12, 28), new THREE.MeshBasicMaterial({ color: 0x35e0ff, side: THREE.DoubleSide })); mRing.rotation.x = -Math.PI / 2;
         const mDot = new THREE.Mesh(new THREE.CircleGeometry(0.024, 16), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })); mDot.rotation.x = -Math.PI / 2;
         const mPost = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.5, 6).translate(0, 0.25, 0), new THREE.MeshBasicMaterial({ color: 0x35e0ff }));
-        const mHead = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 8), new THREE.MeshBasicMaterial({ color: 0x35e0ff })); mHead.position.y = 0.5;
-        markerG.add(mHalo, mRing, mDot, mPost, mHead);
+        mPost.name = 'post';               // (hidden when chipping: the ring alone marks the landing spot, user request 2026-11-20)
+        markerG.add(mHalo, mRing, mDot, mPost);
       }
       const AIM_PTS = 80, ROLL_PTS = 3000;
       const aimLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 }));
@@ -8601,7 +8601,8 @@
         }
         const mx = Math.sin(aim) * L, mz = -Math.cos(aim) * L;
         markerG.position.set(mx, green.h(mx, mz) + 0.012, mz);
-        markerG.scale.setScalar(isChip() ? 3.5 : 1);           // (user request, 2026-11-20: the landing ring readable from the chipping camera)
+        markerG.scale.setScalar(isChip() ? 3.5 : 1);
+        markerG.getObjectByName('post').visible = !isChip();          // (user request, 2026-11-20: the landing ring readable from the chipping camera)
         markerG.visible = state.view !== 'flight';
         aimLine.visible = false;          // removed at the player's request: the marker itself shows where you are aiming
         for (let i = 0; i < AIM_PTS; i++) {
