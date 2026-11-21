@@ -2324,6 +2324,14 @@
       color: var(--dim);
     }
 
+    /* a spare's two buttons: swap it in, sell it */
+    .sh-row .sh-pair {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .sh-row button {
       width: auto;
       margin: 0;
@@ -14730,7 +14738,7 @@
         // the clubs you've replaced: in the locker, free to swap back (an iron set as one row)
         const sp = career.spares.filter((s) => CLUB_MODELS[s.id]);
         if (sp.length) {
-          h += '<div class="sh-cat">Spares in your locker · the clubs you\'ve replaced: swap one back in free (the club in its place goes to the locker)</div>';
+          h += '<div class="sh-cat">Spares in your locker · the clubs you\'ve replaced: swap one back in free (the club in its place goes to the locker), or sell it to the shop</div>';
           const sets = new Set();
           for (const s of sp.sort((a, b) => a.i - b.i)) {
             const iron = CLUB_MODELS[s.id].kind === 'iron';
@@ -14738,7 +14746,7 @@
             const sl = iron ? sp.filter((x) => x.id === s.id) : [s], snapped = sl.filter((x) => x.snapped);
             if (iron) sets.add(s.id);
             h += `<div class="sh-row locker${snapped.length ? ' snapped' : ''}"><b>${iron ? 'Irons' : CLUBS[s.i].name}</b><i>${modelName(s.id)}${iron ? ` · ${sl.map((x) => SLOT_NAME(x.i)).join(', ')}` : ''}${snapped.length ? ` · ${iron ? snapped.map((x) => SLOT_NAME(x.i)).join(', ') + ' ' : ''}snapped` : ''} · spare</i>`
-              + `<button data-swap="${s.id}" data-slot="${s.i}">Swap ${iron ? 'the set' : 'it'} into the bag</button></div>`;
+              + `<span class="sh-pair"><button data-swap="${s.id}" data-slot="${s.i}">Swap ${iron ? 'the set' : 'it'} into the bag</button><button data-sell="${s.id}" data-slot="${s.i}">Sell · ${money(sellPrice(s.id, sl))}</button></span></div>`;
           }
         }
         return h;
@@ -14784,6 +14792,27 @@
         for (const i of slots) if (slotIn(i, id)) waiting.push(CLUBS[i].name);
         shopChanged(`Bought: ${modelName(id)}${m.kind === 'iron' ? ' irons (4–PW)' : ` ${slots.map(SLOT_NAME).join(', ')}`} for ${money(price)}.${lockerNote(old, waiting)}`);
       }
+      // SELLING A SPARE (user request, 2026-11-21): the pro shop buys back a club from your locker (never one you carry):
+      // a share of what it costs new (an iron set by the clubs in it, of the seven), half that if it's snapped; a used club
+      // the shop doesn't sell goes for a few dollars. An iron set sells as a set. (Never more than it cost: no profit in it.)
+      const SELL = { share: 0.4, snapped: 0.5, used: 5 };
+      const sellGroup = (id, slot) => career.spares.filter((s) => s.id === id && (CLUB_MODELS[id].kind === 'iron' || s.i === slot));
+      function sellPrice(id, group) {
+        const m = CLUB_MODELS[id], per = m.kind === 'iron' ? m.price / SHOP.slots.iron.length : m.price;
+        const v = group.reduce((t, s) => t + (per > 0 ? per * SELL.share : SELL.used) * (s.snapped ? SELL.snapped : 1), 0);
+        return Math.max(5, Math.round(v / 5) * 5);
+      }
+      function sellSpare(id, slot) {
+        const m = CLUB_MODELS[id];
+        if (!m) return;
+        const group = sellGroup(id, slot);
+        if (!group.length) return;
+        const p = sellPrice(id, group), what = `${modelName(id)}${m.kind === 'iron' ? ` irons (${group.map((s) => SLOT_NAME(s.i)).join(', ')})` : ` ${SLOT_NAME(group[0].i)}`}`;
+        if (!confirm(`Sell the ${what}${group.some((s) => s.snapped) ? ', snapped,' : ''} to the pro shop for ${money(p)}? It's gone for good.`)) return;
+        career.spares = career.spares.filter((s) => !group.includes(s));
+        career.cash += p;
+        shopChanged(`Sold: the ${what} for ${money(p)}.`);
+      }
       // a spare back into the bag, free: one club (wood, wedge, driver), or a whole iron set
       function lockerSwap(id, slot) {
         const m = CLUB_MODELS[id];
@@ -14808,6 +14837,7 @@
         if (d.tab) { shopTab = d.tab; setText('shMsg', ''); return renderShop(); }
         if (d.buy) return shopBuy(d.buy, d.slots.split(',').map(Number));
         if (d.swap) return lockerSwap(d.swap, +d.slot);
+        if (d.sell) return sellSpare(d.sell, +d.slot);
         if (d.repair) { const i = +d.repair, p = repairPrice(i); if (career.cash < p) return; career.cash -= p; career.snapped = career.snapped.filter((x) => x !== i); return shopChanged(`Your ${CLUBS[i].name} is repaired (${money(p)}).`); }
         if (d.locker) { career.out.push(+d.locker); return shopChanged(`${CLUBS[+d.locker].name} went to your locker.`); }
         if (d.tobag) { if (carried() >= SHOP.bagMax) return; career.out = career.out.filter((x) => x !== +d.tobag); return shopChanged(`${CLUBS[+d.tobag].name} is back in the bag.`); }

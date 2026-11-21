@@ -56,6 +56,22 @@
   g.openBagRoom(); await sleep(500);
   const spareCards = [...document.querySelectorAll('#brList .br-model.spare')].map((x) => x.querySelector('b').textContent);
   say(spareCards.length === 3, `the locker room: ${spareCards.length} spare cards (${spareCards.join(', ')}) · "${$('brSum').innerText.replace(/\s+/g, ' ')}" · ${$('brValue').textContent}`);
+  // 6. selling a spare (user request, 2026-11-21): 40% of new, half if snapped, an iron set as a set; gone for good
+  g.openShop(); await sleep(300); await tab('bag');
+  const sellBtn = (id) => document.querySelector(`#shList button[data-sell="${id}"]`);
+  const sellAt = async (id) => { const b = sellBtn(id), cash = c().cash, want = +(b.textContent.replace(/[^0-9]/g, '')); b.click(); await sleep(250); return { got: c().cash - cash, want, msg: $('shMsg').textContent }; };
+  const sd = await sellAt(drv);
+  say(sd.got === Math.round(M[drv].price * 0.4 / 5) * 5 && sd.got === sd.want && !c().spares.some((s) => s.id === drv), `sold the spare ${drv} (new $${M[drv].price}): +$${sd.got} · "${sd.msg}"`);
+  const ss = await sellAt(bag0[12]);
+  say(ss.got === 5 && !c().spares.some((s) => s.id === bag0[12]), `sold the snapped used ${bag0[12]} (not sold new): +$${ss.got}`);
+  const si = await sellAt(irn);
+  say(si.got === Math.round(M[irn].price * 0.4 / 5) * 5 && !c().spares.some((s) => s.id === irn), `sold the spare ${irn} set, all seven (new $${M[irn].price}): +$${si.got}`);
+  say(!document.querySelector('#shList button[data-sell]') && c().bag[0] === bag0[0], `nothing left to sell; the bag's clubs never had a Sell button (driver ${c().bag[0]} still in the bag)`);
+  // the used set back in, the M2 set bought again: the used set's 4 clubs sell for $5 each
+  await tab('iron'); await click(`#shList button[data-buy="${irn}"]`); await tab('bag');
+  const su = await sellAt(bag0[7]);
+  say(su.got === 20, `sold the used ${bag0[7]} set (5, 7, 9, PW): +$${su.got}`);
+  await sleep(700);                                        // (a save is written 400 ms later, audit 8.1)
   const saved = JSON.parse(localStorage.getItem(Object.keys(localStorage).find((k) => /^golfCareer/.test(k))) || '{}');
   say(Array.isArray(saved.spares) && saved.spares.length === c().spares.length, `saved with the career: ${saved.spares && saved.spares.length} spares`);
   return out.join('\n');
