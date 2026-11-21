@@ -1,4 +1,4 @@
-// THE ARCADE SITE (tools/arcade/build.js; user request, 2026-11-21): back9golf, the arcade on its own. Checks: the home
+// THE ARCADE SITE (tools/arcade/build.js; user request, 2026-11-21): backninegolf.vercel.app, the arcade on its own. Checks: the home
 // screen (its name, no sign-in, no career, the golfer on the left, the lessons, practice, the courses and the Top 10);
 // a round on each course played from the home screen that goes on that course's board as a guest's initials; practice
 // from the home screen; a lesson's "Try it"; the board on L; Esc from the home screen; that the site has no profile or

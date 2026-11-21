@@ -1,4 +1,5 @@
-// THE ARCADE SITE (user request, 2026-11-21): back9golf.vercel.app is the arcade on its own: nine-hole rounds on the
+// THE ARCADE SITE (user request, 2026-11-21): backninegolf.vercel.app (the Vercel project back9golf; back9golf.vercel.app
+// belongs to someone else) is the arcade on its own: nine-hole rounds on the
 // three courses, the Top 10 boards, practice and the how-to-play lessons, with no career, and so no money, entry fees,
 // prizes or matches anywhere in it. back9tour.vercel.app is the full game (the repo itself).
 //
