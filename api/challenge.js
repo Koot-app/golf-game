@@ -12,6 +12,21 @@
 //     submit  { id, card: [{ strokes, putts, pen }] x 9 }  -> { challenge }   settles when both cards are in
 //     forfeit { id }                            -> { challenge }      the other player wins
 //
+// FRIENDS INVITATIONALS (user request, 2026-11-20): the same thing for two or more players. One player invites any
+// number of friends to a nine-hole round, stroke play or skins, for a stake each; each invitee accepts (their stake is
+// held) or declines; the host starts it once at least two players (the host included) are in, and whoever hasn't
+// accepted by then is left out and pays nothing. Then it plays like a challenge: each on their own PC, hole by hole,
+// within 7 days. Stroke play: the lowest net total takes the whole pot (a tie splits it). Skins: each hole's skin is
+// the stake from every player, won by the one lowest net score, a tie carries. Handicaps: each player gets the strokes
+// between their handicap and the best in the field (or none, hcp 'off'; none for anyone if a player has no handicap).
+//     invite  { to: [ids], format: 'stroke' | 'skins', stake, tier, hcp: 'auto' | 'off' }  -> { challenge }  (kind 'inv';
+//             the host's stake is held at once)
+//     accept / decline (an invitee; declining after accepting gives the stake back) · cancel (the host, before it starts)
+//     start   { id } (the host) · hole / submit / forfeit as a challenge (players in the field)
+// An invitational: { kind: 'inv', id, host, players: [ids, the host first], names, format, stake, tier, hcp, status,
+// accepted: { [id]: true }, declined: { [id]: true }, field: [ids who play, fixed at the start], strokes: { [id]: n },
+// why, started, deadline, held, cards, holes, forfeits: { [id]: 'forfeit' | 'expired' }, result, paid }.
+//
 // A challenge (golf:ch:<cid>, JSON): { id, from, to, names, format, stake, tier, hcp, strokes: { player, n }, status:
 // 'pending' | 'open' | 'done' | 'closed', created, accepted, deadline, held: { [id]: true }, cards: { [id]: [...] },
 // result: { kind, winner, net: { [id]: n }, line, holes }, paid: { [id]: true } }. golf:chs:<id> = the set of a
@@ -38,6 +53,11 @@ const { handicapOf, outcomeFor } = require('./_career');
 const holeStrokes = (n, tier) => (SI_BY_TIER[tier] || SI_BASE).map((si) => (si <= n ? 1 : 0) + (si <= n - HOLES ? 1 : 0));
 const escrowOf = (ch) => ch.stake * (ch.format === 'skins' ? HOLES : 1);
 const other = (ch, id) => (ch.from === id ? ch.to : ch.from);
+// (an invitational, or a challenge: everyone it concerns, the ones who may have a stake held)
+const isInv = (ch) => ch && ch.kind === 'inv';
+const peopleOf = (ch) => (isInv(ch) ? ch.players : [ch.from, ch.to]);
+const INV_FORMATS = ['stroke', 'skins'];
+const INV_MAX = 16;                              // players in an invitational, the host included
 const parse = (s) => { try { return JSON.parse(s); } catch { return null; } };
 const fail = (status, message) => Object.assign(new Error(message), { status });
 
@@ -152,10 +172,69 @@ function forfeitResult(ch, loser, why) {
   const w = other(ch, loser), E = escrowOf(ch);
   return { kind: why, winner: w, loser, line: `${ch.names[loser]} ${why === 'expired' ? 'ran out of time' : 'forfeited'}: ${ch.names[w]} wins`, payout: { [w]: 2 * E, [loser]: 0 }, net: { [w]: E, [loser]: -E } };
 }
+// ---- an invitational's settlement: the field's net scores, then stroke play or skins. Anyone in the field without a
+// card (a forfeit, or out of time) plays no part in the scoring but their stake stays in the pot.
+function scoreInv(ch) {
+  const F = ch.field, N = F.length, E = escrowOf(ch), fin = F.filter((p) => Array.isArray(ch.cards[p]));
+  const payout = Object.fromEntries(F.map((p) => [p, 0])), nm = (p) => ch.names[p];
+  if (!fin.length) {                                          // nobody played: everyone's stake back
+    for (const p of F) payout[p] = E;
+    return { kind: 'refund', winner: null, line: 'Nobody played it in time: stakes returned', payout, net: Object.fromEntries(F.map((p) => [p, 0])) };
+  }
+  const give = Object.fromEntries(fin.map((p) => [p, holeStrokes((ch.strokes && ch.strokes[p]) || 0, ch.tier)]));
+  const net = (p, i) => ch.cards[p][i].strokes - give[p][i];
+  const totals = Object.fromEntries(fin.map((p) => [p, ch.cards[p].reduce((s, _, i) => s + net(p, i), 0)]));
+  const standings = fin.map((p) => ({ p, net: totals[p], gross: ch.cards[p].reduce((s, h) => s + h.strokes, 0) })).sort((a, b) => a.net - b.net);
+  let line, winner = null, skins = null;
+  if (ch.format === 'stroke') {
+    const best = standings[0].net, top = standings.filter((s) => s.net === best).map((s) => s.p), pot = N * E;
+    const share = Math.floor(pot / top.length);
+    top.forEach((p, k) => { payout[p] += share + (k === 0 ? pot - share * top.length : 0); });     // (an odd dollar to the first)
+    winner = top.length === 1 ? top[0] : null;
+    line = winner ? `${nm(winner)} wins with net ${best}${standings[1] ? `, ${standings[1].net - best} clear` : ''}` : `${top.map(nm).join(' and ')} tie on net ${best}: they split the pot`;
+  } else {                                                    // skins: each hole the stake from everyone in the field
+    let carry = 0;
+    const won = Object.fromEntries(fin.map((p) => [p, 0])), byHole = [];
+    for (let i = 0; i < HOLES; i++) {
+      carry++;
+      const low = Math.min(...fin.map((p) => net(p, i))), at = fin.filter((p) => net(p, i) === low);
+      if (at.length === 1) { payout[at[0]] += carry * ch.stake * N; won[at[0]] += carry; byHole.push(at[0]); carry = 0; } else byHole.push(null);
+    }
+    if (carry) for (const p of F) payout[p] += carry * ch.stake;          // unclaimed skins go back to everyone who put them up
+    skins = { won, byHole, unclaimed: carry };
+    const order = fin.filter((p) => won[p]).sort((a, b) => won[b] - won[a]);
+    line = `Skins ${order.length ? order.map((p) => `${nm(p)} ${won[p]}`).join(', ') : 'none won'}${carry ? ` · ${carry} unclaimed, returned` : ''}`;
+  }
+  const netMoney = Object.fromEntries(F.map((p) => [p, payout[p] - E]));
+  if (!winner) { const best = Math.max(...F.map((p) => netMoney[p])), top = F.filter((p) => netMoney[p] === best); if (best > 0 && top.length === 1) winner = top[0]; }
+  return { kind: 'played', winner, line, payout, net: netMoney, standings, skins, forfeits: ch.forfeits || {} };
+}
+// one player's history word for an invitational: by the money (a forfeit or running out of time says so)
+const invOutcome = (ch, res, p) => (res.kind === 'refund' ? 'refunded' : (ch.forfeits || {})[p] ? `lost (${ch.forfeits[p] === 'expired' ? 'out of time' : 'forfeit'})`
+  : res.net[p] > 0 ? 'won' : res.net[p] < 0 ? 'lost' : 'halved');
 // move the money (once per player) and write each player's history entry
 async function payOut(ch) {
   if (!ch.result || !ch.result.payout) return ch;
   ch.paid = ch.paid || {};
+  if (isInv(ch)) {                                            // an invitational: each player in the field, the same rules
+    for (const p of ch.field || []) {
+      if (ch.paid[p]) continue;
+      const res = ch.result, n = (ch.field || []).length;
+      try {
+        await updateCareer(p, (c) => {
+          const line = (c.history || []).some((h) => h && h.inv && h.ch === ch.id), esc = escOf(c).includes(ch.id);
+          if (line) { if (!esc) return false; c.escrow = escOf(c).filter((x) => x !== ch.id); return; }
+          if (!esc) return false;
+          c.cash = (c.cash || 0) + (res.payout[p] || 0);
+          c.escrow = escOf(c).filter((x) => x !== ch.id);
+          c.history.push({ inv: true, invName: `${ch.names[ch.host]}'s invitational (${n} players)`, ch: ch.id, format: ch.format, stake: ch.stake, result: `${invOutcome(ch, res, p)} · ${res.line}`, net: res.net[p] || 0, date: Date.now() });
+        });
+      } catch { continue; }
+      ch.paid[p] = true;
+      await putCh(ch);
+    }
+    return ch;
+  }
   for (const p of [ch.from, ch.to]) {
     if (ch.paid[p] || (!ch.esc && !(ch.held && ch.held[p]))) continue;
     const res = ch.result, net = res.net[p];
@@ -184,7 +263,7 @@ async function payOut(ch) {
 async function refundHeld(ch) {
   const E = escrowOf(ch);
   ch.paid = ch.paid || {};
-  for (const p of [ch.from, ch.to]) {
+  for (const p of peopleOf(ch)) {
     if (ch.paid[p] || (!ch.esc && !(ch.held && ch.held[p]))) continue;
     await giveBack(p, ch, E);
     ch.paid[p] = true;
@@ -193,7 +272,8 @@ async function refundHeld(ch) {
   return ch;
 }
 // a stake held but not yet paid back or out (with escrow records, either player may have one, whatever `held` says)
-const owed = (ch) => [ch.from, ch.to].some((p) => (ch.esc || (ch.held && ch.held[p])) && !(ch.paid || {})[p]);
+const owed = (ch) => (isInv(ch) ? (ch.status === 'done' ? ch.field || [] : ch.players).filter((p) => ch.held && ch.held[p]) : [ch.from, ch.to])
+  .some((p) => (ch.esc || (ch.held && ch.held[p])) && !(ch.paid || {})[p]);
 async function finish(ch, result) {
   ch.status = result.kind === 'refund' ? 'closed' : 'done';
   ch.result = result; ch.finished = Date.now();
@@ -203,6 +283,11 @@ async function finish(ch, result) {
 // past the deadline: whoever hasn't sent a card forfeits; if neither has, both get their stakes back
 async function expire(ch) {
   if (ch.status !== 'open' || Date.now() <= ch.deadline) return ch;
+  if (isInv(ch)) {                                            // an invitational: whoever hasn't a card in ran out of time
+    ch.forfeits = ch.forfeits || {};
+    for (const p of ch.field) if (!ch.cards[p] && !ch.forfeits[p]) ch.forfeits[p] = 'expired';
+    return finish(ch, scoreInv(ch));
+  }
   const inA = !!ch.cards[ch.from], inB = !!ch.cards[ch.to];
   if (inA && inB) return finish(ch, score(ch));
   if (inA || inB) return finish(ch, forfeitResult(ch, inA ? ch.to : ch.from, 'expired'));
@@ -211,6 +296,16 @@ async function expire(ch) {
 }
 // what a player sees: the other player's card stays hidden until the challenge is settled
 function view(ch, me) {
+  if (isInv(ch)) {                                            // an invitational: the others' cards hidden until it settles
+    const v = { ...ch, cards: { ...ch.cards } };
+    if (ch.status === 'open') {
+      for (const p of Object.keys(v.cards)) if (p !== me) v.cards[p] = true;
+      v.holes = Object.fromEntries((ch.field || []).map((p) => [p, ((ch.holes || {})[p] || []).length]));
+    } else delete v.holes;
+    if (v.result) { v.result = { ...v.result }; delete v.result.payout; }
+    delete v.paid;
+    return v;
+  }
   const v = { ...ch, cards: { ...ch.cards } };
   if (ch.status === 'open') {
     const o = other(ch, me); if (v.cards[o]) v.cards[o] = true;
@@ -245,6 +340,103 @@ const parsOf = (tier) => PARS_BY_TIER[tier] || PARS_BASE;
 const parOf = (tier) => parsOf(tier).reduce((a, b) => a + b, 0);
 const holePossible = (h, i, tier) => h.strokes >= Math.max(1, parsOf(tier)[i] - 3);
 const MIN_ROUND_MS = 3 * 60 * 1000;
+
+// ---- an invitational's actions (under its lock): see the top
+async function invAction(ch, action, me, b) {
+  const E = escrowOf(ch), host = ch.host === me;
+  if (ch.status === 'pending' && Date.now() > ch.created + DAYS) throw fail(400, 'Nobody started it in time: it\'s closed');
+  if (action === 'cancel') {
+    if (!host) throw fail(400, 'Only the host can call it off');
+    if (ch.status !== 'pending') throw fail(400, 'It has started: play it or forfeit');
+    ch.status = 'closed'; ch.finished = Date.now(); ch.result = { kind: 'cancelled', line: `${ch.names[me]} called it off` };
+    await putCh(ch);
+    return refundHeld(ch);
+  }
+  if (action === 'accept') {
+    if (host) throw fail(400, 'You\'re the host: you\'re in');
+    if (ch.status !== 'pending') throw fail(400, 'It isn\'t waiting for answers any more');
+    if (ch.declined[me]) throw fail(400, 'You declined it');
+    if (ch.accepted[me]) return ch;
+    const c = await getCareer(me);
+    if (!c) throw fail(404, 'You have no career');
+    if ((c.tierMax || 1) < ch.tier) throw fail(400, 'You need that circuit open');
+    await takeStake(me, ch, E, `You need $${E} to accept`);
+    ch.accepted[me] = true; ch.held[me] = true;
+    await putCh(ch);
+    return ch;
+  }
+  if (action === 'decline') {                                  // (or drop out, after accepting: the stake goes back)
+    if (host) throw fail(400, 'You\'re the host: call it off instead');
+    if (ch.status !== 'pending') throw fail(400, 'It has started: play it or forfeit');
+    if (ch.accepted[me]) { await giveBack(me, ch, E); delete ch.accepted[me]; delete ch.held[me]; }
+    ch.declined[me] = true;
+    if (ch.players.every((p) => p === ch.host || ch.declined[p])) {      // everyone said no: it's off
+      ch.status = 'closed'; ch.finished = Date.now(); ch.result = { kind: 'declined', line: 'Everyone declined' };
+      await putCh(ch);
+      return refundHeld(ch);
+    }
+    await putCh(ch);
+    return ch;
+  }
+  if (action === 'start') {
+    if (!host) throw fail(400, 'Only the host starts it');
+    if (ch.status !== 'pending') throw fail(400, 'It has started already');
+    const field = ch.players.filter((p) => ch.accepted[p]);
+    if (field.length < 2) throw fail(400, 'Wait for at least one friend to accept');
+    const cs = await Promise.all(field.map(getCareer));
+    ch.strokes = Object.fromEntries(field.map((p) => [p, 0])); ch.why = ch.hcp === 'off' ? 'off' : 'auto';
+    if (ch.hcp !== 'off') {                                    // each gets the strokes between their handicap and the best
+      const h = cs.map((c) => (c ? handicapOf(c) : null));
+      if (h.some((x) => x === null)) ch.why = 'nohcp';
+      else { const lo = Math.min(...h); field.forEach((p, k) => { ch.strokes[p] = Math.min(18, Math.round(h[k] - lo)); }); ch.hcps = Object.fromEntries(field.map((p, k) => [p, h[k]])); }
+    }
+    ch.field = field; ch.status = 'open'; ch.started = Date.now();
+    ch.deadline = ch.started + DAYS; ch.forfeits = {};
+    await putCh(ch);
+    return ch;
+  }
+  if (ch.status !== 'open') throw fail(400, ch.status === 'pending' ? 'It hasn\'t started yet' : 'That invitational is over');
+  if (!ch.field.includes(me)) throw fail(400, 'You\'re not playing in this one');
+  if (Date.now() > ch.deadline) return expire(ch);
+  const allIn = () => ch.field.every((p) => ch.cards[p] || ch.forfeits[p]);
+  if (action === 'hole') {
+    if (ch.cards[me] || ch.forfeits[me]) throw fail(400, 'Your card is already in');
+    const i = b.i, h = cleanHole(b);
+    if (!Number.isInteger(i) || i < 0 || i >= HOLES || !h) throw fail(400, 'That hole doesn\'t look right');
+    if (!holePossible(h, i, ch.tier)) throw fail(400, `A ${h.strokes} on a par ${parsOf(ch.tier)[i]} isn't possible`);
+    ch.holes = ch.holes || {};
+    const mine = ch.holes[me] = ch.holes[me] || [];
+    if (i < mine.length) {
+      const x = mine[i];
+      if (x.strokes !== h.strokes || x.putts !== h.putts || x.pen !== h.pen) throw fail(409, `Hole ${i + 1} is already in, as a ${x.strokes}`);
+      return ch;
+    }
+    if (i > mine.length) throw fail(409, `Send hole ${mine.length + 1} first`);
+    mine.push({ ...h, t: Date.now() });
+    await putCh(ch);
+    return ch;
+  }
+  if (action === 'submit') {
+    if (ch.cards[me] || ch.forfeits[me]) throw fail(400, 'Your card is already in');
+    const card = cleanCard(b.card);
+    if (!card) throw fail(400, 'That card doesn\'t look right');
+    if (card.some((h, i) => !holePossible(h, i, ch.tier)) || card.reduce((s, h) => s + h.strokes, 0) < parOf(ch.tier) - HOLES) throw fail(400, 'That card isn\'t possible');
+    const sent = (ch.holes && ch.holes[me]) || [];
+    if (sent.length < HOLES) throw fail(409, `Send every hole first (${sent.length} of ${HOLES} are in)`);
+    if (card.some((h, i) => h.strokes !== sent[i].strokes || h.putts !== sent[i].putts || h.pen !== sent[i].pen)) throw fail(409, 'That card isn\'t the holes you sent');
+    if (Date.now() - sent[0].t < MIN_ROUND_MS) ch.fast = { ...(ch.fast || {}), [me]: true };
+    ch.cards[me] = card; ch.submitted = { ...(ch.submitted || {}), [me]: Date.now() };
+    if (allIn()) return finish(ch, scoreInv(ch));
+    await putCh(ch);
+    return ch;
+  }
+  // forfeit: out of the scoring, the stake stays in the pot
+  if (ch.cards[me]) throw fail(400, 'Your card is in: you can\'t forfeit now');
+  ch.forfeits[me] = 'forfeit';
+  if (allIn()) return finish(ch, scoreInv(ch));
+  await putCh(ch);
+  return ch;
+}
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -295,6 +487,38 @@ module.exports = async (req, res) => {
       return send(200, { challenge: view(ch, me) });
     }
 
+    if (action === 'invite') {                               // a friends invitational (see the top)
+      if (!(await rateLimit(`golf:rl:ch:${me}`, 20, 3600))) return send(429, { error: 'Too many challenges this hour' });
+      const format = b.format, stake = b.stake, tier = b.tier, hcp = b.hcp === 'off' ? 'off' : 'auto';
+      const to = [...new Set((Array.isArray(b.to) ? b.to : []).map((x) => String(x || '').trim().toLowerCase()).filter((x) => x && x !== me))];
+      if (!to.length) return send(400, { error: 'Invite at least one friend' });
+      if (to.length > INV_MAX - 1) return send(400, { error: `An invitational is ${INV_MAX} players at most` });
+      if (!INV_FORMATS.includes(format)) return send(400, { error: 'An invitational is stroke play or skins' });
+      if (!Number.isInteger(stake) || stake < 5 || stake > MAX_STAKE) return send(400, { error: 'Stakes are $5 or more, in whole dollars' });
+      if (![1, 2, 3].includes(tier)) return send(400, { error: 'Unknown circuit' });
+      const cs = await Promise.all([me, ...to].map(getCareer)), cMe = cs[0];
+      if (!cMe) return send(400, { error: 'Your career isn\'t on the server yet — open the clubhouse and try again' });
+      const missing = to.filter((_, k) => !cs[k + 1]);
+      if (missing.length) return send(404, { error: `No player called ${missing.join(', ')}` });
+      const shut = cs.filter((c) => (c.tierMax || 1) < tier).map((c, k) => (c === cMe ? 'you' : c.name));
+      if (shut.length) return send(400, { error: `That circuit isn't open to ${shut.join(', ')}` });
+      const E = stake * (format === 'skins' ? HOLES : 1);
+      if ((cMe.cash || 0) < E) return send(400, { error: `You need $${E} to put that up` });
+      const sets = await redis([me, ...to].map((p) => ['SMEMBERS', `golf:chs:${p}`]));
+      for (const [k, p] of [me, ...to].entries()) {
+        if ((await getChs(sets[k] || [])).filter(isActive).length >= MAX_ACTIVE) return send(400, { error: p === me ? `You're in ${MAX_ACTIVE} challenges already — finish some first` : `${cs[k].name} has ${MAX_ACTIVE} challenges on already — try again later` });
+      }
+      const players = [me, ...to], names = Object.fromEntries(players.map((p, k) => [p, cs[k].name]));
+      const ch = { kind: 'inv', id: crypto.randomBytes(8).toString('hex'), host: me, players, names, format, stake, tier, hcp, status: 'pending', created: Date.now(), accepted: { [me]: true }, declined: {}, cards: {}, held: {}, esc: true };
+      // (as a challenge: written first, the host's stake taken after, so a request that dies in between can be refunded)
+      await redis([['SET', `golf:ch:${ch.id}`, JSON.stringify(ch)], ...players.map((p) => ['SADD', `golf:chs:${p}`, ch.id])]);
+      try { await takeStake(me, ch, E, `You need $${E} to put that up`); }
+      catch (e) { await redis([['DEL', `golf:ch:${ch.id}`], ...players.map((p) => ['SREM', `golf:chs:${p}`, ch.id])]); throw e; }
+      ch.held[me] = true;
+      await putCh(ch);
+      return send(200, { challenge: view(ch, me) });
+    }
+
     if (action === 'list') {
       if (!(await rateLimit(`golf:rl:chlist:${me}`, 60, 60))) return send(429, { error: 'Too many requests — wait a minute' });     // (audit 3.3)
       const [ids] = await redis([['SMEMBERS', `golf:chs:${me}`]]);
@@ -318,14 +542,17 @@ module.exports = async (req, res) => {
         out.push(view(ch, me));
       }
       if (drop.length) await redis(drop.map((cid) => ['SREM', `golf:chs:${me}`, cid]));
-      out.sort((x, y) => (y.accepted || y.created) - (x.accepted || x.created));
+      const when = (c) => (isInv(c) ? c.started || c.created : c.accepted || c.created);     // (an invitational's `accepted` is who's in)
+      out.sort((x, y) => when(y) - when(x));
       return send(200, { challenges: out.slice(0, 60), me });
     }
 
     const cid = String(b.id || '');
-    if (!['accept', 'decline', 'cancel', 'hole', 'submit', 'forfeit'].includes(action)) return send(400, { error: 'Unknown action' });
+    if (!['accept', 'decline', 'cancel', 'start', 'hole', 'submit', 'forfeit'].includes(action)) return send(400, { error: 'Unknown action' });
     const ch = await withLock(cid, async (ch) => {
-      if (ch.from !== me && ch.to !== me) throw fail(404, 'No such challenge');
+      if (!peopleOf(ch).includes(me)) throw fail(404, 'No such challenge');
+      if (isInv(ch)) return invAction(ch, action, me, b);
+      if (action === 'start') throw fail(400, 'Only an invitational is started');
       if (action === 'decline' || action === 'cancel') {
         if (ch.status !== 'pending') throw fail(400, 'It isn\'t waiting for an answer any more');
         if ((action === 'decline') !== (ch.to === me)) throw fail(400, action === 'decline' ? 'Only the one challenged can decline' : 'Only the challenger can cancel');

@@ -2041,6 +2041,52 @@
       display: none;
     }
 
+    /* the challenge form as a friends invitational (#chChal.inv): pick the players; no match play, no agreed strokes */
+    #ccPickRow,
+    .cc-inv-how,
+    #chChal.inv .cc-how:not(.cc-inv-how),
+    #chChal.inv #ccFmt [data-fmt=match],
+    #chChal.inv #ccHcp [data-h=agreed] {
+      display: none;
+    }
+
+    #chChal.inv #ccPickRow {
+      display: flex;
+    }
+
+    #chChal.inv .cc-inv-how {
+      display: block;
+    }
+
+    .cc-pick {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .cc-pick button {
+      padding: 5px 10px;
+      border-radius: 14px;
+      font-size: 12px;
+    }
+
+    .cc-pick button.on {
+      background: rgba(94, 224, 138, .22);
+      border-color: rgba(94, 224, 138, .7);
+      color: #fff;
+    }
+
+    .cc-pick button i {
+      font-style: normal;
+      color: var(--dim);
+      margin-left: 4px;
+    }
+
+    .fr-new {
+      margin: 4px 0 10px;
+    }
+
     #chChal.agreed #ccAgreedRow {
       display: grid;
     }
@@ -7057,8 +7103,11 @@
             <li><b>When both cards are in</b>, it settles by itself, handicap strokes included: the winner gets the pot and you
               both see the shared scorecard.</li>
             <li><b>Not played in time?</b> Whoever didn't play forfeits; if neither did, both get their stake back.</li>
+            <li><b>More than one friend?</b> Host an invitational: invite as many as you like to stroke play or skins, start
+              it once at least one has accepted, and the pot goes to the best net score.</li>
           </ol>
         </details>
+        <div class="fr-new"><button id="frInvBtn" class="go">🏆 Host an invitational · two or more players</button></div>
         <div class="sh-list" id="frList"></div>
         <div class="ch-msg" id="frMsg"></div>
         <div class="ch-btns"><button id="frBack">Back (Esc)</button><button id="frRefresh">Refresh</button><span
@@ -7077,7 +7126,18 @@
             <li><b>Not played in time?</b> Whoever didn't play loses by forfeit; if neither of you played, both stakes come back.</li>
           </ol>
         </div>
+        <div class="cc-how cc-inv-how"><b>How an invitational works</b> — the same as a challenge, for as many friends as you like:
+          <ol>
+            <li><b>Pick your friends and send it.</b> Your stake is held from now.</li>
+            <li><b>Each friend accepts or declines.</b> A friend's stake is held when they accept.</li>
+            <li><b>You start it</b> once at least one friend is in. Anyone who hasn't accepted by then is left out and pays nothing.</li>
+            <li><b>Everyone plays the 9 holes on their own PC</b> within 7 days: same course, wind and greens for all.</li>
+            <li><b>When every card is in</b> it settles. Stroke play: the lowest net total takes the whole pot (a tie splits it).
+              Skins: each hole is worth the stake from everyone, won by the one lowest score; a tie carries.</li>
+          </ol>
+        </div>
         <div class="cm-bet">
+          <div class="cm-row" id="ccPickRow"><span>Players</span><div class="cc-pick" id="ccPick"></div></div>
           <div class="cm-row"><span>Format</span><div class="cm-fmt" id="ccFmt"><button data-fmt="match">Match play</button><button data-fmt="stroke">Stroke play</button><button
                 data-fmt="skins">Skins</button></div><i class="cm-fmtnote" id="ccFmtNote"></i></div>
           <div class="cm-row"><span id="ccStakeL">Stake</span><input type="range" id="ccStake" min="5" max="100" step="5" value="20"><b id="ccStakeV"></b></div>
@@ -11894,7 +11954,12 @@
           $('riStart').textContent = tv.holes.length ? `Resume on hole ${tv.holes.length + 1} (Enter)` : `Tee off · ${money(TV.entry)} (Enter)`;
         }
         const pv = mode === 'pvp' && career && career.pvpCard;            // a friend round (M3)
-        if (pv) {
+        if (pv && pv.inv) {                                   // a friends invitational
+          $('roundIntro').querySelector('.card-h span').textContent = `🏆 ${pv.host}'s invitational · ${FR_FMT[pv.format]} · course preview`;
+          $('roundIntro').querySelector('.ri-note').textContent = `${FR_FMT[pv.format]} for ${money(pv.stake)}${pv.format === 'skins' ? ' a skin' : ''} against ${pv.vsName} at ${TIERS[pv.tier].course}. `
+            + `${pv.n ? strokesText({ player: session.id, n: pv.n }, {}, pv.tier) : 'You get no strokes'}. Everyone plays the same holes, wind and greens on their own PC; `
+            + `it settles when every card is in. You can leave and resume until ${frDate(pv.deadline)}.`;
+        } else if (pv) {
           $('roundIntro').querySelector('.card-h span').textContent = `vs ${pv.vsName} · ${FR_FMT[pv.format]} · course preview`;
           $('roundIntro').querySelector('.ri-note').textContent = `${FR_FMT[pv.format]} for ${money(pv.stake)}${pv.format === 'skins' ? ' a skin' : ''} against ${pv.vsName} at ${TIERS[pv.tier].course}. `
             + `${strokesText({ player: pv.n ? (pv.mine ? session.id : pv.vs) : null, n: pv.n }, { [pv.vs]: pv.vsName }, pv.tier)}. ${pv.vsName} plays the same holes, wind and greens on their own PC; `
@@ -12044,7 +12109,7 @@
         for (const x of h) if (x && x.tour && (!best[x.tour] || (x.place || 99) < (best[x.tour].place || 99))) best[x.tour] = x;
         for (const x of Object.values(best)) keep.add(x);
         const cut = h.length - HIST_KEEP;
-        c.history = h.filter((x, i) => i >= cut || (x && x.friend) || keep.has(x));
+        c.history = h.filter((x, i) => i >= cut || (x && (x.friend || x.inv)) || keep.has(x));      // (a friends invitational's line too)
       }
       function readCareer(key) {
         const raw = lsGet(key);
@@ -12228,7 +12293,7 @@
         career.cash = srv.cash + (career.cash - baseCash);
         career.saveIds = [...new Set([...(srv.saveIds || []), ...(career.saveIds || [])])].slice(-SAVE_IDS);
         const seen = new Set(), hist = [];
-        for (const h of [...(srv.history || []), ...(career.history || [])]) { const k = `${h.date}|${h.npc || h.friend}|${h.net}`; if (!seen.has(k)) { seen.add(k); hist.push(h); } }
+        for (const h of [...(srv.history || []), ...(career.history || [])]) { const k = `${h.date}|${h.npc || h.friend || h.ch}|${h.net}`; if (!seen.has(k)) { seen.add(k); hist.push(h); } }
         career.history = hist.sort((a, b) => a.date - b.date);
         trimHistory(career);                                 // (the server's copy can still have lines this PC trimmed)
         // what was bought off your wall (on the server, by a visitor) stays destroyed, whatever this PC had
@@ -13045,6 +13110,14 @@
       const escrowOf = (format, stake) => stake * (format === 'skins' ? HOLES.length : 1);
       const frDate = (t) => new Date(t).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
       const chOther = (ch) => (ch.from === session.id ? ch.to : ch.from);
+      // FRIENDS INVITATIONALS (user request, 2026-11-20; api/challenge.js, kind 'inv'): two or more players, stroke play or
+      // skins. These say where one stands from this player's side.
+      const isInvCh = (c) => c && c.kind === 'inv';
+      const invAsked = (c, me) => isInvCh(c) && c.status === 'pending' && c.host !== me && !c.accepted[me] && !c.declined[me];      // an answer wanted
+      const chAsksMe = (c, me) => (isInvCh(c) ? invAsked(c, me) : c.status === 'pending' && c.to === me);
+      const inField = (c, me) => !isInvCh(c) || ((c.field || []).includes(me) && !(c.forfeits || {})[me]);
+      const chToPlay = (c, me) => c.status === 'open' && !c.cards[me] && inField(c, me);
+      const invTitle = (c) => `🏆 ${c.names[c.host]}'s invitational`;
       // "Gus gets 3 strokes (holes 4, 6 and 9)", from this player's side
       function strokesText(st, names, tier) {
         if (!st || !st.n || !st.player) return st && st.why === 'nohcp' ? 'No strokes: one of you has no handicap yet' : 'No strokes';
@@ -13078,8 +13151,8 @@
       function updateFriendsTile() {
         const b = $('chFriendsBtn');
         if (!session) { b.innerHTML = '<b>🤝 Friends</b><i>Sign in to a profile to bet your friends</i>'; return; }
-        const me = session.id, wait = fr.list.filter((c) => c.status === 'pending' && c.to === me).length;
-        const play = fr.list.filter((c) => c.status === 'open' && !c.cards[me]).length, pc = career && career.pvpCard;
+        const me = session.id, wait = fr.list.filter((c) => chAsksMe(c, me)).length;
+        const play = fr.list.filter((c) => chToPlay(c, me)).length, pc = career && career.pvpCard;
         b.innerHTML = `<b>🤝 Friends</b><i>${pc && pc.holes.length ? `Resume your round vs ${pc.vsName} (thru ${pc.holes.filter(Boolean).length})`
           : wait ? `${wait} challenge${wait > 1 ? 's' : ''} waiting for you` : play ? `${play} round${play > 1 ? 's' : ''} to play` : 'Bet a friend on a round'}</i>`;
       }
@@ -13105,21 +13178,48 @@
             + `<i>${strokesText(c.strokes, c.names, c.tier)}</i><i>${status}</i></div><div class="fr-btns">${btns}</div></div>`;
         };
         const B = (act, id, label, cls = '') => `<button data-act="${act}" data-id="${id}" class="${cls}">${label}</button>`;
+        // an invitational's row: who's in (✓ in · ✗ declined · … not answered), or the field once it has started
+        const irow = (c, cls, status, btns) => {
+          const E = escrowOf(c.format, c.stake), who = (c.status === 'pending' ? c.players : c.field || c.players)
+            .map((p) => `${c.names[p]}${p === me ? ' (you)' : ''}${c.status === 'pending' ? (c.accepted[p] ? ' ✓' : c.declined[p] ? ' ✗' : ' …') : (c.forfeits || {})[p] ? ' ✗' : c.cards[p] ? ' ✓' : ''}`).join(' · ');
+          return `<div class="fr-ch ${cls}"><div><b>${invTitle(c)}</b> · ${FR_FMT[c.format]} · ${money(c.stake)}${c.format === 'skins' ? ' a skin' : ''} · ${TIERS[c.tier].course} · ${money(E)} each`
+            + `<i>${who}</i><i>${status}</i></div><div class="fr-btns">${btns}</div></div>`;
+        };
+        const R = (c, cls, status, btns) => (isInvCh(c) ? irow(c, cls, status, btns) : row(c, cls, status, btns));
+        const nIn = (c) => c.players.filter((p) => c.accepted[p]).length;
         const groups = [
-          ['Waiting for you', L.filter((c) => c.status === 'pending' && c.to === me).map((c) => row(c, 'hot', `${c.names[c.from]} challenged you ${frDate(c.created)} · accepting takes ${money(escrowOf(c.format, c.stake))} from each of you until it settles`,
-            B('accept', c.id, `Accept · ${money(escrowOf(c.format, c.stake))}`, 'go') + B('decline', c.id, 'Decline', 'no')))],
-          ['Waiting for them', L.filter((c) => c.status === 'pending' && c.from === me).map((c) => row(c, '', `Sent ${frDate(c.created)} · waiting for ${c.names[c.to]} to accept${c.held && c.held[me] ? ` · your ${money(escrowOf(c.format, c.stake))} is held (back if they decline)` : ''}`, B('cancel', c.id, 'Cancel', 'no')))],
-          ['To play', L.filter((c) => c.status === 'open').map((c) => {
+          ['Waiting for you', L.filter((c) => chAsksMe(c, me)).map((c) => (isInvCh(c)
+            ? irow(c, 'hot', `${c.names[c.host]} invited you ${frDate(c.created)} · accepting holds ${money(escrowOf(c.format, c.stake))} until it settles`, B('accept', c.id, `I'm in · ${money(escrowOf(c.format, c.stake))}`, 'go') + B('decline', c.id, 'Decline', 'no'))
+            : row(c, 'hot', `${c.names[c.from]} challenged you ${frDate(c.created)} · accepting takes ${money(escrowOf(c.format, c.stake))} from each of you until it settles`,
+              B('accept', c.id, `Accept · ${money(escrowOf(c.format, c.stake))}`, 'go') + B('decline', c.id, 'Decline', 'no'))))],
+          ['Waiting for them', L.filter((c) => c.status === 'pending' && (isInvCh(c) ? c.host === me || c.accepted[me] : c.from === me)).map((c) => {
+            if (!isInvCh(c)) return row(c, '', `Sent ${frDate(c.created)} · waiting for ${c.names[c.to]} to accept${c.held && c.held[me] ? ` · your ${money(escrowOf(c.format, c.stake))} is held (back if they decline)` : ''}`, B('cancel', c.id, 'Cancel', 'no'));
+            const n = nIn(c), waiting = c.players.filter((p) => !c.accepted[p] && !c.declined[p]).length;
+            if (c.host !== me) return irow(c, '', `You're in · ${n} of ${c.players.length} so far · waiting for ${c.names[c.host]} to start it`, B('drop', c.id, 'Drop out', 'no'));
+            return irow(c, n > 1 ? 'hot' : '', `Sent ${frDate(c.created)} · ${n} in${waiting ? `, ${waiting} not answered yet` : ''} · ${n > 1 ? 'start it when you\'re ready: anyone not in by then is left out' : 'start it once a friend is in'}`,
+              (n > 1 ? B('start', c.id, `Start · ${n} players`, 'go') : '') + B('cancel', c.id, 'Call it off', 'no'));
+          })],
+          ['To play', L.filter((c) => c.status === 'open' && inField(c, me)).map((c) => {
+            if (isInvCh(c)) {
+              const mine = c.cards[me], mp = pc && pc.id === c.id ? pc : null, done = mp && mp.holes.filter(Boolean).length === HOLES.length;
+              const left = c.field.filter((p) => !c.cards[p] && !(c.forfeits || {})[p] && p !== me).length;
+              if (mine) return irow(c, '', `Your card is in (${mine.reduce((s, h) => s + h.strokes, 0)}) · waiting for ${left} more card${left === 1 ? '' : 's'}, until ${frDate(c.deadline)}`, '');
+              return irow(c, 'hot', `Play by ${frDate(c.deadline)}${(c.strokes || {})[me] ? ` · you get ${c.strokes[me]} stroke${c.strokes[me] === 1 ? '' : 's'}` : ''}${mp && mp.holes.length ? ` · you're thru ${mp.holes.filter(Boolean).length}` : ''}`,
+                (done ? B('send', c.id, 'Send your card', 'go') : B('play', c.id, mp && mp.holes.length ? 'Resume' : 'Play', 'go')) + B('forfeit', c.id, 'Forfeit', 'no'));
+            }
             const o = chOther(c), mine = c.cards[me], theirs = c.cards[o], mp = pc && pc.id === c.id ? pc : null;
             const done = mp && mp.holes.filter(Boolean).length === HOLES.length;
             if (mine) return row(c, '', `Your card is in (${mine.reduce((s, h) => s + h.strokes, 0)}) · waiting for ${c.names[o]}'s, until ${frDate(c.deadline)}`, '');
             const st = `${theirs ? `${c.names[o]}'s card is in · ` : ''}Play by ${frDate(c.deadline)}${mp && mp.holes.length ? ` · you're thru ${mp.holes.filter(Boolean).length}` : ''}`;
             return row(c, 'hot', st, (done ? B('send', c.id, 'Send your card', 'go') : B('play', c.id, mp && mp.holes.length ? 'Resume' : 'Play', 'go')) + B('forfeit', c.id, 'Forfeit', 'no'));
           })],
-          ['Finished', L.filter((c) => c.status === 'done' || c.status === 'closed').slice(0, 8).map((c) => {
-            const net = c.result && c.result.net ? c.result.net[me] : 0;
-            const money_ = c.status === 'done' ? ` · <span class="${net > 0 ? 'won' : net < 0 ? 'lost' : ''}">${net > 0 ? '+' : net < 0 ? '−' : '±'}${money(Math.abs(net))}</span>` : '';
-            return row(c, c.status === 'done' && !pvpSeen(c.id) ? 'hot' : '', `${(c.result && c.result.line) || c.status}${money_} · ${frDate(c.finished || c.created)}`,
+          // (an invitational you declined, dropped out of, or that started without you is here too: you play no part)
+          ['Finished', L.filter((c) => c.status === 'done' || c.status === 'closed' || (isInvCh(c) && ((c.status === 'pending' && c.declined[me]) || (c.status === 'open' && !inField(c, me))))).slice(0, 8).map((c) => {
+            if (isInvCh(c) && c.status === 'pending') return irow(c, '', `You declined · ${c.names[c.host]} hasn't started it yet`, '');
+            if (isInvCh(c) && c.status === 'open') return irow(c, '', (c.forfeits || {})[me] ? `You forfeited: your stake stays in the pot · the others play until ${frDate(c.deadline)}` : 'It started without you: you play no part', '');
+            const mine = c.result && c.result.net && c.result.net[me] !== undefined, net = mine ? c.result.net[me] : 0;
+            const money_ = c.status === 'done' && mine ? ` · <span class="${net > 0 ? 'won' : net < 0 ? 'lost' : ''}">${net > 0 ? '+' : net < 0 ? '−' : '±'}${money(Math.abs(net))}</span>` : '';
+            return R(c, c.status === 'done' && mine && !pvpSeen(c.id) ? 'hot' : '', `${(c.result && c.result.line) || c.status}${money_} · ${frDate(c.finished || c.created)}`,
               c.status === 'done' ? B('view', c.id, 'View card') : '');
           })],
         ];
@@ -13146,15 +13246,21 @@
         if (act === 'play') return playFriend(id);
         if (act === 'send') return submitPvp();
         if (act === 'view') return showSharedCard(c);
-        if (act === 'forfeit' && !confirm(`Forfeit against ${c.names[chOther(c)]}? They win the ${money(2 * escrowOf(c.format, c.stake))} pot.`)) return;
-        if (act === 'decline' && !confirm(`Decline ${c.names[c.from]}'s challenge?`)) return;
+        const inv = isInvCh(c), E = c ? escrowOf(c.format, c.stake) : 0;
+        if (act === 'forfeit' && !confirm(inv ? `Forfeit ${c.names[c.host]}'s invitational? Your ${money(E)} stays in the pot.` : `Forfeit against ${c.names[chOther(c)]}? They win the ${money(2 * E)} pot.`)) return;
+        if (act === 'decline' && !confirm(inv ? `Decline ${c.names[c.host]}'s invitational?` : `Decline ${c.names[c.from]}'s challenge?`)) return;
+        if (act === 'drop' && !confirm(`Drop out of ${c.names[c.host]}'s invitational? Your ${money(E)} comes back.`)) return;
+        if (act === 'cancel' && inv && !confirm('Call off your invitational? Everyone\'s stake comes back.')) return;
+        if (act === 'start' && !confirm(`Start it with the ${c.players.filter((p) => c.accepted[p]).length} players who are in? Anyone who hasn't accepted is left out.`)) return;
         b.disabled = true; setText('frMsg', '…');
         let r;
-        try { r = await chApi(act, { id }); } catch { r = { status: 0, data: { error: 'Can\'t reach the server' } }; }
+        try { r = await chApi(act === 'drop' ? 'decline' : act, { id }); } catch { r = { status: 0, data: { error: 'Can\'t reach the server' } }; }
         if (r.status !== 200) { b.disabled = false; setText('frMsg', r.data.error || `Something went wrong (${r.status})`); return; }
-        const ch = r.data.challenge, o = chOther(ch);
+        const ch = r.data.challenge, o = inv ? null : chOther(ch);
         if (act === 'forfeit') { if (career.pvpCard && career.pvpCard.id === id) career.pvpCard = null; markSeen(id); careerSave(); }   // (your own forfeit isn't news)
-        const msg = act === 'accept' ? `Game on: ${money(escrowOf(ch.format, ch.stake))} each is held until it settles. Play by ${frDate(ch.deadline)}.`
+        const msg = inv ? ({ accept: `You're in: your ${money(E)} is held until it settles. ${ch.names[ch.host]} starts it once everyone's had their say.`, decline: 'Declined.', drop: `You dropped out: your ${money(E)} is back.`,
+          cancel: 'Invitational called off: every stake is back.', start: `It's on: ${(ch.field || []).length} players, play by ${frDate(ch.deadline)}.`, forfeit: 'You forfeited: your stake stays in the pot.' }[act])
+          : act === 'accept' ? `Game on: ${money(escrowOf(ch.format, ch.stake))} each is held until it settles. Play by ${frDate(ch.deadline)}.`
           : act === 'decline' ? 'Declined.' : act === 'cancel' ? 'Challenge called off.' : `You forfeited: ${ch.names[o]} takes the pot.`;
         await syncLoad();                                    // the server moved money: pick up the new cash
         openFriends(msg);
@@ -13178,7 +13284,46 @@
         const n = Math.min(18, Math.round(Math.abs(hm - ht)));
         return { player: n ? (hm > ht ? session.id : f.to) : null, n, why: 'auto' };
       }
+      // ---- the invitational form: the challenge form (#chChal) with .inv on: pick the friends, stroke play or skins, the
+      // stake, a circuit everyone picked has open, handicaps auto or off
+      function openInvForm() {
+        if (!career || !session) return;
+        if (liveMatch()) return setText('frMsg', liveMatchMsg());
+        if (!fr.players.some((p) => p.name.toLowerCase() !== session.id)) return setText('frMsg', 'Nobody else has a profile yet: get a friend to make one first.');
+        fr.form = { inv: true, picked: [], format: 'stroke', stake: 20, tier: career.tier || 1, hcp: 'auto', tiers: [1] };
+        const ch = $('clubhouse');
+        ch.classList.remove('friends'); ch.classList.add('chal'); $('chChal').classList.add('inv');
+        setText('ccErr', '');
+        renderChalForm();
+      }
+      function renderInvForm() {
+        const f = fr.form, sk = f.format === 'skins', per = sk ? HOLES.length : 1, me = session.id;
+        const others = fr.players.filter((p) => p.name.toLowerCase() !== me).sort((a, b) => a.name.localeCompare(b.name));
+        const picked = others.filter((p) => f.picked.includes(p.name.toLowerCase()));
+        setText('ccTitle', `Host an invitational${picked.length ? ` · ${picked.length + 1} players` : ''}`);
+        $('ccPick').innerHTML = others.map((p) => `<button data-pick="${p.name.toLowerCase()}" class="${f.picked.includes(p.name.toLowerCase()) ? 'on' : ''}">${escH(p.name)}<i>${p.handicap === null || p.handicap === undefined ? 'no hcp' : fmtHcp(p.handicap)} · ${money(p.cash)}</i></button>`).join('');
+        for (const b of $('ccFmt').children) b.classList.toggle('on', b.dataset.fmt === f.format);
+        setText('ccFmtNote', { stroke: 'The lowest net total takes the whole pot', skins: 'A stake per hole from everyone; the one lowest score takes it, a tie carries' }[f.format]);
+        f.tiers = [1, 2, 3].filter((t) => t <= (career.tierMax || 1) && picked.every((p) => t <= (p.tierMax || 1)));
+        if (!f.tiers.includes(f.tier)) f.tier = f.tiers[f.tiers.length - 1];
+        const cap = Math.floor(career.cash / per / 5) * 5, inp = $('ccStake');
+        inp.min = 5; inp.max = Math.max(5, Math.min(cap, 2000)); f.stake = clamp(f.stake, 5, +inp.max); inp.value = f.stake;
+        setText('ccStakeL', sk ? 'Per skin' : 'Stake');
+        setText('ccStakeV', money(f.stake));
+        const n = picked.length + 1, short = picked.filter((p) => (p.cash ?? 0) < f.stake * per).map((p) => p.name);
+        setText('ccEscrow', `${money(f.stake * per)} from each player: yours is held from when you send it, each friend's when they accept · ${sk ? `each hole is worth up to ${money(f.stake * n)}` : `the pot is up to ${money(f.stake * n)}`}`
+          + (short.length ? ` · ${short.join(', ')} can't cover it right now` : ''));
+        $('ccTier').innerHTML = [1, 2, 3].map((t) => `<button data-t="${t}" class="${f.tier === t ? 'on' : ''}" ${f.tiers.includes(t) ? '' : 'disabled title="Not open to everyone you picked"'}>${TIERS[t].course}</button>`).join('');
+        for (const b of $('ccHcp').children) b.classList.toggle('on', b.dataset.h === f.hcp);
+        $('chChal').classList.remove('agreed');
+        setText('ccStrokes', f.hcp === 'off' ? 'No strokes: gross scores' : 'Each player gets the strokes between their handicap and the best in the field (none for anyone if a player has no handicap yet), fixed when you start it');
+        const why = !picked.length ? 'Pick at least one friend' : cap < 5 ? `You don't have ${money(5 * per)} to put up` : '';
+        $('ccGo').disabled = !!why; setText('ccErr', why);
+        setText('ccGo', `Send the invitations${picked.length ? ` · ${picked.length}` : ''} (Enter)`);
+      }
       function renderChalForm() {
+        if (fr.form && fr.form.inv) return renderInvForm();
+        $('chChal').classList.remove('inv'); setText('ccGo', 'Send the challenge (Enter)');
         const f = fr.form, sk = f.format === 'skins', per = sk ? HOLES.length : 1;
         setText('ccTitle', `Challenge ${f.name}`);
         for (const b of $('ccFmt').children) b.classList.toggle('on', b.dataset.fmt === f.format);
@@ -13203,7 +13348,8 @@
         if (!b || b.disabled || !fr.form) return;
         b.blur();
         const f = fr.form;
-        if (b.dataset.fmt) f.format = b.dataset.fmt;
+        if (b.dataset.pick) { const k = b.dataset.pick; f.picked = f.picked.includes(k) ? f.picked.filter((x) => x !== k) : [...f.picked, k]; }
+        else if (b.dataset.fmt) f.format = b.dataset.fmt;
         else if (b.dataset.t) f.tier = +b.dataset.t;
         else if (b.dataset.h) f.hcp = b.dataset.h;
         else return;
@@ -13216,12 +13362,13 @@
         $('ccGo').disabled = true; setText('ccErr', 'Sending…');
         const hcp = f.hcp === 'agreed' ? { strokes: f.n, to: f.who } : f.hcp;
         let r;
-        try { r = await chApi('create', { to: f.to, format: f.format, stake: f.stake, tier: f.tier, hcp }); } catch { r = { status: 0, data: { error: 'Can\'t reach the server' } }; }
+        try { r = await (f.inv ? chApi('invite', { to: f.picked, format: f.format, stake: f.stake, tier: f.tier, hcp }) : chApi('create', { to: f.to, format: f.format, stake: f.stake, tier: f.tier, hcp })); } catch { r = { status: 0, data: { error: 'Can\'t reach the server' } }; }
         $('ccGo').disabled = false;
         if (r.status !== 200) return setText('ccErr', r.data.error || `Something went wrong (${r.status})`);
-        fr.form = null;
+        fr.form = null; $('chChal').classList.remove('inv');
         await syncLoad();                                    // (the server took your stake: pick up the new cash)
-        openFriends(`Challenge sent to ${f.name}. Your ${money(escrowOf(f.format, f.stake))} is held until it settles; you get it back if they decline.`);
+        openFriends(f.inv ? `Invitations sent to ${f.picked.length} friend${f.picked.length > 1 ? 's' : ''}. Your ${money(escrowOf(f.format, f.stake))} is held until it settles. Start it once someone's in.`
+          : `Challenge sent to ${f.name}. Your ${money(escrowOf(f.format, f.stake))} is held until it settles; you get it back if they decline.`);
       }
       // ---- playing it: the same course and conditions as the friend (the circuit's holes, each hole's fixed wind and
       // greens), the career's own stats and bag; no hustler, no tee toss, no presses
@@ -13233,8 +13380,13 @@
         const pc = career.pvpCard;
         if (pc && pc.id !== id && pc.holes.length) return setText('frMsg', `Finish your round against ${pc.vsName} first`);
         if (!pc || pc.id !== id) {
-          const o = chOther(ch);
-          career.pvpCard = { id, tier: ch.tier, format: ch.format, stake: ch.stake, vs: o, vsName: ch.names[o], deadline: ch.deadline, n: ch.strokes.player ? ch.strokes.n : 0, mine: ch.strokes.player === me, holes: [] };
+          if (isInvCh(ch)) {                                 // an invitational: the others are the field; only your own strokes matter here
+            const k = ch.field.length - 1, n = (ch.strokes || {})[me] || 0;
+            career.pvpCard = { id, inv: true, tier: ch.tier, format: ch.format, stake: ch.stake, vs: null, vsName: `${k} friend${k === 1 ? '' : 's'}`, host: ch.names[ch.host], deadline: ch.deadline, n, mine: n > 0, holes: [] };
+          } else {
+            const o = chOther(ch);
+            career.pvpCard = { id, tier: ch.tier, format: ch.format, stake: ch.stake, vs: o, vsName: ch.names[o], deadline: ch.deadline, n: ch.strokes.player ? ch.strokes.n : 0, mine: ch.strokes.player === me, holes: [] };
+          }
           careerSave();
         }
         closeClubhouse();
@@ -13254,7 +13406,7 @@
         buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(pc); resumeHoleProgress(pc);
         $('btnRound').textContent = 'Leave the round';
         const give = holeStrokes(pc.n)[hp.holeIdx];
-        toast(`vs ${pc.vsName} · ${FR_FMT[pc.format]}, ${money(pc.stake)}${pc.format === 'skins' ? ' a skin' : ''}\n${pc.holes.length ? `Resuming on hole ${hp.holeIdx + 1}` : strokesText({ player: pc.n ? (pc.mine ? session.id : pc.vs) : null, n: pc.n }, { [pc.vs]: pc.vsName })}`
+        toast(`${pc.inv ? `🏆 ${pc.host}'s invitational, vs ${pc.vsName}` : `vs ${pc.vsName}`} · ${FR_FMT[pc.format]}, ${money(pc.stake)}${pc.format === 'skins' ? ' a skin' : ''}\n${pc.holes.length ? `Resuming on hole ${hp.holeIdx + 1}` : pc.inv && !pc.n ? 'You get no strokes' : strokesText({ player: pc.n ? (pc.mine ? session.id : pc.vs) : null, n: pc.n }, { [pc.vs]: pc.vsName })}`
           + `${give ? `\n${pc.mine ? 'You get' : `${pc.vsName} gets`} a stroke on this hole` : ''} · ${HOLE.name}, par ${HOLE.par}`, 3600);
       }
       // after each hole of a friend round: the card in progress (saved), and the stroke on this hole if there is one
@@ -13307,14 +13459,14 @@
             if (round.pvp && round.pvp.id === ch.id && $('scorecard').classList.contains('on')) showSharedCard(ch, headlineFor(ch));
             else { note(`Both cards are in: ${ch.result.line}`); checkNewResults(); }
           }
-          else note(`Card sent. Waiting for ${pc.vsName}'s card (they have until ${frDate(pc.deadline)}).`);
+          else note(pc.inv ? `Card sent. Waiting for the other cards (until ${frDate(pc.deadline)}).` : `Card sent. Waiting for ${pc.vsName}'s card (they have until ${frDate(pc.deadline)}).`);
           if (!round.on) { await syncLoad(); if ($('clubhouse').classList.contains('friends')) renderFriends(); }
         } else note(`Couldn't send your card (${(r.data && r.data.error) || 'offline'}). It's kept: send it from Friends in the clubhouse.`);
         updateFriendsTile();
       }
       function confirmLeavePvp() {
         const pc = round.pvp;
-        return !pc || round.over || confirm(`Leave now? You can resume the round against ${pc.vsName} from Friends until ${frDate(pc.deadline)} (the hole you're on starts again).`);
+        return !pc || round.over || confirm(`Leave now? You can resume the round ${pc.inv ? `in ${pc.host}'s invitational` : `against ${pc.vsName}`} from Friends until ${frDate(pc.deadline)} (the hole you're on starts again).`);
       }
       function pvpToClubhouse() {
         endRound();
@@ -13342,14 +13494,60 @@
         return r;
       }
       function headlineFor(ch) {
+        if (isInvCh(ch)) {                                   // an invitational: where you finished, and the money
+          const me = session.id, net = (ch.result.net || {})[me] || 0, st = ch.result.standings || [], k = st.findIndex((s) => s.p === me);
+          const place = k >= 0 && ch.format === 'stroke' ? `${k + 1}${k === 0 ? 'st' : k === 1 ? 'nd' : k === 2 ? 'rd' : 'th'} of ${(ch.field || []).length} · ` : '';
+          return `Every card is in: ${place}${net > 0 ? `you won ${money(net)}` : net < 0 ? `you lost ${money(-net)}` : 'you broke even'}`;
+        }
         const me = session.id, o = chOther(ch), res = ch.result, net = res.net[me];
         const how = res.kind === 'forfeit' ? `${ch.names[res.loser]} forfeited` : res.kind === 'expired' ? `${ch.names[res.loser]} ran out of time`
           : (ch.submitted && ch.submitted[o] > (ch.submitted[me] || 0)) ? `${ch.names[o]}'s card is in` : 'Both cards are in';
         return `${how}: ${net > 0 ? `you won ${money(net)}` : net < 0 ? `you lost ${money(-net)}` : 'nobody pays'}`;
       }
       // opts.as: whose side to show it from (a framed card on someone's wall: theirs), instead of yours
+      // a friends invitational's final card: every player's card in finishing order (• = a stroke received), net totals and
+      // the money, and in skins who took each hole
+      function showInvCard(ch, headline = '') {
+        const me = session.id, F = ch.field || [], HS = holesFor(TIERS[ch.tier]), res = ch.result, cards = ch.cards || {};
+        const card = (p) => (Array.isArray(cards[p]) ? cards[p] : null), give = (p) => holeStrokes((ch.strokes || {})[p] || 0, ch.tier);
+        const cls = (d) => (d <= -2 ? 'eagle' : d === -1 ? 'birdie' : d === 1 ? 'bogey' : d >= 2 ? 'double' : '');
+        const sum = (f) => HOLES.reduce((s, _, i) => s + f(i), 0), nm = (p) => escH(ch.names[p]);
+        const order = [...(res.standings || []).map((s) => s.p), ...F.filter((p) => !(res.standings || []).some((s) => s.p === p))];
+        let html = `<tr><th>Hole</th>${HOLES.map((_, i) => `<th>${i + 1}</th>`).join('')}<th class="tot">Total</th></tr>`
+          + `<tr><td>Par</td>${HS.map((h) => `<td>${h.par}</td>`).join('')}<td class="tot">${sum((i) => HS[i].par)}</td></tr>`;
+        for (const p of order) {
+          const c = card(p), g = give(p), lab = `${nm(p)}${p === me ? ' (you)' : ''}`, m = (res.net || {})[p] || 0;
+          const mon = `<span class="${m > 0 ? 'mw' : m < 0 ? 'ml' : ''}">${m > 0 ? '+' : m < 0 ? '−' : '±'}${money(Math.abs(m))}</span>`;
+          if (!c) { html += `<tr${p === me ? '' : ' class="npc"'}><td>${lab}</td><td colspan="${HOLES.length}" class="nocard">${(ch.forfeits || {})[p] === 'expired' ? 'ran out of time' : 'forfeited'}</td><td class="tot">${mon}</td></tr>`; continue; }
+          const nt = sum((i) => c[i].strokes - g[i]);
+          html += `<tr${p === me ? '' : ' class="npc"'}><td>${lab}</td>${c.map((h, i) => `<td><span class="sc ${cls(h.strokes - HS[i].par)}">${h.strokes}</span>${g[i] ? `<i class="rcv">${'•'.repeat(g[i])}</i>` : ''}</td>`).join('')}`
+            + `<td class="tot">${sum((i) => c[i].strokes)}${nt !== sum((i) => c[i].strokes) ? ` <small>net ${nt}</small>` : ''} ${mon}</td></tr>`;
+        }
+        if (ch.format === 'skins' && res.skins) {            // who took each hole (→ carried)
+          html += `<tr class="mrow"><td>Skins</td>${res.skins.byHole.map((p) => `<td>${p ? `<span class="${p === me ? 'mw' : ''}" title="${nm(p)}">${nm(p).slice(0, 3)}</span>` : '<span title="carried">→</span>'}</td>`).join('')}<td class="tot">${res.skins.unclaimed ? `${res.skins.unclaimed} back` : ''}</td></tr>`;
+        }
+        $('scTable').innerHTML = html;
+        $('scTitle').textContent = `Final · ${ch.names[ch.host]}'s invitational · ${F.length} players · ${FR_FMT[ch.format]}, ${money(ch.stake)}${ch.format === 'skins' ? ' a skin' : ''}`;
+        const st = F.filter((p) => (ch.strokes || {})[p]);
+        $('scTag').textContent = `${TIERS[ch.tier].course} · ${st.length ? `strokes: ${st.map((p) => `${ch.names[p]} ${ch.strokes[p]}`).join(', ')}` : 'no strokes'}`;
+        const nm_ = (res.net || {})[me];
+        $('scMsg').textContent = `${headline ? headline + '\n' : ''}${res.line}\n`
+          + (nm_ === undefined ? 'You didn\'t play in this one' : nm_ > 0 ? `+${money(nm_)}: your ${money(escrowOf(ch.format, ch.stake))} back and ${money(nm_)} from the pot` : nm_ < 0 ? `−${money(-nm_)} of your held stake` : 'You broke even: your stake is back')
+          + F.filter((p) => ch.fast && ch.fast[p]).map((p) => `\n⚠ ${p === me ? 'Your' : `${ch.names[p]}'s`} card was sent all at once, not hole by hole as it was played`).join('');
+        const inRound = !!round.pvp;
+        $('scNext').textContent = inRound ? 'Back to the clubhouse (N)' : 'OK (Enter)';
+        $('scClose').textContent = inRound ? 'Back to the clubhouse' : 'Close (Esc)';
+        $('scPressBox').classList.remove('on'); $('scBets').innerHTML = '';
+        const sc = $('scorecard');
+        scMode = 'pvp';
+        sc.classList.remove('entry', 'board', 'lbonly');
+        sc.classList.add('on', 'pvp');
+        if (nm_ !== undefined) markSeen(ch.id);
+        if (!round.on) syncLoad();                           // the server paid out: pick up the new cash
+      }
       function showSharedCard(ch, headline = '', opts = {}) {
         if (!ch || !ch.result) return;
+        if (isInvCh(ch)) return showInvCard(ch, headline);   // (a friends invitational: its own card)
         const me = opts.as || session.id, o = ch.from === me ? ch.to : ch.from, n = HOLES.length, rcv = ch.strokes && ch.strokes.player;
         const framed = !!opts.as;
         const give = holeStrokes(rcv ? ch.strokes.n : 0, ch.tier), cards = ch.cards || {}, HS = holesFor(TIERS[ch.tier]);     // (its course's pars)
@@ -13420,7 +13618,7 @@
         if (!session || !career || !clubOpen || $('scorecard').classList.contains('on')) return;
         const v = $('clubhouse').classList;
         if (!(v.contains('hub') || v.contains('friends'))) return;
-        const c = fr.list.find((x) => x.status === 'done' && x.result && x.result.net && !pvpSeen(x.id));
+        const c = fr.list.find((x) => x.status === 'done' && x.result && x.result.net && x.result.net[session.id] !== undefined && !pvpSeen(x.id));
         if (c) showSharedCard(c, headlineFor(c));
       }
       // waiting for a friend's card (your round's final card, or Friends open, with your card in): look every 20 s
@@ -13506,8 +13704,8 @@
             : `<span>${session ? 'Loading your career…' : 'Guest · nothing saved online · no career yet'}</span>`) + '</div></div>';
         // (Friends lives in the clubhouse only, user request 2026-11-20: the career tile carries its news and its badge)
         const m = c && c.match, pc = c && c.pvpCard;
-        const me = session && session.id, wait = me ? fr.list.filter((x) => x.status === 'pending' && x.to === me).length : 0;
-        const play = me ? fr.list.filter((x) => x.status === 'open' && !x.cards[me]).length : 0, news = me ? fr.list.filter((x) => x.status === 'done' && !pvpSeen(x.id)).length : 0;
+        const me = session && session.id, wait = me ? fr.list.filter((x) => chAsksMe(x, me)).length : 0;
+        const play = me ? fr.list.filter((x) => chToPlay(x, me)).length : 0, news = me ? fr.list.filter((x) => x.status === 'done' && x.result && x.result.net && x.result.net[me] !== undefined && !pvpSeen(x.id)).length : 0;
         const badge = wait + play + news;
         const frNews = news ? `🤝 ${news} friend result${news > 1 ? 's' : ''} in` : wait ? `🤝 ${wait} friend challenge${wait > 1 ? 's' : ''} waiting for you` : play ? `🤝 ${play} friend round${play > 1 ? 's' : ''} to play` : '';
         $('hmCareer').innerHTML = `<b>🏌️ ${c ? 'Career' : 'Start a career'}</b><i>${m && !m.settled && m.feePaid ? `Resume your match vs ${npcById(m.npc).nick}`
@@ -17280,6 +17478,7 @@
         $('ccWho').addEventListener('change', (e) => { fr.form.who = e.target.value; e.target.blur(); renderChalForm(); });
         $('ccGo').addEventListener('click', (e) => { e.currentTarget.blur(); sendChallenge(); });
         $('ccBack').addEventListener('click', (e) => { e.currentTarget.blur(); openFriends(); });
+        $('frInvBtn').addEventListener('click', (e) => { e.currentTarget.blur(); openInvForm(); });     // a friends invitational
         $('chCoach').addEventListener('click', coachClick);
         $('cdList').addEventListener('click', caddieClick);
         $('trList').addEventListener('click', trophyClick);
@@ -18248,7 +18447,7 @@
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, tiltFromLie, autoSelectPuttScale, putterBars, createCareer, openShop, openBagRoom, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
-        npc, npcPlan, npcHoleScore, npcHurry, condAvg, NPCS, npcRating, npcPresses, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, holeStrokes, submitPvp, playFriend, startFriendRound, showSharedCard, closeSharedCard, checkNewResults, h2h, openHome, closeHome, get homeOpen() { return homeOpen; }, devOn, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
+        npc, npcPlan, npcHoleScore, npcHurry, condAvg, NPCS, npcRating, npcPresses, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, openFriends, openInvForm, openClubhouse, holeStrokes, submitPvp, playFriend, startFriendRound, showSharedCard, closeSharedCard, checkNewResults, h2h, openHome, closeHome, get homeOpen() { return homeOpen; }, devOn, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }
       };
 
