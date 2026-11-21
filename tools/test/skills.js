@@ -127,6 +127,15 @@
       if (!PL) { say(false, `${T.id}: no test play`); break; }
       let setupOk = area === T.area;
       if (T.id === 'cut' || T.id === 'hook') { const sd = sandSide(); setupOk = setupOk && (T.id === 'cut' ? sd > 0 : sd < 0); notes.push(`sand ${sd > 0 ? 'right' : 'left'} of the line (${(sd / YD).toFixed(1)} yds), tuck ${g.state.chipCfg.tuck}`); }
+      // (user, 2026-11-21: no chip may set you up for failure: the landing the game suggests for the shot it sets up is
+      // on the green, not the fringe, so the shot asked for can actually get there)
+      if (T.area === 'chip') {
+        const gr = g.green, h = gr.hole, hl = Math.hypot(h.x, h.z);
+        let edge = 0; while (edge < hl && gr.surfAt(h.x * edge / hl, h.z * edge / hl) !== 'green') edge += 0.05;
+        const on = g.state.markDist - edge;
+        setupOk = setupOk && on >= 1;
+        notes.push(`suggested landing ${on.toFixed(1)} m onto the green (${g.state.chipType}, the hole ${(hl - edge).toFixed(1)} m on)`);
+      }
       if (/^(sand|rough)/.test(T.id)) { setupOk = setupOk && g.state.lie === (T.id.startsWith('sand') ? 'bunker' : 'light'); notes.push(`lie ${g.state.lie}, ${g.CLUBS[g.state.club].name}`); }
       if (/crown/.test(T.id)) { const a = lineH(), top = Math.max(...a); setupOk = setupOk && !!g.state.greenCfg.shape && top > a[0] + 1.5 && top > a[20] + 1.5; notes.push(`the crown ${top.toFixed(1)} in above the ball, the hole ${a[20].toFixed(1)}`); }
       if (/tier/.test(T.id)) { const a = lineH(); setupOk = setupOk && (T.id === 'tierDn' ? a[20] < -2 : a[20] > 2); notes.push(`the hole ${a[20].toFixed(1)} in from the ball`); }
