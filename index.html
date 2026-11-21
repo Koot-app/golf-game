@@ -7682,8 +7682,8 @@
           <button data-h="chip" title="The chipping green: round the green"><span>🪃</span><b>Chipping</b></button>
           <button data-h="putt" title="The putting green: read the break"><span>🕳️</span><b>Putting</b></button>
         </div>
-        <!-- the skills challenge (user request, 2026-11-21): twelve shots to make, scored by the attempts they take -->
-        <button id="hmSkills" class="hm-skills" title="Twelve shots to make on the range, the chipping green and the putting green"><span>🏁</span><div><b>Skills challenge</b><i>Twelve shots to make: hit greens, shape it, chip in, hole putts. Fewest attempts wins</i></div><em id="hmSkillsBest"></em></button>
+        <!-- the skills challenge (user request, 2026-11-21): thirteen shots to make, scored by the attempts they take -->
+        <button id="hmSkills" class="hm-skills" title="Thirteen shots to make on the range, the chipping green and the putting green"><span>🏁</span><div><b>Skills challenge</b><i>Thirteen shots to make: hit greens, shape it, chip it close, cut a flop, hole putts. Fewest attempts wins</i></div><em id="hmSkillsBest"></em></button>
         <div class="hm-arc-err" id="hmPracErr"></div>
       </div>
     </div>
@@ -8037,7 +8037,7 @@
     </div>
     <div id="skDone" class="card">
       <div class="card-h"><span>🏁 Skills challenge · complete</span><span class="tag" id="skDoneTag"></span></div>
-      <div class="sk-score"><b id="skDoneTot"></b><span>attempts to make all twelve · 12 is perfect</span><i id="skDoneBest"></i></div>
+      <div class="sk-score"><b id="skDoneTot"></b><span id="skDoneSub"></span><i id="skDoneBest"></i></div>
       <div class="sk-cols">
         <table id="skDoneRows"></table>
         <div class="sk-world">
@@ -11506,14 +11506,35 @@
       function makeChipPracticeView() {
         const g = state.greenCfg, R = 16.5, D = state.chipCfg.pinYd * YD, a = (g.angleDeg || 0) * D2R;
         const dir = { x: -Math.sin(a), z: Math.cos(a) };                      // from the green's centre out toward the ball
-        const e2p = Math.min(clamp(D * 0.45, 3, 2 * R - 4), D - 2.5);         // edge of the green to the pin
-        const pin = { x: dir.x * (R - e2p), z: dir.z * (R - e2p) }, at = { x: dir.x * (R - e2p + D), z: dir.z * (R - e2p + D) };
-        const surf = randomSurface(g.seed, { tiltPct: g.tiltPct, contours: g.contours, stimp: g.stimp, pin });
+        // edge of the green to the pin (chipCfg.e2p, metres, sets it instead: the skills challenge's bump and run wants
+        // the ball just off the fringe with a lot of green to run across)
+        const e2p = state.chipCfg.e2p ? clamp(state.chipCfg.e2p, 3, Math.min(2 * R - 4, D - 2.5)) : Math.min(clamp(D * 0.45, 3, 2 * R - 4), D - 2.5);
+        // chipCfg.tuck (m): the hole moves across the green to that far in from its RIGHT edge (as the player looks at it),
+        // the ball with it: the skills challenge's cut flop, a short-sided hole. (The edge is found on the green's own
+        // outline, which isn't a plain circle.)
+        const rx = Math.cos(a), rz = Math.sin(a), gOpt = { tiltPct: g.tiltPct, contours: g.contours, stimp: g.stimp };
+        let sd = 0;
+        if (state.chipCfg.tuck) {
+          const p0 = { x: dir.x * (R - e2p), z: dir.z * (R - e2p) }, s0 = randomSurface(g.seed, { ...gOpt, pin: p0 });
+          let t = 0;
+          while (t < 30 && s0.inside(p0.x + rx * t, p0.z + rz * t)) t += 0.1;
+          sd = Math.max(0, t - state.chipCfg.tuck);
+        }
+        const pin = { x: dir.x * (R - e2p) + rx * sd, z: dir.z * (R - e2p) + rz * sd }, at = { x: pin.x + dir.x * D, z: pin.z + dir.z * D };
+        const surf = randomSurface(g.seed, { ...gOpt, pin });
         const lieKey = chipSurfKey(state.lie), lieR = lieKey === 'bunker' ? 3.6 : 2.6;
         const ux = -dir.x, uz = -dir.z;
+        // chipCfg.sand: sand right against the green's edge on the hole's right (flat: a waste area, not a bowl)
+        let sand = null;
+        if (state.chipCfg.sand) {
+          let t = 0;
+          while (t < 30 && surf.inside(pin.x + rx * t, pin.z + rz * t)) t += 0.1;
+          sand = { x: pin.x + rx * (t + 3.4), z: pin.z + rz * (t + 3.4), r: 3.6 };
+        }
         return chipView(surf, at, (X, Z) => {
           if (Math.hypot(X - at.x, Z - at.z) < lieR) return lieKey;          // the lie the player picked, around the ball
           if (surf.inside(X, Z)) return 'green';
+          if (sand && Math.hypot(X - sand.x, Z - sand.z) < sand.r) return 'bunker';
           if (surf.inside(X, Z, 1.15)) return 'fringe';
           const t = (X - at.x) * ux + (Z - at.z) * uz, off = Math.abs((X - at.x) * uz - (Z - at.z) * ux);
           return t > -3 && t < D && off < 6 ? 'fairway' : 'light';         // a mown approach from the ball to the green
@@ -11931,7 +11952,7 @@
         const tiltTag = state.badStreak > 0 ? ` · TILTED${state.badStreak > 1 ? ' ×' + state.badStreak : ''}` : '';
         const carry = n.carry, roll = Math.max(0, n.total - n.carry);
         toast(shot.holed ? `${flagsTxt ? flagsTxt + '\n' : ''}CHIPPED IN!` : `${flagsTxt ? flagsTxt + '\n' : ''}${carry.toFixed(carry < 10 ? 1 : 0)} yd carry · ${roll.toFixed(roll < 10 ? 1 : 0)} yd roll\n${CHIP_NAME[surfKey] || surfKey} · ${fmtFtIn(left)} from the pin${tiltTag}`, 4500);
-        skShotDone({ holed: shot.holed, leftFt: left / FT });
+        skShotDone({ holed: shot.holed, leftFt: left / FT, axis: shot.res.axis, surf: surfKey });
       }
 
       function shotNumbers(s) {
@@ -13203,19 +13224,19 @@
         else if (e.code === 'Escape') introCancel();
       }
       // =====================================================================================================
-      //  SKILLS CHALLENGE (user request, 2026-11-21): twelve shots to make, in order: six on the range (finish on a target
+      //  SKILLS CHALLENGE (user request, 2026-11-21): thirteen shots to make, in order: six on the range (finish on a target
       //  green, on a named green, with a fade, with a draw, with a low shot, and a long straight drive), three on the
       //  chipping green and three on the putting green. Every ball hit is an attempt; a shot is made when the ball has
-      //  STOPPED where it was asked to (on the green, in the hole). The score is the attempts all twelve took: 12 is
+      //  STOPPED where it was asked to (on the green, in the hole). The score is the attempts all thirteen took: 13 is
       //  perfect, and the best is kept in this browser. It's the same test for everyone: the arcade's bag and stats
       //  (all 8), no wind, a clean lie, and the same chips and putts (fixed greens), so two scores can be compared.
       //  A fade or a draw is what the launch monitor calls one (the spin axis past 3°, as shapeName), however it was
       //  made: the F preset or the swing line. A low shot is the height set to Low (W): the ladder barely lowers a
       //  wedge's flight (about 10%), so a measured height couldn't tell a low one from a thin one.
-      //  My choices, where the request left it open: the list itself, the two chips that must go in being short ones
-      //  (8 and 10 yds), and a lag putt and a bump-and-run that only have to finish close.
+      //  My choices, where the request left it open: the list itself, and a lag putt that only has to finish close. The
+      //  chips (user, 2026-11-21) only have to finish within 3 ft of the hole.
       // =====================================================================================================
-      const skBestKey = () => 'golfSkillsBest'/*<tour>*/ + (session ? `_${session.id}` : '')/*</tour>*/;
+      const skBestKey = () => 'golfSkillsBest13'/*<tour>*/ + (session ? `_${session.id}` : '')/*</tour>*/;
       const skBlocked = () => toast('Skills challenge\nEsc leaves it', 1400);
       const SK_AREA = { range: 'Range', chip: 'Chipping', putt: 'Putting' };
       // which target green a spot on the range is on (-1: none), and how far off the nearest one it is
@@ -13245,8 +13266,13 @@
         setPin(o.pin !== undefined ? o.pin : state.pin);
         refreshShotType(); renderBag(); syncPanel();
       }
+      // (the chip's own hole placement, in chipCfg: e2p how far onto the green it is, tuck how far in from the right
+      // edge, sand past that edge)
+      const SK_PLACE = ['e2p', 'tuck', 'sand'];
       function skChip(type, pinYd, cfg) {
-        Object.assign(state.greenCfg, cfg); state.chipCfg.pinYd = pinYd; state.lie = 'fairway'; state.slope = 'flat'; state.slopeLaunch = null;
+        const gc = { ...cfg };
+        for (const k of SK_PLACE) { if (cfg[k]) state.chipCfg[k] = cfg[k]; else delete state.chipCfg[k]; delete gc[k]; }
+        Object.assign(state.greenCfg, gc); state.chipCfg.pinYd = pinYd; state.lie = 'fairway'; state.slope = 'flat'; state.slopeLaunch = null;
         skArea('chip');
         applyChipType(type, true); state.club = suggestChipClub();
         applyChipGreen();                                     // (again: the landing spot it suggests is this shot type's)
@@ -13272,9 +13298,21 @@
             : r.carry < sk.drive ? { ok: false, msg: `${r.carry.toFixed(0)} yds of carry: ${sk.drive} makes it` }
             : Math.abs(r.offline) > 20 ? { ok: false, msg: `${r.carry.toFixed(0)} yds, but ${Math.abs(r.offline).toFixed(0)} yds ${r.offline > 0 ? 'right' : 'left'} of your line` }
             : { ok: true, msg: `${r.carry.toFixed(0)} yds of carry, ${Math.abs(r.offline).toFixed(0)} off line` }) },
-        { area: 'chip', name: 'Bump and run', goal: 'Low runner (1) from 15 yds: finish within 6 ft of the hole', setup: () => skChip('low', 15, { ...SK_CHIP, angleDeg: 0, seed: 11 }), check: (r) => skType('low', r, skClose(6)) },
-        { area: 'chip', name: 'Chip in', goal: 'Stock chip (2) from 8 yds: into the hole', setup: () => skChip('stock', 8, { ...SK_CHIP, angleDeg: 40, seed: 12 }), check: (r) => skType('stock', r, skHoled) },
-        { area: 'chip', name: 'Flop it in', goal: 'Flop shot (4) from 10 yds: into the hole', setup: () => skChip('flop', 10, { ...SK_CHIP, angleDeg: 320, seed: 13 }), check: (r) => skType('flop', r, skHoled) },
+        // (user, 2026-11-21: from 15 yds the hole was close to the fringe, so a low runner had to land short of the green
+        // or run well past. Now the ball sits just off the fringe with 15 m of green to the hole: land it on and let it run)
+        // (user, same day: every chip only has to finish within 3 ft of the hole; the chip and the flop had to go in)
+        { area: 'chip', name: 'Bump and run', goal: 'Low runner (1) from 20 yds, just off the green: finish within 3 ft of the hole', setup: () => skChip('low', 20, { ...SK_CHIP, angleDeg: 0, seed: 11, e2p: 15 }), check: (r) => skType('low', r, skClose(3)) },
+        { area: 'chip', name: 'Chip it close', goal: 'Stock chip (2) from 8 yds: finish within 3 ft of the hole', setup: () => skChip('stock', 8, { ...SK_CHIP, angleDeg: 40, seed: 12 }), check: (r) => skType('stock', r, skClose(3)) },
+        { area: 'chip', name: 'Flop it close', goal: 'Flop shot (4) from 10 yds: finish within 3 ft of the hole', setup: () => skChip('flop', 10, { ...SK_CHIP, angleDeg: 320, seed: 13 }), check: (r) => skType('flop', r, skClose(3)) },
+        // THE CUT FLOP (user request, 2026-11-21: a flop with side spin put on by hand, where the spin pulls it on landing).
+        // A short-sided hole: tucked by the green's right edge, with sand just past it. Swung out-to-in (up and right
+        // through the ball), the flop starts a touch left, away from the sand, lands left of the hole and kicks right to
+        // it (about half a yard from here). Made: a flop, with cut spin on it (the spin axis 5° or more right), within 3 ft.
+        { area: 'chip', name: 'Cut flop', goal: 'The hole is tucked right, sand past it: a flop (4) swung up and right through the ball for cut spin, within 3 ft',
+          setup: () => skChip('flop', 15, { ...SK_CHIP, angleDeg: 0, seed: 14, e2p: 7, tuck: 2.5, sand: true }),
+          check: (r) => skType('flop', r, (x) => (x.axis === undefined || x.axis < 5
+            ? { ok: false, msg: x.axis < -5 ? 'That was hook spin: a cut is up and right through the ball' : 'No cut on it: swing up and right through the ball' }
+            : x.surf === 'bunker' ? { ok: false, msg: 'In the sand' } : skClose(3)(x))) },
         { area: 'putt', name: 'Knock it in', goal: 'Hole the 6-footer', setup: () => skPutt({ distFt: 6, angleDeg: 20, tiltPct: 1, contours: 0.15, stimp: 10.5, seed: 21 }), check: skHoled },
         { area: 'putt', name: 'Read the break', goal: 'Hole the 15-footer across the slope', setup: () => skPutt({ distFt: 15, angleDeg: 90, tiltPct: 2, contours: 0.3, stimp: 11, seed: 22 }), check: skHoled },
         { area: 'putt', name: 'Lag it close', goal: 'From 40 ft: finish within 3 ft of the hole', setup: () => skPutt({ distFt: 40, angleDeg: 200, tiltPct: 1.5, contours: 0.4, stimp: 11, seed: 23 }), check: skClose(3) },
@@ -13326,6 +13364,7 @@
         const total = skTotal(), best = +lsGet(skBestKey()) || 0, isBest = !best || total < best;
         if (isBest) lsSet(skBestKey(), String(total));
         setText('skDoneTot', String(total));
+        setText('skDoneSub', `attempts to make all ${SKILLS.length} shots · ${SKILLS.length} is perfect`);
         setText('skDoneTag', total === SKILLS.length ? 'perfect' : total <= 18 ? 'tour class' : total <= 30 ? 'sharp' : total <= 48 ? 'solid' : 'keep at it');
         setText('skDoneBest', isBest ? (best ? `A new best: it was ${best}` : 'Your first score: that\'s the one to beat') : `Your best is ${best}`);
         $('skDoneRows').innerHTML = '<tr><th></th><th>Shot</th><th></th><th>Attempts</th></tr>'
@@ -13445,6 +13484,7 @@
         document.body.classList.remove('skills', 'sk-over'); $('skDone').classList.remove('on');
         if (shot) { shot.done = true; shot = null; }
         puttRun = null; puttTel = null;
+        for (const k of SK_PLACE) delete state.chipCfg[k];    // (the chips' hole placements are the challenge's own)
         if (s) { Object.assign(state.greenCfg, s.greenCfg); Object.assign(state.chipCfg, s.chipCfg); state.chipType = s.chipType; }
         if (state.mode !== 'range') setMode('range'); else state.view = 'scout';
         if (s) { setPin(s.pin); if (devOn()) { setStats(s.stats); state.windMph = s.mph; state.windDir = s.dir; $('inWind').value = s.mph; $('inWindDir').value = s.dir; orientFlags(); } }
@@ -20150,7 +20190,7 @@
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, tiltFromLie, autoSelectPuttScale, putterBars,/*<tour>*/createCareer, openShop, openBagRoom,/*</tour>*/compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight,/*<tour>*/get career() { return career; }, get careerOn() { return careerOn; },/*</tour>*/
         /*<tour>*/npc, npcPlan, npcHoleScore, npcHurry, condAvg, NPCS, npcRating, npcPresses, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, openFriends, openInvForm, openClubhouse, holeStrokes, submitPvp, playFriend, startFriendRound, showSharedCard, closeSharedCard, checkNewResults, h2h,/*</tour>*/openHome, closeHome, get homeOpen() { return homeOpen; }, devOn,/*<tour>*/get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },/*</tour>*/
-        sk, skLb, SKILLS, startSkills, endSkills, skShotDone, skAttempt, PINS, PIN_RAD, get trailCount() { return trails.length; },      // (the skills challenge: tools/test/skills.js)
+        sk, skLb, chipLaunch, SKILLS, startSkills, endSkills, skShotDone, skAttempt, PINS, PIN_RAD, get trailCount() { return trails.length; },      // (the skills challenge: tools/test/skills.js)
         // (tools/tutorial: a world point's spot on the screen, in CSS px, for cropping pictures and placing their marks)
         toScreen: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (-v.y * 0.5 + 0.5) * innerHeight }; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }

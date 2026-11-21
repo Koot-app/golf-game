@@ -60,10 +60,12 @@ function clean(member) {
 }
 
 // THE SKILLS CHALLENGE's board (user request, 2026-11-21; index.html SKILLS): ?kind=skills / { kind: 'skills' }. One
-// board, the fewest attempts to make all twelve shots; a tie goes to the earlier one (the member starts with its time).
-// A believable card: the attempts at each of the twelve shots, at least one each, adding up to the total. (Like the
+// board, the fewest attempts to make all thirteen shots; a tie goes to the earlier one (the member starts with its time).
+// A believable card: the attempts at each of the thirteen shots, at least one each, adding up to the total. (Like the
 // rounds, the browser sends it, so a careful cheat could still post a fake one.)
-const SKILLS_KEY = 'golf:lb:skills', SKILLS_N = 12;
+// (the key names the shot count: when the challenge changes, a new board, since the scores no longer compare. It was
+// twelve shots on golf:lb:skills; the cut flop made it thirteen, user request 2026-11-21)
+const SKILLS_N = 13, SKILLS_KEY = 'golf:lb:skills:' + SKILLS_N;
 function cleanSkills(member) {
   try {
     const e = JSON.parse(member);
@@ -118,7 +120,7 @@ module.exports = async (req, res) => {
         if (pn && PROFILE_NAME.test(pn)) { name = pn; pro = true; }
       }
       if (!pro && (typeof name !== 'string' || !/^[A-Z0-9]{3}$/.test(name))) return send(400, { error: 'Initials must be 3 letters or digits' });
-      // the skills challenge: the attempts at each of its twelve shots
+      // the skills challenge: the attempts at each of its thirteen shots
       if (b.kind === 'skills') {
         const tries = b.tries;
         if (!Array.isArray(tries) || tries.length !== SKILLS_N || !tries.every((n) => isInt(n, 1, 99))) return send(400, { error: 'Bad card' });
