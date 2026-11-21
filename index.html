@@ -5195,6 +5195,69 @@
       color: #fff;
     }
 
+    /* the arcade's golfer: a figure at address, and each stat as ten pips with what it does */
+    .hm-arc-golfer {
+      display: grid;
+      grid-template-columns: 62px 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 9px 12px;
+      margin: -4px 0 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .1);
+    }
+
+    .hm-arc-golfer svg {
+      width: 62px;
+      height: 104px;
+      display: block;
+    }
+
+    .hm-arc-golfer .hm-st-h {
+      font-size: 10.5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #8f9cad;
+      margin-bottom: 5px;
+    }
+
+    .hm-arc-golfer .hm-st {
+      display: grid;
+      grid-template-columns: 76px 1fr 30px;
+      gap: 0 8px;
+      align-items: center;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .hm-arc-golfer .hm-st span {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .hm-arc-golfer .hm-st b {
+      color: #ffe066;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hm-arc-golfer .hm-st b small {
+      color: #8f9cad;
+      font-weight: 400;
+    }
+
+    .hm-arc-golfer .hm-st p {
+      grid-column: 1 / -1;
+      margin: 1px 0 0;
+      font-size: 10.5px;
+      color: #8f9cad;
+    }
+
+    .hm-arc-golfer .ch-pips i.on {
+      background: #ffe066;
+    }
+
     .hm-courses {
       display: grid;
       gap: 6px;
@@ -6685,7 +6748,9 @@
          stats and clubs for everyone, and a world Top 10 for each course. -->
     <div class="hm-board" id="hmArcade">
       <div class="hm-h">🕹 Arcade</div>
-      <div class="hm-arc-note">A level game: <b>everyone plays the same stats (all 8) and the same clubs</b>, a full bag of forgiving ones, whatever their career. Pick a course, play nine holes, and your score goes on its world Top 10.</div>
+      <div class="hm-arc-note">A level game: <b>everyone plays the same golfer and the same clubs</b>, a full bag of forgiving ones, whatever their career. Pick a course, play nine holes, and your score goes on its world Top 10.</div>
+      <!-- the arcade's golfer and its stats, out of 10 (user request, 2026-11-21: so a new player sees what the stats are) -->
+      <div class="hm-arc-golfer" id="hmArcStats"></div>
       <div class="hm-courses" id="hmCourses"></div>
       <button id="hmArcPlay" class="go">⛳ Play 9 holes</button>
       <div class="hm-h2 hm-arc-sub">Practice · the same bag and stats</div>
@@ -8653,17 +8718,8 @@
       const contourUp = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x0b2610, transparent: true, opacity: 0.58, depthWrite: false }));
       const contourDown = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xdfffe4, transparent: true, opacity: 0.58, depthWrite: false }));
       let contourLabels = [];   // [{ x, y, z, txt, up }]
-      const ARROW_MAX = 400;
-      const arrowGeo = new THREE.BufferGeometry();
-      arrowGeo.setAttribute('position', new THREE.Float32BufferAttribute([
-        -0.024, 0, -0.22, 0.024, 0, -0.22, 0.024, 0, 0.05,
-        -0.024, 0, -0.22, 0.024, 0, 0.05, -0.024, 0, 0.05,
-        -0.095, 0, 0.04, 0.095, 0, 0.04, 0.000, 0, 0.24,
-      ], 3));
-      const arrowMesh = new THREE.InstancedMesh(arrowGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.88, depthWrite: false, side: THREE.DoubleSide }), ARROW_MAX);
-      arrowMesh.frustumCulled = false;
-      let arrowLabels = [];     // [{ x, y, z, txt }]
-      const BEAD_MAX = 600, BEAD_CHIP_OVH = 0.6;         // (a marble's size in metres; chipping's overhead: animateGreen)
+      // (the overheads' downhill arrows and their slope labels are gone: the marbles read the slope, animateGreen)
+      const BEAD_MAX = 600, BEAD_OVH = { chip: 0.6, putt: 0.28 };     // (a marble's size in metres, in each overhead: animateGreen)
       const dotTex = canvasTex(32, 32, (g) => {
         const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16);
         gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.45, 'rgba(255,255,255,.85)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
@@ -8721,7 +8777,7 @@
         h.rotation.x = r.rotation.x = -Math.PI / 2; r.position.y = 0.002;
         rollEnd.add(h, r);
       }
-      puttG.add(greenMesh, tintMesh, bankMesh, chipGround, gridLines, gridMajor, contourUp, contourDown, arrowMesh, beads, cup, cupRim, pinPole, pinFlag, markerG, aimLine, rollTrail, rollPrevBack, rollPrev, rollEnd);
+      puttG.add(greenMesh, tintMesh, bankMesh, chipGround, gridLines, gridMajor, contourUp, contourDown, beads, cup, cupRim, pinPole, pinFlag, markerG, aimLine, rollTrail, rollPrevBack, rollPrev, rollEnd);
 
       function buildGreen() {
         const d = green.distFt * FT, e = green.surface.outline, segs = 72;
@@ -8835,40 +8891,6 @@
         }
         setGeo(contourUp, cUp, null); setGeo(contourDown, cDn, null);
 
-        // slope arrows (overhead only): square lattice spaced by Perception, pointing downhill, coloured by steepness
-        arrowLabels = [];
-        const aFt = state.perception <= 3 ? 9 : state.perception <= 7 ? 6 : 3, aSp = aFt * FT;
-        const ax0 = Math.floor(xMin / aSp), ax1 = Math.ceil(xMax / aSp), az0 = Math.floor(zMin / aSp), az1 = Math.ceil(zMax / aSp);
-        const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), ps = new THREE.Vector3(), col = new THREE.Color();
-        const aScale = aFt === 3 ? 0.72 : aFt === 6 ? 1.0 : 1.25;
-        sc.set(aScale, 1, aScale);
-        let aCount = 0;
-        for (let ix = ax0; ix <= ax1 && aCount < ARROW_MAX; ix++) {
-          for (let iz = az0; iz <= az1 && aCount < ARROW_MAX; iz++) {
-            const x = ix * aSp, z = iz * aSp;
-            if (!green.inside(x, z, 0.93)) continue;
-            const g = green.grad(x, z), slope = Math.hypot(g.x, g.z);
-            if (slope < 5e-4) continue;
-            const y = green.h(x, z) + 0.013;
-            ps.set(x, y, z);
-            q.setFromAxisAngle(Y_AXIS, Math.atan2(-g.x, -g.z));
-            arrowMesh.setMatrixAt(aCount, m4.compose(ps, q, sc));
-            if (state.perception <= 3) {
-              col.setHex(slope < 0.018 ? 0x5ee08a : 0xff5d6c);
-            } else {
-              col.setHex(slope < 0.010 ? 0x5ee08a : slope <= 0.025 ? 0xffc24a : 0xff5d6c);
-            }
-            arrowMesh.setColorAt(aCount, col);
-            aCount++;
-            if (state.perception >= 8 && ((ix + iz) & 1) === 0) {
-              arrowLabels.push({ x, y, z, txt: `${(slope * 100).toFixed(1)}%` });
-            }
-          }
-        }
-        arrowMesh.count = aCount;
-        arrowMesh.instanceMatrix.needsUpdate = true;
-        if (arrowMesh.instanceColor) arrowMesh.instanceColor.needsUpdate = true;
-
         // break beads: on their own 3-ft lattice near the line of the putt, each sliding downhill at a speed set by the slope
         beadBase = [];
         const sp = 3 * FT, bx0 = Math.floor(xMin / sp), bx1 = Math.ceil(xMax / sp), bz0 = Math.floor(zMin / sp), bz1 = Math.ceil(zMax / sp);
@@ -8904,16 +8926,14 @@
         const perF = (state.perception - 1) / 9, n = Math.floor(beadBase.length * lerp(0.25, 1, perF));
         const reading = state.view !== 'address' || isPeeking();
         const ovh = state.view === 'overhead';
-        // CHIPPING'S OVERHEAD (user request, 2026-11-21: at high Perception the arrows, their slope labels and the 1-ft grid
-        // covered the green and added nothing): the height shading, the contours and the marbles, which read the slope
-        // best. The marbles are drawn bigger there (5 cm from tens of metres up is nothing), and Perception shows in them:
-        // how many, how bright (perF above). Putting's overhead keeps its arrows and grid.
-        const chipOvh = ovh && isChip();
+        // THE OVERHEADS (user request, 2026-11-21, chipping first, then putting: at high Perception the downhill arrows,
+        // their slope % labels and the 1-ft grid covered the green and added nothing): the height shading, the contours
+        // and the marbles, which read the slope best. The marbles are drawn bigger there (5 cm from that high up is next to
+        // nothing), and Perception shows in them, how many and how bright (perF above), and in the contour interval.
         beads.visible = reading;
-        gridLines.visible = gridMajor.visible = reading && !chipOvh;
-        beads.material.size = chipOvh ? BEAD_CHIP_OVH : 0.05;
+        gridLines.visible = gridMajor.visible = reading && !ovh;
+        beads.material.size = ovh ? BEAD_OVH[isChip() ? 'chip' : 'putt'] : 0.05;
         contourUp.visible = contourDown.visible = (ovh || state.view === 'scout');
-        arrowMesh.visible = ovh && !chipOvh;
         tintMesh.visible = ovh;
         gridLines.material.opacity = lerp(0.14, 0.40, perF); gridMajor.material.opacity = lerp(0.30, 0.75, perF);
         if (reading) {
@@ -11588,7 +11608,7 @@
           ], '', tipsGuideSvg('putt'));
           sec('Reading the green', state.view === 'overhead' ? 'you\'re in Overhead' : state.view === 'address' ? 'you\'re at the ball' : 'you\'re in Green Read', [
             '<b>1 · Green Read</b> (where you start): from behind the ball — the grid and height numbers show the slope',
-            '<b>V · Overhead:</b> contours show height, arrows point downhill · click or drag the marker · wheel zooms',
+            '<b>V · Overhead:</b> shading and contours show height, the white marbles roll downhill (faster where it\'s steeper; more of them, and brighter, as Perception grows) · click or drag the marker · wheel zooms',
             '<b>Space · Putt Address:</b> step in · hold <b>Shift</b> to <b>Peek</b> down your start line',
             'The marker\'s pace ignores slope: <b>uphill</b> — set it past the cup · <b>downhill</b> — short of it',
             'It <b>breaks toward the low side</b> — aim up the slope and let it fall in',
@@ -13821,7 +13841,25 @@
       // the arcade side: the three courses (the one picked lit), its play button, and that course's Top 10
       const arcYds = {};
       const arcadeYards = (id) => (arcYds[id] ??= Math.round(arcHoles(id).reduce((s, hd) => s + new THREE.CatmullRomCurve3(hd.path.map(([x, z]) => new THREE.Vector3(x * YD, 0, z * YD)), false, 'centripetal').getLength(), 0) / YD));
+      // the arcade's golfer (user request, 2026-11-21): a figure at address and the stats everyone plays, each out of 10, with
+      // what it does, so a new player sees what Power, Dexterity and the rest are (ARCADE_STATS; the words: CAREER_STATS)
+      const ARC_GOLFER_SVG = `<svg viewBox="0 0 62 104" aria-hidden="true"><ellipse cx="34" cy="100" rx="24" ry="3" fill="rgba(0,0,0,.35)"/>`
+        + `<g fill="none" stroke-linecap="round" stroke-linejoin="round">`
+        + `<path d="M24 52 L29 73 L24 97 M27 52 L35 72 L33 97" stroke="#2f4a6b" stroke-width="6"/>`                 // legs, knees flexed
+        + `<path d="M33 27 L25 53" stroke="#ffe066" stroke-width="9"/>`                                             // shirt, bent over the ball
+        + `<path d="M32 29 L39 53 M34 28 L40 53" stroke="#e8c9a0" stroke-width="3.6"/>`                            // arms hanging
+        + `<path d="M40 54 L53 95" stroke="#c9d4e0" stroke-width="1.8"/><path d="M51 95 L57 96" stroke="#c9d4e0" stroke-width="3.5"/>`   // the club
+        + `<path d="M20 97 L27 97 M30 97 L37 97" stroke="#14202e" stroke-width="3.5"/></g>`                         // shoes
+        + `<circle cx="36" cy="18" r="7" fill="#e8c9a0"/><path d="M28.5 16 Q36 7 43.5 16 Z M41 15 L48 17" fill="#ffffff" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>`   // head and cap
+        + `<circle cx="59" cy="95" r="2.6" fill="#fff"/></svg>`;
+      function renderArcStats() {
+        $('hmArcStats').innerHTML = `${ARC_GOLFER_SVG}<div><div class="hm-st-h">Everyone's golfer · out of 10</div>`
+          + CAREER_STATS.map(([k, n, what]) => `<div class="hm-st"><span>${n}</span><div class="ch-pips">${Array.from({ length: COACH.maxStat }, (_, i) => `<i class="${i < ARCADE_STATS[k] ? 'on' : ''}"></i>`).join('')}</div>`
+            + `<b>${ARCADE_STATS[k]}<small>/${COACH.maxStat}</small></b><p>${what[0].toUpperCase() + what.slice(1)}</p></div>`).join('')
+          + `<div class="hm-st-h" style="margin:6px 0 0;text-transform:none;letter-spacing:0">A new career starts at ${CAREER.stats.power} and builds them up with lessons</div></div>`;
+      }
       function renderHomeBoard() {
+        renderArcStats();
         $('hmCourses').innerHTML = ARCADE.map((a) => `<button data-arc="${a.id}" class="${a.id === arcCourse ? 'on' : ''}"><b>${a.name}</b><em title="How hard it plays">${'★'.repeat(a.stars)}<s>${'★'.repeat(3 - a.stars)}</s></em>`
           + `<i>Par ${arcHoles(a.id).reduce((s, hd) => s + hd.par, 0)} · ${arcadeYards(a.id).toLocaleString()} yds · ${a.blurb}</i></button>`).join('');
         setText('hmArcPlay', `⛳ Play ${arcOf().name}`);
@@ -16645,8 +16683,8 @@
       //  THE GREEN READ (user request, 2026-11-20): the hole's green from above, turned so your line to the pin points up
       //  the card, for the approach. G toggles it on a hole (full swings; chipping and putting have their own reads); it
       //  opens by itself once the green is in reach of a club in the bag, unless you've closed it on this hole. Height is
-      //  shaded in bands of the putting read's contour interval and the arrows point downhill, coloured by steepness, as on
-      //  the putting overhead: Perception sets the detail (1-3: sparse, two colours, the main fall in words; 4-7: more
+      //  shaded in bands of the putting read's contour interval and the arrows point downhill, coloured by steepness (as the
+      //  putting overhead's did, before the marbles took over there, 2026-11-21): Perception sets the detail (1-3: sparse, two colours, the main fall in words; 4-7: more
       //  arrows, three colours, the fall and around the pin; 8-10: dense, with the slope in %).
       // =====================================================================================================
       const grCv = $('greenRead'), grCtx = grCv.getContext('2d'), GR_W = 216, GR_H = 196;
@@ -18252,18 +18290,6 @@
         }
         g.textAlign = 'center';
         g.textBaseline = 'middle';
-        if (state.view === 'overhead' && !chip && arrowLabels.length) {          // (chipping's overhead has no arrows: animateGreen)
-          g.font = '700 10px "Segoe UI", system-ui, sans-serif';
-          for (const a of arrowLabels) {
-            const p = project(a.x, a.y, a.z);
-            if (!p) continue;
-            const tw = g.measureText(a.txt).width + 6;
-            g.fillStyle = 'rgba(6, 12, 10, 0.72)';
-            g.beginPath(); g.roundRect(p.x - tw / 2, p.y + 7, tw, 14, 3); g.fill();
-            g.fillStyle = '#e8f5ec';
-            g.fillText(a.txt, p.x, p.y + 14);
-          }
-        }
         if (contourLabels.length) {
           g.font = '700 10.5px "Segoe UI", system-ui, sans-serif';
           for (const c of contourLabels) {
