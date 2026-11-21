@@ -1,65 +1,7 @@
-// Shared helpers for the API functions (Vercel doesn't deploy files starting with "_" as endpoints).
-// Upstash Redis over its REST pipeline; the keys come from the Vercel project's environment variables (see
-// leaderboard.js for the story): KV_REST_API_* or UPSTASH_REDIS_REST_* by name or with a custom prefix, or an Upstash
-// REDIS_URL connection string as a last resort.
-
-const PAIRS = [['KV_REST_API_URL', 'KV_REST_API_TOKEN'], ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'], ['REDIS_REST_URL', 'REDIS_REST_TOKEN']];
-function findCreds(env = process.env) {
-  for (const [u, t] of PAIRS) if (env[u] && env[t]) return { url: env[u], token: env[t] };
-  for (const k of Object.keys(env).sort()) {
-    for (const [u, t] of PAIRS) {
-      if (!k.endsWith(`_${u}`) || !env[k]) continue;
-      const prefix = k.slice(0, -u.length);
-      if (env[prefix + t]) return { url: env[k], token: env[prefix + t] };
-    }
-  }
-  for (const k of Object.keys(env).sort()) {
-    if (!/(^|_)(REDIS_URL|KV_URL)$/.test(k)) continue;
-    try {
-      const u = new URL(env[k]);
-      if (/^rediss?:$/.test(u.protocol) && u.hostname.endsWith('.upstash.io') && u.password) return { url: `https://${u.hostname}`, token: decodeURIComponent(u.password) };
-    } catch { /* not a URL */ }
-  }
-  return null;
-}
-
-// run several commands in one round trip: [[cmd, ...args], ...] -> [result, ...]
-async function redis(commands) {
-  const c = findCreds();
-  if (!c) throw Object.assign(new Error('Storage is not configured'), { status: 503 });
-  const r = await fetch(`${c.url.replace(/\/+$/, '')}/pipeline`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${c.token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(commands),
-  });
-  if (!r.ok) throw new Error(`Upstash ${r.status}`);
-  const out = await r.json();
-  for (const x of out) if (x && x.error) throw new Error(`Upstash: ${x.error}`);
-  return out.map((x) => x.result);
-}
-
-// the request's JSON body, always as an object ({} for anything else). (Audit 3.9: Vercel parses the body itself, and a
-// body that wasn't an object, say a bare number, fell through to reading the stream it had already read, so the
-// function waited until it timed out.)
-const asObj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
-function readBody(req, limit = 300000) {
-  if (req.body !== undefined && req.body !== null && typeof req.body !== 'string') return Promise.resolve(asObj(req.body));
-  if (typeof req.body === 'string') return Promise.resolve(asObj(JSON.parse(req.body || '{}')));
-  return new Promise((resolve, reject) => {
-    let s = '';
-    req.on('data', (c) => { s += c; if (s.length > limit) reject(new Error('too large')); });
-    req.on('end', () => { try { resolve(asObj(JSON.parse(s || '{}'))); } catch (e) { reject(e); } });
-    req.on('error', reject);
-  });
-}
-
-const clientIp = (req) => String((req.headers && req.headers['x-forwarded-for']) || (req.socket && req.socket.remoteAddress) || 'unknown').split(',')[0].trim();
-
-// true if this key is still under `max` hits in the current window
-async function rateLimit(key, max, windowS) {
-  const [, count] = await redis([['SET', key, 0, 'EX', windowS, 'NX'], ['INCR', key]]);
-  return count <= max;
-}
+// Shared helpers for the API functions (Vercel doesn't deploy files starting with "_" as endpoints): sessions and the
+// career on the server. The storage itself (Upstash Redis, the request body, the rate limit) is in _store.js, and is
+// passed on from here unchanged, so every function can keep asking this file for it.
+const { findCreds, redis, readBody, clientIp, rateLimit } = require('./_store');
 
 // the profile id of a request's session (Authorization: Bearer <token>), or null. An admin's session is stored as
 // "<id>#<credential fingerprint>" and only counts while that credential is the current one, so changing the admin

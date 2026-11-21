@@ -4,9 +4,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Back Nine Tour</title>
-  <!-- what the site is, stated plainly -->
-  <meta name="description" content="Back Nine Tour: a golf simulation game played with the mouse, with realistic ball flight, chipping and putting.">
+  <!--<tour>--><title>Back Nine Tour</title><!--</tour>-->
+  <!--arcade:<title>Back Nine Golf</title>-->
+  <!-- what the site is, stated plainly (the arcade site, tools/arcade/build.js, has its own) -->
+  <!--<tour>--><meta name="description" content="Back Nine Tour: a golf simulation game played with the mouse, with realistic ball flight, chipping and putting."><!--</tour>-->
+  <!--arcade:<meta name="description" content="Back Nine Golf: a golf game played with the mouse, with realistic ball flight, chipping and putting. Nine holes on three courses, with a Top 10 on each.">-->
   <meta name="rating" content="general">
   <!--
   PHASE 1 PROTOTYPE — driving range + mouse-vector swing.
@@ -43,7 +45,7 @@
       through the ball is in-to-out (draw), UP-and-right is out-to-in (fade). The spec had up = in-to-out, which
       contradicted the on-screen golfer once the swing was drawn over the real ball.
 
-  PHASE 2 — PUTTING (double G). Built from the putting spec, with these deviations (search "PUTTING" in the code):
+  PHASE 2 — PUTTING (press G). Built from the putting spec, with these deviations (search "PUTTING" in the code):
    P1. The "Putter Gate oscilloscope" is drawn on the turf around the real ball, not in the corner card, because
        the corner chart was replaced by the on-screen swing ring in Phase 1. The gate is a short tunnel just
        before the ball; judging the whole stroke against it made long lag strokes clip the rails every time.
@@ -7261,8 +7263,10 @@
     <div class="hm-side">
       <div class="hm-brand">
         <div class="hm-logo">⛳</div>
-        <div><h1 id="hmTitle"></h1><div class="hm-sub">A golf RPG · take on the locals, beat your friends</div></div>
+        <div><h1 id="hmTitle"></h1><div class="hm-sub"><!--<tour>-->A golf RPG · take on the locals, beat your friends<!--</tour>--><!--arcade:A golf game · three courses, nine holes, a Top 10 on each--></div></div>
       </div>
+      <!--arcade:<div class="hm-arc-golfer" id="hmArcStats"></div>-->
+      <!--<tour>-->
       <div id="hmWho">
         <div class="hm-h">Who's playing?</div>
         <div class="hm-roster" id="hmRoster"></div>
@@ -7287,6 +7291,7 @@
         </div>
         <div class="hm-foot"><button id="hmReauth" class="go" style="display:none">Sign in again</button><button id="hmSwitch">Switch player</button><label class="hm-dev" id="hmDevBox"><input type="checkbox" id="hmDev"> 🛠 Developer tools</label><span id="hmSync"></span></div>
       </div>
+      <!--</tour>-->
     </div>
     <!-- HOW TO PLAY (TUTORIAL_PLAN.md; user request, 2026-11-21: front and centre on the home screen): three lessons of
          slides with pictures from the game. Shown signed out and signed in. -->
@@ -7308,9 +7313,10 @@
          stats and clubs for everyone, and a world Top 10 for each course. -->
     <div class="hm-board" id="hmArcade">
       <div class="hm-h">🕹 Arcade</div>
-      <div class="hm-arc-note">A level game: <b>everyone plays the same golfer and the same clubs</b>, a full bag of forgiving ones, whatever their career. Pick a course, play nine holes, and your score goes on its world Top 10.</div>
-      <!-- the arcade's golfer and its stats, out of 10 (user request, 2026-11-21: so a new player sees what the stats are) -->
-      <div class="hm-arc-golfer" id="hmArcStats"></div>
+      <div class="hm-arc-note">A level game: <b>everyone plays the same golfer and the same clubs</b>, a full bag of forgiving ones<!--<tour>-->, whatever their career<!--</tour>-->. Pick a course, play nine holes, and your score goes on its world Top 10.</div>
+      <!-- the arcade's golfer and its stats, out of 10 (user request, 2026-11-21: so a new player sees what the stats are).
+           On the arcade site it stands under the name, where the career's side would be. -->
+      <!--<tour>--><div class="hm-arc-golfer" id="hmArcStats"></div><!--</tour>-->
       <div class="hm-courses" id="hmCourses"></div>
       <button id="hmArcPlay" class="go">⛳ Play 9 holes</button>
       <div class="hm-arc-err" id="hmArcErr"></div>
@@ -7322,7 +7328,9 @@
 
   <div id="topbar" class="card">
     <button id="tbHome" title="Back to the home screen (Esc)">🏠<span>Home</span><kbd>Esc</kbd></button>
+    <!--<tour>-->
     <div class="tb-me" id="tbMe"></div>
+    <!--</tour>-->
     <div class="tb only-hole" id="tbHoleCell"><i id="tbHoleL">Hole 1 · Par 5</i><b id="tbHole">Shot 1</b></div>
     <div class="tb only-round" id="tbRoundCell" title="Round score (K shows the scorecard)"><i id="tbRoundL">Arcade</i><b id="tbRound">E</b></div>
     <div class="tb" id="tbView"><i>Camera</i><b id="tbViewV">1 · Scout</b></div>
@@ -7367,7 +7375,9 @@
           <button data-area="hole" title="Play a hole (H)"><i>⛳</i>Hole</button>
         </div>
         <label class="row wide hole-pick round-hide"><span>Hole</span><select id="inHole"></select></label>
+        <!--<tour>-->
         <button id="btnCareer" class="pn-career round-hide" title="Career mode: compete, upgrade, move up (J)">🏌️ Start a career</button>
+        <!--</tour>-->
         <div class="btn2 only-round" style="grid-template-columns: 1fr auto; margin-bottom: 6px">
           <button id="btnRound" style="margin: 0">Arcade round · 9 holes</button>
           <button id="btnBoard" style="margin: 0" title="Top 10 test-round scores (L)">🏆 Top 10</button>
@@ -7412,7 +7422,7 @@
         <div>
           <div class="sec dev-only">Player (RPG test)</div>
           <div class="note only-round dev-only" style="margin: 0 0 4px">Arcade round: everyone plays the same stats — Power, Dexterity, Composure and Perception all 8. Yours come back after the round.</div>
-          <div class="note only-career" id="careerStatNote" style="margin: 0 0 4px"></div>
+          <!--<tour>--><div class="note only-career" id="careerStatNote" style="margin: 0 0 4px"></div><!--</tour>-->
           <label class="row dev-only"><span>Power</span><input type="range" id="inPower" min="1" max="10" step="1" value="5"><b
               id="outPower"></b></label>
           <label class="row dev-only"><span>Dexterity</span><input type="range" id="inDex" min="1" max="10" step="1" value="5"><b
@@ -7590,11 +7600,15 @@
       <div class="card-h"><span id="scTitle">Scorecard</span><span class="tag" id="scTag"></span></div>
       <div id="scCourse"></div>
       <div id="scMsg"></div>
+      <!--<tour>-->
       <!-- a career match: the double offer when you're 2 down (or the news that he doubled), explained. Above the table
            (audit 5.2: below it, it was out of sight on any screen under about 1,000 px tall) -->
       <div id="scPressBox"><div id="scPressTxt"></div><div class="pr-btns"><button id="scPress">Double the prize (P)</button><span id="scPressAlt"></span></div></div>
+      <!--</tour>-->
       <table id="scTable"></table>
+      <!--<tour>-->
       <div id="scBets"></div>
+      <!--</tour>-->
       <div id="lbEntry">
         <div class="lb-new" id="lbHead">NEW HIGH SCORE!</div>
         <div class="lb-sub">ENTER YOUR INITIALS</div>
@@ -7624,7 +7638,7 @@
     <div id="dropCard" class="card">
       <div class="card-h"><span>Take a drop · one penalty stroke</span><span class="tag" id="dropTag"></span></div>
       <div id="dropOpts"></div>
-      <div class="drop-help">Double <b>1</b>–<b id="dropMax">3</b> or click an option · <b>Esc</b> to cancel</div>
+      <div class="drop-help">Press <b>1</b>–<b id="dropMax">3</b> or click an option · <b>Esc</b> to cancel</div>
     </div>
     <div id="roundIntro" class="card">
       <div class="card-h"><span>Test round · course preview</span><span class="tag" id="riTag"></span></div>
@@ -7635,6 +7649,7 @@
         <div id="riBtns"><button id="riStart">Start round (Enter)</button><button id="riCancel">Cancel (Esc)</button></div>
       </div>
     </div>
+    <!--<tour>-->
     <div id="clubhouse">
       <div class="ch-scene" id="chScene"></div>
       <div class="ch-scene ch-spots" id="chSpots">
@@ -7838,6 +7853,7 @@
       <div class="tt-result" id="ttResult"></div>
       <div class="ch-btns" style="justify-content:center"><button id="ttGo" class="go">Tee off (Enter)</button></div>
     </div>
+    <!--</tour>-->
     <div id="hint" class="card"></div>
     <div id="toast"></div>
     <!-- a hole's title card, for a couple of seconds as you step onto the tee; and the shot counter while you play it -->
@@ -7845,7 +7861,7 @@
     <div id="topCenter">
       <!-- caddie tips: on a hole, in the row left of the shot counter; on the greens, under the wind dial -->
       <button id="btnTips" title="Caddie tips: how the wind, your shot shape, your lie and the difficulty work (I)">💡 <span id="btnTipsTxt">Caddie tips</span> <kbd>I</kbd></button>
-      <div id="holeBadge"><span><b id="hbHole">Hole 1</b><i id="hbPar">Par 5</i></span><span class="hb-shot"><i id="hbShotL">Shot</i><b id="hbShot">1</b></span><span><b id="hbDist">—</b><i>to the pin</i></span><span class="hb-npc" id="hbNpc"><i id="hbNpcL">Him</i><b id="hbNpcN">0</b><u id="hbNpcW">on the tee</u></span></div>
+      <div id="holeBadge"><span><b id="hbHole">Hole 1</b><i id="hbPar">Par 5</i></span><span class="hb-shot"><i id="hbShotL">Shot</i><b id="hbShot">1</b></span><span><b id="hbDist">—</b><i>to the pin</i></span><!--<tour>--><span class="hb-npc" id="hbNpc"><i id="hbNpcL">Him</i><b id="hbNpcN">0</b><u id="hbNpcW">on the tee</u></span><!--</tour>--></div>
       <!-- the wind, front and centre (user request): an arrow for where it blows relative to your aim (up = toward the
            target), the speed, the words, coloured by strength -->
       <div id="windDial" class="calm">
@@ -10324,13 +10340,13 @@
         // (bunkerFaceDeg, user direction 2026-11-20: on the beginner course a stock shot must always get out of a bunker,
         //  so no face is steeper than this from its foot to its top (makeDips); the later courses have the faces as
         //  built, where under the deep ones it takes a flop)
-        1: { course: 'Rolling Pines Muni', stimpAdd: -1, windMult: 0.7, mirror: false, obMult: 1, treeMult: 1, bunkerDepth: 0.75, bunkerFaceDeg: 22, rep: 0, entry: 0, desc: 'Public tracks, scruffy slow greens, small-time locals' },
+        1: { course: 'Rolling Pines Muni', stimpAdd: -1, windMult: 0.7, mirror: false, obMult: 1, treeMult: 1, bunkerDepth: 0.75, bunkerFaceDeg: 22/*<tour>*/, rep: 0, entry: 0, desc: 'Public tracks, scruffy slow greens, small-time locals'/*</tour>*/ },
         // (holes: a course of its own, user request 2026-11-20: tier 2 plays HOLES_T2, not the muni's holes mirrored)
         // (course: user request 2026-11-20, a name that feels vaguely familiar, like somewhere you've played before; it was
         //  Palm Crest Resort while it played the muni's holes mirrored)
-        2: { course: 'Cedar Hollow Golf Club', holes: HOLES_T2, stimpAdd: 1, windMult: 1.0, mirror: false, obMult: 1, treeMult: 1.5, bunkerDepth: 1, rep: 40, entry: 0, desc: 'A course of its own: tight tree-lined holes, faster greens, bigger money' },
+        2: { course: 'Cedar Hollow Golf Club', holes: HOLES_T2, stimpAdd: 1, windMult: 1.0, mirror: false, obMult: 1, treeMult: 1.5, bunkerDepth: 1/*<tour>*/, rep: 40, entry: 0, desc: 'A course of its own: tight tree-lined holes, faster greens, bigger money'/*</tour>*/ },
         // (holes: user request 2026-11-20, a course of its own and the hardest: HOLES_T3; it played the muni's holes)
-        3: { course: 'Hawthorne Country Club', holes: HOLES_T3, stimpAdd: 2.5, windMult: 1.3, mirror: false, obMult: 0.8, treeMult: 1.6, bunkerDepth: 1.3, rep: 120, entry: 500, desc: 'The hardest test: long, narrow and tree-lined, deep sand, lightning greens, high rollers' },
+        3: { course: 'Hawthorne Country Club', holes: HOLES_T3, stimpAdd: 2.5, windMult: 1.3, mirror: false, obMult: 0.8, treeMult: 1.6, bunkerDepth: 1.3/*<tour>*/, rep: 120, entry: 500, desc: 'The hardest test: long, narrow and tree-lined, deep sand, lightning greens, high rollers'/*</tour>*/ },
       };
       let courseV = null;
       // a tier's own holes (HOLES_T2), else the holes as written. HOLES holds the course being played (useCourse), so the
@@ -10515,11 +10531,11 @@
         holeTreeGhost.count = placed; holeTreeGhost.frustumCulled = false; holeCourseG.add(holeTreeGhost);
 
         // out of bounds: white stakes along the OB line on both sides (and round the back of the green)
-        hole.obStakes = obStakesFor(cl, hole.ob);
+        hole.obPosts = obPostsFor(cl, hole.ob);
         const post = new THREE.CylinderGeometry(0.06, 0.06, 1.2, 6); post.translate(0, 0.6, 0);
-        const stakeMesh = new THREE.InstancedMesh(post, new THREE.MeshLambertMaterial({ color: 0xf6f6f6, emissive: 0x333333 }), Math.max(1, hole.obStakes.length));
-        hole.obStakes.forEach((s, i) => stakeMesh.setMatrixAt(i, m4.compose(ps.set(s.x, 0, s.z), q, sc.set(1, 1, 1))));
-        stakeMesh.count = hole.obStakes.length; stakeMesh.frustumCulled = false; holeCourseG.add(stakeMesh);
+        const postMesh = new THREE.InstancedMesh(post, new THREE.MeshLambertMaterial({ color: 0xf6f6f6, emissive: 0x333333 }), Math.max(1, hole.obPosts.length));
+        hole.obPosts.forEach((s, i) => postMesh.setMatrixAt(i, m4.compose(ps.set(s.x, 0, s.z), q, sc.set(1, 1, 1))));
+        postMesh.count = hole.obPosts.length; postMesh.frustumCulled = false; holeCourseG.add(postMesh);
 
         setText('tbHoleL', `${def.name} · Par ${def.par}`);
         setText('mapTitle', `${def.name} · Par ${def.par}`);
@@ -10577,15 +10593,15 @@
         (h.water || []).forEach((w) => blob(w, '#2f6f9e'));                                      // (WATER)
         blob(h.green, '#5cae48', 1.3); blob(h.green, '#9be67f');
         h.bunkers.forEach((b) => blob(b, '#e9dcaa'));
-        if (h.obStakes) {                                                                        // out of bounds: the white stakes
+        if (h.obPosts) {                                                                        // out of bounds: the white stakes
           g.fillStyle = 'rgba(255,255,255,.85)';
-          for (const s of h.obStakes) { g.beginPath(); g.arc(X(s.x, s.z), Y(s.x, s.z), Math.max(1, 1.4 * Math.min(1, k * 2)), 0, 7); g.fill(); }
+          for (const s of h.obPosts) { g.beginPath(); g.arc(X(s.x, s.z), Y(s.x, s.z), Math.max(1, 1.4 * Math.min(1, k * 2)), 0, 7); g.fill(); }
         }
         g.fillStyle = '#ffffff'; g.fillRect(X(0, 0) - 2, Y(0, 0) - 3, 4, 6);                      // tee
       }
       // where the white OB stakes go: about every 14 m along both OB lines, and round the far end behind the green. Only
       // points that really are OB distance from the whole centre line are kept (none inside a bend).
-      function obStakesFor(cl, ob) {
+      function obPostsFor(cl, ob) {
         const near = (x, z) => {
           let best = Infinity;
           for (let i = 0; i < cl.length - 1; i++) {
@@ -10627,7 +10643,7 @@
           water: (def.water || []).map(m),
         };
         layFairway(g, def);
-        g.obStakes = obStakesFor(cl, (def.ob || 45) * YD);
+        g.obPosts = obPostsFor(cl, (def.ob || 45) * YD);
         let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
         const addPt = (x, z, r = 0) => { u0 = Math.min(u0, -z - r); u1 = Math.max(u1, -z + r); v0 = Math.min(v0, x - r); v1 = Math.max(v1, x + r); };
         for (const p of cl) addPt(p.x, p.z);
@@ -10780,7 +10796,7 @@
       function newTracer() {
         trails.forEach((t) => t.dim());
         while (trails.length >= 6) { const t = trails.shift(); t.group.removeFromParent(); t.dispose(); }
-        const demoShot = careerOn && demo && demo.model && demo.on && demo.idx === state.club;      // a pro-shop demo flies gold, like its badge
+        const demoShot = /*<tour>*/careerOn && demo && demo.model && demo.on && demo.idx === state.club/*</tour>*//*arcade: false*/;      // a pro-shop demo flies gold, like its badge
         const t = new Tracer(demoShot ? 0xffd23a : 0xff3ea5, isChip() ? 0.35 : 1); t.group.visible = !isPutt(); scene.add(t.group); trails.push(t); return t;
       }
       // on a hole, your earlier shots' tracers step aside while you're at address (user request), and come back after
@@ -11349,7 +11365,7 @@
         if (c === 'Digit1' || c === 'Digit2' || c === 'Digit3') { state.puttScaleAuto = false; state.puttScale = +c[5] - 1; return syncPanel(); }
         if (c === 'BracketLeft' || c === 'BracketRight') {   // [ ] step through the putters on the card
           const list = puttersAvail();
-          if (list.length < 2) return toast(`${PUTTERS[state.putter].name}\n${careerOn ? 'The only putter you own · more in the pro shop' : 'The only putter here'}`, 1400);
+          if (list.length < 2) return toast(`${PUTTERS[state.putter].name}\n${/*<tour>*/careerOn ? 'The only putter you own · more in the pro shop' : /*</tour>*/'The only putter here'}`, 1400);
           const i = list.indexOf(state.putter);
           return pickPutter(list[(i + (c === 'BracketRight' ? 1 : -1) + list.length) % list.length]);
         }
@@ -11419,7 +11435,8 @@
 
       canvas.addEventListener('pointerdown', (e) => {
         canvas.focus();
-        if (npcTurn || npc.starting) { npcHurry(); return; }  // the rival is playing (or about to tee off): a click hurries him up
+        /*<tour>*/if (npcTurn || npc.starting) { npcHurry(); return; }  // the rival is playing (or about to tee off): a click hurries him up
+        /*</tour>*/
         if (e.button === 2) { state.peekMouse = true; return; }
         if (e.button === 0 && onGreenView() && state.view === 'overhead' && !swing.active && !(hp.on && hp.done)) {
           markerDragging = true;
@@ -11610,8 +11627,8 @@
 
       function enterHole() {
         if (swing.active) return;
-        if (careerOn && demo) clearDemo();                   // demos are for the range
-        hp.on = true; document.body.classList.add('hole'); closeDrop(true);
+        /*<tour>*/if (careerOn && demo) clearDemo();                   // demos are for the range
+        /*</tour>*/hp.on = true; document.body.classList.add('hole'); closeDrop(true);
         Object.assign(hp, { ball: { x: 0, z: 0 }, strokes: 0, putts: 0, pen: 0, lastFrom: null, onTee: true, done: false, history: [], frame: null, aimPin: false, mapZoom: 0, grUser: null });
         if (round.on) applyRoundConditions();
         state.badStreak = 0;
@@ -11620,8 +11637,9 @@
         $('toast').classList.remove('on'); $('btnHole').textContent = 'Leave the hole (H)';
         if (state.mode !== 'range') setMode('range');
         setupNextShot(); camReady = false;
-        npcTurn = false;
+        /*<tour>*/npcTurn = false;
         if (round.match) npcHoleStart(); else npc.plan = null;     // a career match: the rival's hole (and the tee toss)
+        /*</tour>*/
         showHoleTitle();                                     // the hole's title card, for a couple of seconds
       }
       function selectHole(idx) {
@@ -11632,10 +11650,11 @@
       }
       function leaveHole() {
         if (swing.active) return;
-        if (round.match && !confirmForfeit()) return;       // leaving a career match early forfeits it
+        /*<tour>*/if (round.match && !confirmForfeit()) return;       // leaving a career match early forfeits it
         if (round.pvp && !confirmLeavePvp()) return;         // a friend round can be resumed
         if (round.tour && !confirmWithdraw()) return;        // an invitational: leaving is withdrawing
         const leftPvp = !!round.pvp && !round.over;
+        /*</tour>*/
         if (round.on) endRound();          // leaving the course ends a test round
         hp.on = false; document.body.classList.remove('hole');
         setGreenRead(false); closeDrop(true);
@@ -11647,14 +11666,15 @@
         state.lie = 'fairway'; state.slopeLaunch = null; state.lieSeed = (state.lieSeed * 1664525 + 1013904223) >>> 0; $('inLie').value = 'fairway'; state.aim = PINS[state.pin].brg; state.view = 'scout'; camReady = false;
         layoutWorld(); syncPanel(); renderBag(); txtCache.clear();
         $('tbPinL').textContent = 'Target pin'; $('panelTitle').textContent = '🎯 Driving range';
-        if (leftPvp) toast('Left the round\nResume it from 🤝 Friends in the clubhouse (J)', 2400);
+        /*<tour>*/if (leftPvp) toast('Left the round\nResume it from 🤝 Friends in the clubhouse (J)', 2400);/*</tour>*/
       }
 
       // Read the lie from where the ball finished and set up the next stroke.
       function setupNextShot() {
         shot = null; puttRun = null; telemetry = null;
         saveHoleProgress();                                    // where the ball lies now, and the strokes so far (audit 1.4)
-        if (round.match && !hp.onTee && !hp.done) setTimeout(() => npcTakeTurns(), 0);     // a match: is the rival away?
+        /*<tour>*/if (round.match && !hp.onTee && !hp.done) setTimeout(() => npcTakeTurns(), 0);     // a match: is the rival away?
+        /*</tour>*/
         if (!hp.onTee && hp.mapZoom === 0) hp.mapZoom = 1;    // automatically zoom minimap in on shot 2+
         const surf = surfaceAt(hp.ball.x, hp.ball.z);
         if (surf === 'water') return openWaterDrop();          // (WATER: it's played from a drop, one penalty stroke)
@@ -12242,7 +12262,8 @@
             '<b>B</b> more spin checks it faster — wedges, and not from rough or sand',
             '<b>Side spin by hand:</b> swing <b style="color:#ffc24a">up-right</b> (out-to-in) for a cut: it checks and kicks right when it lands · <b style="color:#35e0ff">down-right</b> (in-to-out) for hook spin: it releases and runs left · up to a yard or two with a spinning wedge, next to nothing with a low runner · the read assumes a straight swing',
             '<span class="pro">Wind</span> barely touches a low chip · high and flop shots feel it more',
-            careerOn && ['high', 'flop', 'spin'].some(shotLocked) && `<span class="con">🔒 Still to learn from the coach:</span> ${['high', 'flop', 'spin'].filter(shotLocked).map((k) => COACH.unlocks[k].name.toLowerCase()).join(', ')}`,
+            /*<tour>*/careerOn && ['high', 'flop', 'spin'].some(shotLocked) && `<span class="con">🔒 Still to learn from the coach:</span> ${['high', 'flop', 'spin'].filter(shotLocked).map((k) => COACH.unlocks[k].name.toLowerCase()).join(', ')}`,
+            /*</tour>*/
           ], '', tipsChipSvg(ct));
           sec('Views & the read', state.view === 'overhead' ? 'you\'re in Overhead' : state.view === 'address' ? 'you\'re at the ball' : 'you\'re in Green Read', [
             '<b>1 · Green Read</b> (where you start): from behind the ball — the grid and height numbers show the slope · <b>W A S D</b> move the landing spot',
@@ -12294,7 +12315,8 @@
             `${on(sc > 0, 'More spin (B)')} checks up fast — best with wedges</span>`,
             `${on(sc < 0, 'Less spin')} runs out, curves a little more</span>`,
             'Each one adds difficulty — the more you ask, the more it adds',
-            careerOn && ['draw', 'fade', 'stinger', 'high', 'spin'].some(shotLocked) && `<span class="con">🔒 Still to learn from the coach:</span> ${['draw', 'fade', 'stinger', 'high', 'spin'].filter(shotLocked).map((k) => COACH.unlocks[k].name.toLowerCase()).join(', ')}`,
+            /*<tour>*/careerOn && ['draw', 'fade', 'stinger', 'high', 'spin'].some(shotLocked) && `<span class="con">🔒 Still to learn from the coach:</span> ${['draw', 'fade', 'stinger', 'high', 'spin'].filter(shotLocked).map((k) => COACH.unlocks[k].name.toLowerCase()).join(', ')}`,
+            /*</tour>*/
             ((sh === 'draw' && h > 0) || (sh === 'fade' && h < 0)) && '<span class="con">High draw / low fade fight the shape — extra difficulty</span>',
           ]);
         }
@@ -12500,8 +12522,8 @@
         tutMarkDone(tut.cat);
         closeTut();
         if (!homeOpen) return;
-        if (!homeSigned()) return setText('hmErr', 'Pick who\'s playing first, or play as a guest: then try it');
-        homeGo(L.go);
+        /*<tour>*/if (!homeSigned()) return setText('hmErr', 'Pick who\'s playing first, or play as a guest: then try it');
+        /*</tour>*/        homeGo(L.go);
       }
       function tutKey(e) {
         const c = e.code;
@@ -12537,22 +12559,23 @@
       };
       function finishHole() {
         hp.done = true; shot = null;
-        if (round.match && npc.plan && !npc.done) { npcTakeTurns(true, finishHole); return; }    // he plays out first, then the card
-        const name = scoreName(hp.strokes, HOLE.par);
+        /*<tour>*/if (round.match && npc.plan && !npc.done) { npcTakeTurns(true, finishHole); return; }    // he plays out first, then the card
+        /*</tour>*/const name = scoreName(hp.strokes, HOLE.par);
         if (round.on) {          // a test round: record it and show the card
           round.scores[hp.holeIdx] = { strokes: hp.strokes, putts: hp.putts, par: HOLE.par, pen: hp.pen };
-          const crT = round.match || round.tour || round.pvp;
+          /*<tour>*/const crT = round.match || round.tour || round.pvp;
           if (crT) { crT.tilt = state.badStreak; crT.cur = null; }                   // saved with the hole just below (audit 6.2); the hole is done (1.4)
-          $('toast').classList.remove('on');
-          const pv = round.pvp && pvpAfterHole(hp.holeIdx);                         // a friend round: the card so far (M3)
+          /*</tour>*/$('toast').classList.remove('on');
+          /*<tour>*/const pv = round.pvp && pvpAfterHole(hp.holeIdx);                         // a friend round: the card so far (M3)
           const vs = round.match ? `\n${matchAfterHole(hp.holeIdx)}` : pv ? `\n${pv}` : round.tour ? `\n\n${tourAfterHole(hp.holeIdx)}` : '';   // a career match: the rival's score, the match; an invitational: the board
           const cr = round.match || round.pvp || round.tour;
           const hc = cr && careerOn ? recordCareerRound(cr) : '';                     // all 9 played: it counts for your handicap (M2)
           archiveRound();                                                              // the card goes in the trophy room's history
+          /*</tour>*//*arcade: const vs = '', hc = ''; */
           showScorecard(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}${vs}${hc}`);
-          maybeShowOutcome();                                                          // a match or an invitational just settled: the payoff screen
+          /*<tour>*/maybeShowOutcome();                                                          // a match or an invitational just settled: the payoff screen
           if (round.pvp && round.over) submitPvp();                                  // the last hole of a friend round: send the card
-          return;
+          /*</tour>*/return;
         }
         toast(`${name}\n${hp.strokes} strokes on the par ${HOLE.par} · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}\nPress R to replay · N for next hole`, 12000);
       }
@@ -12573,8 +12596,8 @@
       // same stats and the same clubs for everyone.
       function arcadeIntro() {
         if (swing.active || round.on) return;
-        if (careerOn) leaveCareer(true);
-        arcadePractice = !devOn();                           // (and back on the range after it, still the arcade's game)
+        /*<tour>*/if (careerOn) leaveCareer(true);
+        /*</tour>*/arcadePractice = !devOn();                          // (and back on the range after it, still the arcade's game)
         applyDevTools();
         if (hp.on) leaveHole();
         setCourse(arcOf().tier);
@@ -12582,8 +12605,8 @@
       }
       function startRound() {
         if (swing.active) return;
-        if (careerOn) leaveCareer(true);                     // the test round is standard for everyone: never the career's game
-        setCourse(arcOf().tier);                             // (the arcade course picked: its holes and conditions)
+        /*<tour>*/if (careerOn) leaveCareer(true);                     // the test round is standard for everyone: never the career's game
+        /*</tour>*/        setCourse(arcOf().tier);                             // (the arcade course picked: its holes and conditions)
         // your own wind and stats come back after the round; in it everyone plays the arcade's stats (ARCADE_STATS, all 8)
         if (!round.on) round.saved = { mph: state.windMph, dir: state.windDir, power: state.power, dex: state.dex, composure: state.composure, perception: state.perception };
         round.on = true; round.over = false; round.scores = []; round.lbDone = false;
@@ -12597,7 +12620,7 @@
         $('btnRound').textContent = 'Leave the round';
       }
       function endRound() {
-        if (round.match) {                                   // a career match: an undecided one is forfeited (confirmed before we get here)
+        /*<tour>*/if (round.match) {                                   // a career match: an undecided one is forfeited (confirmed before we get here)
           if (!round.match.settled) settleMatch('forfeit');
           if (career && career.match && career.match.settled) career.match = null;
           careerSave(); updateCareerUI();
@@ -12617,13 +12640,14 @@
           setCourse(null);
           careerSave(); updateCareerUI();
         }
-        if (courseV) setCourse(null);                         // (an arcade round on the club's or the country club's course)
+        /*</tour>*/if (courseV) setCourse(null);                         // (an arcade round on the club's or the country club's course)
         round.on = false; round.over = false; lbEntry.active = false;
-        if (!careerOn) { applyCareerClubs(); refreshShotType(); renderBag(); }      // (the arcade's bag is put away: the range's clubs are back)
-        if (round.saved) { setStats(arcadePractice && !careerOn ? ARCADE_STATS : round.saved); state.windMph = round.saved.mph; state.windDir = round.saved.dir; round.saved = null; $('inWind').value = state.windMph; $('inWindDir').value = state.windDir; orientFlags(); syncPanel(); }
+        /*<tour>*/if (!careerOn) /*</tour>*/{ applyCareerClubs(); refreshShotType(); renderBag(); }      // (the arcade's bag is put away: the range's clubs are back)
+        if (round.saved) { setStats(arcadePractice /*<tour>*/&& !careerOn /*</tour>*/? ARCADE_STATS : round.saved); state.windMph = round.saved.mph; state.windDir = round.saved.dir; round.saved = null; $('inWind').value = state.windMph; $('inWindDir').value = state.windDir; orientFlags(); syncPanel(); }
         document.body.classList.remove('round'); hideScorecard();
         $('btnRound').textContent = `Arcade round · ${HOLES.length} holes`;
       }
+      /*<tour>*/
       // Audit 6.2: a career round (a match, an invitational, a friend round) saves your tilt at the end of each hole
       // (finishHole), so reopening the game part-way tees you up as tilted as you left, less what a calm caddie walks
       // off: the same as walking to the next tee. (It used to be calm again on a fresh tee.)
@@ -12663,27 +12687,31 @@
         const msg = `Back on hole ${hp.holeIdx + 1}, where you left it\nPlaying ${hp.strokes + 1}${hp.pen ? ` (${hp.pen} penalt${hp.pen === 1 ? 'y' : 'ies'})` : ''}`;
         setTimeout(() => { if (round.on && hp.on && !hp.done) toast(msg, 3000); }, 3800);     // (after the round's own "where were we?")
       }
+      /*</tour>*/
+      /*arcade:
+      function saveHoleProgress() {}
+      */
       function nextRoundHole() {
         if (!round.on || swing.active) return;
         if (hp.holeIdx >= HOLES.length - 1) { showScorecard(); return; }          // the round is over: the final card stays
         const streak = state.badStreak;
         hideScorecard();
         hp.holeIdx++; buildHole(hp.holeIdx); enterHole();
-        setBadStreak(caddieWalkOff(streak));                                        // tilt follows you to the next tee (a calm caddie walks some off)
+        setBadStreak(/*<tour>*/caddieWalkOff(/*</tour>*/streak/*<tour>*/)/*</tour>*/);                                        // tilt follows you to the next tee (a calm caddie walks some off)
       }
       function quitRound() {
         if (swing.active) return;
-        const wasMatch = !!round.match || !!round.tour, wasPvp = !!round.pvp;
+        /*<tour>*/const wasMatch = !!round.match || !!round.tour, wasPvp = !!round.pvp;
         if (round.match && !confirmForfeit()) return;
         if (round.tour && !confirmWithdraw()) return;
         if (wasPvp && !confirmLeavePvp()) return;
-        endRound();
+        /*</tour>*/endRound();
         if (hp.on) leaveHole();
-        if (wasPvp) toast('Left the round\nResume it from 🤝 Friends in the clubhouse (J)', 2400);
-        else if (!wasMatch) toast('Arcade round ended', 1600);
+        /*<tour>*/if (wasPvp) toast('Left the round\nResume it from 🤝 Friends in the clubhouse (J)', 2400);
+        else if (!wasMatch) /*</tour>*/toast('Arcade round ended', 1600);
       }
       const doneHint = () => lbEntry.active ? 'Type your initials (or <kbd>↑</kbd><kbd>↓</kbd>) · <kbd>←</kbd><kbd>→</kbd> move · <kbd>Enter</kbd> save · <kbd>Esc</kbd> skip'
-        : round.tour
+        /*<tour>*/: round.tour
         ? (round.over ? '<kbd>N</kbd> back to the clubhouse · <kbd>K</kbd> scorecard' : '<kbd>N</kbd> or <kbd>R</kbd> next hole · <kbd>K</kbd> scorecard and leaderboard · <kbd>H</kbd> withdraw')
         : round.pvp
         ? (round.over ? '<kbd>N</kbd> back to the clubhouse · <kbd>K</kbd> scorecard' : '<kbd>N</kbd> or <kbd>R</kbd> next hole · <kbd>K</kbd> scorecard · <kbd>H</kbd> leave (you can resume)')
@@ -12691,7 +12719,7 @@
         ? (round.over ? '<kbd>N</kbd> back to the clubhouse · <kbd>K</kbd> scorecard'
           : round.match.settled ? '<kbd>N</kbd> play on for practice · <kbd>K</kbd> scorecard · <kbd>H</kbd> leave the course'
           : '<kbd>N</kbd> or <kbd>R</kbd> next hole · <kbd>K</kbd> scorecard · <kbd>H</kbd> forfeit the match')
-        : round.on
+        /*</tour>*/: round.on
         ? (round.over ? '<kbd>N</kbd> play the round again · <kbd>K</kbd> scorecard · <kbd>H</kbd> back to the range' : '<kbd>N</kbd> or <kbd>R</kbd> next hole · <kbd>K</kbd> scorecard · <kbd>H</kbd> quit the round')
         : '<kbd>R</kbd> play the hole again · <kbd>N</kbd> next hole · <kbd>H</kbd> back to the range';
       // ---- the course preview shown before a test round: all the holes as maps, with their par, length, wind and greens
@@ -12699,12 +12727,12 @@
       function openRoundIntro(mode = 'test') {
         if (swing.active) return;
         introMode = mode;
-        const mm = mode === 'match' && career && career.match, nn = mm && npcById(mm.npc);
-        $('roundIntro').querySelector('.card-h span').textContent = mm ? `Match vs ${npcName(nn)} · course preview` : `🕹 Arcade · ${arcOf().name} · course preview`;
-        $('roundIntro').querySelector('.ri-note').textContent = mm
+        /*<tour>*/const mm = mode === 'match' && career && career.match, nn = mm && npcById(mm.npc);
+        /*</tour>*/$('roundIntro').querySelector('.card-h span').textContent = /*<tour>*/mm ? `Match vs ${npcName(nn)} · course preview` : /*</tour>*/`🕹 Arcade · ${arcOf().name} · course preview`;
+        $('roundIntro').querySelector('.ri-note').textContent = /*<tour>*/mm
           ? `${mm.format === 'skins' ? `Skins at ${money(mm.stake)} a hole against ${nn.first} “${nn.nick}”: win a hole outright to take its skin; a halved hole carries it to the next.` : `Match play for ${money(mm.stake)} against ${nn.first} “${nn.nick}”: win the most holes. Whoever is 2 down may double the prize.`} Your own stats and bag; each hole's wind and greens are fixed. Teeing off pays the ${money(MATCH.fee[mm.tier])} green fee. Leaving before it's decided forfeits the entry.`
-          : `Arcade: everyone plays the same game. The same stats (all 8) and the same clubs whatever your career: a forgiving full bag (${modelName(ARCADE_BAG[0])} driver and woods, ${modelName(ARCADE_BAG[7])} irons, ${modelName(ARCADE_BAG[12])} wedges). Each hole's wind and green speed are fixed. Holes are played in order; your score goes on this course's world Top 10.`;
-        const tv = mode === 'tour' && career && career.tour, TV = tv && tourById(tv.id);      // an invitational
+          : /*</tour>*/`Arcade: everyone plays the same game. The same stats (all 8) and the same clubs ${/*<tour>*/'whatever your career'/*</tour>*//*arcade:'for everyone'*/}: a forgiving full bag (${modelName(ARCADE_BAG[0])} driver and woods, ${modelName(ARCADE_BAG[7])} irons, ${modelName(ARCADE_BAG[12])} wedges). Each hole's wind and green speed are fixed. Holes are played in order; your score goes on this course's world Top 10.`;
+        /*<tour>*/const tv = mode === 'tour' && career && career.tour, TV = tv && tourById(tv.id);      // an invitational
         if (tv) {
           $('roundIntro').querySelector('.card-h span').textContent = `🏆 ${TV.name} · course preview`;
           $('roundIntro').querySelector('.ri-note').textContent = `Stroke play at ${TIERS[tv.tier].course} against all twelve rivals. Lowest score wins: `
@@ -12724,7 +12752,7 @@
             + `${strokesText({ player: pv.n ? (pv.mine ? session.id : pv.vs) : null, n: pv.n }, { [pv.vs]: pv.vsName }, pv.tier)}. ${pv.vsName} plays the same holes, wind and greens on their own PC; `
             + `the match settles when both cards are in. You can leave and resume until ${frDate(pv.deadline)}.`;
         }
-        if (!tv) $('riStart').textContent = mm || pv ? (pv && pv.holes.length ? `Resume on hole ${pv.holes.length + 1} (Enter)` : 'Tee off (Enter)') : 'Start round (Enter)';
+        if (!tv) /*</tour>*/$('riStart').textContent = /*<tour>*/mm || pv ? (pv && pv.holes.length ? `Resume on hole ${pv.holes.length + 1} (Enter)` : 'Tee off (Enter)') : /*</tour>*/'Start round (Enter)';
         hideScorecard();
         $('roundIntro').classList.add('on'); introOpen = true;        // shown first so each map can be drawn at its real width
         const grid = $('riGrid'), dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -12767,6 +12795,7 @@
         $('inPower').value = s.power; $('inDex').value = s.dex; $('inComp').value = s.composure; $('inPer').value = s.perception;
         telemetry = null; syncPanel(); renderBag();
       }
+      /*<tour>*/
       // =====================================================================================================
       //  CAREER (CAMPAIGN_PLAN.md). Chunk 1: the career shell and its save. One career, kept in this browser. While a
       //  career is on, the game plays its stats (the sliders are hidden) and the player's own come back on leaving.
@@ -12781,10 +12810,14 @@
         putter: 'p-wh2',
         tiers: { 1: 'Munis', 2: 'Clubs', 3: 'Country clubs' },          // (tier 2 was 'Resorts': user request, 2026-11-20)
       };
+      /*</tour>*/
       const CAREER_STATS = [['power', 'Power', 'longer shots'], ['dex', 'Dexterity', 'steadier when the shot is hard'],
         ['composure', 'Composure', 'shrugs off bad shots'], ['perception', 'Perception', 'reads lies and greens']];
+      /*<tour>*/
       let career = null, careerOn = false, clubOpen = false, careerOwnStats = null;
+      /*</tour>*/
       let arcadePractice = false;                            // (practice from the home screen's arcade side: arcadeBagOn)
+/*<tour>*/
 
       // ---- PROFILES (MULTIPLAYER_PLAN.md, M1). Signed in, the career lives on the server (api/profile.js) and this PC keeps a
       // copy per profile; on this PC only, it's the old local career. session = { token, id, name }; playMode remembers
@@ -12796,12 +12829,20 @@
       // writes or clears it replaces the pending one; the page being hidden or closed flushes it.
       const disk = { timer: 0, key: '', write: null };
       function flushCareer() { clearTimeout(disk.timer); const w = disk.write; disk.write = null; if (w) w(); }
+/*</tour>*/
+      /*<tour>*/
       const lsGet = (k) => { if (disk.write && k === disk.key) flushCareer(); try { return localStorage.getItem(k); } catch { return null; } };
       // (true if it was written: false when storage is blocked or full)
       const lsSet = (k, v) => {
         if (disk.write && k === disk.key) { clearTimeout(disk.timer); disk.write = null; }     // this write replaces the pending one
         try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); return true; } catch { return false; }
       };
+      /*</tour>*/
+      /*arcade:
+      const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+      const lsSet = (k, v) => { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); return true; } catch { return false; } };
+      */
+      /*<tour>*/
       // Audit 2.8: a career that can't be written (a private window, storage full) used to fail silently, and a guest
       // played a whole session that wasn't kept. Now the player is told, once, and the clubhouse's status line says so.
       function careerWritten(ok) {
@@ -13215,9 +13256,11 @@
         if (!quiet) toast('Left your career\nYour own stats are back', 1800);
       }
       const money = (n) => `${n < 0 ? '−' : ''}$${Math.abs(Math.round(n)).toLocaleString()}`;
+      /*</tour>*/
       // text that came from a career (anyone's, since a career is whatever its owner's browser saved) going into HTML:
       // always through this (audit 3.1: a visited trophy room ran the owner's markup as script)
       const escH = (t) => String(t ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+      /*<tour>*/
       function updateCareerUI() {
         updateMeChip();
         $('btnCareer').textContent = careerOn ? `🏠 Clubhouse (J) · ${money(career.cash)}` : career ? `🏌️ Career · ${career.name}` : session ? `🏌️ ${session.name}` : '🏌️ Career · sign in';
@@ -14401,55 +14444,57 @@
         if (c && scMode !== 'pvp') showSharedCard(c, headlineFor(c));
       }, 20000);
 
+      /*</tour>*/
       // =====================================================================================================
       //  HOME: the title screen, over the range. Signed out it lists the profiles (pick yours, type the password), with
       //  a new profile and "play as a guest" (a career on this PC only); signed in it's the menu: career, friends, the
       //  9-hole round, the practice areas, and the world Top 10. The developer tools (the sliders that change the game:
       //  stats, wind, green speed and slope) are only for an admin profile, and the admin can switch them off.
       // =====================================================================================================
-      const GAME_NAME = 'Back Nine Tour';
-      let homeOpen = false, homeSel = '';
-      const roster = { list: [], loaded: false, err: '' };
-      const devOn = () => !!session && adminOk && lsGet('golfDevTools') !== 'off';
+      const GAME_NAME = /*<tour>*/'Back Nine Tour'/*</tour>*//*arcade:'Back Nine Golf'*/;
+      let homeOpen = false/*<tour>*/, homeSel = ''/*</tour>*/;
+      /*<tour>*/const roster = { list: [], loaded: false, err: '' };
+      /*</tour>*/const devOn = () => /*<tour>*/!!session && adminOk && lsGet('golfDevTools') !== 'off'/*</tour>*//*arcade:false*/;
       function applyDevTools() {
         const on = devOn();
         document.body.classList.toggle('dev', on);
-        $('chAdmin').classList.toggle('on', !!session && adminOk && !!career);   // (the admin's money: also when the rights arrive late)
+        /*<tour>*/$('chAdmin').classList.toggle('on', !!session && adminOk && !!career);   // (the admin's money: also when the rights arrive late)
         $('chAdminBtn').classList.toggle('on', !!session && adminOk && !!career);
-        if (on && arcadePractice) { arcadePractice = false; applyCareerClubs(); renderBag(); }     // (the admin's sandbox: the base clubs)
-        if (!on && !careerOn && !round.on && typeof setStats === 'function') {        // everyone else plays the standard game
+        /*</tour>*/if (on && arcadePractice) { arcadePractice = false; applyCareerClubs(); renderBag(); }     // (the admin's sandbox: the base clubs)
+        if (!on && /*<tour>*/!careerOn && /*</tour>*/!round.on && typeof setStats === 'function') {        // everyone else plays the standard game
           setStats(arcadePractice ? ARCADE_STATS : ROUND_STATS);                       // (the arcade's, practising from its side)
           state.windMph = 0; state.windDir = 0; $('inWind').value = 0; $('inWindDir').value = 0;
           orientFlags(); syncPanel();
         }
       }
-      const homeSigned = () => !!session || playMode === 'local';
+      /*<tour>*/const homeSigned = () => !!session || playMode === 'local';
       function avatarHTML(name) {
         let h = 0;
         for (const ch of name.toLowerCase()) h = (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0;
         return `<div class="hm-av" style="background:hsl(${h % 360} 52% 36%)">${name.slice(0, 2).toUpperCase()}</div>`;
       }
-      function openHome() {
+      /*</tour>*/function openHome() {
         if (swing.active) return;
         if (round.on) { toast('Finish or leave your round first\nThen 🏠 Home', 1800); return; }
-        if (clubOpen) closeClubhouse();
-        if (introOpen) { closeRoundIntro(); if (introMode === 'test') setCourse(null); }      // (an arcade course's preview: its course is put away)
+        /*<tour>*/if (clubOpen) closeClubhouse();
+        /*</tour>*/if (introOpen) { closeRoundIntro(); if (introMode === 'test') setCourse(null); }      // (an arcade course's preview: its course is put away)
         if (tipsOn) setTips(false);
         hideScorecard();
-        if (!career) career = careerLoad();
-        homeOpen = true; document.body.classList.add('home-on');
-        $('home').classList.remove('adding');
+        /*<tour>*/if (!career) career = careerLoad();
+        /*</tour>*/homeOpen = true; document.body.classList.add('home-on');
+        /*<tour>*/$('home').classList.remove('adding');
         setText('hmErr', '');
-        renderHome(); renderLearn();
+        /*</tour>*/renderHome(); renderLearn();
         lbFetch().then(renderHomeBoard); renderHomeBoard();
-        if (!homeSigned()) loadRoster();
+        /*<tour>*/if (!homeSigned()) loadRoster();
         else if (session) { syncLoad(); loadFriends(true); }
+        /*</tour>*/
       }
       function closeHome() {
         homeOpen = false; document.body.classList.remove('home-on');
         if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       }
-      async function loadRoster() {
+      /*<tour>*/async function loadRoster() {
         roster.err = '';
         try {
           const r = await profileApi('roster');
@@ -14458,12 +14503,12 @@
         } catch { roster.err = 'Can\'t reach the profile server (it runs on the deployed site). You can still play as a guest.'; }
         if (homeOpen && !homeSigned()) renderRoster();
       }
-      function renderHome() {
-        const home = $('home'), signed = homeSigned();
+      /*</tour>*/function renderHome() {
+        /*<tour>*/const home = $('home'), signed = homeSigned();
         home.classList.toggle('who', !signed); home.classList.toggle('menu', signed);
         home.classList.toggle('admin', !!session && adminOk);
-        setText('hmTitle', GAME_NAME);
-        if (!signed) return renderRoster();
+        /*</tour>*/setText('hmTitle', GAME_NAME);
+        /*<tour>*/if (!signed) return renderRoster();
         const c = career, name = session ? session.name : c ? c.name : 'Guest';
         const h = c ? handicapOf(c) : null, rec = session && c ? h2h(null) : null;
         $('hmMe').innerHTML = `${avatarHTML(name)}<div><b>${name}</b>${session && adminOk ? ' <span title="admin">👑</span>' : ''}<div class="hm-kpis">`
@@ -14486,8 +14531,9 @@
         setText('hmSync', !session ? 'Guest · saved on this PC only'
           : sync.state === 'offline' ? '⚠ not synced (offline)' : sync.state === 'signedout' ? '⚠ Your sign-in has expired' : 'Saved to your profile');
         $('hmReauth').style.display = session && sync.state === 'signedout' ? '' : 'none';
+        /*</tour>*/
       }
-      function renderRoster() {
+      /*<tour>*/function renderRoster() {
         const last = lsGet('golfLastProfile') || '';
         const L = [...roster.list].sort((a, b) => (b.name.toLowerCase() === last) - (a.name.toLowerCase() === last) || a.name.localeCompare(b.name));
         const typed = homeSel && $('hmRoster').querySelector('.hm-p.on input');
@@ -14536,21 +14582,21 @@
         career = careerLoad();
         updateCareerUI(); renderHome();
       }
-      // the menu's tiles
+      /*</tour>*/// the menu's tiles
       function homeGo(what) {
         closeHome();
-        if (what === 'career') {                             // (Friends is in the clubhouse: user request, 2026-11-20)
+        /*<tour>*/if (what === 'career') {                             // (Friends is in the clubhouse: user request, 2026-11-20)
           if (!career && !session) siMode = 'local';        // a guest's first career: its name
           openClubhouse();
           return;
         }
-        if (what === 'round') return arcadeIntro();
+        /*</tour>*/if (what === 'round') return arcadeIntro();
         // practice (the arcade side's Range / Chipping / Putting, user request 2026-11-20): the arcade's game, its bag and
         // its stats (all 8), never the career's (a career practises from its clubhouse); the admin's developer tools play
         // the sandbox (base clubs, the sliders)
         if (hp.on) leaveHole();
-        if (careerOn) leaveCareer(true);
-        arcadePractice = !devOn();
+        /*<tour>*/if (careerOn) leaveCareer(true);
+        /*</tour>*/arcadePractice = !devOn();
         applyCareerClubs();
         if (arcadePractice) setStats(ARCADE_STATS); else renderBag();
         refreshShotType();
@@ -14575,14 +14621,14 @@
         + `<circle cx="36" cy="18" r="7" fill="#e8c9a0"/><path d="M28.5 16 Q36 7 43.5 16 Z M41 15 L48 17" fill="#ffffff" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>`   // head and cap
         + `<circle cx="59" cy="95" r="2.6" fill="#fff"/></svg>`;
       // one stat as a row: its name, ten pips (lit to v, then green to e: a caddie's help), the number, what it does
-      const statRowHTML = (n, what, v, e = v) => `<div class="hm-st"><span>${n}</span><div class="ch-pips">${Array.from({ length: COACH.maxStat }, (_, i) => `<i class="${i < v ? 'on' : i < e ? 'cad' : ''}"></i>`).join('')}</div>`
-        + `<b>${e}<small>/${COACH.maxStat}</small></b><p>${what[0].toUpperCase() + what.slice(1)}</p></div>`;
+      const statRowHTML = (n, what, v, e = v) => `<div class="hm-st"><span>${n}</span><div class="ch-pips">${Array.from({ length: /*<tour>*/COACH.maxStat/*</tour>*//*arcade:10*/ }, (_, i) => `<i class="${i < v ? 'on' : i < e ? 'cad' : ''}"></i>`).join('')}</div>`
+        + `<b>${e}<small>/${/*<tour>*/COACH.maxStat/*</tour>*//*arcade:10*/}</small></b><p>${what[0].toUpperCase() + what.slice(1)}</p></div>`;
       function renderArcStats() {
         $('hmArcStats').innerHTML = `${golferSvg('#ffe066')}<div><div class="hm-st-h">Everyone's golfer · out of 10</div>`
           + CAREER_STATS.map(([k, n, what]) => statRowHTML(n, what, ARCADE_STATS[k])).join('')
-          + `<div class="hm-st-h hm-st-foot">A new career starts at ${CAREER.stats.power} and builds them up with lessons</div></div>`;
+          + `<div class="hm-st-h hm-st-foot">${/*<tour>*/`A new career starts at ${CAREER.stats.power} and builds them up with lessons`/*</tour>*//*arcade:'The same for everyone, so every Top 10 is a level field'*/}</div></div>`;
       }
-      // the career side's golfer (user request, 2026-11-21): your own stats, a hired caddie's help in green; no career yet,
+      /*<tour>*/// the career side's golfer (user request, 2026-11-21): your own stats, a hired caddie's help in green; no career yet,
       // where one starts
       function renderCareerStats() {
         const c = career, el = $('hmCarStats');
@@ -14593,7 +14639,7 @@
           : `${cd ? `<span class="cadk">■</span> ${cd.short}'s help · ` : ''}Lessons from the coach (in the clubhouse) build them up · the arcade plays everyone at ${ARCADE_STATS.power}`;
         el.innerHTML = `${golferSvg('#35e0ff')}<div><div class="hm-st-h">${c ? 'Your golfer' : 'A new golfer'} · out of 10</div>${rows}<div class="hm-st-h hm-st-foot">${foot}</div></div>`;
       }
-      function renderHomeBoard() {
+      /*</tour>*/function renderHomeBoard() {
         renderArcStats();
         $('hmCourses').innerHTML = ARCADE.map((a) => `<button data-arc="${a.id}" class="${a.id === arcCourse ? 'on' : ''}"><b>${a.name}</b><em title="How hard it plays">${'★'.repeat(a.stars)}<s>${'★'.repeat(3 - a.stars)}</s></em>`
           + `<i>Par ${arcHoles(a.id).reduce((s, hd) => s + hd.par, 0)} · ${arcadeYards(a.id).toLocaleString()} yds · ${a.blurb}</i></button>`).join('');
@@ -14609,7 +14655,8 @@
         $('hmBoard').innerHTML = h;
       }
       // ---- the in-game HUD in the home screen's style: who's playing (top bar) and the area tabs (left panel)
-      function updateMeChip() {
+      /*arcade: function updateMeChip() {} */
+      /*<tour>*/function updateMeChip() {
         const el = $('tbMe'), name = session ? session.name : career ? career.name : '';
         el.style.display = name ? '' : 'none';
         if (!name) return;
@@ -14617,6 +14664,7 @@
         el.innerHTML = `${avatarHTML(name)}<div><b>${name}${session && adminOk ? ' 👑' : ''}</b>`
           + `<i>${career ? `<span class="cash">${money(career.cash)}</span>${h !== null ? ` · hcp ${fmtHcp(h)}` : ''}` : 'Guest'}</i></div>`;
       }
+      /*</tour>*/
       // the area tabs: the practice areas and a hole (a round plays in order, so it has no tabs)
       function goArea(a) {
         if (swing.active || round.on) return;
@@ -14627,15 +14675,15 @@
       // while the home screen is up it takes the keys (typing goes to the boxes)
       function homeKey(e) {
         const t = e.target, typing = t instanceof HTMLInputElement && t.type !== 'checkbox';
-        if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+        /*<tour>*/if (e.code === 'Enter' || e.code === 'NumpadEnter') {
           if (typing) { e.preventDefault(); if (t.id === 'hmNewName' || t.id === 'hmNewPw') homeNewProfile(); else homeSignIn(); }
           return;
         }
-        if (e.code === 'Escape') {
+        /*</tour>*/if (e.code === 'Escape') {
           e.preventDefault();
-          if ($('home').classList.contains('adding')) { $('home').classList.remove('adding'); setText('hmErr', ''); }
+          /*<tour>*/if ($('home').classList.contains('adding')) { $('home').classList.remove('adding'); setText('hmErr', ''); }
           else if (homeSel) { homeSel = ''; setText('hmErr', ''); renderRoster(); }
-          else if (homeSigned()) closeHome();               // back to where you were
+          else if (homeSigned()) /*</tour>*/closeHome();               // back to where you were
           return;
         }
         if (typing) return;
@@ -14659,8 +14707,9 @@
       const ARCADE_BAG = { 0: 'd-g440k', 1: 'f-g440k', 2: 'f-g440k', 3: 'f-g440k', 4: 'i-qimax', 5: 'i-qimax', 6: 'i-qimax', 7: 'i-qimax', 8: 'i-qimax', 9: 'i-qimax', 10: 'i-qimax', 11: 'w-cbx2', 12: 'w-cbx2', 13: 'w-cbx2' };
       // (round.on in a career is a match, an invitational or a friend round. arcadePractice: the range, chipping or putting
       // started from the home screen's arcade side plays the arcade's bag and stats too, user request 2026-11-20)
-      const arcadeBagOn = () => !careerOn && (round.on || arcadePractice);
+      const arcadeBagOn = () => /*<tour>*/!careerOn && /*</tour>*/(round.on || arcadePractice);
       const CLUB_MODELS = {
+        /*<tour>*/
         // ---- irons (7-iron loft change shown; 4i–5i get 80% of it)
         //      Swing audit S5.2 (2026-11-20): dynLoft and spin re-tuned so the strong-lofted sets land a little FLATTER than
         //      the blade and roll out more (they used to add +1.8° of dynamic loft and landed 2–3° steeper). 7 iron against
@@ -14669,7 +14718,9 @@
         //      lift refit, swing audit S3.1: at 7-iron speeds the lift is at its ceiling, so less spin barely lowers it.)
         'i-ap1': { kind: 'iron', cat: 'Used', brand: 'Titleist', name: 'AP1 716 (2015)', price: 0, bias: 2, add: { loft: -4, dynLoft: -0.3 }, x: { spin: 0.95, speed: 0.96, sweet: 1.6, gear: 0.67, work: 0.65 }, set: { floor: 0.7, offset: 0.9, consist: 2.2, groove: 0.8 }, note: 'A forgiving 2015 cavity, now tired: worn grooves, mismatched shafts, the odd one pulls or pushes' },
         'i-m2': { kind: 'iron', cat: 'Used', brand: 'TaylorMade', name: 'M2 (2016)', price: 200, bias: 1.5, add: { loft: -5.5, dynLoft: -1.0 }, x: { spin: 0.9, speed: 0.99, sweet: 1.8, gear: 0.58, work: 0.55 }, set: { floor: 0.8, offset: 1.1, consist: 1.9, groove: 0.75 }, note: 'Famously long and strong-lofted, but this set is beaten up, wild and won\'t stop' },
-        'i-qimax': { kind: 'iron', cat: 'Game improvement', brand: 'TaylorMade', name: 'Qi Max', price: 1100, add: { loft: -5.5, dynLoft: -1.6 }, x: { spin: 0.87, speed: 1.01, sweet: 2.4, gear: 0.42, work: 0.45 }, set: { floor: 0.85, offset: 1.1, consist: 0.85 }, note: 'The most forgiving and highest launching; holds greens best of the GIs' },
+        /*</tour>*/
+        'i-qimax': { kind: 'iron', cat: 'Game improvement', brand: 'TaylorMade', name: 'Qi Max', /*<tour>*/price: 1100, /*</tour>*/add: { loft: -5.5, dynLoft: -1.6 }, x: { spin: 0.87, speed: 1.01, sweet: 2.4, gear: 0.42, work: 0.45 }, set: { floor: 0.85, offset: 1.1, consist: 0.85 }, note: 'The most forgiving and highest launching; holds greens best of the GIs' },
+        /*<tour>*/
         'i-jpxhm': { kind: 'iron', cat: 'Game improvement', brand: 'Mizuno', name: 'JPX 925 Hot Metal', price: 1050, add: { loft: -6, dynLoft: -2.8 }, x: { spin: 0.82, speed: 1.006, sweet: 2.0, gear: 0.5, work: 0.5 }, set: { floor: 0.85, offset: 0.9, consist: 0.9 }, note: 'The longest; lands flattest and runs' },
         'i-takomo': { kind: 'iron', cat: 'Game improvement', brand: 'Takomo', name: '101 MKII', price: 580, add: { loft: -5, dynLoft: -1.8 }, x: { spin: 0.84, speed: 1.0, sweet: 2.1, gear: 0.46, work: 0.5 }, set: { floor: 0.85, offset: 0.8, consist: 0.8 }, note: 'The budget pick, and the most accurate GI in testing' },
         'i-ai200': { kind: 'iron', cat: 'In-between', brand: 'Callaway', name: 'Apex Ai200', price: 1400, add: { loft: -4, dynLoft: -1.0 }, x: { spin: 0.9, speed: 1.0, sweet: 1.8, gear: 0.58, work: 0.7 }, set: { floor: 0.7, offset: 0.6, consist: 0.92 }, note: 'Game-improvement distance in a players\' shape' },
@@ -14686,7 +14737,9 @@
         // ---- drivers
         'd-xr16': { kind: 'driver', cat: 'Used', brand: 'Callaway', name: 'XR 16 (2016)', price: 0, add: { dynLoft: 0.3 }, x: { spin: 1.15, speed: 0.97, sweet: 1.0, gear: 1.125, work: 1 }, set: { offset: 0.3, consist: 1.3 }, note: 'An old warhorse: spins too much, a bit short' },
         'd-m2': { kind: 'driver', cat: 'Used', brand: 'TaylorMade', name: 'M2 (2016)', price: 90, add: {}, x: { spin: 1.1, speed: 0.98, sweet: 1.05, gear: 1.06, work: 1 }, set: { offset: 0.2, consist: 1.3 }, note: 'Long in its day, now just loose' },
-        'd-g440k': { kind: 'driver', cat: 'Max forgiveness', brand: 'Ping', name: 'G440 K', price: 650, add: { dynLoft: 0.5 }, x: { spin: 1.1, speed: 0.99, sweet: 1.35, gear: 0.75, work: 0.82 }, set: { offset: 0.5, consist: 0.9 }, note: 'The most forgiving driver going; launches high' },
+        /*</tour>*/
+        'd-g440k': { kind: 'driver', cat: 'Max forgiveness', brand: 'Ping', name: 'G440 K', /*<tour>*/price: 650, /*</tour>*/add: { dynLoft: 0.5 }, x: { spin: 1.1, speed: 0.99, sweet: 1.35, gear: 0.75, work: 0.82 }, set: { offset: 0.5, consist: 0.9 }, note: 'The most forgiving driver going; launches high' },
+        /*<tour>*/
         'd-maxd': { kind: 'driver', cat: 'Max forgiveness', brand: 'Callaway', name: 'Quantum Max D', price: 600, add: { dynLoft: 0.4 }, x: { spin: 1.07, speed: 0.995, sweet: 1.25, gear: 0.875, work: 0.82 }, set: { offset: 0.6, consist: 0.95 }, note: 'Forgiving, and fights a slice' },
         'd-qi4d': { kind: 'driver', cat: 'In-between', brand: 'TaylorMade', name: 'Qi4D', price: 630, add: {}, x: { spin: 1.04, speed: 1.0, sweet: 1.1, gear: 1.0, work: 1.0 }, set: { offset: 0, consist: 1.0 }, note: 'The best all-rounder' },
         'd-qi4dls': { kind: 'driver', cat: 'Low spin', brand: 'TaylorMade', name: 'Qi4D LS', price: 650, add: { dynLoft: 0.5 }, x: { spin: 0.96, speed: 1.018, sweet: 0.9, gear: 1.19, work: 1.12 }, set: { offset: 0, consist: 1.0 }, note: 'The longest when you find the middle' },
@@ -14699,11 +14752,14 @@
         // ---- wedges (GW / SW / LW, one at a time; bounce is the sand wedge's)
         'w-sm6': { kind: 'wedge', cat: 'Used', brand: 'Titleist', name: 'Vokey SM6 (2016)', price: 0, add: {}, x: { spin: 1.0, sweet: 1.0, gear: 1.05, work: 0.94 }, set: { groove: 0.75, consist: 1.15, bounce: 10 }, note: 'A good wedge once; the grooves are worn smooth' },
         'w-cb12': { kind: 'wedge', cat: 'Cavity', brand: 'Callaway', name: 'CB 12', price: 150, add: {}, x: { spin: 0.92, sweet: 1.6, gear: 0.7, work: 0.78 }, set: { consist: 0.9, bounce: 14, flopX: 1.2 }, note: 'The easiest wedge to hit; wide sole, hard to open up' },
-        'w-cbx2': { kind: 'wedge', cat: 'Cavity', brand: 'Cleveland', name: 'CBX 2', price: 150, add: {}, x: { spin: 0.96, sweet: 1.4, gear: 0.8, work: 0.89 }, set: { consist: 0.92, bounce: 12, flopX: 1.1 }, note: 'Forgiving, with decent spin' },
+        /*</tour>*/
+        'w-cbx2': { kind: 'wedge', cat: 'Cavity', brand: 'Cleveland', name: 'CBX 2', /*<tour>*/price: 150, /*</tour>*/add: {}, x: { spin: 0.96, sweet: 1.4, gear: 0.8, work: 0.89 }, set: { consist: 0.92, bounce: 12, flopX: 1.1 }, note: 'Forgiving, with decent spin' },
+        /*<tour>*/
         'w-opus': { kind: 'wedge', cat: 'Tour', brand: 'Callaway', name: 'Opus', price: 180, add: {}, x: { spin: 1.0, sweet: 1.0, gear: 1.0, work: 1.05 }, set: { consist: 1.0, bounce: 12 }, note: 'Tour spin with a forgiving grind' },
         'w-vokey': { kind: 'wedge', cat: 'Tour', brand: 'Titleist', name: 'Vokey SM11', price: 200, add: {}, x: { spin: 1.02, sweet: 1.0, gear: 1.0, work: 1.1 }, set: { consist: 1.0, bounce: 10, flopX: 0.95 }, note: 'The most spin and the most versatile' },
         'w-rosegold': { kind: 'wedge', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Rose Gold', price: 4000, add: {}, x: { spin: 1.0, sweet: 1.0, gear: 1.0, work: 1.05 }, set: { consist: 1.0, bounce: 12 }, note: 'Rose-gold plating over a soft forging. It will scuff in the first bunker, and you\'ll buy another' },
         'w-damascus': { kind: 'wedge', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Damascus', price: 7500, add: {}, x: { spin: 1.02, sweet: 1.0, gear: 1.0, work: 1.1 }, set: { consist: 1.0, bounce: 10, flopX: 0.95 }, note: 'Hand-folded Damascus steel: no two faces have the same ripples. Spins like a tour wedge' },
+        /*</tour>*/
       };
       // putters: added to PUTTERS (the range's own blade / mallet stay as they are). Putting audit PT6: these are a TRADE, not
       // a ladder. The blades forgive a shaky rhythm (wide tempo windows); the mallets forgive a shaky line (a straighter start,
@@ -14738,8 +14794,8 @@
         // straighter instead of hooking 20–30 yds, and a low-spin head's no longer slices
         if (m.x && m.x.gear && b.bulge) out.bulge = b.bulge * m.x.gear * (m.x.work || 1);
         if (out.work !== undefined && out.work !== b.work) out.shapeCx = b.work / out.work;     // (swing audit S5.1: see computeImpact)
-        if (m.bias && career) out.lieBias = Math.round((rng32((career.seed ^ (i * 2654435761)) >>> 0)() * 2 - 1) * m.bias * 10) / 10;   // bent lie: fixed for the career
-        return out;
+        /*<tour>*/if (m.bias && career) out.lieBias = Math.round((rng32((career.seed ^ (i * 2654435761)) >>> 0)() * 2 - 1) * m.bias * 10) / 10;   // bent lie: fixed for the career
+        /*</tour>*/return out;
       }
       // Swing audit S5.6 (the user's choice: automatic): a strong-lofted iron set's PW (44.5° or less) leaves ~20 yds before
       // a 50° gap wedge, so the gap wedge slot becomes the set's approach wedge, as real sets of this kind are sold: its
@@ -14766,22 +14822,22 @@
         CLUBS.forEach((c, i) => {
           for (const f of Object.keys(c)) if (!(f in BASE_CLUBS[i])) delete c[f];
           Object.assign(c, BASE_CLUBS[i]);
-          const id = careerOn ? (demo && demo.idx === i && demo.on ? demo.model : career.bag[i]) : arc ? ARCADE_BAG[i] : null;
+          const id = /*<tour>*/careerOn ? (demo && demo.idx === i && demo.on ? demo.model : career.bag[i]) : /*</tour>*/arc ? ARCADE_BAG[i] : null;
           if (id && CLUB_MODELS[id]) Object.assign(c, modelMods(CLUB_MODELS[id], i), { model: id });
         });
-        if (careerOn || arc) fitApproachWedge();
+        if (/*<tour>*/careerOn || /*</tour>*/arc) fitApproachWedge();
         stockCache.clear(); shapeCache.clear(); spreadCache.clear();
         telemetry = null;
       }
       // a shop model tried on the range for free (chunk 5): { idx, model, on } for a club, or { putter } (never saved).
       // on = you're hitting the demo; off = your own club in that slot (swap with the club's key again, or a click)
-      let demo = null;
+      /*<tour>*/let demo = null;
       // which clubs can be used: all of them outside a career; in one, the owned clubs in the bag (not the locker) that
       // aren't snapped, plus a demo club
       const inBag = (i) => !!career.bag[i] && !career.out.includes(i);
-      const rangeOnly = (i) => i === CI_GI && hp.on;
-      const canUseClub = (i) => !careerOn ? !rangeOnly(i) : (demo && demo.idx === i && demo.on) || (inBag(i) && !career.snapped.includes(i));
-      // can you swap between the demo and your own club in its slot? (you own one there, in the bag and not snapped)
+      /*</tour>*/const rangeOnly = (i) => i === CI_GI && hp.on;
+      const canUseClub = (i) => /*<tour>*/!careerOn ? /*</tour>*/!rangeOnly(i)/*<tour>*/ : (demo && demo.idx === i && demo.on) || (inBag(i) && !career.snapped.includes(i))/*</tour>*/;
+      /*<tour>*/// can you swap between the demo and your own club in its slot? (you own one there, in the bag and not snapped)
       const demoCanSwap = () => !!(demo && demo.model && inBag(demo.idx) && !career.snapped.includes(demo.idx));
       function toggleDemo(on = !demo.on) {
         if (!demoCanSwap() || swing.active || on === demo.on) return;
@@ -14798,7 +14854,7 @@
         if (i === CI_GW && pwModel && CLUB_MODELS[pwModel]) fitApproachWedge(c, { ...BASE_CLUBS[CI_PW], ...modelMods(CLUB_MODELS[pwModel], CI_PW), model: pwModel });
         try { return fn(); } finally { for (const f of Object.keys(c)) delete c[f]; Object.assign(c, saved); }
       }
-      const bagOrder = () => CLUBS.map((_, i) => i).filter((i) => careerOn ? inBag(i) || (demo && demo.idx === i) : !rangeOnly(i));
+      /*</tour>*/const bagOrder = () => CLUBS.map((_, i) => i).filter((i) => /*<tour>*/careerOn ? inBag(i) || (demo && demo.idx === i) : /*</tour>*/!rangeOnly(i));
       const usableOrder = () => bagOrder().filter(canUseClub);
       // the first usable club from a list of preferences, else the most lofted usable one below a lob wedge's loft
       function usableClub(...prefs) {
@@ -14806,6 +14862,7 @@
         const u = usableOrder();
         return u.length ? u.reduce((a, i) => (CLUBS[i].loft > CLUBS[a].loft ? i : a), u[0]) : 0;
       }
+      /*<tour>*/
       // =====================================================================================================
       //  COACH (CAMPAIGN_PLAN.md, chunk 6): lessons raise a stat by one (price = perLevel × current level²), and shots are
       //  learned: until then a career can't pick the draw / fade presets, Low 2 (the stinger), High 2 and the High Soft
@@ -14823,7 +14880,14 @@
           flop: { name: 'The flop shot', price: 400, what: 'Chip type 4: straight up and stops dead (needs a 50°+ wedge)' },
         },
       };
+      /*</tour>*/
+      /*<tour>*/
       const shotLocked = (k) => careerOn && !!career && k in COACH.unlocks && !career.unlocks[k];
+      /*</tour>*/
+      /*arcade:
+      const shotLocked = () => false;
+      */
+      /*<tour>*/
       // swing audit S7.1: a full ball-position move is a height level, so while the stinger (Low 2) or the high ball (High 2)
       // is unlearned the ladder PLUS ball position is capped at one level that way. -> true if the setup is past the cap;
       // fix = also pull the ball position back inside it.
@@ -14835,7 +14899,17 @@
         if (fix) state.ballPos = Math.round(clamp(state.ballPos, (lo - state.height) / per, (hi - state.height) / per) * 10) / 10;
         return true;
       }
+      /*</tour>*/
+      /*arcade:
+      function heightCapBallPos() { return false; }
+      */
+      /*<tour>*/
       function lockedToast(k) { toast(`🔒 ${COACH.unlocks[k].name}\nLearn it from the coach in the clubhouse (J)`, 1800); }
+      /*</tour>*/
+      /*arcade:
+      function lockedToast() {}
+      */
+      /*<tour>*/
       // $60 × level² (5→6: $1,500), but the first two lessons cost less (audit 7.3: the start was a long grind):
       // 2→3 $80 and 3→4 $360 (they were $240 and $540); from 4→5 ($960) on, the full price
       const lessonPrice = (lv) => Math.round(COACH.lessonPerLevel * lv * lv * Math.min(1, (lv - 1) / 3));
@@ -15372,16 +15446,19 @@
       const sparkles = (pts) => pts.map(([x, y, s], i) => `<path d="M${x} ${y - s} L${x + s * 0.25} ${y - s * 0.25} L${x + s} ${y} L${x + s * 0.25} ${y + s * 0.25} L${x} ${y + s} L${x - s * 0.25} ${y + s * 0.25} L${x - s} ${y} L${x - s * 0.25} ${y - s * 0.25} Z" fill="#fff6d0" opacity="0">`
         + `<animate attributeName="opacity" values="0;1;0" dur="${1.8 + i * 0.5}s" begin="${i * 0.45}s" repeatCount="indefinite"/></path>`).join('');
       const luxBuyConfirm =(name, price) => price < 5000 || confirm(`Buy the ${name} for ${money(price)}? It plays like the best of the ordinary clubs: you're paying for the shine.`);
-      // fairway woods and hybrids follow each new driver line, at half the driver's differences
+      /*</tour>*/
+      // fairway woods and hybrids follow each new driver line, at half the driver's differences (the arcade site's too:
+      // its bag's fairway wood is the G440 K's)
       for (const [id, m] of Object.entries({ ...CLUB_MODELS })) {
         if (m.kind !== 'driver' || m.cat === 'Used') continue;
         const half = (o, f) => Object.fromEntries(Object.entries(o || {}).map(([k, v]) => [k, f(v)]));
         CLUB_MODELS[`f-${id.slice(2)}`] = {
-          kind: 'wood', cat: m.cat, lux: m.lux, brand: m.brand, name: `${m.name} fairway / hybrid`, price: Math.round(m.price * 0.055) * 10,
+          kind: 'wood', cat: m.cat, lux: m.lux, brand: m.brand, name: `${m.name} fairway / hybrid`, /*<tour>*/price: Math.round(m.price * 0.055) * 10,/*</tour>*/
           add: half(m.add, (v) => v / 2), x: half(m.x, (v) => 1 + (v - 1) / 2), set: { offset: (m.set.offset || 0) / 2, consist: 1 + ((m.set.consist || 1) - 1) / 2 },
           note: `${m.note.split(/[;:]/)[0]}: the fairway wood and hybrid version`,
         };
       }
+      /*<tour>*/
       const SLOT_NAME = (i) => CLUBS[i].name.replace('Pitching Wedge', 'PW');
       const carried = () => CLUBS.reduce((n, _, i) => n + (inBag(i) ? 1 : 0), 0) + 1;     // + the putter
       let shopTab = 'iron';
@@ -15475,6 +15552,7 @@
           <div class="sh-bars">${barRow('Distance', shopBar(m.kind, 'carry', s.carry))}${barRow('Stopping', shopBar(m.kind, 'roll', s.roll, true))}${barRow('Forgiveness', shopBar(m.kind, 'forgive', s.forgive))}${barRow('Shaping', shopBar(m.kind, 'shape', s.shape))}</div>
           <div class="sh-btns">${btns}</div></div>`;
       }
+      /*</tour>*/
       // The four PUTTER BARS: one set of names and one scale, wherever they are drawn (the shop, the bag screen, the putting
       // green's putter card). Each bar is where the putter's number sits between the least and the most forgiving of all
       // the putters, 15–100, so it stays right when the numbers are re-tuned. (Putting audit PT10: the shop said "Stability"
@@ -15494,6 +15572,7 @@
           return { label, tip, pct: Math.round(15 + 85 * (hi > lo ? clamp((f(p) - lo) / (hi - lo), 0, 1) : 1)) };
         });
       }
+      /*<tour>*/
       const putterBarsHTML = (p) => putterBars(p).map((b) => barRow(b.label, b.pct)).join('');
       function shopPuttersHTML() {
         const ids = Object.keys(SHOP.putters), P = (id) => PUTTERS[id];
@@ -15760,37 +15839,39 @@
         const key = CLUB_KEYS[bagOrder().indexOf(i)];
         toast(`Trying the ${modelName(id)} ${CLUBS[i].name}\nFree on the range${demoCanSwap() ? ` · ${key ? `${key} again` : 'Click the bag'} swaps to your own` : ''} · Esc back to the shop`, 3200);
       }
+      /*</tour>*/
       // ---- the PUTTER CARD (user request): the putting green's bag, top right. The putters you can use here (in a career
       // the ones you own plus a pro-shop demo; otherwise the practice blade and mallet), and bars for what the selected one
       // does; trying a demo, a white tick shows your own putter on each bar. On the course you putt with the bag's putter.
       function puttersAvail() {
-        if (!careerOn) return Object.keys(PUTTERS).filter((k) => !PUTTERS[k].model);
-        const own = (career.putters || [career.putter]).filter((k) => PUTTERS[k]);
-        return demo && demo.putter && !own.includes(demo.putter) ? [...own, demo.putter] : own;
+        /*<tour>*/if (!careerOn) /*</tour>*/return Object.keys(PUTTERS).filter((k) => !PUTTERS[k].model);
+        /*<tour>*/const own = (career.putters || [career.putter]).filter((k) => PUTTERS[k]);
+        return demo && demo.putter && !own.includes(demo.putter) ? [...own, demo.putter] : own;/*</tour>*/
       }
-      const putterIsDemo = (k) => careerOn && !!demo && demo.putter === k && !(career.putters || []).includes(k);
+      const putterIsDemo = (k) => /*<tour>*/careerOn && !!demo && demo.putter === k && !(career.putters || []).includes(k)/*</tour>*//*arcade:false*/;
       function renderPutterCard() {
-        const list = puttersAvail(), cur = state.putter, mine = careerOn ? career.putter : null;
+        const list = puttersAvail(), cur = state.putter, mine = /*<tour>*/careerOn ? career.putter : /*</tour>*/null;
         setText('ptTitle', list.length > 1 ? 'Putters' : 'Putter');
-        setText('ptTag', putterIsDemo(cur) ? 'demo' : careerOn ? (cur === mine ? 'in your bag' : 'locker') : 'practice');
+        setText('ptTag', putterIsDemo(cur) ? 'demo' : /*<tour>*/careerOn ? (cur === mine ? 'in your bag' : 'locker') : /*</tour>*/'practice');
         $('ptList').innerHTML = list.map((k) => {
           const p = PUTTERS[k], dm = putterIsDemo(k);
-          return `<div class="pt-row${k === cur ? ' on' : ''}${dm ? ' demo' : ''}" data-putter="${k}"><kbd>${dm ? '⇄' : careerOn && k === mine ? '✓' : '·'}</kbd>`
-            + `<span>${p.name}</span><i>${dm ? 'demo' : careerOn ? (k === mine ? 'in your bag' : 'locker') : ''}</i></div>`;
+          return `<div class="pt-row${k === cur ? ' on' : ''}${dm ? ' demo' : ''}" data-putter="${k}"><kbd>${dm ? '⇄' : /*<tour>*/careerOn && k === mine ? '✓' : /*</tour>*/'·'}</kbd>`
+            + `<span>${p.name}</span><i>${dm ? 'demo' : /*<tour>*/careerOn ? (k === mine ? 'in your bag' : 'locker') : /*</tour>*/''}</i></div>`;
         }).join('');
         const P = PUTTERS[cur], Y = putterIsDemo(cur) && mine && PUTTERS[mine] ? PUTTERS[mine] : null, yours = Y ? putterBars(Y) : null;
         $('ptStats').innerHTML = P ? putterBars(P).map((b, i) => `<div class="pt-stat" title="${b.tip}${Y ? ` · yours (${Y.name}): the white tick` : ''}"><span>${b.label}</span>`
           + `<div><i class="${Y ? 'demo' : ''}" style="width:${b.pct}%"></i>${Y ? `<u style="left:${yours[i].pct}%"></u>` : ''}</div></div>`).join('') : '';
-        setText('ptFoot', hp.on && careerOn ? 'On the course: the putter in your bag' : list.length > 1 ? '[ ] or a click switches putter' : careerOn ? 'More putters in the pro shop' : '');
+        setText('ptFoot', /*<tour>*/hp.on && careerOn ? 'On the course: the putter in your bag' : /*</tour>*/list.length > 1 ? '[ ] or a click switches putter' : /*<tour>*/careerOn ? 'More putters in the pro shop' : /*</tour>*/'');
       }
       // switch putter (the practice green; on the course a career putts with the one in its bag)
       function pickPutter(k) {
         if (!PUTTERS[k] || swing.active || !isPutt()) return;
-        if (hp.on && careerOn) return toast(`${PUTTERS[state.putter].name}\nOn the course you putt with the one in your bag`, 1600);
-        state.putter = k;
-        if (careerOn && !putterIsDemo(k) && career.putter !== k) { career.putter = k; careerSave(); }
+        /*<tour>*/if (hp.on && careerOn) return toast(`${PUTTERS[state.putter].name}\nOn the course you putt with the one in your bag`, 1600);
+        /*</tour>*/state.putter = k;
+        /*<tour>*/if (careerOn && !putterIsDemo(k) && career.putter !== k) { career.putter = k; careerSave(); }/*</tour>*/
         syncPanel();
       }
+      /*<tour>*/
       function startPutterDemo(id) {
         demo = { putter: id };
         careerToRange(); setMode('putt');
@@ -16057,7 +16138,12 @@
       // the rival's score on hole i: par + their skill + the hole's conditions + a seeded roll
       // (user request: more variety) every match has its own salt, rolled at tee off and saved, so no two matches are the
       // same; the rival has a form for the day (sharp or rusty, the whole match); and now and then a hole blows up.
+      /*</tour>*/
+      /*arcade:
+      let introMode = 'test';
+      */
       const gauss = (r) => Math.sqrt(-2 * Math.log(Math.max(1e-6, r()))) * Math.cos(2 * Math.PI * r());
+      /*<tour>*/
       const matchSeed = (m, k) => (career.seed ^ Math.imul(m.no, 7919) ^ (m.salt || 0) ^ k) >>> 0;
       // AUDIT 4.1: a rival's `skill` is now what it says, strokes over par a hole on his own circuit, and his form for
       // the day swings less.
@@ -16808,10 +16894,11 @@
         if (!e.repeat && (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space')) closeToss();
       }
       // the course preview's buttons start a test round or the career's match
-      function introStart() { closeRoundIntro(); if (introMode === 'match') startMatch(); else if (introMode === 'pvp') startFriendRound(); else if (introMode === 'tour') startTour(); else startRound(); }
+      /*</tour>*/
+      function introStart() { closeRoundIntro(); /*<tour>*/if (introMode === 'match') startMatch(); else if (introMode === 'pvp') startFriendRound(); else if (introMode === 'tour') startTour(); else /*</tour>*/startRound(); }
       function introCancel() {
         closeRoundIntro();
-        if (introMode === 'tour') {                          // not teed off yet: no entry, nothing kept
+        /*<tour>*/if (introMode === 'tour') {                          // not teed off yet: no entry, nothing kept
           if (career && career.tour && !career.tour.paid) { career.tour = null; careerSave(); }
           setCourse(null); openClubhouse(); openTours();
           return;
@@ -16822,7 +16909,7 @@
           return;
         }
         if (introMode === 'match' && career && career.match && !career.match.feePaid) { career.match = null; careerSave(); setCourse(null); openClubhouse(); openMatchPicker(); }
-        else if (introMode === 'test') { setCourse(null); openHome(); }      // (an arcade course's preview: back to the home screen it came from)
+        else /*</tour>*/if (introMode === 'test') { setCourse(null); openHome(); }      // (an arcade course's preview: back to the home screen it came from)
       }
       // TEST ROUND conditions: the hole's own wind and green speed, the same for every player (the sliders are hidden)
       const holeStimp = () => (round.on && HOLE.stimp) || state.greenCfg.stimp;
@@ -16880,6 +16967,7 @@
         return { head, parRow, windRow, scRow, ptRow, pnRow, tpRow, totPar };
       }
       const scoreTotals = (scores) => { let strokes = 0, par = 0, putts = 0, pen = 0, played = 0; scores.forEach((s) => { if (s) { strokes += s.strokes; par += s.par; putts += s.putts; pen += s.pen || 0; played++; } }); return { strokes, par, putts, pen, played, toPar: strokes - par }; };
+      /*<tour>*/
       // a rival match's rows: his scores, then the skins or a row per match (live card and archived card alike)
       function matchRowsHTML(m, cur = -1) {
         const n = HOLES.length;
@@ -16926,20 +17014,21 @@
       // a settled match in a few words: a loss you couldn't pay is still a loss (audit 4.4: it read "all square")
       const settledTag = (m) => (m.unpaid ? `lost ${money(-(m.net || 0) + m.unpaid)} · couldn't pay ${money(m.unpaid)}`
         : m.net ? `${m.net > 0 ? 'won' : 'lost'} ${money(Math.abs(m.net))}` : 'all square');
+      /*</tour>*/
       function hideScorecard() { $('scorecard').classList.remove('on', 'pvp', 'arch'); if (scMode === 'pvp' || scMode === 'arch') scMode = 'round'; }
       function showScorecard(msg = '') {
-        $('scPressBox').classList.remove('on'); $('scBets').innerHTML = '';               // (only a career match shows it, below)
-        $('scorecard').classList.remove('pvp');            // (the shared friend card is its own mode)
+        /*<tour>*/$('scPressBox').classList.remove('on'); $('scBets').innerHTML = '';               // (only a career match shows it, below)
+        /*</tour>*/        $('scorecard').classList.remove('pvp');            // (the shared friend card is its own mode)
         if (msg || !$('scorecard').classList.contains('on')) $('scorecard').scrollTop = 0;   // a new card opens at the top: the news and the double offer (5.2)
         const n = HOLES.length, t = roundTotals(), final = t.played === n;
         round.over = final;
         const cur = hp.on && !hp.done ? hp.holeIdx : -1;
         // your row carries your name (a career's, else your profile's; the test round's standard player is just "Score")
-        const myName = careerOn && career ? career.name : session ? session.name : 'Score';
+        const myName = /*<tour>*/careerOn && career ? career.name : session ? session.name : /*</tour>*/'Score';
         const { head, parRow, windRow, scRow, ptRow, pnRow, tpRow, totPar } = cardRows(HOLES.map((h) => h.par), HOLES.map((h) => variantDef(h).wind), round.scores, myName, cur);
 
         // a career match: the rival's scores and the match, hole by hole
-        let mRows = '';
+        /*<tour>*/let mRows = '';
         const m = round.match;
         if (m) mRows = matchRowsHTML(m, cur);
         const pv = round.pvp;
@@ -16954,19 +17043,19 @@
           }
           mRows = `${row}<td class="tot">${pv.n || ''}</td></tr>${pv.mine && pv.n ? `${netRow}<td class="tot">${t.played ? nt : ''}</td></tr>` : ''}`;
         }
-        $('scTable').innerHTML = head + parRow + windRow + scRow + (m || pv ? mRows : '') + ptRow + pnRow + tpRow;
+        /*</tour>*/$('scTable').innerHTML = head + parRow + windRow + scRow + /*<tour>*/(m || pv ? mRows : '') + /*</tour>*/ptRow + pnRow + tpRow;
         // the course and the date across the top, as on a printed card
-        const crsTier = m ? m.tier : round.tour ? round.tour.tier : careerOn && career ? career.tier : 0;
-        setText('scCourse', `${crsTier && TIERS[crsTier] ? TIERS[crsTier].course : pv ? 'Friends\' challenge' : 'The test course'} · ${new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`);
+        const crsTier = /*<tour>*/m ? m.tier : round.tour ? round.tour.tier : careerOn && career ? career.tier : /*</tour>*/0;
+        setText('scCourse', `${crsTier && TIERS[crsTier] ? TIERS[crsTier].course : /*<tour>*/pv ? 'Friends\' challenge' : /*</tour>*/'The test course'} · ${new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`);
         $('scTitle').textContent = final ? 'Final scorecard' : 'Scorecard';
-        $('scTag').textContent = final ? `${t.strokes} strokes · ${fmtToPar(t.toPar)}` : t.played ? `${fmtToPar(t.toPar)} thru ${t.played}` : round.match || round.tour || round.pvp ? 'Round' : `Arcade · ${arcOf().name}`;
+        $('scTag').textContent = final ? `${t.strokes} strokes · ${fmtToPar(t.toPar)}` : t.played ? `${fmtToPar(t.toPar)} thru ${t.played}` : /*<tour>*/round.match || round.tour || round.pvp ? 'Round' : /*</tour>*/`Arcade · ${arcOf().name}`;
         $('scMsg').textContent = final
           ? `${msg ? msg + '\n\n' : ''}Round complete: ${t.strokes} strokes on a par ${totPar} (${fmtToPar(t.toPar)}) · ${t.putts} putts`
           : msg;
         $('scNext').textContent = final ? 'Play again' : hp.done ? `Next: Hole ${hp.holeIdx + 2} (N)` : 'Back to the hole (K)';
         $('scClose').textContent = final ? '🏠 Back to the home screen' : 'Close (K)';      // (user request, 2026-11-20: it went to the range)
         // a career match: its own title, status and buttons, and no leaderboard
-        if (m) {
+        /*<tour>*/if (m) {
           const s = matchStatus(m), nn = npcById(m.npc);
           $('scTitle').textContent = `${final ? 'Final · ' : ''}${m.format === 'skins' ? `Skins at ${money(m.stake)} a hole` : 'Match'} vs ${nn.first} “${nn.nick}” ${nn.last}`;
           $('scTag').textContent = m.settled ? settledTag(m) : `${matchLine(m)} thru ${s.played}${m.format === 'skins' ? '' : ` · ${money(m.stake)} a match`}`;
@@ -17008,13 +17097,13 @@
           sc.classList.add('on');
           return;
         }
-        // the end of the round: a top-10 score gets the initials screen, then the board
+        /*</tour>*/// the end of the round: a top-10 score gets the initials screen, then the board
         const sc = $('scorecard');
         scMode = 'round';
         sc.classList.remove('entry', 'board', 'lbonly');
         if (final) {
           if (!round.lbDone && !lbEntry.active) {            // signed in: your profile's name goes up; a guest types arcade initials
-            if (session && sync.state !== 'signedout') submitAsProfile(); else startEntry();
+            /*<tour>*/if (session && sync.state !== 'signedout') submitAsProfile(); else /*</tour>*/startEntry();
           }
           if (lbEntry.active) sc.classList.add('entry');
           else { renderBoard(); sc.classList.add('board'); }
@@ -17022,26 +17111,26 @@
         sc.classList.add('on');
       }
       function scorecardNext() {
-        if (scMode === 'arch') return closeArchivedCard();
+        /*<tour>*/if (scMode === 'arch') return closeArchivedCard();
         if (scMode === 'pvp') return closeSharedCard();
-        if (scMode === 'board') { if (round.on) return hideScorecard(); hideScorecard(); return arcadeIntro(); }
-        if (outcomeDue()) return;
+        /*</tour>*/if (scMode === 'board') { if (round.on) return hideScorecard(); hideScorecard(); return arcadeIntro(); }
+        /*<tour>*/if (outcomeDue()) return;
         if (round.match) { if (round.over) return matchToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
         if (round.pvp) { if (round.over) return pvpToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
         if (round.tour) { if (round.over) return tourToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
-        if (round.over) return startRound();
+        /*</tour>*/if (round.over) return startRound();
         if (hp.done) return nextRoundHole();
         hideScorecard();
       }
       function scorecardClose() {
-        if (scMode === 'arch') return closeArchivedCard();
+        /*<tour>*/if (scMode === 'arch') return closeArchivedCard();
         if (scMode === 'pvp') return closeSharedCard();
-        if (scMode === 'board') return hideScorecard();
-        if (outcomeDue()) return;
+        /*</tour>*/if (scMode === 'board') return hideScorecard();
+        /*<tour>*/if (outcomeDue()) return;
         if (round.match && (round.over || round.match.settled)) return matchToClubhouse();
         if (round.pvp && round.over) return pvpToClubhouse();
         if (round.tour && round.over) return tourToClubhouse();
-        if (round.over) {                                    // a finished arcade round: off the course and back to the home screen
+        /*</tour>*/if (round.over) {                                    // a finished arcade round: off the course and back to the home screen
           if (swing.active) return;
           endRound(); if (hp.on) leaveHole();
           return openHome();
@@ -17114,7 +17203,7 @@
         if (lbBoardShown()) renderBoard();
         try {
           const r = await fetch(LB_API, {
-            method: 'POST', headers: { 'Content-Type': 'application/json', ...(entry.pro && session ? { Authorization: `Bearer ${session.token}` } : {}) },
+            method: 'POST', headers: { 'Content-Type': 'application/json'/*<tour>*/, ...(entry.pro && session ? { Authorization: `Bearer ${session.token}` } : {})/*</tour>*/ },
             body: JSON.stringify({ name: entry.name, strokes: entry.strokes, putts: entry.putts, par: entry.par, holes: HOLES.length, course: c, scores }),
           });
           const j = await r.json().catch(() => ({}));
@@ -17141,7 +17230,7 @@
       function renderEntry() {
         [...$('lbSlots').children].forEach((s, i) => { s.textContent = lbEntry.chars[i]; s.classList.toggle('on', i === lbEntry.pos); });
       }
-      // a signed-in player's round: straight onto the board under their profile name (the server takes the name from the
+      /*<tour>*/// a signed-in player's round: straight onto the board under their profile name (the server takes the name from the
       // sign-in, not from us), no initials screen
       function submitAsProfile() {
         round.lbDone = true;
@@ -17151,6 +17240,7 @@
         lbEntry.mineT = entry.t;
         lbSubmit(entry, HOLES.map((_, i) => (round.scores[i] ? round.scores[i].strokes : 0)));
       }
+      /*</tour>*/
       function finishEntry(save) {
         if (!lbEntry.active) return;
         lbEntry.active = false; round.lbDone = true;
@@ -17200,12 +17290,12 @@
           if (!r) { h += `<tr><td class="empty">${ordinal(i + 1)}</td><td class="empty">---</td><td class="empty">--</td><td class="empty">--</td><td class="empty">--</td><td class="empty">--/--</td></tr>`; continue; }
           const d = new Date(r.t), cls = [i < 3 ? `r${i + 1}` : '', r.t === lbEntry.mineT ? 'mine' : ''].join(' ').trim();
           // (the admin can take a round off the world board: audit 3.6; the server checks it's the admin)
-          const rm = adminOk && lbOnline && r.id ? ` <button class="lb-rm" data-lbrm="${escH(r.t)}|${escH(r.id)}" title="Remove this round from the world board">✕</button>` : '';
+          const rm = /*<tour>*/adminOk && lbOnline && r.id ? ` <button class="lb-rm" data-lbrm="${escH(r.t)}|${escH(r.id)}" title="Remove this round from the world board">✕</button>` : /*</tour>*/'';
           h += `<tr${cls ? ` class="${cls}"` : ''}><td>${ordinal(i + 1)}</td><td>${escH(r.name)}</td><td>${r.strokes}</td><td>${fmtToPar(r.toPar)}</td><td>${r.putts}</td><td>${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}${rm}</td></tr>`;
         }
         $('lbTable').innerHTML = h;
       }
-      async function lbAdminClick(e) {
+      /*<tour>*/async function lbAdminClick(e) {
         const b = e.target.closest('button[data-lbrm]');
         if (!b || !adminOk || !session) return;
         b.blur();
@@ -17220,11 +17310,12 @@
         } catch (err) { lbInfo.note = `Couldn't remove it (${err.message})`; }
         renderBoard();
       }
+      /*</tour>*/
       // the board on its own (button or L), any time
       function showLeaderboard() {
         if (lbEntry.active) return;
-        $('scPressBox').classList.remove('on'); $('scBets').innerHTML = '';
-        renderBoard();
+        /*<tour>*/$('scPressBox').classList.remove('on'); $('scBets').innerHTML = '';
+        /*</tour>*/renderBoard();
         if (!lbBusy) lbFetch();                              // freshen it from the world board
         const sc = $('scorecard');
         scMode = 'board';
@@ -17317,12 +17408,13 @@
           g.beginPath(); g.moveTo(X(h.a.x, h.a.z), Y(h.a.x, h.a.z)); g.lineTo(X(h.b.x, h.b.z), Y(h.b.x, h.b.z)); g.stroke();
         }
         g.setLineDash([]);
-        if (round.match && npc.plan) {                        // a career match: the rival's shots and his ball, in orange
+        /*<tour>*/if (round.match && npc.plan) {                        // a career match: the rival's shots and his ball, in orange
           g.strokeStyle = 'rgba(255,165,61,.95)'; g.lineWidth = 1.5;
           for (const h of npc.trail) { g.beginPath(); g.moveTo(X(h.a.x, h.a.z), Y(h.a.x, h.a.z)); g.lineTo(X(h.b.x, h.b.z), Y(h.b.x, h.b.z)); g.stroke(); }
           if (npc.anim) { const a = npc.anim.st.from; g.setLineDash([2, 2]); g.beginPath(); g.moveTo(X(a.x, a.z), Y(a.x, a.z)); g.lineTo(X(npc.cur.x, npc.cur.z), Y(npc.cur.x, npc.cur.z)); g.stroke(); g.setLineDash([]); }
           if (!npc.holed && npc.cur) { g.fillStyle = '#ffa53d'; g.strokeStyle = '#000'; g.lineWidth = 1; g.beginPath(); g.arc(X(npc.cur.x, npc.cur.z), Y(npc.cur.x, npc.cur.z), 3.4, 0, 7); g.fill(); g.stroke(); }
         }
+        /*</tour>*/
         if (isChip() && !hp.done && state.view !== 'flight' && green.chip) {                       // chip: line to the landing marker
           const a = heading(state.aim), m = green.toSurface(a.x * state.markDist, a.z * state.markDist);
           // a faint ball -> pin line first: the map is not turned to the shot, so this shows the landing line runs along it
@@ -17582,7 +17674,7 @@
             : isPutt() && markRead && !puttRun ? `${fmtBandFt(markRead.cupLo, markRead.cupHi)} ft`
             : isChip() && chipRead ? `${fmtBandYd(chipRead.pinLo, chipRead.pinHi)} yds` : fmtToPin(pinDist()));
         }
-        {   // a rival match: his shots so far on this hole (counting the one in the air) and where his ball lies
+        /*<tour>*/{   // a rival match: his shots so far on this hole (counting the one in the air) and where his ball lies
           const el = $('hbNpc'), on = !!(round.match && npc.plan);
           el.classList.toggle('on', on);
           if (on) {
@@ -17601,16 +17693,18 @@
             setText('hbNpcW', where);
           }
         }
+        /*</tour>*/
         setText('tbPinL', isPutt() ? 'Hole' : 'To the pin'); setText('panelTitle', `⛳ ${HOLE.name} · Par ${HOLE.par}`);
         setText('mapTag', '');                               // (the distance is on the shot counter: the map's header doesn't repeat it)
         setText('tbHole', hp.done ? `Holed in ${hp.strokes}` : `Shot ${hp.strokes + 1}${hp.putts ? ` · ${hp.putts} putt${hp.putts === 1 ? '' : 's'}` : ''}`);
         if (round.on) {          // test round: score so far (holes finished) and where you are
           const t = roundTotals();
-          const pv = round.pvp;
-          setText('tbRoundL', round.match ? (round.match.format === 'skins' ? `Skins · ${money(round.match.stake)} a hole` : `Match · ${money(round.match.stake)}`)
-            : pv ? `${FR_FMT[pv.format]} · ${money(pv.stake)}` : round.tour ? `🏆 ${tourById(round.tour.id).short}` : `🕹 Arcade · ${arcOf().short}`);
-          const tps = round.tour && t.played ? tourStandings(round.tour, t.played).find((r) => r.me) : null;
+          /*<tour>*/const pv = round.pvp;
+          /*</tour>*/setText('tbRoundL', /*<tour>*/round.match ? (round.match.format === 'skins' ? `Skins · ${money(round.match.stake)} a hole` : `Match · ${money(round.match.stake)}`)
+            : pv ? `${FR_FMT[pv.format]} · ${money(pv.stake)}` : round.tour ? `🏆 ${tourById(round.tour.id).short}` : /*</tour>*/`🕹 Arcade · ${arcOf().short}`);
+          /*<tour>*/const tps = round.tour && t.played ? tourStandings(round.tour, t.played).find((r) => r.me) : null;
           const mt = round.match ? `${round.match.settled ? round.match.result.replace(/:.*/, '') : `${matchLine(round.match)} vs ${npcById(round.match.npc).nick}`} · ` : pv ? `vs ${pv.vsName} · ` : tps ? `${posText(tps)} · ` : '';
+          /*</tour>*//*arcade: const mt = ''; */
           setText('tbRound', mt + (t.played ? `${fmtToPar(t.toPar)} thru ${t.played} · Hole ${hp.holeIdx + 1}/${HOLES.length}` : `Hole ${hp.holeIdx + 1}/${HOLES.length}`));
           $('tbRoundCell').classList.toggle('over', t.toPar > 0);
         }
@@ -17625,15 +17719,16 @@
         if (dir) {
           const u = usableOrder();
           if (!u.length) return;
-          // a pro-shop demo you can swap with your own club is two stops in its slot: yours, then the demo
+          /*<tour>*/// a pro-shop demo you can swap with your own club is two stops in its slot: yours, then the demo
           const swap = demoCanSwap(), stops = u.flatMap((k) => (swap && k === demo.idx ? [[k, false], [k, true]] : [[k, null]]));
           const p = stops.findIndex(([k, d]) => k === state.club && (d === null || d === demo.on));
           const [k, d] = stops[p < 0 ? 0 : (p + dir + stops.length) % stops.length];
           if (d !== null && d !== demo.on) toggleDemo(d);
           i = k;
+          /*</tour>*//*arcade: const p = u.indexOf(state.club); i = u[p < 0 ? 0 : (p + dir + u.length) % u.length]; */
         } else if (i === undefined || i < 0 || i >= CLUBS.length || !canUseClub(i)) {
-          if (careerOn) toast(career.snapped.includes(i) ? `Your ${CLUBS[i].name} is snapped\nRepair it in the pro shop` : 'Not in your bag', 1200);
-          return;
+          /*<tour>*/if (careerOn) toast(career.snapped.includes(i) ? `Your ${CLUBS[i].name} is snapped\nRepair it in the pro shop` : 'Not in your bag', 1200);
+          /*</tour>*/return;
         }
         state.club = i;
         telemetry = null;
@@ -17947,23 +18042,24 @@
         let h = '';
         $('bagTag').textContent = state.lie === 'fairway' ? 'full swing, yds' : `${LIES[state.lie].name.toLowerCase()} · per ${state.perception}, yds`;
         // in a career: only the clubs it owns (snapped ones struck through), keys in the bag's order, the set's name above
-        const irons = careerOn && Object.entries(career.bag).find(([i, id]) => +i >= 4 && +i <= 10 && id);
-        setText('bagTitle', careerOn && demo && demo.model ? `Bag · demo: ${CLUB_MODELS[demo.model].name}`
+        /*<tour>*/const irons = careerOn && Object.entries(career.bag).find(([i, id]) => +i >= 4 && +i <= 10 && id);/*</tour>*/
+        setText('bagTitle', /*<tour>*/careerOn && demo && demo.model ? `Bag · demo: ${CLUB_MODELS[demo.model].name}`
           : careerOn ? `Bag${irons && CLUB_MODELS[irons[1]] ? ` · ${CLUB_MODELS[irons[1]].name.replace(/ \(\d{4}\)/, '')} irons` : ''}`
-          : arcadeBagOn() ? `Arcade bag · ${CLUB_MODELS[ARCADE_BAG[7]].name} irons` : 'Bag');
-        const pair = careerOn && demoCanSwap();               // trying a club you have one of: both rows, and the difference
+          : /*</tour>*/arcadeBagOn() ? `Arcade bag · ${CLUB_MODELS[ARCADE_BAG[7]].name} irons` : 'Bag');
+        /*<tour>*/const pair = careerOn && demoCanSwap();               // trying a club you have one of: both rows, and the difference
+        /*</tour>*/
         bagOrder().forEach((i, pos) => {
-          if (pair && i === demo.idx) { h += demoPairRows(i, pos); return; }
-          const c = CLUBS[i], r = lieRead(i), snapped = careerOn && career.snapped.includes(i);
+          /*<tour>*/if (pair && i === demo.idx) { h += demoPairRows(i, pos); return; }/*</tour>*/
+          const c = CLUBS[i], r = lieRead(i), snapped = /*<tour>*/careerOn && career.snapped.includes(i)/*</tour>*//*arcade:false*/;
           const fit = clubFit(c, state.lie, isTeed(c)), risk = fit.s >= 0.5 ? ' risk2' : fit.s > 0.02 ? ' risk1' : '';      // how this club suits the current lie
-          const mid = careerOn ? career.bag[i] : arcadeBagOn() ? ARCADE_BAG[i] : null;      // (the arcade's set shows its models too)
+          const mid = /*<tour>*/careerOn ? career.bag[i] : /*</tour>*/arcadeBagOn() ? ARCADE_BAG[i] : null;      // (the arcade's set shows its models too)
           const model = mid && CLUB_MODELS[mid] ? modelName(mid) : '';
-          const tip = snapped ? ' title="Snapped: repair it in the pro shop"'
-            : fit.s > 0.02 ? ` title="${model ? `${model} · ` : ''}From this lie: ${Math.round(fit.mishit * 100)}% chance of a topped or fat shot, about ${Math.round((1 - fit.power) * 100)}% less ball speed, much wider dispersion"`
+          const tip = /*<tour>*/snapped ? ' title="Snapped: repair it in the pro shop"'
+            : /*</tour>*/fit.s > 0.02 ? ` title="${model ? `${model} · ` : ''}From this lie: ${Math.round(fit.mishit * 100)}% chance of a topped or fat shot, about ${Math.round((1 - fit.power) * 100)}% less ball speed, much wider dispersion"`
             : model ? ` title="${model}: ${CLUB_MODELS[mid].note}"` : '';
-          const lux = careerOn && isLux(career.bag[i]) && !(demo && demo.idx === i && demo.on);
+          const lux = /*<tour>*/careerOn && isLux(career.bag[i]) && !(demo && demo.idx === i && demo.on)/*</tour>*//*arcade:false*/;
           // (user request, 2026-11-20: the make and model beside each club, on a hole and on the range; the year is left off)
-          const shown = careerOn && demo && demo.idx === i && demo.on ? demo.model : careerOn ? career.bag[i] : null;
+          const shown = /*<tour>*/careerOn && demo && demo.idx === i && demo.on ? demo.model : careerOn ? career.bag[i] : /*</tour>*/null;
           const make = shown && CLUB_MODELS[shown] ? `<em class="bag-tag">${CLUB_MODELS[shown].brand} ${CLUB_MODELS[shown].name.replace(/ \(\d{4}\)/, '')}</em>` : '';
           const cname = make ? WEDGE_SHORT[c.name] || c.name : c.name;      // (with the make beside it, a wedge is PW / AW / GW / SW / LW)
           h += `<div class="bag-row${i === state.club ? ' on' : ''}${risk}${snapped ? ' snapped' : ''}${lux ? ' lux' : ''}" data-i="${i}"${tip}><kbd>${CLUB_KEYS[pos] || '·'}</kbd><span>${lux ? '✦ ' : ''}${cname}${snapped ? ' ✕ snapped' : fit.s >= 0.5 ? ' ✕' : fit.s > 0.02 ? ' ⚠' : ''}${make}</span><b>${snapped ? '—' : r.carryTxt}</b><i>${snapped ? '—' : r.totalTxt}</i></div>`;
@@ -17977,7 +18073,7 @@
           else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
         }
       }
-      // a demo from the pro shop next to your own club in the same slot: your row, the demo's row (gold), and what changes.
+      /*<tour>*/// a demo from the pro shop next to your own club in the same slot: your row, the demo's row (gold), and what changes.
       // Both are read with the same setup and lie, so the difference is the club; click a row (or its key again) to swap.
       function demoPairRows(i, pos) {
         const own = career.bag[i], c = CLUBS[i], sel = i === state.club;
@@ -18015,7 +18111,7 @@
           + `<div class="bag-cmp"><span>Demo vs yours: carry ${d(a.carryMid, b.carryMid)} · total ${d(a.totalMid, b.totalMid)} yds</span>`
           + `<span class="hint">${sel ? `${CLUB_KEYS[pos] || 'Click'} ${CLUB_KEYS[pos] ? 'again ' : ''}swaps · hitting ${demo.on ? 'the demo' : 'yours'}` : 'click a row to hit it'}</span>${stats}</div>`;
       }
-      function setPin(i) { state.pin = (i + PINS.length) % PINS.length; state.aim = PINS[state.pin].brg; }
+      /*</tour>*/function setPin(i) { state.pin = (i + PINS.length) % PINS.length; state.aim = PINS[state.pin].brg; }
       function togglePractice() {
         state.practice = !state.practice;
         $('btnPractice').textContent = `Practice: ${state.practice ? 'On' : 'Off'}`;
@@ -18053,21 +18149,25 @@
           && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.code)) return;
         if (tut.open) return tutKey(e);                  // the how-to-play lessons, over everything (the home screen too)
         if (homeOpen) return homeKey(e);                 // the home screen (typing a password, Esc back to the game)
-        if (beatOpen) return beatKey(e);                 // the debt collector's visit (Enter to get up)
+        /*<tour>*/if (beatOpen) return beatKey(e);                 // the debt collector's visit (Enter to get up)
         if (outOpen) return outcomeKey(e);               // the payoff screen at the end of a match / invitational
+        /*</tour>*/
         if (lbEntry.active) return entryKey(e);          // the initials screen takes every key
         if (introOpen) return introKey(e);               // so does the course preview (Enter starts, Esc cancels)
-        if (clubOpen) return clubKey(e);                 // and the clubhouse (Esc / J to the range, typing a name)
+        /*<tour>*/if (clubOpen) return clubKey(e);                 // and the clubhouse (Esc / J to the range, typing a name)
+        /*</tour>*/
         if (dropOpen) return dropKey(e);                 // and the drop card (1-3, Esc)
         if (tipsOn) return tipsKey(e);                   // and the tips window: → / Enter next, ← back, Esc / I close
-        if (tossOpen) return tossKey(e);                 // the tee toss (Enter once it has landed)
+        /*<tour>*/if (tossOpen) return tossKey(e);                 // the tee toss (Enter once it has landed)
         if ((npcTurn || npc.starting) && !['KeyK', 'KeyI', 'KeyL'].includes(e.code)) {          // the rival is playing (or about to tee off): Space / Enter hurry him up
           if (['Space', 'Enter', 'NumpadEnter', 'KeyR'].includes(e.code)) { e.preventDefault(); npcHurry(); }
           return;
         }
+        /*</tour>*/
         if (e.code === 'KeyU' && !e.repeat) return openDrop();       // take a drop (unplayable)
         if (e.code === 'KeyI' && !e.repeat && tipsAvail()) return setTips(true);       // caddie tips
-        if (e.code === 'KeyJ' && !e.repeat && !swing.active) return openClubhouse();   // the career's clubhouse
+        /*<tour>*/if (e.code === 'KeyJ' && !e.repeat && !swing.active) return openClubhouse();   // the career's clubhouse
+        /*</tour>*/
         const c = e.code;
         if (['Space', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(c)) e.preventDefault();
         if (c === 'ShiftLeft' || c === 'ShiftRight') { state.peekKey = true; return; }
@@ -18076,10 +18176,11 @@
           return;
         }
         held.add(c);
-        if (c === 'Escape' && !e.repeat && !swing.active) return careerOn && demo && !hp.on && !round.on ? backToShop() : openHome();   // home (a round says to leave it first); trying a club: back to the shop
+        if (c === 'Escape' && !e.repeat && !swing.active) return /*<tour>*/careerOn && demo && !hp.on && !round.on ? backToShop() : /*</tour>*/openHome();   // home (a round says to leave it first); trying a club: back to the shop
         if (c === 'KeyH' && !e.repeat) return hp.on ? leaveHole() : enterHole();
         if (c === 'KeyK' && !e.repeat && round.on) { if ($('scorecard').classList.contains('on')) hideScorecard(); else showScorecard(); return; }   // K only shows / hides
-        if (c === 'KeyP' && !e.repeat && round.match && canPress(round.match)) return playerPress();     // a career match: double when 2 down
+        /*<tour>*/if (c === 'KeyP' && !e.repeat && round.match && canPress(round.match)) return playerPress();     // a career match: double when 2 down
+        /*</tour>*/
         if (c === 'KeyN' && !e.repeat && round.on && !swing.active) {      // a test round goes in order: N only once the hole is finished
           if (hp.done) scorecardNext(); else toast(`Finish the hole first\nThe round plays all ${HOLES.length} holes in order`, 1800);
           return;
@@ -18119,15 +18220,16 @@
         if (c === 'Tab' && !e.repeat) { if (hp.on) { hp.aimPin = !hp.aimPin; state.aim = holeAim(hp.aimPin); return; } return setPin(state.pin + (e.shiftKey ? -1 : 1)); }
         if (CLUB_CODES.includes(c)) {                         // the keys follow the bag's order
           const t = bagOrder()[CLUB_CODES.indexOf(c)] ?? -1;
-          if (!e.repeat && demo && demo.model && t === demo.idx && t === state.club && demoCanSwap()) return toggleDemo();   // again: the demo ⇄ your own
+          /*<tour>*/if (!e.repeat && demo && demo.model && t === demo.idx && t === state.club && demoCanSwap()) return toggleDemo();   // again: the demo ⇄ your own
+          /*</tour>*/
           return setClub(t);
         }
         if (c === 'BracketLeft') return setClub(0, -1);       // [ ] step through the bag
         if (c === 'BracketRight') return setClub(0, 1);
         if (state.view !== 'address' || isPeeking()) return;
-        const tw = careerOn && !isChip() && shotLocked('draw') && shotLocked('fade') ? COACH.tweakMax : 0;     // (career: ±2° until a shape is learned)
-        if (tw && ['KeyQ', 'KeyE', 'KeyZ', 'KeyC'].includes(c) && !e.repeat && Math.abs(c === 'KeyQ' || c === 'KeyE' ? state.face : state.stance) >= tw) toast('🔒 Bigger face and stance changes\nLearn the draw or the fade from the coach', 1600);
-        const before = { face: state.face, stance: state.stance, ballPos: state.ballPos };
+        const tw = /*<tour>*/careerOn && !isChip() && shotLocked('draw') && shotLocked('fade') ? COACH.tweakMax : /*</tour>*/0;     // (career: ±2° until a shape is learned)
+        /*<tour>*/if (tw && ['KeyQ', 'KeyE', 'KeyZ', 'KeyC'].includes(c) && !e.repeat && Math.abs(c === 'KeyQ' || c === 'KeyE' ? state.face : state.stance) >= tw) toast('🔒 Bigger face and stance changes\nLearn the draw or the fade from the coach', 1600);
+        /*</tour>*/const before = { face: state.face, stance: state.stance, ballPos: state.ballPos };
         if (c === 'KeyQ') { state.face = step(state.face, -0.5, -(tw || 10), tw || 10, 0.5); telemetry = null; }
         if (c === 'KeyE') { state.face = step(state.face, 0.5, -(tw || 10), tw || 10, 0.5); telemetry = null; }
         if (c === 'KeyA') { state.ballPos = step(state.ballPos, -0.1, -1, 1, 0.1); telemetry = null; }
@@ -18140,10 +18242,11 @@
         // swing audit S7.1: what the coach sells can't be set up by hand first. Until a shape is learned the face may sit
         // only COACH.tweakFtp off the stance (face and stance together just re-aim; the gap between them is what curves
         // it). Until Low 2 / High 2 are learned, the ladder plus ball position can't pass one level either way.
-        if (tw && Math.abs(state.face - state.stance) > COACH.tweakFtp + 1e-9 && ['KeyQ', 'KeyE', 'KeyZ', 'KeyC'].includes(c)) {
+        /*<tour>*/if (tw && Math.abs(state.face - state.stance) > COACH.tweakFtp + 1e-9 && ['KeyQ', 'KeyE', 'KeyZ', 'KeyC'].includes(c)) {
           state.face = before.face; state.stance = before.stance;
           if (!e.repeat) toast('🔒 Curving it from the setup\nLearn the draw or the fade from the coach', 1600);
         }
+        /*</tour>*/
         if ((c === 'KeyA' || c === 'KeyD') && heightCapBallPos()) { state.ballPos = before.ballPos; if (!e.repeat) lockedToast(c === 'KeyA' ? 'stinger' : 'high'); }
         if (c === 'KeyX' && !e.repeat) return resetSetup();
       });
@@ -18244,7 +18347,8 @@
         $('bagList').addEventListener('click', (e) => {
           const row = e.target.closest('.bag-row');
           if (!row) return;
-          if (row.dataset.pick) { toggleDemo(row.dataset.pick === 'demo'); return setClub(+row.dataset.i); }     // a demo and your own: pick one
+          /*<tour>*/if (row.dataset.pick) { toggleDemo(row.dataset.pick === 'demo'); return setClub(+row.dataset.i); }     // a demo and your own: pick one
+          /*</tour>*/
           setClub(+row.dataset.i);
         });
         canvas.addEventListener('wheel', (e) => {
@@ -18290,7 +18394,7 @@
           if (round.on) return quitRound();
           arcadeIntro();
         });
-        $('btnCareer').addEventListener('click', (e) => { e.currentTarget.blur(); if (!clubOpen) openClubhouse(); else if (career) careerToRange(); else closeClubhouse(); });
+        /*<tour>*/$('btnCareer').addEventListener('click', (e) => { e.currentTarget.blur(); if (!clubOpen) openClubhouse(); else if (career) careerToRange(); else closeClubhouse(); });
         $('chCreate').addEventListener('click', (e) => { e.currentTarget.blur(); submitSignIn(); });
         $('siTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { b.blur(); siMode = b.dataset.si; renderSignIn(); } });
         $('chSwitch').addEventListener('click', (e) => { e.currentTarget.blur(); switchPlayer(); });
@@ -18314,9 +18418,9 @@
         $('chRetire').addEventListener('click', (e) => { e.currentTarget.blur(); retireCareer(); });
         $('clubhouse').querySelector('.ch-menu').addEventListener('click', (e) => { const b = e.target.closest('button[data-go]'); if (b) { b.blur(); clubhouseGo(b.dataset.go); } });
         updateCareerUI();
-        $('riStart').addEventListener('click', (e) => { e.currentTarget.blur(); introStart(); });
+        /*</tour>*/$('riStart').addEventListener('click', (e) => { e.currentTarget.blur(); introStart(); });
         $('riCancel').addEventListener('click', (e) => { e.currentTarget.blur(); introCancel(); });
-        // the match picker
+        /*<tour>*/// the match picker
         $('cmNpcs').addEventListener('click', (e) => { const c = e.target.closest('.cm-npc'); if (c) { cmSel = +c.dataset.i; renderMatchPicker(); } });
         $('teeSpots').addEventListener('click', (e) => { const b = e.target.closest('.tee-spot'); if (b) { b.blur(); cmSel = +b.dataset.i; renderMatchPicker(); } });     // click a rival on the tee
         $('cmStake').addEventListener('input', () => updateStakeLabel());
@@ -18327,11 +18431,12 @@
         $('cmBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('chShop').addEventListener('click', shopClick);
         $('chTiers').addEventListener('click', tierClick);
+        /*</tour>*/
         // the home screen
         $('btnHome').addEventListener('click', (e) => { e.currentTarget.blur(); openHome(); });
         $('tbHome').addEventListener('click', (e) => { e.currentTarget.blur(); openHome(); });
         $('areaTabs').addEventListener('click', (e) => { const b = e.target.closest('button[data-area]'); if (b) { b.blur(); goArea(b.dataset.area); } });
-        $('hmRoster').addEventListener('click', (e) => {
+        /*<tour>*/$('hmRoster').addEventListener('click', (e) => {
           if (e.target.closest('[data-signin]')) return homeSignIn();
           if (e.target.closest('.hm-pw')) return;
           const p = e.target.closest('.hm-p');
@@ -18351,6 +18456,7 @@
         });
         $('hmDev').addEventListener('change', (e) => { lsSet('golfDevTools', e.target.checked ? 'on' : 'off'); e.target.blur(); applyDevTools(); });
         $('hmMenu').querySelector('.hm-tiles').addEventListener('click', (e) => { const b = e.target.closest('button[data-h]'); if (b) { b.blur(); homeGo(b.dataset.h); } });
+        /*</tour>*/
         $('hmBoardBtn').addEventListener('click', (e) => { e.currentTarget.blur(); closeHome(); showLeaderboard(); });
         // the arcade side: pick a course (its board follows), and play it
         $('hmCourses').addEventListener('click', (e) => {
@@ -18363,15 +18469,15 @@
           const b = e.target.closest('button[data-h]');
           if (!b) return;
           b.blur();
-          if (!homeSigned()) return setText('hmPracErr', 'Pick who\'s playing first, or play as a guest');
+          /*<tour>*/if (!homeSigned()) return setText('hmPracErr', 'Pick who\'s playing first, or play as a guest');/*</tour>*/
           setText('hmPracErr', ''); homeGo(b.dataset.h);
         });
         $('hmArcPlay').addEventListener('click', (e) => {
           e.currentTarget.blur();
-          if (!homeSigned()) return setText('hmArcErr', 'Pick who\'s playing first, or play as a guest');
+          /*<tour>*/if (!homeSigned()) return setText('hmArcErr', 'Pick who\'s playing first, or play as a guest');/*</tour>*/
           setText('hmArcErr', ''); closeHome(); arcadeIntro();
         });
-        $('lbTable').addEventListener('click', lbAdminClick);         // the admin's ✕ on a world-board round (audit 3.6)
+        /*<tour>*/$('lbTable').addEventListener('click', lbAdminClick);         // the admin's ✕ on a world-board round (audit 3.6)
         $('frList').addEventListener('click', friendsClick);           // friends and challenges (M3)
         $('frBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('frRefresh').addEventListener('click', (e) => { e.currentTarget.blur(); loadFriends(); });
@@ -18397,6 +18503,7 @@
         $('coBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('shBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });
         $('ttGo').addEventListener('click', (e) => { e.currentTarget.blur(); closeToss(); });
+        /*</tour>*/
         $('dropOpts').addEventListener('click', (e) => { const o = e.target.closest('.drop-opt'); if (o) takeDrop(+o.dataset.i); });
         $('btnTips').addEventListener('click', (e) => { setTips(!tipsOn); e.currentTarget.blur(); });
         // the how-to-play lessons: the home screen's tiles, the caddie tips' button, the viewer's own buttons
@@ -18517,9 +18624,9 @@
           goalPos.set(cx, H, cz); goalLook.set(cx, 0, cz);
           kp = 6; kq = 8;
         };
-        if (npcTurn) {                                          // a career match: watching the rival play
+        /*<tour>*/if (npcTurn) {                                          // a career match: watching the rival play
           npcCameraPose(goalPos, goalLook); fovGoal = 50; kp = 2.6; kq = 6;
-        } else if (isPutt()) {
+        } else /*</tour>*/if (isPutt()) {
           // The same three states, lower and closer: crouched behind the ball to read it, face-on over the putter to
           // stroke it, a turn of the head down the start line, then watch it roll from behind.
           const dist = green.distFt * FT;
@@ -18591,7 +18698,7 @@
           toWorld(goalPos.set(0, 3, 6)); toWorld(goalLook.set(0, 1, -200));
         }
         // (BUNKER: on a hole's full shots, never inside a bunker's wall or bank: from down in one the cameras ride up)
-        if (hp.on && !onGreenView() && !npcTurn && !(state.view === 'flight' && shot && shot.age >= 0.15)) {
+        if (hp.on && !onGreenView() && /*<tour>*/!npcTurn && /*</tour>*/!(state.view === 'flight' && shot && shot.age >= 0.15)) {
           goalPos.y = Math.max(goalPos.y, bunkerH(hp.ball.x + goalPos.x, hp.ball.z + goalPos.z) + 0.6);
         }
         if (!camReady) { camPos.copy(goalPos); kq = 1e3; camReady = true; }
@@ -18648,7 +18755,7 @@
         const fitNow = clubFit(club, state.lie, isTeed(club));
         const fitTxt = fitNow.s > 0.02 ? `  ·  ${fitNow.s >= 0.5 ? '✕ WRONG CLUB FOR THIS LIE' : '⚠ risky from this lie'} (${Math.round(fitNow.mishit * 100)}% mishit, −${Math.round((1 - fitNow.power) * 100)}% speed)` : '';
         const pSide = chip ? 0 : previewSide(state.club), sideTxt = !chip && Math.abs(pSide) >= 1 ? ` · finishes ${Math.abs(pSide).toFixed(0)} yd ${pSide > 0 ? 'R' : 'L'}` : '';     // (S9.3: the average finish)
-        const demoTxt = careerOn && demo && demo.model && demo.idx === state.club ? (demo.on ? ' (DEMO)' : ' (yours)') : '';       // a pro-shop demo in this slot
+        const demoTxt = /*<tour>*/careerOn && demo && demo.model && demo.idx === state.club ? (demo.on ? ' (DEMO)' : ' (yours)') : /*</tour>*/'';       // a pro-shop demo in this slot
         setText('tbClub', chip ? `${club.name}${demoTxt} · ${CHIP_TYPES[state.chipType].name}${fitTxt}`
           : `${club.name}${demoTxt}${shotName() !== 'Stock' ? ` · ${shotName()}` : ''} · ${read.carryTxt} yd carry / ${read.totalTxt} total${sideTxt}${fitTxt}`);
         $('tbClub').style.color = fitNow.s >= 0.5 ? 'var(--red)' : fitNow.s > 0.02 ? 'var(--amber)' : '';
@@ -18715,8 +18822,8 @@
 
         // hint line
         let hint;
-        if (npcTurn) hint = `<b>${npcById(round.match.npc).nick}</b> is playing · <kbd>Space</kbd> or click to hurry him up`;
-        else if (hp.on && hp.done) hint = doneHint();
+        /*<tour>*/if (npcTurn) hint = `<b>${npcById(round.match.npc).nick}</b> is playing · <kbd>Space</kbd> or click to hurry him up`;
+        else /*</tour>*/if (hp.on && hp.done) hint = doneHint();
         else if (chip && state.view === 'overhead') hint = `<kbd>Click</kbd> / drag or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> place the landing spot · <kbd>F</kbd> reset it · <kbd>1</kbd>–<kbd>4</kbd> shot type · <kbd>Wheel</kbd> zoom (${state.puttZoom === 'green' ? 'full green' : 'chip'}) · <kbd>V</kbd> green read · <kbd>Space</kbd> step in`;
         else if (chip && state.view === 'scout') hint = `<kbd>V</kbd> overhead · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move the landing spot · <kbd>F</kbd> reset it · <kbd>1</kbd>–<kbd>4</kbd> shot type · <kbd>[</kbd><kbd>]</kbd> or wheel: club · <kbd>Space</kbd> step in${hp.on ? '' : ' · <kbd>N</kbd> new chip · <kbd>Shift+N</kbd> new green · <kbd>C</kbd> range'}`;
         else if (chip && state.view === 'flight') hint = hp.on ? '<kbd>R</kbd> walk to the ball' : '<kbd>R</kbd> chip it again · <kbd>N</kbd> new chip · <kbd>T</kbd> clear trails';
@@ -18731,8 +18838,8 @@
         }
         else if (peek) hint = 'Looking down the line — swing is locked · <kbd>A</kbd><kbd>D</kbd> adjust aim · Orange = feet, white = target line';
         else hint = 'Hold <kbd>Left-Click</kbd>: pull the ring left, swing it back <b>through the ball</b> · <kbd>F</kbd> shape · <kbd>B</kbd> spin · <kbd>W</kbd> lower / <kbd>S</kbd> higher · <kbd>Q</kbd><kbd>E</kbd> face · <kbd>A</kbd><kbd>D</kbd> ball · <kbd>Z</kbd><kbd>C</kbd> stance · <kbd>X</kbd> back to the shot type · <kbd>Shift</kbd> peek · <kbd>P</kbd> practice · <kbd>Space</kbd> back';
-        if (hp.on && !hp.done && !isPutt() && hint && state.view !== 'flight' && !swing.active && !npcTurn) hint += ' · <kbd>U</kbd> take a drop';
-        if (round.on && hint && !hp.done && !npcTurn) hint += ' · <kbd>K</kbd> scorecard';
+        if (hp.on && !hp.done && !isPutt() && hint && state.view !== 'flight' && !swing.active/*<tour>*/ && !npcTurn/*</tour>*/) hint += ' · <kbd>U</kbd> take a drop';
+        if (round.on && hint && !hp.done/*<tour>*/ && !npcTurn/*</tour>*/) hint += ' · <kbd>K</kbd> scorecard';
         if (txtCache.get('hint') !== hint) { txtCache.set('hint', hint); $('hint').innerHTML = hint; }
 
         // ---- telemetry card
@@ -18891,8 +18998,8 @@
         $('tbSetup').style.color = '';
 
         let hint;
-        if (npcTurn) hint = `<b>${npcById(round.match.npc).nick}</b> is playing · <kbd>Space</kbd> or click to hurry him up`;
-        else if (hp.on && hp.done) hint = doneHint();
+        /*<tour>*/if (npcTurn) hint = `<b>${npcById(round.match.npc).nick}</b> is playing · <kbd>Space</kbd> or click to hurry him up`;
+        else /*</tour>*/if (hp.on && hp.done) hint = doneHint();
         else if (state.view === 'overhead') hint = `<kbd>Click</kbd> / drag or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> place target marker · <kbd>C</kbd> reset to cup · <kbd>Wheel</kbd> zoom (${state.puttZoom === 'green' ? 'full green' : 'putt'}) · <kbd>V</kbd> green read · <kbd>Space</kbd> step in`;
         else if (state.view === 'scout' && hp.on) hint = '<kbd>V</kbd> overhead view · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move marker · <kbd>C</kbd> cup · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> scale · <kbd>[</kbd><kbd>]</kbd> putter · <kbd>Space</kbd> step in';
         else if (state.view === 'scout') hint = '<kbd>V</kbd> overhead view · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move marker · <kbd>C</kbd> cup · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> scale · <kbd>[</kbd><kbd>]</kbd> putter · <kbd>N</kbd> new putt · <kbd>Shift+N</kbd> new green · <kbd>Space</kbd> step in · <kbd>G</kbd> range';
@@ -18900,8 +19007,8 @@
         else if (swing.active) hint = swing.phase === 'ready' || swing.phase === 'back' ? 'Draw the putter <b>back</b> into the marker band…' : 'Stroke it <b>through the gate</b> at the same rhythm you took it back';
         else if (peek) hint = 'Looking down your start line — the stroke is locked · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> adjust marker · <kbd>C</kbd> cup';
         else hint = 'Hold <kbd>Left-Click</kbd>: pull back to set the pace, then stroke through the ball at the same rhythm · <kbd>Shift</kbd> peek · <kbd>V</kbd> overhead · <kbd>P</kbd> practice · <kbd>Space</kbd> back';
-        if (hp.on && !hp.done && !isPutt() && hint && state.view !== 'flight' && !swing.active && !npcTurn) hint += ' · <kbd>U</kbd> take a drop';
-        if (round.on && hint && !hp.done && !npcTurn) hint += ' · <kbd>K</kbd> scorecard';
+        if (hp.on && !hp.done && !isPutt() && hint && state.view !== 'flight' && !swing.active/*<tour>*/ && !npcTurn/*</tour>*/) hint += ' · <kbd>U</kbd> take a drop';
+        if (round.on && hint && !hp.done/*<tour>*/ && !npcTurn/*</tour>*/) hint += ' · <kbd>K</kbd> scorecard';
         if (txtCache.get('hint') !== hint) { txtCache.set('hint', hint); $('hint').innerHTML = hint; }
 
         // ---- telemetry card
@@ -19277,7 +19384,8 @@
         else updateShot(dt);
         poseRig(); updateShapeLine();
         pinBeam.position.set(PINS[state.pin].pos.x, 22, PINS[state.pin].pos.z);
-        updateNpc(dt);                                         // a career match: the rival's ball
+        /*<tour>*/updateNpc(dt);                                         // a career match: the rival's ball
+        /*</tour>*/
         updateCamera(dt, now);
         if (isPutt()) updatePuttHUD(); else updateHUD();
         hideOldTracersAtAddress();
@@ -19341,14 +19449,14 @@
       window.__golf = {
         // (swing audit, SWING_AUDIT_PLAN.md: internals the audit's probes read; nothing here changes how the game plays)
         analyzeSwing, computeImpact, swingSample, beginSwing, endSwing, onPointerMove, isSpike, tempoTarget, powerFromBackswing, powerFromTempo,
-        LIES, SLOPES, AERO, windVector, clubFit, solveShape, powerMult, runChip, computePutt, analyzePutt, CADDIES,
-        createPutt, stepPutt, puttTarget, rollDecel, puttGate, rng32, shopStats, SHOP, withClubModel, setup, careerStats,
-        fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock, flatChipView, treeDeflect, treePart, TREE, previewTrack, previewSide, spreadRatio, dexSpreadAt, lowRunnerHeight, fitApproachWedge, APPROACH, bagClubNumbers, greenInReach, setGreenRead, get greenReadOpen() { return greenRead.open; },
+        LIES, SLOPES, AERO, windVector, clubFit, solveShape, powerMult, runChip, computePutt, analyzePutt,/*<tour>*/CADDIES,/*</tour>*/
+        createPutt, stepPutt, puttTarget, rollDecel, puttGate, rng32,/*<tour>*/shopStats, SHOP, withClubModel,/*</tour>*/setup,/*<tour>*/careerStats,/*</tour>*/
+        fullShotGreen, holeStimp, heightCapBallPos,/*<tour>*/COACH,/*</tour>*/lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock, flatChipView, treeDeflect, treePart, TREE, previewTrack, previewSide, spreadRatio, dexSpreadAt, lowRunnerHeight, fitApproachWedge, APPROACH,/*<tour>*/bagClubNumbers,/*</tour>*/greenInReach, setGreenRead, get greenReadOpen() { return greenRead.open; },
         BUNKER, bunkerH, bunkerGrad, inBowl, bunkerSlopeLie, stepChip, createChip, chipBounce, env, fullFaceRead, rigY, playTarget, suggestClub, setCourse, TIERS, holeGeom, drawHoleCourse, makeMapTransform, inEllipse, waterDropOptions, waterEntry, get dropOpen() { return dropOpen; },
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
-        get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, tiltFromLie, autoSelectPuttScale, putterBars, createCareer, openShop, openBagRoom, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
-        CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
-        npc, npcPlan, npcHoleScore, npcHurry, condAvg, NPCS, npcRating, npcPresses, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, openFriends, openInvForm, openClubhouse, holeStrokes, submitPvp, playFriend, startFriendRound, showSharedCard, closeSharedCard, checkNewResults, h2h, openHome, closeHome, get homeOpen() { return homeOpen; }, devOn, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
+        get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, tiltFromLie, autoSelectPuttScale, putterBars,/*<tour>*/createCareer, openShop, openBagRoom,/*</tour>*/compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
+        CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight,/*<tour>*/get career() { return career; }, get careerOn() { return careerOn; },/*</tour>*/
+        /*<tour>*/npc, npcPlan, npcHoleScore, npcHurry, condAvg, NPCS, npcRating, npcPresses, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, openFriends, openInvForm, openClubhouse, holeStrokes, submitPvp, playFriend, startFriendRound, showSharedCard, closeSharedCard, checkNewResults, h2h,/*</tour>*/openHome, closeHome, get homeOpen() { return homeOpen; }, devOn,/*<tour>*/get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },/*</tour>*/
         // (tools/tutorial: a world point's spot on the screen, in CSS px, for cropping pictures and placing their marks)
         toScreen: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (-v.y * 0.5 + 0.5) * innerHeight }; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }

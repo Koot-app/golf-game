@@ -29,9 +29,18 @@ const courseOf = (v) => { const c = parseInt(v === undefined || v === null || v 
 const keyOf = (holes, course) => `golf:lb:${holes}h${course > 1 ? `:c${course}` : ''}`;
 
 // The storage helpers (finding the credentials, the Redis pipeline, reading the body, the rate limit) are the shared
-// ones in _redis.js (audit 9.2: this file used to carry its own copies).
-const { findCreds, redis, readBody, clientIp, rateLimit, sessionId } = require('./_redis');
+// ones in _store.js (audit 9.2: this file used to carry its own copies).
+const { findCreds, redis, readBody, clientIp, rateLimit } = require('./_store');
+// Who is signed in, and whether that's the admin. The arcade site (tools/arcade/build.js copies this file there, with
+// _store.js) has no profiles: there every round is a guest's, under three initials, and nobody can remove one (the
+// boards are shared, so the admin does that from the full game).
+/*<tour>*/
+const { sessionId } = require('./_redis');
 const { isAdmin } = require('./_admins');
+/*</tour>*/
+/*arcade:
+const sessionId = async () => null, isAdmin = () => false;
+*/
 
 const isInt = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
 // a signed-in player's round goes on the board under their profile name (taken from their session, never from the

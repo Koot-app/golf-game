@@ -1,10 +1,12 @@
 // Local test server: the game's static files + the real api/*.js handlers, with Upstash replaced by an in-memory fake.
 //
-//   node tools/test/devserver.js [port]        (default 8090; then open http://127.0.0.1:8090/)
+//   node tools/test/devserver.js [port] [root]   (default 8090; then open http://127.0.0.1:8090/)
 //
+// root is the site's folder, relative to the repo: left out, the full game (the repo itself); `arcade` serves the
+// standalone arcade site that tools/arcade/build.js writes, with its own api/ and vercel.json, as Vercel would.
 // Nothing touches the real database: every Redis command goes to the Map-based fake below, which is wiped on restart.
 const http = require('http'), fs = require('fs'), path = require('path');
-const ROOT = path.resolve(__dirname, '..', '..'), PORT = +process.argv[2] || 8090;
+const ROOT = path.resolve(__dirname, '..', '..', process.argv[3] || '.'), PORT = +process.argv[2] || 8090;
 process.env.KV_REST_API_URL = 'https://fake.upstash.io'; process.env.KV_REST_API_TOKEN = 'tok';
 // the tests make many profiles from one address: the real limits (5 a day per address, 300 a day for everyone, audit
 // 3.3) would stop them. Start it with GOLF_SIGNUPS_PER_IP=5 to try the real limit.
@@ -70,7 +72,7 @@ global.fetch = async (url, opts) => {
   const out = JSON.parse(opts.body).map((c) => { const r = run(c); return r && r.error ? r : { result: r }; });
   return { ok: true, status: 200, json: async () => out };
 };
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.md': 'text/plain' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.md': 'text/plain', '.webp': 'image/webp' };
 // the live site's headers (vercel.json: the content security policy and the rest, audit 3.9), so the tests run under them
 let SITE_HEADERS = [];
 try { SITE_HEADERS = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8')).headers.filter((h) => h.source === '/(.*)').flatMap((h) => h.headers); } catch { /* none */ }
@@ -89,11 +91,13 @@ http.createServer(async (req, res) => {
     for await (const c of req) body += c;
     const r = { method: req.method, headers: req.headers, query: Object.fromEntries(u.searchParams), body: body ? JSON.parse(body) : {}, socket: req.socket };
     const w = { code: 200, setHeader: (k, v) => res.setHeader(k, v), status(c) { this.code = c; return this; }, json(o) { res.writeHead(this.code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(o)); } };
-    try { const f = path.join(ROOT, 'api', name + '.js'); delete require.cache[require.resolve(f)]; await require(f)(r, w); }
+    const f = path.join(ROOT, 'api', name + '.js');
+    if (!fs.existsSync(f)) { res.writeHead(404); res.end(); return; }          // (the arcade site has only the leaderboard)
+    try { delete require.cache[require.resolve(f)]; await require(f)(r, w); }
     catch (e) { res.writeHead(500); res.end(String(e)); }
     return;
   }
-  const f = path.join(ROOT, u.pathname === '/' ? 'index.html' : u.pathname);
+  const f = path.join(ROOT, u.pathname.endsWith('/') ? u.pathname + 'index.html' : u.pathname);
   if (!f.startsWith(ROOT)) { res.writeHead(403); res.end(); return; }
   fs.readFile(f, (e, d) => { if (e) { res.writeHead(404); res.end(); return; } res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); });
 }).listen(PORT, '127.0.0.1', () => console.log('dev server on http://127.0.0.1:' + PORT + '/'));

@@ -1,3 +1,5 @@
 # Not served on the live site (audit 3.9): the plans, the audit, and the dev tools and tests
 *.md
 tools/
+# the arcade site (back9golf) is its own Vercel project, with arcade/ as its root: not part of the full game's site
+arcade/
