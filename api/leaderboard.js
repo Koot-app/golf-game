@@ -4,6 +4,8 @@
 //   POST /api/leaderboard  { name, strokes, putts, par, holes, course, scores: [per-hole strokes] }
 //     (signed in, with the session token in Authorization: the profile's name is used instead of `name`)
 //                                           -> { entry, rank, total, top }
+//   GET  /api/leaderboard?kind=skills        -> the skills challenge's board: { top: [...10], total }
+//   POST /api/leaderboard  { kind: 'skills', name, tries: [attempts at each of the 12 shots] } -> { entry, rank, total, top }
 //
 // Credentials come from the Vercel project's environment variables. Connecting Upstash through Vercel's Storage tab
 // sets KV_REST_API_URL / KV_REST_API_TOKEN (possibly with a custom prefix); adding them by hand from the Upstash console
@@ -57,6 +59,20 @@ function clean(member) {
   } catch { return null; }
 }
 
+// THE SKILLS CHALLENGE's board (user request, 2026-11-21; index.html SKILLS): ?kind=skills / { kind: 'skills' }. One
+// board, the fewest attempts to make all twelve shots; a tie goes to the earlier one (the member starts with its time).
+// A believable card: the attempts at each of the twelve shots, at least one each, adding up to the total. (Like the
+// rounds, the browser sends it, so a careful cheat could still post a fake one.)
+const SKILLS_KEY = 'golf:lb:skills', SKILLS_N = 12;
+function cleanSkills(member) {
+  try {
+    const e = JSON.parse(member);
+    const okName = e.pro ? PROFILE_NAME.test(e.name) : /^[A-Z0-9]{3}$/.test(e.name);
+    if (!okName || !isInt(e.total, SKILLS_N, SKILLS_N * 99)) return null;
+    return { t: +e.t || 0, id: /^[a-z0-9]{1,8}$/.test(e.id || '') ? e.id : '', name: e.name, pro: !!e.pro, total: e.total };
+  } catch { return null; }
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const send = (code, obj) => res.status(code).json(obj);
@@ -65,6 +81,10 @@ module.exports = async (req, res) => {
 
   try {
     if (req.method === 'GET') {
+      if (req.query && req.query.kind === 'skills') {
+        const [members, total] = await redis([['ZRANGE', SKILLS_KEY, 0, TOP_N - 1], ['ZCARD', SKILLS_KEY]]);
+        return send(200, { top: members.map(cleanSkills).filter(Boolean), total });
+      }
       const holes = parseInt((req.query && req.query.holes) || '9', 10);
       const course = courseOf(req.query && req.query.course);
       if (!isInt(holes, 1, 18) || !course) return send(400, { error: 'Bad holes' });
@@ -80,16 +100,15 @@ module.exports = async (req, res) => {
         let me = null;
         try { me = await sessionId(req); } catch { me = null; }
         if (!me || !isAdmin(me)) return send(403, { error: 'Only the admin can remove a round' });
-        const rc = courseOf(b.course);
-        if (!rc) return send(400, { error: 'Bad course' });
-        const key = keyOf(PARS_BY_COURSE[rc].length, rc);
+        const sk = b.kind === 'skills', rc = courseOf(b.course);
+        if (!sk && !rc) return send(400, { error: 'Bad course' });
+        const key = sk ? SKILLS_KEY : keyOf(PARS_BY_COURSE[rc].length, rc), cl = sk ? cleanSkills : clean;
         const [all] = await redis([['ZRANGE', key, 0, -1]]);
-        const hit = (all || []).find((m) => { const e = clean(m); return e && e.t === b.t && e.id === b.id; });
+        const hit = (all || []).find((m) => { const e = cl(m); return e && e.t === b.t && e.id === b.id; });
         if (!hit) return send(404, { error: 'That round isn\'t on the board' });
         const [, top, total] = await redis([['ZREM', key, hit], ['ZRANGE', key, 0, TOP_N - 1], ['ZCARD', key]]);
-        return send(200, { ok: true, top: top.map(clean).filter(Boolean), total });
+        return send(200, { ok: true, top: top.map(cl).filter(Boolean), total });
       }
-      const { strokes, putts, par, holes, scores } = b || {};
       let name = b && b.name, pro = false;
       // signed in: the profile's own name (looked up from the session); a guest: three initials
       let me = null;
@@ -98,8 +117,27 @@ module.exports = async (req, res) => {
         const [pn] = await redis([['HGET', `golf:user:${me}`, 'name']]);
         if (pn && PROFILE_NAME.test(pn)) { name = pn; pro = true; }
       }
-      // a believable round: a name, whole numbers, a per-hole card that adds up
       if (!pro && (typeof name !== 'string' || !/^[A-Z0-9]{3}$/.test(name))) return send(400, { error: 'Initials must be 3 letters or digits' });
+      // the skills challenge: the attempts at each of its twelve shots
+      if (b.kind === 'skills') {
+        const tries = b.tries;
+        if (!Array.isArray(tries) || tries.length !== SKILLS_N || !tries.every((n) => isInt(n, 1, 99))) return send(400, { error: 'Bad card' });
+        const sum = tries.reduce((a, n) => a + n, 0);
+        if (b.total !== undefined && b.total !== sum) return send(400, { error: 'Card does not add up' });
+        if (!(await rateLimit(`golf:rl:${clientIp(req)}`, RATE_MAX, RATE_WINDOW_S))) return send(429, { error: 'Too many saves — try again in a minute' });
+        const t = Date.now(), id = Math.random().toString(36).slice(2, 8);
+        const member = JSON.stringify({ t, id, name, total: sum, ...(pro ? { pro: true } : {}) });
+        const [, rank, total, top] = await redis([
+          ['ZADD', SKILLS_KEY, sum, member],
+          ['ZRANK', SKILLS_KEY, member],
+          ['ZCARD', SKILLS_KEY],
+          ['ZRANGE', SKILLS_KEY, 0, TOP_N - 1],
+          ['ZREMRANGEBYRANK', SKILLS_KEY, MAX_KEEP, -1],
+        ]);
+        return send(200, { entry: cleanSkills(member), rank: rank + 1, total: Math.min(total, MAX_KEEP), top: top.map(cleanSkills).filter(Boolean) });
+      }
+      const { strokes, putts, par, holes, scores } = b || {};
+      // a believable round: a name, whole numbers, a per-hole card that adds up
       if (!isInt(holes, 1, 18) || !isInt(par, holes * 3, holes * 5)) return send(400, { error: 'Bad course' });
       if (!Array.isArray(scores) || scores.length !== holes || !scores.every((s) => isInt(s, 1, 40))) return send(400, { error: 'Bad scorecard' });
       if (!isInt(strokes, holes, holes * 40) || scores.reduce((a, s) => a + s, 0) !== strokes) return send(400, { error: 'Scorecard does not add up' });

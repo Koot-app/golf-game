@@ -6060,7 +6060,7 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-      width: min(500px, calc(100vw - 32px));
+      width: min(820px, calc(100vw - 32px));
       max-height: calc(100vh - 32px);
       overflow-y: auto;
       display: none;
@@ -6100,11 +6100,130 @@
       margin-top: 5px;
     }
 
-    #skDoneRows {
-      width: calc(100% - 28px);
+    /* the shots (left) and the world Top 10 (right) */
+    .sk-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
       margin: 10px 14px 4px;
+      align-items: start;
+    }
+
+    @media (max-width: 700px) {
+      .sk-cols {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    #skDoneRows,
+    #skBoard {
+      width: 100%;
       border-collapse: collapse;
       font-size: 13px;
+    }
+
+    .sk-wh {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #ffe066;
+      padding: 3px 6px 5px;
+    }
+
+    #skEntry {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      margin-bottom: 6px;
+      border-radius: 8px;
+      background: rgba(255, 224, 102, .1);
+      border: 1px solid rgba(255, 224, 102, .35);
+    }
+
+    #skEntry.on {
+      display: flex;
+    }
+
+    #skEntry span {
+      font-size: 12px;
+      color: #dfe8f1;
+    }
+
+    #skInit {
+      width: 64px;
+      font-family: inherit;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: .2em;
+      text-align: center;
+      text-transform: uppercase;
+      color: #fff;
+      background: rgba(0, 0, 0, .35);
+      border: 1px solid rgba(255, 255, 255, .25);
+      border-radius: 6px;
+      padding: 4px 2px;
+    }
+
+    #skEntry button {
+      margin-left: auto;
+    }
+
+    #skBoard th {
+      text-align: left;
+      font-size: 10.5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--dim);
+      font-weight: 400;
+      padding: 3px 6px;
+    }
+
+    #skBoard td {
+      padding: 4px 6px;
+      border-top: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    #skBoard td:first-child {
+      color: var(--dim);
+    }
+
+    #skBoard td:nth-child(3),
+    #skBoard th:nth-child(3) {
+      text-align: right;
+      font-weight: 700;
+    }
+
+    #skBoard td:last-child {
+      text-align: right;
+      color: var(--dim);
+      white-space: nowrap;
+    }
+
+    #skBoard tr.empty td {
+      color: rgba(255, 255, 255, .25);
+    }
+
+    #skBoard tr.mine td {
+      color: #7dff9b;
+      font-weight: 700;
+    }
+
+    #skNote {
+      font-size: 12px;
+      color: #c9d4e0;
+      padding: 6px 6px 0;
+      min-height: 16px;
+    }
+
+    .hm-skills em small {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 400;
+      color: #c9d4e0;
+      text-align: right;
     }
 
     #skDoneRows th {
@@ -7919,7 +8038,15 @@
     <div id="skDone" class="card">
       <div class="card-h"><span>🏁 Skills challenge · complete</span><span class="tag" id="skDoneTag"></span></div>
       <div class="sk-score"><b id="skDoneTot"></b><span>attempts to make all twelve · 12 is perfect</span><i id="skDoneBest"></i></div>
-      <table id="skDoneRows"></table>
+      <div class="sk-cols">
+        <table id="skDoneRows"></table>
+        <div class="sk-world">
+          <div class="sk-wh">🏆 World Top 10</div>
+          <div id="skEntry"><span>Your initials</span><input id="skInit" maxlength="3" autocomplete="off" spellcheck="false"><button id="skSave" class="go">Save (Enter)</button></div>
+          <table id="skBoard"></table>
+          <div id="skNote"></div>
+        </div>
+      </div>
       <div class="sk-btns"><button id="skAgain" class="go">Play it again (Enter)</button><button id="skHome">🏠 Home (Esc)</button></div>
     </div>
     <!--<tour>-->
@@ -13180,9 +13307,16 @@
         if (res.ok) { clearTimeout(sk.timer); sk.timer = setTimeout(skNext, 2600); }
         renderSkills();
       }
+      // a shot made: its tracers go (user request, 2026-11-21: each shot starts on a clean range), and the swing's ghost
+      function skClearTracers() {
+        clearTrails();
+        rollTrailN = 0; rollTrail.geometry.setDrawRange(0, 0);
+        lastTrace = ghostTrace = null;
+      }
       function skNext() {
         if (!sk.on) return;
         sk.ok = false; sk.msg = ''; sk.at = null;
+        skClearTracers();
         if (sk.i >= SKILLS.length - 1) return skFinish();
         sk.i++;
         $('toast').classList.remove('on');
@@ -13197,12 +13331,93 @@
         $('skDoneRows').innerHTML = '<tr><th></th><th>Shot</th><th></th><th>Attempts</th></tr>'
           + SKILLS.map((T, k) => `<tr><td>${k + 1}</td><td>${T.name}</td><td>${SK_AREA[T.area]}</td><td class="${sk.tries[k] === 1 ? 'one' : ''}">${sk.tries[k]}</td></tr>`).join('');
         sk.doneOpen = true; $('skDone').classList.add('on'); document.body.classList.add('sk-over'); $('toast').classList.remove('on');
+        // the world Top 10: signed in, it goes up under your profile's name; otherwise three initials first
+        Object.assign(skLb, { saved: false, busy: false, mineT: null, rank: 0, note: '', entry: false });
+        skFetchBoard();
+        if (skSignedIn()) skSubmit('');
+        else {
+          let last = 'AAA';
+          try { last = (localStorage.getItem('golfInitials') || 'AAA').toUpperCase(); } catch { /* default */ }
+          skLb.entry = true; $('skInit').value = /^[A-Z0-9]{3}$/.test(last) ? last : 'AAA';
+          renderSkBoard();
+          setTimeout(() => { if (sk.doneOpen) { $('skInit').focus(); $('skInit').select(); } }, 0);
+        }
       }
       function skDoneKey(e) {
         if (e.repeat) return;
-        if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); startSkills(); }
-        else if (e.code === 'Escape') { e.preventDefault(); openHome(); }
+        if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+          e.preventDefault();
+          if (skLb.entry && !skLb.saved) { if (!skLb.busy) skSaveInitials(); return; }      // (save first: Enter again plays again)
+          startSkills();
+        } else if (e.code === 'Escape') { e.preventDefault(); openHome(); }
       }
+      // THE SKILLS CHALLENGE's WORLD TOP 10 (user request, 2026-11-21; api/leaderboard.js, kind 'skills'): one board, the
+      // fewest attempts; a tie goes to the earlier one. Shared by both sites.
+      const skLb = { top: [], total: 0, online: null, busy: false, saved: false, entry: false, mineT: null, rank: 0, note: '' };
+      const skSignedIn = () => /*<tour>*/!!session && sync.state !== 'signedout'/*</tour>*//*arcade:false*/;
+      async function skFetchBoard() {
+        try {
+          const r = await fetch(`${LB_API}?kind=skills`, { cache: 'no-store' });
+          const j = await r.json();
+          if (!r.ok) throw new Error(j.error || r.status);
+          skLb.top = Array.isArray(j.top) ? j.top : []; skLb.total = j.total || 0; skLb.online = true;
+        } catch { skLb.online = false; }
+        renderSkBoard(); if (homeOpen) renderSkillsTile();
+      }
+      function skSaveInitials() {
+        const v = $('skInit').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (v.length !== 3) { skLb.note = 'Three letters or digits'; return renderSkBoard(); }
+        try { localStorage.setItem('golfInitials', v); } catch { /* fine */ }
+        $('skInit').blur();
+        skSubmit(v);
+      }
+      async function skSubmit(name) {
+        skLb.busy = true; skLb.note = ''; renderSkBoard();
+        try {
+          const r = await fetch(LB_API, {
+            method: 'POST', headers: { 'Content-Type': 'application/json'/*<tour>*/, ...(session ? { Authorization: `Bearer ${session.token}` } : {})/*</tour>*/ },
+            body: JSON.stringify({ kind: 'skills', name, tries: sk.tries, total: skTotal() }),
+          });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(j.error || r.status);
+          Object.assign(skLb, { top: j.top || [], total: j.total || 0, rank: j.rank || 0, mineT: j.entry ? j.entry.t : null, online: true, saved: true, entry: false });
+          skLb.note = `Saved: you're ${j.rank}${['th', 'st', 'nd', 'rd'][(j.rank % 100 > 10 && j.rank % 100 < 14) || j.rank % 10 > 3 ? 0 : j.rank % 10]} of ${j.total} on the world board`;
+        } catch (e) {
+          skLb.note = `Couldn't save it to the world board${e && e.message && !/^\d+$/.test(e.message) ? ` (${e.message})` : ''}`;
+        }
+        skLb.busy = false; renderSkBoard();
+      }
+      function renderSkBoard() {
+        let h = '<tr><th></th><th>Name</th><th>Attempts</th><th>Date</th></tr>';
+        for (let i = 0; i < 10; i++) {
+          const r = skLb.top[i];
+          if (!r) { h += `<tr class="empty"><td>${i + 1}</td><td>---</td><td>--</td><td></td></tr>`; continue; }
+          const d = new Date(r.t), mine = skLb.mineT && r.t === skLb.mineT;
+          /*<tour>*/const rm = adminOk && r.id ? ` <button class="lb-rm" data-skrm="${escH(r.t)}|${escH(r.id)}" title="Remove this score from the world board">✕</button>` : '';/*</tour>*/
+          h += `<tr class="${mine ? 'mine' : ''}"><td>${i + 1}</td><td>${escH(r.name)}</td><td>${r.total}</td><td>${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}${/*<tour>*/rm/*</tour>*//*arcade:''*/}</td></tr>`;
+        }
+        $('skBoard').innerHTML = h;
+        setText('skNote', skLb.busy ? 'Saving to the world board…' : skLb.note
+          || (skLb.online === false ? 'The world board can\'t be reached right now' : skLb.online ? `${skLb.total} score${skLb.total === 1 ? '' : 's'} on the world board` : 'Loading the world board…'));
+        $('skEntry').classList.toggle('on', skLb.entry && !skLb.saved);
+        $('skSave').disabled = skLb.busy;
+      }
+      /*<tour>*/// the admin takes a score off the skills board (the server checks it's the admin)
+      async function skAdminClick(e) {
+        const b = e.target.closest('button[data-skrm]');
+        if (!b || !adminOk || !session) return;
+        b.blur();
+        const [t, id] = b.dataset.skrm.split('|'), row = skLb.top.find((x) => String(x.t) === t && x.id === id);
+        if (!row || !confirm(`Take ${row.name}'s ${row.total} off the skills board? It can't be put back.`)) return;
+        try {
+          const r = await fetch(LB_API, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` }, body: JSON.stringify({ action: 'remove', kind: 'skills', t: +t, id }) });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(j.error || r.status);
+          skLb.top = j.top || []; skLb.total = j.total || 0; skLb.note = `Removed ${row.name}'s score`;
+        } catch (err) { skLb.note = `Couldn't remove it (${err.message})`; }
+        renderSkBoard();
+      }
+      /*</tour>*/
       function startSkills() {
         if (swing.active || round.on) return;
         /*<tour>*/if (careerOn) leaveCareer(true);
@@ -13217,6 +13432,7 @@
         state.windMph = 0; state.windDir = 0; $('inWind').value = 0; $('inWindDir').value = 0; orientFlags();
         setBadStreak(0);
         if (state.practice) togglePractice();
+        skClearTracers();
         SKILLS[0].setup(); renderSkills();
         toast(`Skills challenge\n${SKILLS.length} shots to make · every ball you hit counts`, 2600);
       }
@@ -13236,8 +13452,9 @@
       }
       // the home screen's tile: your best
       function renderSkillsTile() {
-        const best = +lsGet(skBestKey()) || 0;
-        setText('hmSkillsBest', best ? `Your best: ${best}` : 'Not played yet');
+        const best = +lsGet(skBestKey()) || 0, w = skLb.top[0];
+        $('hmSkillsBest').innerHTML = `${best ? `Your best: ${best}` : 'Not played yet'}${w ? `<small>World best: ${w.total} · ${escH(w.name)}</small>` : ''}`;
+        if (skLb.online === null) skFetchBoard();            // (once: the world best for the tile)
       }
       // ARCADE stats (user request, 2026-11-20): everyone plays 8 across the board in an arcade round (it was 5, the
       // standard). 8 is tour-average Dexterity and a strong Power (design direction 14: Power 5 is the tour average)
@@ -18944,6 +19161,9 @@
           setText('hmPracErr', ''); closeHome(); startSkills();
         });
         $('skAgain').addEventListener('click', (e) => { e.currentTarget.blur(); startSkills(); });
+        $('skSave').addEventListener('click', (e) => { e.currentTarget.blur(); if (!skLb.busy && !skLb.saved) skSaveInitials(); });
+        $('skInit').addEventListener('input', (e) => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3); if (v !== e.target.value) e.target.value = v; });
+        /*<tour>*/$('skBoard').addEventListener('click', skAdminClick);/*</tour>*/
         $('skHome').addEventListener('click', (e) => { e.currentTarget.blur(); openHome(); });
         $('hmArcPlay').addEventListener('click', (e) => {
           e.currentTarget.blur();
@@ -19930,7 +20150,7 @@
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, tiltFromLie, autoSelectPuttScale, putterBars,/*<tour>*/createCareer, openShop, openBagRoom,/*</tour>*/compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight,/*<tour>*/get career() { return career; }, get careerOn() { return careerOn; },/*</tour>*/
         /*<tour>*/npc, npcPlan, npcHoleScore, npcHurry, condAvg, NPCS, npcRating, npcPresses, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, openFriends, openInvForm, openClubhouse, holeStrokes, submitPvp, playFriend, startFriendRound, showSharedCard, closeSharedCard, checkNewResults, h2h,/*</tour>*/openHome, closeHome, get homeOpen() { return homeOpen; }, devOn,/*<tour>*/get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },/*</tour>*/
-        sk, SKILLS, startSkills, endSkills, skShotDone, skAttempt, PINS, PIN_RAD,      // (the skills challenge: tools/test/skills.js)
+        sk, skLb, SKILLS, startSkills, endSkills, skShotDone, skAttempt, PINS, PIN_RAD, get trailCount() { return trails.length; },      // (the skills challenge: tools/test/skills.js)
         // (tools/tutorial: a world point's spot on the screen, in CSS px, for cropping pictures and placing their marks)
         toScreen: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (-v.y * 0.5 + 0.5) * innerHeight }; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }

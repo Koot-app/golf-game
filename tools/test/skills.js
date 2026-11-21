@@ -5,7 +5,8 @@
 // Works on both sites:
 //   node tools/test/probe.js http://127.0.0.1:8090/ <shot|-> @tools/test/skills.js 0 skills1
 //   node tools/test/probe.js http://127.0.0.1:8091/ <shot|-> @tools/test/skills.js 0 skills2     (the arcade site)
-// (window.__shot = 1 stops on the first shot's card, 2 on the result, for a screenshot)
+// (window.__shot = 1 stops on the first shot's card, 2 on the result with the initials box, 3 once it's saved)
+// (it posts to the leaderboard: the dev server only)
 (async () => {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms)), $ = (id) => document.getElementById(id);
   for (let i = 0; i < 50 && !window.__golf; i++) await sleep(200);
@@ -16,7 +17,13 @@
   const sk = g.sk, N = g.SKILLS.length;
   if (!document.body.classList.contains('home-on')) { g.openHome(); await sleep(300); }
   if ($('hmGuest')) { $('hmGuest').click(); await sleep(200); }
-  say($('hmSkillsBest').textContent === 'Not played yet', `home tile: "${$('hmSkills').querySelector('b').textContent}" · "${$('hmSkillsBest').textContent}"`);
+  await sleep(500);
+  say($('hmSkillsBest').textContent.startsWith('Not played yet'), `home tile: "${$('hmSkills').querySelector('b').textContent}" · "${$('hmSkillsBest').textContent}"`);
+  // the server's board: a card that doesn't add up, or has a shot with no attempt, is refused
+  const post = (b) => fetch('/api/leaderboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'skills', name: 'ZZZ', ...b }) }).then((r) => r.status);
+  const ones = Array(N).fill(1);
+  say(await post({ tries: ones.slice(1) }) === 400 && await post({ tries: [0, ...ones.slice(1)] }) === 400 && await post({ tries: ones, total: 11 }) === 400,
+    'the server refuses a card with 11 shots, a shot with no attempt, or a total that doesn\'t add up');
   const cfg0 = JSON.stringify(g.state.greenCfg);
   $('hmSkills').click(); await sleep(500);
   say(sk.on && !document.body.classList.contains('home-on') && g.state.mode === 'range' && st() === '8/8/8/8' && g.CLUBS[0].model === 'd-g440k',
@@ -26,13 +33,6 @@
   // nothing else moves you while it's on
   g.setMode('putt'); key('KeyH'); await sleep(200);
   say(g.state.mode === 'range' && !g.hp.on, `G / H while it's on: still ${g.state.mode}, on a hole ${g.hp.on} · "${$('toast').textContent.replace(/\n/g, ' / ')}"`);
-  // a real swing on the range: counted when it's hit, judged when it stops
-  g.setClub(10); g.debugSwing({ back: 1, tempo: 1 });
-  await sleep(300);
-  const hitNow = sk.tries[0];
-  for (let i = 0; i < 80 && !(g.shot && g.shot.done); i++) await sleep(250);
-  say(hitNow === 1 && !!$('skMsg').textContent, `a real swing (PW at the 150): attempts ${hitNow} as it left, then "${$('skMsg').textContent}"`);
-  if (sk.ok) await sleep(2800); else { key('KeyR'); await sleep(200); }
   // each shot's rule, with the result it would report (a miss first where there's a rule to miss)
   const pos = (i, dx = 0) => ({ x: g.PINS[i].pos.x + dx, z: g.PINS[i].pos.z });
   const plays = [
@@ -49,6 +49,16 @@
     { miss: { holed: false, leftFt: 2 }, hit: { holed: true, leftFt: 0 } },
     { miss: { holed: false, leftFt: 7 }, hit: { holed: false, leftFt: 2.4 } },
   ];
+  // a real swing on the range: counted when it's hit, judged when it stops; once the shot is made its tracer goes
+  g.setClub(10); g.debugSwing({ back: 1, tempo: 1 });
+  await sleep(300);
+  const hitNow = sk.tries[0];
+  for (let i = 0; i < 80 && !(g.shot && g.shot.done); i++) await sleep(250);
+  const trailsAfter = g.trailCount;
+  say(hitNow === 1 && !!$('skMsg').textContent && trailsAfter >= 1, `a real swing (PW at the 150): attempts ${hitNow} as it left, then "${$('skMsg').textContent}" · tracers on the range ${trailsAfter}`);
+  if (!sk.ok) { g.skAttempt(); g.skShotDone(plays[0].hit); }
+  await sleep(2800);
+  say(sk.i === 1 && g.trailCount === 0, `made: on to shot ${sk.i + 1}, and the tracers are cleared (${g.trailCount} left)`);
   const first = sk.i;
   for (let i = first; i < N; i++) {
     const T = g.SKILLS[i], P = plays[i], area = g.state.mode;
@@ -67,8 +77,16 @@
   }
   const total = sk.tries.reduce((a, b) => a + b, 0);
   say(sk.doneOpen && $('skDone').classList.contains('on') && +$('skDoneTot').textContent === total, `the result: ${$('skDoneTot').textContent} attempts (${sk.tries.join(',')}) · "${$('skDoneTag').textContent}" · "${$('skDoneBest').textContent}" · ${$('skDoneRows').rows.length - 1} rows`);
+  await sleep(600);
+  say($('skEntry').classList.contains('on') && document.activeElement === $('skInit'), `the world Top 10: the initials box is up and focused ("${$('skInit').value}") · "${$('skNote').textContent}"`);
   if (window.__shot === 2) return out.join('\n');
-  // Enter plays it again; a real chip and a real putt are counted and judged too
+  // Enter saves the initials; the score goes on the world board, highlighted
+  $('skInit').value = 'TST'; key('Enter'); await sleep(1200);
+  const row = [...$('skBoard').rows].find((r) => r.classList.contains('mine'));
+  say(g.skLb.saved && !!row && row.cells[1].textContent === 'TST' && +row.cells[2].textContent === total && !$('skEntry').classList.contains('on'),
+    `saved: "${$('skNote').textContent}" · my row ${row ? `${row.cells[0].textContent}. ${row.cells[1].textContent} ${row.cells[2].textContent}` : 'missing'}`);
+  if (window.__shot === 3) return out.join('\n');
+  // Enter again plays it again; a real chip and a real putt are counted and judged too
   key('Enter'); await sleep(500);
   say(sk.on && !sk.doneOpen && sk.i === 0 && sk.tries.every((n) => n === 0), `Enter: a new challenge, shot ${sk.i + 1}, attempts ${sk.tries.reduce((a, b) => a + b, 0)}`);
   for (let i = 0; i < 6; i++) { if (i === 4) g.setHeight(-1); g.skAttempt(); g.skShotDone(plays[i].hit); await sleep(2800); }
@@ -86,7 +104,7 @@
   key('Escape'); await sleep(500);
   say(!sk.on && document.body.classList.contains('home-on') && JSON.stringify(g.state.greenCfg) === cfg0 && g.state.mode === 'range' && !document.body.classList.contains('skills'),
     `Esc part-way: challenge on ${sk.on}, home open, mode ${g.state.mode}, the practice green as it was ${JSON.stringify(g.state.greenCfg) === cfg0} · tile "${$('hmSkillsBest').textContent}"`);
-  say($('hmSkillsBest').textContent === `Your best: ${total}`, `the best is kept: "${$('hmSkillsBest').textContent}"`);
+  say($('hmSkillsBest').textContent.startsWith(`Your best: ${total}`) && /World best: \d+ · \w+/.test($('hmSkillsBest').textContent), `the home tile: "${$('hmSkillsBest').textContent}"`);
   key('Escape'); await sleep(300);
   say(st() === '8/8/8/8' && g.CLUBS[0].model === 'd-g440k' && getComputedStyle($('panel')).display !== 'none', `back on the range: stats ${st()}, driver ${g.CLUBS[0].model}, the area panel is back`);
   return out.join('\n');
