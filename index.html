@@ -8663,7 +8663,7 @@
       const arrowMesh = new THREE.InstancedMesh(arrowGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.88, depthWrite: false, side: THREE.DoubleSide }), ARROW_MAX);
       arrowMesh.frustumCulled = false;
       let arrowLabels = [];     // [{ x, y, z, txt }]
-      const BEAD_MAX = 600;
+      const BEAD_MAX = 600, BEAD_CHIP_OVH = 0.6;         // (a marble's size in metres; chipping's overhead: animateGreen)
       const dotTex = canvasTex(32, 32, (g) => {
         const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16);
         gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.45, 'rgba(255,255,255,.85)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
@@ -8904,9 +8904,17 @@
         const perF = (state.perception - 1) / 9, n = Math.floor(beadBase.length * lerp(0.25, 1, perF));
         const reading = state.view !== 'address' || isPeeking();
         const ovh = state.view === 'overhead';
-        beads.visible = gridLines.visible = gridMajor.visible = reading;
+        // CHIPPING'S OVERHEAD (user request, 2026-11-21: at high Perception the arrows, their slope labels and the 1-ft grid
+        // covered the green and added nothing): the height shading, the contours and the marbles, which read the slope
+        // best. The marbles are drawn bigger there (5 cm from tens of metres up is nothing), and Perception shows in them:
+        // how many, how bright (perF above). Putting's overhead keeps its arrows and grid.
+        const chipOvh = ovh && isChip();
+        beads.visible = reading;
+        gridLines.visible = gridMajor.visible = reading && !chipOvh;
+        beads.material.size = chipOvh ? BEAD_CHIP_OVH : 0.05;
         contourUp.visible = contourDown.visible = (ovh || state.view === 'scout');
-        arrowMesh.visible = tintMesh.visible = ovh;
+        arrowMesh.visible = ovh && !chipOvh;
+        tintMesh.visible = ovh;
         gridLines.material.opacity = lerp(0.14, 0.40, perF); gridMajor.material.opacity = lerp(0.30, 0.75, perF);
         if (reading) {
           const pos = beads.geometry.attributes.position.array, col = beads.geometry.attributes.color.array, t = now / 1000, bright = lerp(0.35, 1, perF);
@@ -11655,7 +11663,7 @@
           ], '', tipsChipSvg(ct));
           sec('Views & the read', state.view === 'overhead' ? 'you\'re in Overhead' : state.view === 'address' ? 'you\'re at the ball' : 'you\'re in Green Read', [
             '<b>1 · Green Read</b> (where you start): from behind the ball — the grid and height numbers show the slope · <b>W A S D</b> move the landing spot',
-            '<b>V · Overhead:</b> contours show height, arrows point downhill · click or drag to place the landing spot · wheel zooms',
+            '<b>V · Overhead:</b> shading and contours show height, the white marbles roll downhill (faster where it\'s steeper; more of them, and brighter, as Perception grows) · click or drag to place the landing spot · wheel zooms',
             'The dashed amber line is the roll the read expects on a <b>flat</b> green',
             '<b>Space · Chip Address:</b> step in to the ball · hold <b>Shift</b> to <b>Peek</b> up at your landing spot',
             '<b>F</b> puts the landing spot back · <b>1</b>–<b>4</b> change the chip type in any view',
@@ -18244,7 +18252,7 @@
         }
         g.textAlign = 'center';
         g.textBaseline = 'middle';
-        if (state.view === 'overhead' && arrowLabels.length) {
+        if (state.view === 'overhead' && !chip && arrowLabels.length) {          // (chipping's overhead has no arrows: animateGreen)
           g.font = '700 10px "Segoe UI", system-ui, sans-serif';
           for (const a of arrowLabels) {
             const p = project(a.x, a.y, a.z);
