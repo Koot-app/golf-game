@@ -7942,15 +7942,32 @@
         return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
       }
       // < 1 inside an ellipse (k scales it). Matches a CircleGeometry laid flat, scaled (rx, rz) and turned by rot.
+      // SHAPED OUTLINES (user request, 2026-11-20: greens that aren't plain ovals). e.shape = [[k, amp, phaseDeg], ...]
+      // pushes the ellipse's edge in and out round it: radius × (1 + Σ amp·cos(k·θ − phase)), θ round the ellipse from
+      // its own +x axis (0 = right, 90° = the far side, for an unturned green on a hole playing away from you). Everything
+      // that asks inEllipse about that outline (the surface, the putting green's mesh, the maps) follows the shape.
+      const shapeR = (e, th) => { let r = 1; for (const [k, a, ph] of e.shape) r += a * Math.cos(k * th - ph * Math.PI / 180); return r; };
       function inEllipse(e, x, z, k = 1) {
         const X = x - e.x, Y = -(z - e.z), c = Math.cos(e.rot || 0), s = Math.sin(e.rot || 0);
-        return ((X * c + Y * s) / (e.rx * k)) ** 2 + ((-X * s + Y * c) / (e.rz * k)) ** 2;
+        const u = (X * c + Y * s) / (e.rx * k), v = (-X * s + Y * c) / (e.rz * k), q2 = u ** 2 + v ** 2;
+        if (!e.shape || q2 > 4) return q2;                     // (well outside any shape: no need for its angle)
+        const R = shapeR(e, Math.atan2(v, u));
+        return q2 / (R * R);
+      }
+      // n points round an outline (its shape too), k × its size: [[x, z], ...]
+      function outlinePts(e, k = 1, n = 72) {
+        const c = Math.cos(e.rot || 0), s = Math.sin(e.rot || 0), out = [];
+        for (let i = 0; i < n; i++) {
+          const a = i / n * Math.PI * 2, R = e.shape ? shapeR(e, a) : 1, u = Math.cos(a) * e.rx * k * R, v = Math.sin(a) * e.rz * k * R;
+          out.push([e.x + u * c - v * s, e.z - (u * s + v * c)]);
+        }
+        return out;
       }
 
       // Persistent height field in its own fixed coordinates (metres), independent of where the ball is.
       function fitSurface(surf) {
         const { outline, pin, tilt, bumps, tiers, inside, grad } = surf;
-        const R = Math.max(outline.rx, outline.rz);
+        const R = Math.max(outline.rx, outline.rz) * (outline.shape ? 1.4 : 1);      // (a shaped outline reaches past its ellipse)
         const scaleFeatures = (f) => {
           for (const b of bumps) b.amp *= f;
           for (const tr of tiers) tr.rise *= f;
@@ -8499,7 +8516,8 @@
         const d = green.distFt * FT, e = green.surface.outline, segs = 72;
         const ce = Math.cos(e.rot || 0), se = Math.sin(e.rot || 0);
         const outlinePt = (t, a) => {
-          const u = Math.cos(a) * e.rx * t, v = Math.sin(a) * e.rz * t;
+          const R = e.shape ? shapeR(e, a) : 1;                // (a shaped green: its real outline)
+          const u = Math.cos(a) * e.rx * t * R, v = Math.sin(a) * e.rz * t * R;
           return green.fromSurface(e.x + u * ce - v * se, e.z - (u * se + v * ce));
         };
         let xMin = Infinity, xMax = -Infinity, zMin = Infinity, zMax = -Infinity;
@@ -8906,124 +8924,141 @@
       ];
       // =====================================================================================================
       //  THE TIER 2 COURSE (user request, 2026-11-20): its own nine holes, laid out from GPS-app screenshots of a real
-      //  parkland course the user gave as the template (par 36, 2,977 yds). Each hole was traced from its screenshot and
-      //  scaled so its centre line is the scorecard yardage; si is the scorecard's handicap order. fairwayGaps (yards
-      //  along the centre line): no fairway there (the ponds). water: the ponds, penalty areas (see WATER).
+      //  parkland course the user gave as the template (par 36, 2,977 yds). si is the scorecard's handicap order.
+      //  GENERATED: this block is written by tools/course/t2-trace.js, which holds the trace (in screenshot pixels) and
+      //  scales each hole so the app's own aiming line is the scorecard yardage. Change the trace there and run it.
+      //  Audit, 2026-11-20 (user request: more detail): the greens have shapes (green.shape: SHAPED OUTLINES) and the
+      //  angles the screenshots show; the fairways have their own edges (fairway: stations, SHAPED FAIRWAYS), with necks
+      //  into the greens; hole 8 follows its fairway round the stand of trees (groves) instead of the app's line across
+      //  it; hole 2 has its approach fairway between the ponds; hole 9's pond is its real size (it was half).
+      //  fairwayGaps: no fairway there. water: the ponds, penalty areas (see WATER).
       // =====================================================================================================
       const HOLES_T2 = [
         {
           name: 'Hole 1', par: 4, si: 7, desc: 'Straight down a tree-lined chute', ob: 36, wind: { mph: 6, from: 20 }, stimp: 11,
-          path: [[0, 0], [-9, -93], [-16, -146], [-17, -185], [-19, -243], [-21, -280], [-25, -314]],
-          fairwayFrom: 94, halfWidth: 18, firstCut: 8,
-          green: { x: -25, z: -314, rx: 12, rz: 15, rot: 0 }, pin: [-23, -317],
+          path: [[0, 0], [-9, -93], [-16, -146], [-17, -185], [-19, -244], [-21, -280], [-25, -314]],          // 315 yds along the fairway, 315 from tee to green
+          halfWidth: 17, firstCut: 8,
+          fairway: [[-9, -93, 12.5, 9.5], [-12, -118, 19, 15.5], [-16, -146, 19.5, 19], [-17, -185, 18, 18], [-18, -216, 17.5, 16.5], [-19, -244, 16, 14], [-19, -262, 12.5, 9.5], [-20, -270, 8, 6.5], [-21, -280, 10.5, 10], [-23, -294, 8.5, 8.5]],
+          green: { x: -25, z: -314, rx: 13, rz: 14.5, rot: 0.15, shape: [[2, -0.07, 270], [3, -0.09, 225]] }, pin: [-27, -311],
           greenSurface: { tilt: { x: -0.006, z: -0.010 }, bumps: [{ x: -4, z: 3, amp: 4, sigma: 4 }, { x: 4, z: -5, amp: -3, sigma: 4 }] },
           bunkers: [
             { x: -27, z: -335, rx: 10, rz: 6, rot: 0.1, type: 'bunker', depth: 3.5 },        // behind the green
-            { x: 4, z: -210, rx: 5, rz: 5, rot: 0, type: 'fbunker', depth: 2.5 },            // right edge of the landing zone
+            { x: 4, z: -210, rx: 5, rz: 5, rot: 0, type: 'fbunker', depth: 2.5 },        // right edge of the landing zone
           ],
           hardpan: [], water: [],
         },
         {
-          name: 'Hole 2', par: 5, si: 5, desc: 'Dogleg left, then back right to the green', ob: 45, wind: { mph: 9, from: 200 }, stimp: 11,
-          path: [[0, 0], [-60, -51], [-106, -94], [-111, -143], [-104, -192], [-88, -245], [-68, -304], [-30, -344], [10, -379]],
-          fairwayFrom: 141, fairwayGaps: [[363, 517]], halfWidth: 17, firstCut: 8,         // the fairway ends at the ponds
-          green: { x: 10, z: -379, rx: 14, rz: 12, rot: -0.7 }, pin: [13, -381],
+          name: 'Hole 2', par: 5, si: 5, desc: 'Dogleg left, then right between the ponds', ob: 45, wind: { mph: 9, from: 200 }, stimp: 11,
+          path: [[0, 0], [-54, -52], [-98, -92], [-110, -146], [-101, -196], [-84, -250], [-70, -310], [-31, -350], [10, -387]],          // 470 yds along the fairway, 387 from tee to green
+          halfWidth: 20, firstCut: 8,
+          fairway: [[-94, -82, 4, 4], [-100, -95, 17, 17], [-110, -146, 23.5, 25], [-101, -196, 27, 28.5], [-84, -250, 22, 23.5], [-74, -290, 15, 18.5], [-71, -304, 8.5, 10], [-70, -312, 2.5, 2.5], [-57, -327, 2.5, 2.5], [-52, -332, 6.5, 6.5], [-31, -350, 12.5, 12.5], [-11, -369, 12, 11.5], [3, -380, 8.5, 8]],
+          fairwayGaps: [[[-70, -313], [-57, -326]]],
+          green: { x: 10, z: -387, rx: 13.5, rz: 11.5, rot: 0, shape: [[2, -0.08, 130], [3, -0.08, 15]] }, pin: [13, -384],
           greenSurface: { tilt: { x: 0.007, z: -0.006 }, tiers: [{ x: 0, z: 0, ang: -0.7, rise: 4, width: 5 }], bumps: [{ x: 5, z: 3, amp: -3, sigma: 4 }] },
           bunkers: [
-            { x: 5, z: -396, rx: 5, rz: 4, rot: 0, type: 'bunker', depth: 3 },              // behind, left
-            { x: 3, z: -362, rx: 9, rz: 6, rot: 0.3, type: 'bunker', depth: 3.5 },          // front left
-            { x: -135, z: -192, rx: 4, rz: 7, rot: 0.1, type: 'fbunker', depth: 2.5 },      // left of the fairway
+            { x: 5, z: -404, rx: 5, rz: 4, rot: 0, type: 'bunker', depth: 3 },        // behind, left
+            { x: 3, z: -368, rx: 9, rz: 6, rot: 0.3, type: 'bunker', depth: 3.5 },        // front left
+            { x: -137, z: -209, rx: 4, rz: 6, rot: 0.1, type: 'fbunker', depth: 2.5 },        // left of the fairway
+            { x: -141, z: -183, rx: 3.5, rz: 4.5, rot: 0, type: 'fbunker', depth: 2.5 },        // left of the fairway, the second
           ],
-          hardpan: [], water: [{ x: -85, z: -350, rx: 14, rz: 26 }, { x: -30, z: -296, rx: 27, rz: 18 }],
+          hardpan: [], water: [{ x: -86, z: -357, rx: 14, rz: 24 }, { x: -31, z: -301, rx: 24, rz: 17 }],
         },
         {
           name: 'Hole 3', par: 4, si: 3, desc: 'Dogleg right', ob: 50, wind: { mph: 8, from: 300 }, stimp: 11.5,
-          path: [[0, 0], [-29, -60], [-71, -114], [-72, -199], [-62, -249], [-44, -276], [-20, -309], [0, -335]],
-          fairwayFrom: 103, halfWidth: 19, firstCut: 8,
-          green: { x: 0, z: -335, rx: 12, rz: 15, rot: -0.4 }, pin: [-2, -339],
+          path: [[0, 0], [-30, -59], [-74, -111], [-78, -164], [-76, -206], [-67, -238], [-55, -269], [-37, -297], [-16, -325], [0, -345]],          // 390 yds along the fairway, 345 from tee to green
+          halfWidth: 20, firstCut: 8,
+          fairway: [[-55, -88, 3.5, 3.5], [-74, -111, 23, 20], [-78, -164, 28, 23], [-76, -206, 25, 23], [-67, -238, 17, 18.5], [-57, -266, 10.5, 12], [-48, -279, 5.5, 5.5], [-34, -301, 12.5, 12.5], [-15, -327, 11, 11], [-6, -337, 7.5, 7.5]],
+          green: { x: 0, z: -345, rx: 10.5, rz: 17, rot: -0.15, shape: [[1, -0.1, 270], [3, 0.1, 90]] }, pin: [-1, -351],
           greenSurface: { tilt: { x: -0.008, z: -0.008 }, bumps: [{ x: 3, z: 4, amp: 4, sigma: 4.5 }, { x: -4, z: -5, amp: -3, sigma: 4 }] },
           bunkers: [
-            { x: -19, z: -337, rx: 5, rz: 5, rot: 0, type: 'bunker', depth: 3 },            // left
-            { x: 16, z: -325, rx: 9, rz: 8, rot: 0.2, type: 'bunker', depth: 4 },           // right, the big one
-            { x: -110, z: -184, rx: 7, rz: 13, rot: 0.1, type: 'fbunker', depth: 2.5 },     // left of the landing zone
+            { x: -20, z: -348, rx: 4.5, rz: 5, rot: 0, type: 'bunker', depth: 3 },        // left
+            { x: 17, z: -336, rx: 8.5, rz: 8, rot: 0.2, type: 'bunker', depth: 4 },        // right, the big one
+            { x: -114, z: -190, rx: 7, rz: 13, rot: 0.1, type: 'fbunker', depth: 2.5 },        // left of the landing zone
           ],
-          hardpan: [], water: [{ x: -53, z: -15, rx: 30, rz: 12 }],
+          hardpan: [], water: [{ x: -52, z: -14, rx: 31, rz: 17 }],
         },
         {
-          name: 'Hole 4', par: 4, si: 6, desc: 'Straightaway, trees both sides', ob: 40, wind: { mph: 12, from: 10 }, stimp: 11,
-          path: [[0, 0], [-7, -127], [-15, -182], [-13, -246], [-7, -287], [-4, -333]],
-          fairwayFrom: 127, halfWidth: 15, firstCut: 7,
-          green: { x: -4, z: -333, rx: 12, rz: 13, rot: 0 }, pin: [-1, -335],
+          name: 'Hole 4', par: 4, si: 6, desc: 'Straightaway, the fairway opening to the right', ob: 40, wind: { mph: 12, from: 10 }, stimp: 11,
+          path: [[0, 0], [-7, -127], [-15, -182], [-13, -246], [-7, -288], [-4, -333]],          // 334 yds along the fairway, 333 from tee to green
+          halfWidth: 16, firstCut: 7,
+          fairway: [[-7, -127, 2.5, 2.5], [-10, -151, 12, 12], [-15, -182, 12.5, 17.5], [-14, -216, 10.5, 22.5], [-13, -246, 10.5, 27], [-9, -273, 11, 26], [-7, -289, 6.5, 24.5], [-5, -306, 2, 21.5], [-4, -318, 0, 16.5]],
+          green: { x: -4, z: -333, rx: 11.5, rz: 12.5, rot: 0, shape: [[2, -0.07, 90], [3, -0.08, 315]] }, pin: [-1, -335],
           greenSurface: { tilt: { x: 0.004, z: -0.011 }, bumps: [{ x: -5, z: 2, amp: 3, sigma: 4 }] },
           bunkers: [
-            { x: -19, z: -325, rx: 5, rz: 5, rot: 0, type: 'bunker', depth: 3 },            // left
-            { x: -5, z: -314, rx: 7, rz: 5, rot: 0.2, type: 'bunker', depth: 3.5 },         // front
-            { x: -24, z: -222, rx: 4, rz: 4, rot: 0, type: 'fbunker', depth: 2 },           // left edge of the fairway
+            { x: -20, z: -326, rx: 3.5, rz: 6.5, rot: 0, type: 'bunker', depth: 3 },        // left
+            { x: -6, z: -314, rx: 5, rz: 6, rot: 0.2, type: 'bunker', depth: 3.5 },        // front, on the line
+            { x: -24, z: -223, rx: 4, rz: 4, rot: 0, type: 'fbunker', depth: 2 },        // left edge of the fairway
           ],
           hardpan: [], water: [],
         },
         {
-          name: 'Hole 5', par: 3, si: 1, desc: 'Narrow par 3, sand both sides', ob: 34, wind: { mph: 7, from: 90 }, stimp: 12,
-          path: [[0, 0], [-7, -61], [-14, -104], [-17, -132], [-21, -162]],
-          fairwayFrom: 105, halfWidth: 8, firstCut: 6,
-          green: { x: -21, z: -162, rx: 10, rz: 15, rot: 0.1 }, pin: [-23, -158],
+          name: 'Hole 5', par: 3, si: 1, desc: 'Narrow par 3 to a long green, sand both sides', ob: 34, wind: { mph: 7, from: 90 }, stimp: 12,
+          path: [[0, 0], [-7, -61], [-14, -104], [-17, -132], [-21, -162]],          // 163 yds along the fairway, 163 from tee to green
+          halfWidth: 7, firstCut: 6,
+          fairway: [[-13, -102, 4.5, 4], [-15, -112, 8.5, 6.5], [-16, -127, 7.5, 4], [-18, -137, 6, 3.5], [-19, -144, 5, 4.5]],
+          green: { x: -21, z: -162, rx: 10, rz: 16, rot: 0.2, shape: [[2, -0.2, 0], [3, 0.05, 90]] }, pin: [-22, -156],
           greenSurface: { tilt: { x: -0.005, z: -0.009 }, tiers: [{ x: 0, z: -1, ang: -Math.PI / 2, rise: 4, width: 4 }], bumps: [{ x: 3, z: 6, amp: -3, sigma: 3.5 }] },
           bunkers: [
-            { x: -39, z: -172, rx: 4, rz: 4, rot: 0, type: 'bunker', depth: 3.5 },          // back left
-            { x: -36, z: -142, rx: 4, rz: 6, rot: 0.2, type: 'bunker', depth: 4 },          // front left
-            { x: -4, z: -153, rx: 3.5, rz: 6, rot: -0.1, type: 'bunker', depth: 3.5 },      // right
+            { x: -41, z: -172, rx: 3, rz: 4.2, rot: 0, type: 'bunker', depth: 3.5 },        // back left
+            { x: -36, z: -142, rx: 3, rz: 6, rot: 0.2, type: 'bunker', depth: 4 },        // front left
+            { x: -4, z: -153, rx: 2.6, rz: 6, rot: -0.1, type: 'bunker', depth: 3.5 },        // right
           ],
           hardpan: [], water: [],
         },
         {
-          name: 'Hole 6', par: 4, si: 8, desc: 'Dogleg right to a tight landing zone', ob: 45, wind: { mph: 10, from: 160 }, stimp: 11.5,
-          path: [[0, 0], [37, -79], [72, -156], [63, -217], [48, -280], [36, -340]],
-          fairwayFrom: 78, halfWidth: 17, firstCut: 7,                                    // (between the two ponds)
-          green: { x: 36, z: -340, rx: 11, rz: 13, rot: 0 }, pin: [38, -343],
+          name: 'Hole 6', par: 4, si: 8, desc: 'Between the ponds, then bending left', ob: 45, wind: { mph: 10, from: 160 }, stimp: 11.5,
+          path: [[0, 0], [25, -37], [50, -60], [61, -105], [71, -156], [63, -217], [48, -281], [36, -340]],          // 364 yds along the fairway, 342 from tee to green
+          halfWidth: 19, firstCut: 7,
+          fairway: [[41, -49, 3.5, 3.5], [50, -60, 18.5, 18], [61, -105, 27, 25.5], [71, -156, 21, 15], [67, -191, 24.5, 19.5], [63, -217, 27.5, 18.5], [55, -251, 27, 18], [48, -281, 21.5, 18.5], [44, -295, 15.5, 15.5], [41, -314, 17, 15], [39, -327, 12.5, 12.5]],
+          green: { x: 36, z: -340, rx: 11.5, rz: 14.5, rot: 0, shape: [[2, -0.24, 0]] }, pin: [37, -347],
           greenSurface: { tilt: { x: 0.006, z: -0.008 }, bumps: [{ x: -3, z: -3, amp: 4, sigma: 4 }, { x: 4, z: 5, amp: -3, sigma: 4 }] },
           bunkers: [
-            { x: 22, z: -349, rx: 4, rz: 4, rot: 0, type: 'bunker', depth: 3 },             // left
-            { x: 50, z: -331, rx: 4, rz: 5, rot: 0, type: 'bunker', depth: 3 },             // front right
+            { x: 22, z: -349, rx: 3.5, rz: 4.5, rot: 0, type: 'bunker', depth: 3 },        // left
+            { x: 50, z: -331, rx: 4, rz: 5, rot: 0, type: 'bunker', depth: 3 },        // front right
           ],
-          hardpan: [], water: [{ x: 29, z: -159, rx: 14, rz: 30 }, { x: 104, z: -166, rx: 14, rz: 28 }],
+          hardpan: [], water: [{ x: 30, z: -157, rx: 16, rz: 33 }, { x: 104, z: -166, rx: 17, rz: 30 }],
         },
         {
-          name: 'Hole 7', par: 3, si: 2, desc: 'Long par 3, sand left and right', ob: 38, wind: { mph: 9, from: 330 }, stimp: 12,
-          path: [[0, 0], [-3, -82], [-7, -115], [-12, -148], [-17, -179]],
-          fairwayFrom: 82, halfWidth: 14, firstCut: 7,
-          green: { x: -17, z: -179, rx: 12, rz: 11.5, rot: 0 }, pin: [-20, -181],
+          name: 'Hole 7', par: 3, si: 2, desc: 'Long par 3 to an angled green', ob: 38, wind: { mph: 9, from: 330 }, stimp: 12,
+          path: [[0, 0], [-3, -82], [-7, -115], [-12, -149], [-17, -179]],          // 180 yds along the fairway, 180 from tee to green
+          halfWidth: 12, firstCut: 7,
+          fairway: [[-6, -106, 3.5, 3.5], [-7, -115, 14, 9], [-9, -132, 17.5, 12.5], [-11, -145, 13.5, 10], [-12, -151, 5.5, 5.5], [-13, -158, 4, 5], [-15, -167, 3, 4.5]],
+          green: { x: -17, z: -179, rx: 10, rz: 14, rot: 0.55, shape: [[1, -0.09, 270], [3, 0.09, 90]] }, pin: [-19, -183],
           greenSurface: { tilt: { x: -0.007, z: -0.006 }, tiers: [{ x: 0, z: 0, ang: 0, rise: 4, width: 5 }], bumps: [{ x: -6, z: 3, amp: -3, sigma: 4 }] },
           bunkers: [
-            { x: -3, z: -184, rx: 8, rz: 7, rot: 0.3, type: 'bunker', depth: 4 },           // back right
-            { x: -26, z: -159, rx: 8, rz: 7, rot: -0.2, type: 'bunker', depth: 4 },         // front left
+            { x: -3, z: -185, rx: 4.5, rz: 11, rot: 0.84, type: 'bunker', depth: 4 },        // back right, a long one along the green
+            { x: -26, z: -159, rx: 8.5, rz: 9, rot: -0.2, type: 'bunker', depth: 4 },        // front left
           ],
-          hardpan: [], water: [{ x: -25, z: -38, rx: 18, rz: 32 }],                          // (left of the tee shot)
+          hardpan: [], water: [{ x: -25, z: -38, rx: 18, rz: 33 }],
         },
         {
-          name: 'Hole 8', par: 5, si: 9, desc: 'Long par 5, bending left', ob: 48, wind: { mph: 11, from: 190 }, stimp: 11,
-          path: [[0, 0], [1, -125], [8, -251], [-7, -317], [-21, -392], [-10, -424], [0, -448]],
-          fairwayFrom: 67, halfWidth: 16, firstCut: 8,
-          green: { x: 0, z: -448, rx: 11, rz: 13, rot: 0.3 }, pin: [-2, -451],
+          name: 'Hole 8', par: 5, si: 9, desc: 'Par 5 bending round a stand of trees', ob: 48, wind: { mph: 11, from: 190 }, stimp: 11,
+          path: [[0, 0], [1, -125], [8, -251], [38, -305], [56, -355], [53, -403], [34, -437], [0, -448]],          // 489 yds along the fairway, 448 from tee to green
+          halfWidth: 16, firstCut: 8,
+          fairway: [[1, -71, 4, 4], [1, -94, 13.5, 17.5], [1, -125, 12.5, 25], [4, -182, 11.5, 24], [7, -240, 21, 23], [22, -278, 17.5, 17.5], [38, -305, 17.5, 16], [56, -355, 17.5, 11.5], [53, -403, 16, 13.5], [34, -437, 15.5, 13.5], [17, -444, 11.5, 11.5]],
+          green: { x: 0, z: -448, rx: 11, rz: 13, rot: 0.3, shape: [[2, -0.07, 0], [3, -0.08, 180]] }, pin: [2, -451],
           greenSurface: { tilt: { x: 0.005, z: -0.010 }, bumps: [{ x: 3, z: -4, amp: 3, sigma: 4 }, { x: -4, z: 5, amp: -3, sigma: 4 }] },
           bunkers: [
-            { x: -10, z: -288, rx: 6, rz: 6, rot: 0, type: 'fbunker', depth: 3 },          // left side, second-shot zone
-            { x: 32, z: -217, rx: 5, rz: 10, rot: 0.1, type: 'fbunker', depth: 2.5 },       // right of the landing zone
-            { x: -20, z: -449, rx: 4, rz: 4, rot: 0, type: 'bunker', depth: 3 },            // left of the green
+            { x: -10, z: -288, rx: 6, rz: 6, rot: 0, type: 'fbunker', depth: 3 },        // inside the corner: guards the cut
+            { x: 32, z: -217, rx: 4.5, rz: 10, rot: 0.1, type: 'fbunker', depth: 2.5 },        // right of the landing zone
+            { x: -20, z: -449, rx: 4, rz: 4, rot: 0, type: 'bunker', depth: 3 },        // left of the green
           ],
-          hardpan: [], water: [],
+          hardpan: [], water: [], groves: [{ x: 14, z: -338, rx: 14, rz: 38 }],
         },
         {
           name: 'Hole 9', par: 4, si: 4, desc: 'Carry the pond, then bend left', ob: 42, wind: { mph: 8, from: 240 }, stimp: 11.5,
-          path: [[0, 0], [23, -81], [37, -147], [49, -196], [34, -254], [13, -288], [-1, -308]],
-          fairwayFrom: 39, fairwayGaps: [[135, 185]], halfWidth: 15, firstCut: 7,           // the pond splits the fairway
-          green: { x: -1, z: -308, rx: 11, rz: 12, rot: 0 }, pin: [1, -306],
+          path: [[0, 0], [23, -81], [37, -148], [49, -197], [34, -255], [13, -289], [-1, -310]],          // 329 yds along the fairway, 310 from tee to green
+          halfWidth: 18, firstCut: 7,
+          fairway: [[25, -91, 2.5, 2.5], [27, -103, 8.5, 8.5], [32, -121, 8.5, 8.5], [45, -183, 13.5, 22.5], [49, -197, 18, 21], [42, -225, 22.5, 19], [34, -255, 25.5, 14.5], [23, -272, 16.5, 12], [18, -282, 8, 7.5], [10, -293, 6, 6]],
+          fairwayGaps: [[[34, -125], [45, -181]]],
+          green: { x: -1, z: -310, rx: 11.5, rz: 12, rot: 0, shape: [[2, -0.1, 300], [3, -0.1, 270]] }, pin: [-4, -308],
           greenSurface: { tilt: { x: -0.006, z: -0.012 }, bumps: [{ x: -3, z: 3, amp: 4, sigma: 4 }] },
           bunkers: [
-            { x: 17, z: -306, rx: 3.5, rz: 4, rot: 0, type: 'bunker', depth: 3 },           // right
-            { x: -5, z: -293, rx: 4, rz: 3.5, rot: 0, type: 'bunker', depth: 3 },           // front left
-            { x: 39, z: -281, rx: 7, rz: 5, rot: 0.2, type: 'fbunker', depth: 2.5 },        // right of the approach
+            { x: 17, z: -308, rx: 3.5, rz: 4, rot: 0, type: 'bunker', depth: 3 },        // right
+            { x: -5, z: -294, rx: 4, rz: 3.5, rot: 0, type: 'bunker', depth: 3 },        // front left
+            { x: 45, z: -278, rx: 10, rz: 6, rot: 0.1, type: 'fbunker', depth: 2.5 },        // right of the approach
           ],
-          hardpan: [], water: [{ x: 50, z: -155, rx: 27, rz: 13 }],
+          hardpan: [], water: [{ x: 50, z: -154, rx: 50, rz: 26 }],
         },
       ];
       const HOLES_BASE = HOLES.slice();          // the holes as written (HOLES itself holds the course being played: useCourse)
@@ -9097,14 +9132,42 @@
       const holeCourseG = new THREE.Group(); holeG.add(holeCourseG);
       const holeGreenG = new THREE.Group(); holeG.add(holeGreenG);          // the flat green + pin; swapped for the putting surface when you putt
       const hole = {};                                                      // populated in metres by buildHole()
-      function pathNear(x, z) {              // closest point on the centre line: distance from it, and how far along the hole
-        let best = Infinity, s = 0;
-        for (let i = 0; i < hole.cl.length - 1; i++) {
-          const a = hole.cl[i], b = hole.cl[i + 1], ex = b.x - a.x, ez = b.z - a.z, L2 = ex * ex + ez * ez;
+      // closest point on a centre line: distance from it, how far along the hole, and which side (+1 right, −1 left)
+      function nearOn(cl, x, z) {
+        let best = Infinity, s = 0, side = 1;
+        for (let i = 0; i < cl.length - 1; i++) {
+          const a = cl[i], b = cl[i + 1], ex = b.x - a.x, ez = b.z - a.z, L2 = ex * ex + ez * ez;
           const u = clamp(((x - a.x) * ex + (z - a.z) * ez) / L2, 0, 1), d = Math.hypot(x - a.x - ex * u, z - a.z - ez * u);
-          if (d < best) { best = d; s = a.s + Math.sqrt(L2) * u; }
+          if (d < best) { best = d; s = a.s + Math.sqrt(L2) * u; side = (x - a.x) * -ez + (z - a.z) * ex >= 0 ? 1 : -1; }
         }
-        return { d: best, s };
+        return { d: best, s, side };
+      }
+      function pathNear(x, z) { return nearOn(hole.cl, x, z); }
+      // SHAPED FAIRWAYS (user request, 2026-11-20: fairways that aren't constant-width strips). def.fairway = stations
+      // [[x, z, left, right], ...] (yards): a point on or near the centre line, and the fairway's half-width to the left
+      // and right of the line there; between stations it eases from one to the next. The fairway starts at the first
+      // station. fairwayGaps: [[from, to], ...], each end a point [x, z] or yards along the line. groves: stands of
+      // trees ({ x, z, rx, rz, rot }). Sets on h (the live hole, or a map layout), in metres:
+      //   fw(s, side)      the fairway's half-width at s along the line, on that side
+      //   fwBase(s, side)  the same, but never under half the nominal width (the mown corridor where there is no fairway)
+      //   cutHalf(s, side) fwBase + the first cut
+      // A hole without stations has its halfWidth everywhere, as before.
+      function layFairway(h, def) {
+        const H = def.halfWidth * YD, cut = def.firstCut * YD, sOf = (p) => (Array.isArray(p) ? nearOn(h.cl, p[0] * YD, p[1] * YD).s : p * YD);
+        h.gaps = (def.fairwayGaps || []).map(([a, b]) => [sOf(a), sOf(b)]);
+        h.groves = (def.groves || []).map((o) => ({ ...o, x: o.x * YD, z: o.z * YD, rx: o.rx * YD, rz: o.rz * YD, rot: o.rot || 0 }));
+        h.fwShaped = !!(def.fairway && def.fairway.length);
+        if (!h.fwShaped) { h.fw = () => H; h.fwBase = h.fw; h.cutHalf = () => H + cut; return; }
+        const S = def.fairway.map(([x, z, l, r]) => [nearOn(h.cl, x * YD, z * YD).s, l * YD, r * YD]).sort((a, b) => a[0] - b[0]);
+        h.from = S[0][0];
+        h.fw = (s, side) => {
+          const j = side < 0 ? 1 : 2;
+          if (s <= S[0][0]) return S[0][j];
+          for (let i = 1; i < S.length; i++) if (s <= S[i][0]) { const a = S[i - 1], b = S[i], t = (s - a[0]) / (b[0] - a[0] || 1); return lerp(a[j], b[j], t * t * (3 - 2 * t)); }
+          return S[S.length - 1][j];
+        };
+        h.fwBase = (s, side) => Math.max(h.fw(s, side), H * 0.5);
+        h.cutHalf = (s, side) => h.fwBase(s, side) + cut;
       }
       function pathPoint(s) {
         const cl = hole.cl; let i = 0;
@@ -9177,9 +9240,9 @@
         if (Math.abs(x) < 4 && Math.abs(z) < 4) return 'tee';
         const n = pathNear(x, z);
         if (n.d > hole.ob) return 'ob';                                     // beyond the white stakes
-        if ((n.s >= hole.from && n.d <= hole.halfW && !inFairwayGap(hole, n.s)) || inEllipse(hole.green, x, z, 1.3) < 1) return 'fairway';      // fairway and the collar
+        if ((n.s >= hole.from && n.d <= hole.fw(n.s, n.side) && !inFairwayGap(hole, n.s)) || inEllipse(hole.green, x, z, 1.3) < 1) return 'fairway';      // fairway (its shape: layFairway) and the collar
         for (const h of hole.hardpan) if (inEllipse(h, x, z) < 1) return 'hardpan';
-        return n.d <= hole.halfW + hole.cut ? 'light' : 'heavy';
+        return n.d <= hole.cutHalf(n.s, n.side) ? 'light' : 'heavy';
       }
       // ---- the bunkers' bowls (see BUNKER). hole.dips: one per bunker, greenside and fairway, built in buildHole.
       const smooth01 = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -9336,6 +9399,8 @@
           if (i >= 0) def = hs[i];
         }
         if (!v) return def;
+        // (mirror turns the plain holes' fields only: not a shaped green, fairway stations, ponds or groves. No course is
+        // mirrored now; if one is again, those need turning too.)
         const mx = v.mirror ? -1 : 1, e = (o) => ({ ...o, x: o.x * mx, rot: (o.rot || 0) * mx });
         const gs = def.greenSurface;
         return {
@@ -9377,8 +9442,9 @@
         Object.assign(hole, {
           cl, length: cl[N].s, halfW: def.halfWidth * YD, cut: def.firstCut * YD, from: def.fairwayFrom * YD,
           green: grn, pin, bunkers: def.bunkers.map(m), hardpan: def.hardpan.map(m), surface, ob: (def.ob || 45) * YD,
-          gaps: (def.fairwayGaps || []).map(([a, b]) => [a * YD, b * YD]), water: (def.water || []).map(m),
+          water: (def.water || []).map(m),
         });
+        layFairway(hole, def);                                 // the fairway's shape, its gaps, the groves
         // the bunkers' bowls are part of the hole's ground (BUNKER): added on top of the green's height field
         // (which runs on out under the surrounds), after its slopes were fitted, and nothing on the green itself changes
         hole.dips = makeDips(hole.bunkers, grn, def.bunkerDepth || 1, def.bunkerFaceDeg);
@@ -9389,6 +9455,7 @@
         for (const p of cl) addPt(p.x, p.z);
         addPt(hole.green.x, hole.green.z, Math.max(hole.green.rx, hole.green.rz));
         for (const b of hole.bunkers) addPt(b.x, b.z, Math.max(b.rx, b.rz));
+        for (const w of hole.water) { addPt(w.x - w.rx, w.z); addPt(w.x + w.rx, w.z); addPt(w.x, w.z - w.rz); addPt(w.x, w.z + w.rz); }      // (the ponds too)
         Object.assign(mapFullBounds, { u0: u0 - 22, u1: u1 + 30, v0: v0 - 42, v1: v1 + 42 });
 
         clearHoleGroup(holeCourseG); clearHoleGroup(holeGreenG);
@@ -9404,7 +9471,8 @@
           const pos = [], col = [], c = new THREE.Color();
           const edge = (i, sgn) => {
             const a = cl[Math.max(0, i - 1)], b = cl[Math.min(cl.length - 1, i + 1)], tx = b.x - a.x, tz = b.z - a.z, l = Math.hypot(tx, tz);
-            return [cl[i].x + sgn * (-tz / l) * half, 0, cl[i].z + sgn * (tx / l) * half];
+            const hf = half(cl[i].s, sgn);                     // (the half-width there, on that side: layFairway)
+            return [cl[i].x + sgn * (-tz / l) * hf, 0, cl[i].z + sgn * (tx / l) * hf];
           };
           for (let i = 0; i < cl.length - 1; i++) {
             if (cl[i].s < fromS || (skip && skip(cl[i].s))) continue;
@@ -9420,12 +9488,14 @@
           return mesh;
         };
         const oval = (e, color, order, k = 1, parent = holeCourseG) => {
-          const mesh = flat(new THREE.CircleGeometry(1, 56), overlayMat(color, 1, order), e.x, e.z, order);
+          // (a shaped outline, e.shape: the same disc with its edge pushed in and out, so it still scales and turns as one)
+          const disc = e.shape ? new THREE.ShapeGeometry(new THREE.Shape(Array.from({ length: 96 }, (_, i) => { const a = i / 96 * Math.PI * 2, R = shapeR(e, a); return new THREE.Vector2(Math.cos(a) * R, Math.sin(a) * R); }))) : new THREE.CircleGeometry(1, 56);
+          const mesh = flat(disc, overlayMat(color, 1, order), e.x, e.z, order);
           mesh.scale.set(e.rx * k, e.rz * k, 1); mesh.rotation.z = e.rot; parent.add(mesh); return mesh;
         };
-        holeCourseG.add(ribbon(hole.halfW + hole.cut, 0, [0x3f8232], 1));                              // first cut
+        holeCourseG.add(ribbon(hole.cutHalf, 0, [0x3f8232], 1));                                       // first cut
         hole.hardpan.forEach((h) => oval(h, 0x8d7c57, 2));
-        holeCourseG.add(ribbon(hole.halfW, hole.from, [0x57a844, 0x4d9a3c], 3, (s) => inFairwayGap(hole, s)));     // fairway, striped
+        holeCourseG.add(ribbon(hole.fw, hole.from, [0x57a844, 0x4d9a3c], 3, (s) => inFairwayGap(hole, s)));     // fairway, striped
         hole.water.forEach((w) => { oval(w, 0x5a7a45, 4, 1.05); oval(w, GROUND_COL.water, 4); });                // WATER: a muddy bank, then the pond
         holeCourseG.add(flat(new THREE.PlaneGeometry(7, 7), overlayMat(0x5cae48, 1, 3), 0, 0, 3));     // tee box
         for (const sx of [-2.6, 2.6]) { const mk = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), new THREE.MeshLambertMaterial({ color: 0xf2f2f2 })); mk.position.set(sx, 0.1, 0.3); holeCourseG.add(mk); }
@@ -9444,24 +9514,39 @@
         const r = rng32(2026 + idx * 101), cone = new THREE.ConeGeometry(1, 1 - TREE.base, 7); cone.translate(0, TREE.base + (1 - TREE.base) / 2, 0);
         const trunkGeo = new THREE.CylinderGeometry(0.8, 1, 1, 6); trunkGeo.translate(0, 0.5, 0);
         treeGrid.clear(); treeClearAt = null;
-        const COUNT = Math.round(clamp(hole.length * 0.85, 220, 440) * (def.treeMult || 1)), trees = new THREE.InstancedMesh(cone, new THREE.MeshLambertMaterial({ color: 0x2c5d2e }), COUNT);
+        // (groves, layFairway: stands of trees inside the hole, on a jittered 7 m grid with a random stream of their own,
+        // so the scattered trees are where they were)
+        const keepOff = (x, z) => inEllipse(hole.green, x, z, 2.4) < 1 || hole.bunkers.some((b) => inEllipse(b, x, z, 1.5) < 1) || hole.water.some((w) => inEllipse(w, x, z, 1.1) < 1) || Math.hypot(x, z) < 14;
+        const groveAt = [], rg = rng32(9001 + idx * 7);
+        for (const gv of hole.groves) {
+          const c = Math.cos(gv.rot), s = Math.sin(gv.rot);
+          for (let u = -gv.rx; u <= gv.rx; u += 7) for (let v = -gv.rz; v <= gv.rz; v += 7) {
+            const uu = u + (rg() - 0.5) * 5, vv = v + (rg() - 0.5) * 5, x = gv.x + uu * c - vv * s, z = gv.z - (uu * s + vv * c);
+            if ((uu / gv.rx) ** 2 + (vv / gv.rz) ** 2 <= 1 && !keepOff(x, z)) groveAt.push([x, z]);
+          }
+        }
+        const COUNT = Math.round(clamp(hole.length * 0.85, 220, 440) * (def.treeMult || 1)), trees = new THREE.InstancedMesh(cone, new THREE.MeshLambertMaterial({ color: 0x2c5d2e }), COUNT + groveAt.length);
         const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), ps = new THREE.Vector3(), col = new THREE.Color();
         const xMin = mapFullBounds.v0 - 110, xSpan = (mapFullBounds.v1 - mapFullBounds.v0) + 220;
         const zMax = -mapFullBounds.u0 + 50, zSpan = (mapFullBounds.u1 - mapFullBounds.u0) + 120;
         let placed = 0;
-        for (let tries = 0; tries < 20000 && placed < COUNT; tries++) {
-          const x = xMin + r() * xSpan, z = zMax - r() * zSpan, n = pathNear(x, z), onHardpan = hole.hardpan.some((h) => inEllipse(h, x, z) < 1);
-          if (n.d < hole.halfW + (onHardpan ? 5 : hole.cut + 7)) continue;                       // keep the playing corridor clear
-          if (n.d > 95 && r() < 0.8) continue;                                                   // thin out far from the hole
-          if (n.d > hole.ob && r() < 0.7) continue;                                              // most trees line the hole inside the OB stakes
-          if (inEllipse(hole.green, x, z, 2.4) < 1 || hole.bunkers.some((b) => inEllipse(b, x, z, 1.5) < 1) || Math.hypot(x, z) < 14) continue;
-          const h = 10 + r() * 12; ps.set(x, 0, z); sc.set(h * 0.3, h, h * 0.3);
-          trees.setMatrixAt(placed, m4.compose(ps, q, sc)); trees.setColorAt(placed, col.setHSL(0.33 + r() * 0.04, 0.42, 0.2 + r() * 0.08));
+        const plant = (x, z, rr) => {
+          const h = 10 + rr() * 12; ps.set(x, 0, z); sc.set(h * 0.3, h, h * 0.3);
+          trees.setMatrixAt(placed, m4.compose(ps, q, sc)); trees.setColorAt(placed, col.setHSL(0.33 + rr() * 0.04, 0.42, 0.2 + rr() * 0.08));
           const key = `${Math.floor(x / TREE_CELL)},${Math.floor(z / TREE_CELL)}`;
           if (!treeGrid.has(key)) treeGrid.set(key, []);
           treeGrid.get(key).push(placed);
           holeTrees.push({ x, z, h, r: h * 0.3, hidden: false, ghost: false }); placed++;
+        };
+        for (let tries = 0; tries < 20000 && placed < COUNT; tries++) {
+          const x = xMin + r() * xSpan, z = zMax - r() * zSpan, n = pathNear(x, z), onHardpan = hole.hardpan.some((h) => inEllipse(h, x, z) < 1);
+          if (n.d < hole.fwBase(n.s, n.side) + (onHardpan ? 5 : hole.cut + 7)) continue;         // keep the playing corridor clear (a shaped fairway: its own edge)
+          if (n.d > 95 && r() < 0.8) continue;                                                   // thin out far from the hole
+          if (n.d > hole.ob && r() < 0.7) continue;                                              // most trees line the hole inside the OB stakes
+          if (keepOff(x, z)) continue;                                                           // (not on the green's surrounds, in sand, in a pond or on the tee)
+          plant(x, z, r);
         }
+        for (const [x, z] of groveAt) plant(x, z, rg);
         trees.count = placed; trees.frustumCulled = false; holeCourseG.add(trees); holeTreeMesh = trees;
         holeTrunkMesh = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: 0x4a3626 }), Math.max(1, placed));
         holeTrees.forEach((t, i) => holeTrunkMesh.setMatrixAt(i, m4.compose(ps.set(t.x, 0, t.z), q, sc.set(TREE.trunkR, t.h * (TREE.base + 0.05), TREE.trunkR))));
@@ -9503,10 +9588,32 @@
           }
           g.stroke();
         };
-        const blob = (e, color, kk = 1) => { g.fillStyle = color; g.beginPath(); g.ellipse(X(e.x, e.z), Y(e.x, e.z), e.rz * k * kk, e.rx * k * kk, -e.rot, 0, 7); g.fill(); };
-        strip(h.halfW + h.cut, 0, '#3f8232');
+        // (a shaped fairway, layFairway: the band between its two edges, in runs between the gaps)
+        const band = (halfFn, fromS, color, gaps = false) => {
+          g.fillStyle = color;
+          let run = [];
+          const flush = () => {
+            if (run.length > 1) { g.beginPath(); run.forEach((p, i) => (i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]))); for (let i = run.length - 1; i >= 0; i--) g.lineTo(run[i][2], run[i][3]); g.closePath(); g.fill(); }
+            run = [];
+          };
+          h.cl.forEach((p, i) => {
+            if (p.s < fromS || (gaps && inFairwayGap(h, p.s))) return flush();
+            const a = h.cl[Math.max(0, i - 1)], b = h.cl[Math.min(h.cl.length - 1, i + 1)], tx = b.x - a.x, tz = b.z - a.z, l = Math.hypot(tx, tz) || 1, nx = -tz / l, nz = tx / l;
+            const R = halfFn(p.s, 1), L = halfFn(p.s, -1);
+            run.push([X(p.x + nx * R, p.z + nz * R), Y(p.x + nx * R, p.z + nz * R), X(p.x - nx * L, p.z - nz * L), Y(p.x - nx * L, p.z - nz * L)]);
+          });
+          flush();
+        };
+        const blob = (e, color, kk = 1) => {
+          g.fillStyle = color; g.beginPath();
+          if (e.shape) outlinePts(e, kk, 60).forEach(([x, z], i) => (i ? g.lineTo(X(x, z), Y(x, z)) : g.moveTo(X(x, z), Y(x, z))));      // (a shaped green)
+          else g.ellipse(X(e.x, e.z), Y(e.x, e.z), e.rz * k * kk, e.rx * k * kk, -e.rot, 0, 7);
+          g.fill();
+        };
+        if (h.fwShaped) band(h.cutHalf, 0, '#3f8232'); else strip(h.halfW + h.cut, 0, '#3f8232');
         h.hardpan.forEach((p) => blob(p, '#8d7c57'));
-        strip(h.halfW, h.from, '#5cae48', true);
+        if (h.fwShaped) band(h.fw, h.from, '#5cae48', true); else strip(h.halfW, h.from, '#5cae48', true);
+        (h.groves || []).forEach((gv) => blob(gv, '#1f4d22'));                                    // (a stand of trees)
         (h.water || []).forEach((w) => blob(w, '#2f6f9e'));                                      // (WATER)
         blob(h.green, '#5cae48', 1.3); blob(h.green, '#9be67f');
         h.bunkers.forEach((b) => blob(b, '#e9dcaa'));
@@ -9557,14 +9664,16 @@
         const g = {
           cl, length: cl[N].s, halfW: def.halfWidth * YD, cut: def.firstCut * YD, from: def.fairwayFrom * YD,
           green: m(def.green), pin: { x: def.pin[0] * YD, z: def.pin[1] * YD }, bunkers: def.bunkers.map(m), hardpan: def.hardpan.map(m),
-          gaps: (def.fairwayGaps || []).map(([a, b]) => [a * YD, b * YD]), water: (def.water || []).map(m),
+          water: (def.water || []).map(m),
         };
+        layFairway(g, def);
         g.obStakes = obStakesFor(cl, (def.ob || 45) * YD);
         let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
         const addPt = (x, z, r = 0) => { u0 = Math.min(u0, -z - r); u1 = Math.max(u1, -z + r); v0 = Math.min(v0, x - r); v1 = Math.max(v1, x + r); };
         for (const p of cl) addPt(p.x, p.z);
         addPt(g.green.x, g.green.z, Math.max(g.green.rx, g.green.rz));
         for (const b of g.bunkers) addPt(b.x, b.z, Math.max(b.rx, b.rz));
+        for (const w of g.water) { addPt(w.x - w.rx, w.z); addPt(w.x + w.rx, w.z); addPt(w.x, w.z - w.rz); addPt(w.x, w.z + w.rz); }
         g.bounds = { u0: u0 - 14, u1: u1 + 18, v0: v0 - 20, v1: v1 + 20 };
         return (holeGeomCache[idx] = g);
       }
@@ -17743,7 +17852,7 @@
         LIES, SLOPES, AERO, windVector, clubFit, solveShape, powerMult, runChip, computePutt, analyzePutt, CADDIES,
         createPutt, stepPutt, puttTarget, rollDecel, puttGate, rng32, shopStats, SHOP, withClubModel, setup, careerStats,
         fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock, flatChipView, treeDeflect, treePart, TREE, previewTrack, previewSide, spreadRatio, dexSpreadAt, lowRunnerHeight, fitApproachWedge, APPROACH, bagClubNumbers, greenInReach, setGreenRead, get greenReadOpen() { return greenRead.open; },
-        BUNKER, bunkerH, bunkerGrad, inBowl, bunkerSlopeLie, stepChip, createChip, chipBounce, env, fullFaceRead, rigY, playTarget, suggestClub, setCourse, TIERS, waterDropOptions, waterEntry, get dropOpen() { return dropOpen; },
+        BUNKER, bunkerH, bunkerGrad, inBowl, bunkerSlopeLie, stepChip, createChip, chipBounce, env, fullFaceRead, rigY, playTarget, suggestClub, setCourse, TIERS, holeGeom, drawHoleCourse, makeMapTransform, inEllipse, waterDropOptions, waterEntry, get dropOpen() { return dropOpen; },
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, tiltFromLie, autoSelectPuttScale, putterBars, createCareer, openShop, openBagRoom, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
