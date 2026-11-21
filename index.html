@@ -5322,6 +5322,20 @@
         font-size: 11px;
         line-height: 1.3;
       }
+
+      /* (the three practice buttons still fit side by side: no icons) */
+      .hm-learn .hm-arc-prac {
+        gap: 6px;
+      }
+
+      .hm-learn .hm-arc-prac button {
+        min-width: 0;
+        padding: 8px 4px !important;
+      }
+
+      .hm-learn .hm-arc-prac span {
+        display: none;
+      }
     }
 
     /* the lessons' viewer: over everything (the home screen too), one slide at a time */
@@ -5828,7 +5842,20 @@
     .hm-arc-prac {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
+      gap: 8px;
+    }
+
+    /* (in the How to play block: each practice area under its lesson) */
+    .hm-learn .hm-arc-sub {
+      margin: 12px 0 6px;
+    }
+
+    .hm-learn .hm-arc-err {
+      margin: 6px 0 0;
+    }
+
+    .hm-learn .hm-arc-err:empty {
+      display: none;
     }
 
     .hm-arc-prac button {
@@ -7264,6 +7291,14 @@
       <div class="hm-learn" id="hmLearn">
         <div class="hm-learn-h"><b>📖 How to play</b><span>Three quick lessons, with pictures from the game</span></div>
         <div class="hm-learn-tiles" id="hmLearnTiles"></div>
+        <!-- practice, each under its lesson (user request, 2026-11-21; it was on the arcade side): the arcade's bag and stats -->
+        <div class="hm-h2 hm-arc-sub">Then practise it · the arcade's bag and stats</div>
+        <div class="hm-arc-prac" id="hmArcPrac">
+          <button data-h="range" title="The driving range: full swings"><span>🎯</span><b>Range</b></button>
+          <button data-h="chip" title="The chipping green: round the green"><span>🪃</span><b>Chipping</b></button>
+          <button data-h="putt" title="The putting green: read the break"><span>🕳️</span><b>Putting</b></button>
+        </div>
+        <div class="hm-arc-err" id="hmPracErr"></div>
       </div>
     </div>
     <!-- ARCADE (user request, 2026-11-20): apart from the career. Nine holes on any of the three courses with the same
@@ -7275,12 +7310,6 @@
       <div class="hm-arc-golfer" id="hmArcStats"></div>
       <div class="hm-courses" id="hmCourses"></div>
       <button id="hmArcPlay" class="go">⛳ Play 9 holes</button>
-      <div class="hm-h2 hm-arc-sub">Practice · the same bag and stats</div>
-      <div class="hm-arc-prac" id="hmArcPrac">
-        <button data-h="range" title="The driving range: full swings"><span>🎯</span><b>Range</b></button>
-        <button data-h="chip" title="The chipping green: round the green"><span>🪃</span><b>Chipping</b></button>
-        <button data-h="putt" title="The putting green: read the break"><span>🕳️</span><b>Putting</b></button>
-      </div>
       <div class="hm-arc-err" id="hmArcErr"></div>
       <div class="hm-h2" id="hmBoardH">🏆 World Top 10</div>
       <table id="hmBoard"></table>
@@ -18330,8 +18359,8 @@
           const b = e.target.closest('button[data-h]');
           if (!b) return;
           b.blur();
-          if (!homeSigned()) return setText('hmArcErr', 'Pick who\'s playing first, or play as a guest');
-          setText('hmArcErr', ''); homeGo(b.dataset.h);
+          if (!homeSigned()) return setText('hmPracErr', 'Pick who\'s playing first, or play as a guest');
+          setText('hmPracErr', ''); homeGo(b.dataset.h);
         });
         $('hmArcPlay').addEventListener('click', (e) => {
           e.currentTarget.blur();
