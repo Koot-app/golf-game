@@ -49,6 +49,15 @@
   out.push(`back on the range: pars ${g.HOLES.map((h) => h.par).join(',')} (the plain holes) · round on ${g.round.on}`);
   out.push('', 'THE ARCADE BAG at its stats (all 8) against the range\'s clubs at the standard 5 (stock full swing): loft · carry yds · sweet spot mm');
   for (const r of bagRows) { const b = g.CLUBS[r.i]; out.push(`   ${r.n.padEnd(15)} ${r.m.padEnd(38)} ${r.loft.toFixed(1).padStart(5)}° ${r.carry.toFixed(0).padStart(4)} ${r.sweet.toFixed(1).padStart(5)}   | range: ${b.model ? 'STILL A MODEL' : 'base'} ${b.loft.toFixed(1).padStart(5)}° ${g.stockShot(r.i).carry.toFixed(0).padStart(4)} ${b.sweet.toFixed(1).padStart(5)}`); }
+  out.push(`   after the round, on the range: stats ${g.state.power}/${g.state.dex}/${g.state.composure}/${g.state.perception} · driver ${g.CLUBS[0].model || 'base'} · bag "${$('bagTitle').textContent}"`);
+  // practice from the arcade side: the same bag and stats (user request); the career side has no practice tiles now
+  g.openHome(); await sleep(300);
+  out.push('', `career side tiles now: ${[...document.querySelectorAll('#hmMenu .hm-tiles button')].map((b) => b.querySelector('b').textContent.trim()).join(' | ')}`);
+  for (const h of ['range', 'chip', 'putt']) {
+    if (!document.body.classList.contains('home-on')) { g.openHome(); await sleep(300); }
+    document.querySelector(`#hmArcPrac button[data-h="${h}"]`).click(); await sleep(400);
+    out.push(`practice ${h}: mode ${g.state.mode} · stats ${g.state.power}/${g.state.dex}/${g.state.composure}/${g.state.perception} · driver ${g.CLUBS[0].model || 'base'} · 7 iron ${g.CLUBS[7].model || 'base'} · SW ${g.CLUBS[12].model || 'base'} · career on ${g.careerOn}`);
+  }
   // a bad course is refused by the server
   const bad = await fetch('/api/leaderboard?holes=9&course=7'); out.push(`asking for course 7's board: ${bad.status}`);
   const wrong = await fetch('/api/leaderboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'AAA', strokes: 35, putts: 18, par: 35, holes: 9, course: 2, scores: [5, 3, 4, 4, 3, 5, 4, 3, 4] }) });

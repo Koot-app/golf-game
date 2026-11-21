@@ -5201,6 +5201,40 @@
       margin-bottom: 4px;
     }
 
+    .hm-arc-sub {
+      margin: 10px 0 6px;
+    }
+
+    .hm-arc-prac {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .hm-arc-prac button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 6px !important;
+      border-radius: 10px !important;
+      background: rgba(255, 255, 255, .05);
+      border: 1px solid rgba(255, 255, 255, .12);
+    }
+
+    .hm-arc-prac button:hover {
+      background: rgba(255, 255, 255, .1);
+    }
+
+    .hm-arc-prac b {
+      font-size: 13px;
+      color: #fff;
+    }
+
+    #hmArcade #hmBoard td {
+      padding: 3px 4px;
+    }
+
     .hm-arc-err {
       min-height: 4px;
       font-size: 12px;
@@ -6587,12 +6621,6 @@
           <div class="hm-cat">Career · your own golfer, stats, clubs and money</div>
           <button data-h="career" class="hm-big" id="hmCareer"><b>🏌️ Career</b><i>Hustle the locals for money, buy clubs, take lessons, move up the circuits</i></button>
           <button data-h="friends" class="hm-wide" id="hmFriends"><b>🤝 Friends</b><i>Bet a friend on a round</i></button>
-          <div class="hm-cat">Practice</div>
-          <div class="hm-three">
-            <button data-h="range"><b>🎯 Range</b><i>Full swings</i></button>
-            <button data-h="chip"><b>🪃 Chipping</b><i>Around the green</i></button>
-            <button data-h="putt"><b>🕳️ Putting</b><i>Read the break</i></button>
-          </div>
         </div>
         <div class="hm-foot"><button id="hmReauth" class="go" style="display:none">Sign in again</button><button id="hmSwitch">Switch player</button><label class="hm-dev" id="hmDevBox"><input type="checkbox" id="hmDev"> 🛠 Developer tools</label><span id="hmSync"></span></div>
       </div>
@@ -6604,6 +6632,12 @@
       <div class="hm-arc-note">A level game: <b>everyone plays the same stats (all 8) and the same clubs</b>, a full bag of forgiving ones, whatever their career. Pick a course, play nine holes, and your score goes on its world Top 10.</div>
       <div class="hm-courses" id="hmCourses"></div>
       <button id="hmArcPlay" class="go">⛳ Play 9 holes</button>
+      <div class="hm-h2 hm-arc-sub">Practice · the same bag and stats</div>
+      <div class="hm-arc-prac" id="hmArcPrac">
+        <button data-h="range" title="The driving range: full swings"><span>🎯</span><b>Range</b></button>
+        <button data-h="chip" title="The chipping green: round the green"><span>🪃</span><b>Chipping</b></button>
+        <button data-h="putt" title="The putting green: read the break"><span>🕳️</span><b>Putting</b></button>
+      </div>
       <div class="hm-arc-err" id="hmArcErr"></div>
       <div class="hm-h2" id="hmBoardH">🏆 World Top 10</div>
       <table id="hmBoard"></table>
@@ -11722,6 +11756,7 @@
       function arcadeIntro() {
         if (swing.active || round.on) return;
         if (careerOn) leaveCareer(true);
+        arcadePractice = !devOn();                           // (and back on the range after it, still the arcade's game)
         applyDevTools();
         if (hp.on) leaveHole();
         setCourse(arcOf().tier);
@@ -11767,7 +11802,7 @@
         if (courseV) setCourse(null);                         // (an arcade round on the club's or the country club's course)
         round.on = false; round.over = false; lbEntry.active = false;
         if (!careerOn) { applyCareerClubs(); refreshShotType(); renderBag(); }      // (the arcade's bag is put away: the range's clubs are back)
-        if (round.saved) { setStats(round.saved); state.windMph = round.saved.mph; state.windDir = round.saved.dir; round.saved = null; $('inWind').value = state.windMph; $('inWindDir').value = state.windDir; orientFlags(); syncPanel(); }
+        if (round.saved) { setStats(arcadePractice && !careerOn ? ARCADE_STATS : round.saved); state.windMph = round.saved.mph; state.windDir = round.saved.dir; round.saved = null; $('inWind').value = state.windMph; $('inWindDir').value = state.windDir; orientFlags(); syncPanel(); }
         document.body.classList.remove('round'); hideScorecard();
         $('btnRound').textContent = `Arcade round · ${HOLES.length} holes`;
       }
@@ -11926,6 +11961,7 @@
       const CAREER_STATS = [['power', 'Power', 'longer shots'], ['dex', 'Dexterity', 'steadier when the shot is hard'],
         ['composure', 'Composure', 'shrugs off bad shots'], ['perception', 'Perception', 'reads lies and greens']];
       let career = null, careerOn = false, clubOpen = false, careerOwnStats = null;
+      let arcadePractice = false;                            // (practice from the home screen's arcade side: arcadeBagOn)
 
       // ---- PROFILES (MULTIPLAYER_PLAN.md, M1). Signed in, the career lives on the server (api/profile.js) and this PC keeps a
       // copy per profile; on this PC only, it's the old local career. session = { token, id, name }; playMode remembers
@@ -13414,8 +13450,9 @@
         document.body.classList.toggle('dev', on);
         $('chAdmin').classList.toggle('on', !!session && adminOk && !!career);   // (the admin's money: also when the rights arrive late)
         $('chAdminBtn').classList.toggle('on', !!session && adminOk && !!career);
+        if (on && arcadePractice) { arcadePractice = false; applyCareerClubs(); renderBag(); }     // (the admin's sandbox: the base clubs)
         if (!on && !careerOn && !round.on && typeof setStats === 'function') {        // everyone else plays the standard game
-          setStats(ROUND_STATS);
+          setStats(arcadePractice ? ARCADE_STATS : ROUND_STATS);                       // (the arcade's, practising from its side)
           state.windMph = 0; state.windDir = 0; $('inWind').value = 0; $('inWindDir').value = 0;
           orientFlags(); syncPanel();
         }
@@ -13542,13 +13579,19 @@
           return;
         }
         if (what === 'round') return arcadeIntro();
-        // practice: your career's game (stats and bag) if you have one; the admin's developer tools play the sandbox
+        // practice (the arcade side's Range / Chipping / Putting, user request 2026-11-20): the arcade's game, its bag and
+        // its stats (all 8), never the career's (a career practises from its clubhouse); the admin's developer tools play
+        // the sandbox (base clubs, the sliders)
         if (hp.on) leaveHole();
-        if (career && !devOn()) { if (!careerOn) enterCareer(); }
-        else if (careerOn) leaveCareer(true);
-        if (what === 'range') { if (state.mode !== 'range') setMode('range'); toast('The driving range\nH plays a hole · Esc for 🏠 Home', 2200); }
-        else if (what === 'chip') { setMode('chip'); toast('The chipping green\nN a new chip · Esc for 🏠 Home', 2200); }
-        else if (what === 'putt') { setMode('putt'); toast('The putting green\nN a new putt · Esc for 🏠 Home', 2200); }
+        if (careerOn) leaveCareer(true);
+        arcadePractice = !devOn();
+        applyCareerClubs();
+        if (arcadePractice) setStats(ARCADE_STATS); else renderBag();
+        refreshShotType();
+        const arcTag = arcadePractice ? ' · arcade bag, stats 8' : '';
+        if (what === 'range') { if (state.mode !== 'range') setMode('range'); toast(`The driving range${arcTag}\nH plays a hole · Esc for 🏠 Home`, 2200); }
+        else if (what === 'chip') { setMode('chip'); toast(`The chipping green${arcTag}\nN a new chip · Esc for 🏠 Home`, 2200); }
+        else if (what === 'putt') { setMode('putt'); toast(`The putting green${arcTag}\nN a new putt · Esc for 🏠 Home`, 2200); }
       }
       // the arcade side: the three courses (the one picked lit), its play button, and that course's Top 10
       const arcYds = {};
@@ -13616,7 +13659,9 @@
       // the CB 12, can't, and the country club's bunkers need one). It used to be the base clubs. The putter is still
       // the player's pick of the two standard ones.
       const ARCADE_BAG = { 0: 'd-g440k', 1: 'f-g440k', 2: 'f-g440k', 3: 'f-g440k', 4: 'i-qimax', 5: 'i-qimax', 6: 'i-qimax', 7: 'i-qimax', 8: 'i-qimax', 9: 'i-qimax', 10: 'i-qimax', 11: 'w-cbx2', 12: 'w-cbx2', 13: 'w-cbx2' };
-      const arcadeBagOn = () => round.on && !careerOn;      // (round.on in a career is a match, an invitational or a friend round)
+      // (round.on in a career is a match, an invitational or a friend round. arcadePractice: the range, chipping or putting
+      // started from the home screen's arcade side plays the arcade's bag and stats too, user request 2026-11-20)
+      const arcadeBagOn = () => !careerOn && (round.on || arcadePractice);
       const CLUB_MODELS = {
         // ---- irons (7-iron loft change shown; 4i–5i get 80% of it)
         //      Swing audit S5.2 (2026-11-20): dynLoft and spin re-tuned so the strong-lofted sets land a little FLATTER than
@@ -17210,6 +17255,13 @@
           if (!b) return;
           setArcCourse(+b.dataset.arc); setText('hmArcErr', '');
           renderHomeBoard(); lbFetch().then(renderHomeBoard);
+        });
+        $('hmArcPrac').addEventListener('click', (e) => {         // practice: the arcade's bag and stats (homeGo)
+          const b = e.target.closest('button[data-h]');
+          if (!b) return;
+          b.blur();
+          if (!homeSigned()) return setText('hmArcErr', 'Pick who\'s playing first, or play as a guest');
+          setText('hmArcErr', ''); homeGo(b.dataset.h);
         });
         $('hmArcPlay').addEventListener('click', (e) => {
           e.currentTarget.blur();
