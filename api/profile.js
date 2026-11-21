@@ -26,7 +26,7 @@
 const crypto = require('crypto');
 const { redis, readBody, clientIp, rateLimit, sessionId, sessionValue, tokenOf, SESSION_S, CAS, updateCareer } = require('./_redis');
 const { isAdmin, adminCred } = require('./_admins');
-const { arr, num, tierOf, plain, goodRounds, handicapOf, normCareer, outcomeFor } = require('./_career');
+const { arr, num, tierOf, plain, goodRounds, handicapOf, normCareer, outcomeFor, invPairs } = require('./_career');
 const FORMATS = ['match', 'stroke', 'skins'];
 const ID_RE = /^[a-z0-9 _-]{3,12}$/;                // a profile id: the name lower-cased
 
@@ -48,10 +48,17 @@ function lineFromRecord(ch, who) {
   return { friend: o, friendName: (ch.names || {})[o] || o, ch: ch.id, format: FORMATS.includes(ch.format) ? ch.format : 'match', stake: num(ch.stake),
     result: plain(`${outcomeFor(res, who)} · ${res.line}`), net: num((res.net || {})[who]), date: num(ch.finished) };
 }
-// the friend lines of a career's history that check out against the records (one line per challenge)
+// a settled friends invitational as one player's history line, for the rivalry wall's records: `vs` is the result
+// against each other player (invPairs, the same as payOut writes), or null if it isn't theirs / settled
+function invLineFromRecord(ch, who) {
+  if (!ch || ch.kind !== 'inv' || ch.status !== 'done' || !ch.result || !arr(ch.field).includes(who)) return null;
+  return { inv: true, friend: null, friendName: null, ch: ch.id, format: FORMATS.includes(ch.format) ? ch.format : 'stroke', stake: num(ch.stake),
+    result: plain(ch.result.line), net: num((ch.result.net || {})[who]), vs: invPairs(ch, who), date: num(ch.finished) };
+}
+// the friend lines of a career's history that check out against the records (one line per challenge or invitational)
 async function verifiedFriendLines(c, who) {
-  const ids = [...new Set(arr(c.history).filter((h) => h && h.friend && CH_ID.test(String(h.ch || ''))).map((h) => h.ch))].slice(-200);
-  return (await getChs(ids)).map((ch) => lineFromRecord(ch, who)).filter(Boolean);
+  const ids = [...new Set(arr(c.history).filter((h) => h && (h.friend || h.inv) && CH_ID.test(String(h.ch || ''))).map((h) => h.ch))].slice(-200);
+  return (await getChs(ids)).map((ch) => (ch && ch.kind === 'inv' ? invLineFromRecord(ch, who) : lineFromRecord(ch, who))).filter(Boolean);
 }
 // is this piece on the owner's wall right now (their own show / hide / frame choices; destroyed for good)?
 function onWall(c, key) {
@@ -295,7 +302,7 @@ module.exports = async (req, res) => {
       // these): ids and names that match the profile rules, a known format, finite numbers, plain short text
       // the friend lines (the rivalry wall: records and wins) come from the challenge records, never from the career
       // (audit 3.5); the others (hustler wins and big scores, for their earned trophies) are the career's own
-      const own = arr(c.history).filter((h) => h && typeof h === 'object' && !h.friend && !h.sale && ((h.npc && num(h.net) > 0) || num(h.net) >= 1000))
+      const own = arr(c.history).filter((h) => h && typeof h === 'object' && !h.friend && !h.inv && !h.sale &&((h.npc && num(h.net) > 0) || num(h.net) >= 1000))
         .slice(-200).map((h) => ({ npc: h.npc ? 1 : 0, friend: null, friendName: null, ch: null, format: FORMATS.includes(h.format) ? h.format : 'match', stake: num(h.stake), result: plain(h.result), net: num(h.net), date: num(h.date) }));
       const hist = [...own, ...(await verifiedFriendLines(c, who))].sort((x, y) => x.date - y.date).slice(-300);
       // the framed scorecards: the settled challenges themselves (both cards), for whoever looks at the wall

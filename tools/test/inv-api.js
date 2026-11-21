@@ -77,5 +77,25 @@
   await post(A.token, 'accept', { id: lid }); await post(H.token, 'start', { id: lid }); await play(H, lid, z);
   const la = (await post(A.token, 'list')).challenges.find((c) => c.id === lid);
   say(la && la.cards[H.id] === true && la.holes[H.id] === 9, `A's list: H's card shows only as in (${JSON.stringify(la && la.cards)}), holes ${JSON.stringify(la && la.holes)}`);
+  // ---- 6. the head-to-head records (user request, 2026-11-20): each settled invitational's history line has a result
+  // against every other player in it (vs), the two sides agree, and the money against each adds up to the line's net
+  const hist = async (p) => (((await post(p.token, 'load', {}, '/api/profile')).career || {}).history || []).filter((h) => h.inv);
+  const HL = { H: await hist(H), A: await hist(A), B: await hist(B) }, ids = { H: H.id, A: A.id, B: B.id };
+  const vsOf = (k, cid, o) => ((HL[k].find((h) => h.ch === cid) || {}).vs || []).find((v) => v.id === ids[o]);
+  const flip = { won: 'lost', lost: 'won', halved: 'halved' };
+  for (const [cid, what] of [[id, 'stroke play'], [sid, 'skins'], [fid, 'the forfeit']]) {
+    const pairs = [['H', 'A'], ['H', 'B'], ['A', 'B']].map(([a, b2]) => [a, b2, vsOf(a, cid, b2), vsOf(b2, cid, a)]);
+    const agree = pairs.every(([, , x, y]) => x && y && flip[x.r] === y.r && x.net === -y.net);
+    const sums = ['H', 'A', 'B'].every((k) => { const l = HL[k].find((h) => h.ch === cid); return l && Math.abs(l.vs.reduce((s, v) => s + v.net, 0) - l.net) <= 1; });
+    say(agree && sums, `${what}: ${pairs.map(([a, b2, x]) => `${a} ${x ? x.r : '?'} vs ${b2} (${x ? x.net : '?'})`).join(' · ')} · both sides agree ${agree}, money adds up ${sums}`);
+  }
+  say(vsOf('B', sid, 'H').r === 'won' && vsOf('H', sid, 'A').r === 'won' && vsOf('H', fid, 'B').r === 'won' && vsOf('A', fid, 'B').r === 'won',
+    'skins: B (+$90) beat both, H (−$30) beat A (−$60) · the forfeit: B lost to both who finished');
+  // a visitor to B's trophy room gets the same records, rebuilt from the challenge records (not B's own history)
+  const room = await post(H.token, 'showcase', { name: B.id }, '/api/profile');
+  const rl = ((room.player || {}).history || []).filter((h) => h.inv);
+  const rv = (cid, o) => ((rl.find((h) => h.ch === cid) || {}).vs || []).find((v) => v.id === ids[o]);
+  say(rl.length === 3 && rv(sid, 'H').r === 'won' && rv(fid, 'A').r === 'lost' && rv(id, 'H').r === vsOf('B', id, 'H').r,
+    `B's trophy room for a visitor: ${rl.length} invitational lines with records (skins vs H ${rv(sid, 'H') && rv(sid, 'H').r}, the forfeit vs A ${rv(fid, 'A') && rv(fid, 'A').r})`);
   return out.join('\n');
 })()

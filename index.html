@@ -13483,13 +13483,19 @@
         if (!career || pvpSeen(id)) return;
         career.pvpSeen = [...(career.pvpSeen || []), id].slice(-40); careerSave();
       }
-      // won–lost–halved and money against one friend (or all of them, id = null), from the career's history
+      // won–lost–halved and money against one friend (or all of them, id = null), from the career's history. A friends
+      // invitational counts too (user request, 2026-11-20): its line's `vs` holds a result against each other player
+      // (beat the ones you finished ahead of; the money between the two of you), written by the server (invPairs in
+      // api/_career.js), so a five-player invitational is four results.
+      const invVs = (x) => (x && x.inv && Array.isArray(x.vs) ? x.vs : []).filter((v) => v && typeof v.id === 'string' && ['won', 'lost', 'halved'].includes(v.r))
+        .map((v) => ({ id: v.id, name: String(v.name || v.id).slice(0, 12), r: v.r, net: Number.isFinite(v.net) ? v.net : 0 }));
       function h2h(id) {
         const r = { w: 0, l: 0, h: 0, n: 0, money: 0 };
+        const add = (res, net) => { r.n++; r.money += net || 0; if (/^won/.test(res)) r.w++; else if (/^lost/.test(res)) r.l++; else r.h++; };
         for (const x of (career && career.history) || []) {
-          if (!x.friend || (id && x.friend !== id) || /^refunded/.test(x.result || '')) continue;
-          r.n++; r.money += x.net || 0;
-          if (/^won/.test(x.result)) r.w++; else if (/^lost/.test(x.result)) r.l++; else r.h++;
+          if (x && x.inv) { for (const v of invVs(x)) if (!id || v.id === id) add(v.r, v.net); continue; }
+          if (!x || !x.friend || (id && x.friend !== id) || /^refunded/.test(x.result || '')) continue;
+          add(x.result || '', x.net);
         }
         return r;
       }
@@ -14214,7 +14220,7 @@
         { id: 'firstwin', name: 'First hustle won', art: 'cup-bronze', how: 'Win a match against a hustler', got: (c) => (c.history || []).some((h) => h.npc && h.net > 0) },
         { id: 'resort', name: 'Club card', art: 'cup-silver', how: 'Open the club circuit', got: (c) => (c.tierMax || 1) >= 2 },
         { id: 'member', name: 'Country-club member', art: 'cup-gold', how: 'Join the country club', got: (c) => (c.tierMax || 1) >= 3 },
-        { id: 'friendly', name: 'Friendly fire', art: 'cup-silver', how: 'Beat a friend in a challenge', got: (c) => (c.history || []).some((h) => h.friend && /^won/.test(h.result || '')) },
+        { id: 'friendly', name: 'Friendly fire', art: 'cup-silver', how: 'Beat a friend in a challenge', got: (c) => (c.history || []).some((h) => (h.friend && /^won/.test(h.result || '')) || invVs(h).some((v) => v.r === 'won')) },
         { id: 'bigscore', name: 'The big score', art: 'cup-gold', how: 'Win $1,000 or more in one match or event', got: (c) => (c.history || []).some((h) => h.net >= 1000 && !h.sale) },
         { id: 'single', name: 'Single figures', art: 'cup-silver', how: 'Get your handicap under 10', got: (c) => { const h = handicapOf(c); return h !== null && h < 10; } },
         { id: 'scratch', name: 'Scratch golfer', art: 'cup-gold', how: 'Get your handicap to 0 or better', got: (c) => { const h = handicapOf(c); return h !== null && h <= 0; } },
@@ -14271,6 +14277,15 @@
       function rivalItems(c) {
         const by = new Map(), sc = (c && c.showcase) || {}, gone = new Set(sc.destroyed || []), hide = new Set(sc.hide || []), framed = new Set(sc.cards || []);
         for (const h0 of (c && Array.isArray(c.history) ? c.history : [])) {
+          // (a friends invitational adds to each rival's record and money; its wins aren't framed cards, which are 1v1's)
+          if (h0 && h0.inv) {
+            for (const v of invVs(h0)) {
+              const r = by.get(v.id) || { id: v.id, name: v.name, w: 0, l: 0, hv: 0, money: 0, wins: [] };
+              r.money += v.net; if (v.r === 'won') r.w++; else if (v.r === 'lost') r.l++; else r.hv++;
+              by.set(v.id, r);
+            }
+            continue;
+          }
           if (!h0 || typeof h0.friend !== 'string' || /^refunded/.test(h0.result || '')) continue;
           // (only values of the right kind: a challenge id that looks like one, a format the game knows, numbers)
           const h = { ...h0, ch: /^[a-f0-9]{16}$/.test(h0.ch || '') ? h0.ch : null, format: FR_FMT[h0.format] ? h0.format : 'match',

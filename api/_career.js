@@ -60,4 +60,22 @@ const summaryOf = (c, id) => ({
 const outcomeFor = (res, p) => (res.kind === 'refund' ? 'refunded' : !res.winner ? 'halved' : res.winner === p ? 'won' : res.kind === 'played' ? 'lost'
   : res.kind === 'expired' ? 'lost (out of time)' : 'lost (forfeit)');
 
-module.exports = { arr, num, tierOf, plain, strs, goodRounds, HCP, handicapOf, normCareer, outcomeFor, summaryOf };
+// A settled friends invitational (api/challenge.js, kind 'inv') as head-to-head results (user request, 2026-11-20): one
+// per other player in the field. You beat a player you finished ahead of (stroke play: the lower net total; skins: the
+// more money), lose to one ahead of you, halve with one level; a forfeit (or running out of time) is behind everyone
+// who finished. The money against each: (your net − theirs) ÷ the field, so the pairs add up to exactly what you won or
+// lost (stroke play, winner takes all: the winner is a stake up on each player, two losers are level). Written into each
+// player's history line as `vs` (api/challenge.js payOut), and rebuilt from the record for a visited trophy room
+// (api/profile.js); index.html's h2h() and rivalItems() count them.
+function invPairs(ch, who) {
+  const F = arr(ch && ch.field), res = ch && ch.result;
+  if (!res || res.kind === 'refund' || !F.includes(who) || !res.net) return [];
+  const ff = (ch.forfeits && typeof ch.forfeits === 'object') ? ch.forfeits : {}, st = arr(res.standings);
+  const metric = (p) => (ff[p] ? -Infinity : ch.format === 'skins' ? num(res.net[p]) : (() => { const s = st.find((x) => x && x.p === p); return s ? -num(s.net) : -Infinity; })());
+  return F.filter((p) => p !== who).map((o) => {
+    const a = metric(who), b = metric(o);
+    return { id: o, name: plain((ch.names || {})[o] || o).slice(0, 12), r: a > b ? 'won' : a < b ? 'lost' : 'halved', net: Math.round((num(res.net[who]) - num(res.net[o])) / F.length) };
+  });
+}
+
+module.exports = { arr, num, tierOf, plain, strs, goodRounds, HCP, handicapOf, normCareer, outcomeFor, summaryOf, invPairs };

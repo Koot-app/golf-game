@@ -52,6 +52,10 @@
   // I host one: the form, pick both friends, send
   $('scNext').click(); await sleep(1500);
   if (!$('clubhouse').classList.contains('friends')) { g.openClubhouse(); await sleep(300); g.openFriends(); await sleep(1500); }
+  // the head-to-head records count it: I beat both (user request, 2026-11-20)
+  const recRow = (n) => { const r = [...document.querySelectorAll('#frList .fr-pl')].find((x) => x.querySelector('b').textContent === n); return r ? r.innerText.replace(/\s+/g, ' ') : ''; };
+  const recH = recRow(H.name), recF = recRow(F.name), hdr = [...document.querySelectorAll('#frList .sh-cat')].map((x) => x.textContent).find((t) => /^Players/.test(t)) || '';
+  say(/You vs \S+: 1–0–0/.test(recH) && /You vs \S+: 1–0–0/.test(recF) && /record vs friends 2–0–0/.test(hdr), `Friends records: "${(/You vs[^·]*·[^ ]* [^ ]*/.exec(recH) || [''])[0]}" · "${(/You vs[^·]*·[^ ]* [^ ]*/.exec(recF) || [''])[0]}" · "${hdr}"`);
   $('frInvBtn').click(); await sleep(300);
   say($('chChal').classList.contains('inv') && $('ccPickRow').offsetParent !== null, `the invitational form is open: "${$('ccTitle').textContent}" · match play shown ${document.querySelector('#ccFmt [data-fmt=match]').offsetParent !== null}`);
   document.querySelector(`#ccPick button[data-pick="${H.id}"]`).click(); await sleep(100);

@@ -48,7 +48,7 @@ const MAX_ACTIVE = 12;                           // pending + open challenges a 
 const MAX_STAKE = 100000;
 
 // a career's handicap: _career.js (shared with api/profile.js, and the same as handicapOf() in index.html)
-const { handicapOf, outcomeFor } = require('./_career');
+const { handicapOf, outcomeFor, invPairs } = require('./_career');
 // strokes received on each hole: one on every hole whose stroke index is ≤ n, two on the hardest past 9 (same in index.html)
 const holeStrokes = (n, tier) => (SI_BY_TIER[tier] || SI_BASE).map((si) => (si <= n ? 1 : 0) + (si <= n - HOLES ? 1 : 0));
 const escrowOf = (ch) => ch.stake * (ch.format === 'skins' ? HOLES : 1);
@@ -227,7 +227,8 @@ async function payOut(ch) {
           if (!esc) return false;
           c.cash = (c.cash || 0) + (res.payout[p] || 0);
           c.escrow = escOf(c).filter((x) => x !== ch.id);
-          c.history.push({ inv: true, invName: `${ch.names[ch.host]}'s invitational (${n} players)`, ch: ch.id, format: ch.format, stake: ch.stake, result: `${invOutcome(ch, res, p)} · ${res.line}`, net: res.net[p] || 0, date: Date.now() });
+          // (vs: the head-to-head result against each other player, for the records: invPairs in _career.js)
+          c.history.push({ inv: true, invName: `${ch.names[ch.host]}'s invitational (${n} players)`, ch: ch.id, format: ch.format, stake: ch.stake, result: `${invOutcome(ch, res, p)} · ${res.line}`, net: res.net[p] || 0, vs: invPairs(ch, p), date: Date.now() });
         });
       } catch { continue; }
       ch.paid[p] = true;
