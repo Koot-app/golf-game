@@ -9299,7 +9299,7 @@
       }
 
       // ---- CAREER TIERS (CAMPAIGN_PLAN.md, chunk 8): each circuit plays nine holes as its own course: its green speed and
-      // wind, the country club's tighter OB, more trees. The muni and the country club play the holes as written; the resort
+      // wind, the country club's tighter OB, more trees. The muni and the country club play the holes as written; the club
       // has its own (HOLES_T2, user request 2026-11-20; it used to play them mirrored left to right). courseV = the course
       // being played (null = the holes as written: the range, free play, the test round).
       const TIERS = {
@@ -11529,7 +11529,7 @@
         // the starting bag (CLUBS index -> model id, see the club catalogue); used from chunk 2 on
         bag: { 0: 'd-xr16', 3: 'h-xr', 5: 'i-ap1', 7: 'i-ap1', 9: 'i-ap1', 10: 'i-ap1', 12: 'w-sm6' },
         putter: 'p-wh2',
-        tiers: { 1: 'Munis', 2: 'Resorts', 3: 'Country clubs' },
+        tiers: { 1: 'Munis', 2: 'Clubs', 3: 'Country clubs' },          // (tier 2 was 'Resorts': user request, 2026-11-20)
       };
       const CAREER_STATS = [['power', 'Power', 'longer shots'], ['dex', 'Dexterity', 'steadier when the shot is hard'],
         ['composure', 'Composure', 'shrugs off bad shots'], ['perception', 'Perception', 'reads lies and greens']];
@@ -12018,9 +12018,9 @@
       function renderTiers() {
         if (!career) return;
         career.tierMax = career.tierMax || 1;
-        if (career.tierMax < 2 && career.rep >= TIERS[2].rep) {         // the resort circuit opens on its own
+        if (career.tierMax < 2 && career.rep >= TIERS[2].rep) {         // the club circuit opens on its own
           career.tierMax = 2; careerSave();
-          setText('chMsg', `The resort circuit is open to you: ${TIERS[2].course}. Pick it below.`);
+          setText('chMsg', `The club circuit is open to you: ${TIERS[2].course}. Pick it below.`);
         }
         const busy = career.match && !career.match.settled && career.match.feePaid;
         $('chTiers').innerHTML = [1, 2, 3].map((t) => {
@@ -12338,7 +12338,7 @@
       new MutationObserver(chSetRoom).observe($('clubhouse'), { attributes: true, attributeFilter: ['class'] });
       $('chSpots').appendChild($('clubhouse').querySelector('.ch-menu'));          // the lobby's menu hangs on its doors
       // the career's standing, as a title under the name (reputation)
-      const RANKS = [[0, 'Muni rat'], [15, 'Range regular'], [40, 'Weekend hustler'], [80, 'Local legend'], [120, 'Resort shark'], [200, 'Country-club menace'], [320, 'Legend of the links']];
+      const RANKS = [[0, 'Muni rat'], [15, 'Range regular'], [40, 'Weekend hustler'], [80, 'Local legend'], [120, 'Club shark'], [200, 'Country-club menace'], [320, 'Legend of the links']];
       const rankOf = (rep) => RANKS.filter(([r]) => rep >= r).pop()[1];
 
       function chScene(room) {
@@ -13464,7 +13464,7 @@
         { id: 'lefty', short: 'Lefty', name: '“Lefty” Doyle', tier: 1, rep: 40, hire: 3000, loop: 40, comp: 1, per: 1, calm: 0,
           bio: 'Forty years of loops. Says almost nothing, then points at the right club.', say: 'Next one.' },
         { id: 'marisol', short: 'Marisol', name: 'Marisol Vega', tier: 2, rep: 80, hire: 8000, loop: 90, comp: 1, per: 2, calm: 1,
-          bio: 'Reads the resort greens like a book, and walks off a bad hole with you.', say: 'That hole\'s gone. This one\'s ours.' },
+          bio: 'Reads the Cedar Hollow greens like a book, and walks off a bad hole with you.', say: 'That hole\'s gone. This one\'s ours.' },
         { id: 'walt', short: 'Big Walt', name: '“Big Walt” Okafor', tier: 3, rep: 120, hire: 15000, loop: 150, comp: 3, per: 1, calm: 2,
           bio: 'Nothing rattles him, so nothing rattles you. Every hole starts fresh.', say: 'Breathe. New hole, new day.' },
         // the top of the shack (user request): two caddies at the same price, the same help with your head, and one extra:
@@ -13562,7 +13562,7 @@
       ];
       const EARNED = [
         { id: 'firstwin', name: 'First hustle won', art: 'cup-bronze', how: 'Win a match against a hustler', got: (c) => (c.history || []).some((h) => h.npc && h.net > 0) },
-        { id: 'resort', name: 'Resort card', art: 'cup-silver', how: 'Open the resort circuit', got: (c) => (c.tierMax || 1) >= 2 },
+        { id: 'resort', name: 'Club card', art: 'cup-silver', how: 'Open the club circuit', got: (c) => (c.tierMax || 1) >= 2 },
         { id: 'member', name: 'Country-club member', art: 'cup-gold', how: 'Join the country club', got: (c) => (c.tierMax || 1) >= 3 },
         { id: 'friendly', name: 'Friendly fire', art: 'cup-silver', how: 'Beat a friend in a challenge', got: (c) => (c.history || []).some((h) => h.friend && /^won/.test(h.result || '')) },
         { id: 'bigscore', name: 'The big score', art: 'cup-gold', how: 'Win $1,000 or more in one match or event', got: (c) => (c.history || []).some((h) => h.net >= 1000 && !h.sale) },
@@ -14285,11 +14285,11 @@
         { id: 'terry', tier: 1, first: 'Terry', nick: 'Two-Putt', last: 'Vance', skill: 1.375, spread: 0.8, maxStake: 150, press: 0, desc: 'A steady bogey golfer who never three-putts', lines: { hello: 'Slow and steady, friend. Slow and steady.', win: 'Told you. Never three-putt.', lose: 'Well. That stings.', halve: 'Square. I\'ll take it.', cantPay: 'You bet money you didn\'t have? Steady on. Steady.', press: 'I don\'t press. Never have.', pressed: 'If you must. Steady, though.' } },
         { id: 'sal', tier: 1, first: 'Sal', nick: 'Sandbag', last: 'Moretti', skill: 1.075, spread: 0.9, maxStake: 200, press: 0.6, desc: 'Says he\'s a 20 handicap. He isn\'t.', lines: { hello: 'Go easy on me, I\'m just a hacker.', win: 'Huh, lucky day I guess. Pay up.', lose: 'Fine. You got me.', halve: 'Even. Rematch?', cantPay: 'Hacker, huh? So am I. Hold still.', press: 'Let\'s make it interesting, shall we?', pressed: 'Sure, sure. Whatever you say.' } },
         { id: 'gus', tier: 1, first: 'Gus', nick: 'Gravel', last: 'Haney', skill: 0.775, spread: 0.8, maxStake: 250, press: 1, desc: 'The best player at the muni, and he knows it', lines: { hello: 'You sure about this?', win: 'Thought so.', lose: '...Nobody beats me here. Nobody.', halve: 'Not bad. Not good either.', cantPay: 'Nobody stiffs Gravel Haney.', press: 'Press. You got lucky.', pressed: 'Your funeral.' } },
-        // ---- tier 2: the resort circuit (chunk 8)
+        // ---- tier 2: the club circuit (chunk 8; the resort circuit until 2026-11-20)
         { id: 'chad', tier: 2, first: 'Chad', nick: 'Trust Fund', last: 'Whitmore', skill: 0.7, spread: 0.9, maxStake: 400, press: 1, desc: 'Plays with his father\'s money and presses everything', lines: { hello: 'Let\'s make this worth my time, yeah?', win: 'Put it on my tab. Oh wait — you pay me.', lose: 'Whatever. Dad\'s good for it.', halve: 'Boring. Again tomorrow.', cantPay: 'You don\'t have it? That\'s embarrassing. For you.', press: 'Press. Money\'s no object.', pressed: 'Sure, bro. Love it.' } },
         { id: 'marco', tier: 2, first: 'Marco', nick: 'Mulligan', last: 'Bellini', skill: 0.65, spread: 1.15, maxStake: 300, press: 0.8, desc: 'Brilliant one hole, a disaster the next', lines: { hello: 'No mulligans today. Probably.', win: 'Bellissimo. Pay the man.', lose: 'Bah! The wind, the greens, everything.', halve: 'A draw. Like football.', cantPay: 'In my family we have a word for this.', press: 'Press! Now it gets fun.', pressed: 'Ah, you have courage. I like it.' } },
         { id: 'rita', tier: 2, first: 'Rita', nick: 'The Closer', last: 'Delgado', skill: 0.55, spread: 0.7, maxStake: 500, press: 0.5, desc: 'Never misses a short putt when money is on it', lines: { hello: 'Bring your putter. You\'ll need it.', win: 'Closed. As always.', lose: 'Fair. You earned that.', halve: 'Even. Don\'t get used to it.', cantPay: 'Then we settle it another way.', press: 'Let\'s press. I close better than you.', pressed: 'Bold. Fine.' } },
-        { id: 'jim', tier: 2, first: 'Jim', nick: 'Pro-Am', last: 'Kessler', skill: 0.45, spread: 0.6, maxStake: 800, press: 0.3, desc: 'A retired club pro who plays the resort every day', lines: { hello: 'Thirty years teaching this game. Let\'s see.', win: 'Lesson\'s free. The bet isn\'t.', lose: 'Well struck, son. Well struck.', halve: 'A fair contest.', cantPay: 'I taught you better than that.', press: 'Alright. Press.', pressed: 'Accepted.' } },
+        { id: 'jim', tier: 2, first: 'Jim', nick: 'Pro-Am', last: 'Kessler', skill: 0.45, spread: 0.6, maxStake: 800, press: 0.3, desc: 'A retired club pro who plays Cedar Hollow every day', lines: { hello: 'Thirty years teaching this game. Let\'s see.', win: 'Lesson\'s free. The bet isn\'t.', lose: 'Well struck, son. Well struck.', halve: 'A fair contest.', cantPay: 'I taught you better than that.', press: 'Alright. Press.', pressed: 'Accepted.' } },
         // ---- tier 3: the country club (chunk 8)
         { id: 'whit', tier: 3, first: 'Whitaker', nick: 'Old Money', last: 'Pell', skill: 0.5, spread: 0.6, maxStake: 1500, press: 0.3, desc: 'Fourth-generation member; never hurried, never rattled', lines: { hello: 'Shall we say a modest wager?', win: 'Splendid. My man will collect.', lose: 'Hm. Most irregular.', halve: 'A gentleman\'s draw.', cantPay: 'One simply does not welch at Hawthorne.', press: 'I believe I shall press.', pressed: 'If you insist.' } },
         { id: 'ana', tier: 3, first: 'Ana', nick: 'Ice', last: 'Lindqvist', skill: 0.3, spread: 0.5, maxStake: 2500, press: 0, desc: 'A former college star: says nothing, misses nothing', lines: { hello: '...', win: 'Good game.', lose: 'Good game.', halve: 'Good game.', cantPay: 'That was a mistake.', press: '...', pressed: 'Fine.' } },
@@ -14859,7 +14859,7 @@
         { id: 'muniopen', name: 'The Rolling Pines Muni Open', short: 'Muni Open', tier: 1, rep: 20, entry: 250, purse: [1500, 700, 400], repWin: [15, 8, 4], form: 0, art: 'cup-silver',
           desc: 'The muni\'s summer stroke-play shootout. Every hustler in town turns up, even the country-club ones.' },
         { id: 'palmproam', name: 'The Cedar Hollow Pro-Am', short: 'Cedar Hollow Pro-Am', tier: 2, rep: 80, entry: 1500, purse: [9000, 4000, 2000], repWin: [30, 15, 8], form: -0.05, art: 'salver',
-          desc: 'Resort money, resort greens. The pros play for pride; you play for the purse.' },
+          desc: 'Members\' money, members\' greens. The pros play for pride; you play for the purse.' },
         { id: 'hawthorne', name: 'The Hawthorne Members\' Invitational', short: 'Hawthorne Invitational', tier: 3, rep: 150, entry: 7500, purse: [30000, 12000, 6000], repWin: [60, 30, 15], form: -0.1, art: 'cup-gold',
           desc: 'Jackets, juleps and lightning greens. The members don\'t like losing their own trophy.' },
         { id: 'classic', name: 'The Hustlers\' Classic', short: 'Hustlers\' Classic', tier: 3, rep: 250, entry: 25000, purse: [150000, 60000, 30000], repWin: [100, 50, 25], form: -0.2, art: 'bigcup',
