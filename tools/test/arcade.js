@@ -41,8 +41,9 @@
     }
     for (let i = 0; i < 9; i++) { g.hp.strokes = pars[i] + (i === c ? 1 : 0); g.hp.putts = 2; g.finishHole(); await sleep(60); if (i < 8) { g.scorecardNext(); await sleep(150); } }
     await sleep(400); key('Enter'); await sleep(1500);
-    out.push(`   saved: "${$('lbNote').textContent}" · board title "${$('scTitle').textContent}"`);
-    g.quitRound(); await sleep(300);
+    out.push(`   saved: "${$('lbNote').textContent}" · board title "${$('scTitle').textContent}" · buttons "${$('scNext').textContent}" | "${$('scClose').textContent}"`);
+    $('scClose').click(); await sleep(400);                // (the finished round's second button: back to the home screen)
+    out.push(`   after "Back to the home screen": home screen open ${document.body.classList.contains('home-on')} · round on ${g.round.on} · on a hole ${g.hp.on}`);
   }
   const after = [await board(1), await board(2), await board(3)];
   out.push('', `rounds on each course's board, before -> after: ${before.map((b, i) => `course ${i + 1}: ${b} -> ${after[i]}`).join(' · ')}`);

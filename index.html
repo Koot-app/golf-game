@@ -15866,7 +15866,7 @@
           ? `${msg ? msg + '\n\n' : ''}Round complete: ${t.strokes} strokes on a par ${totPar} (${fmtToPar(t.toPar)}) · ${t.putts} putts`
           : msg;
         $('scNext').textContent = final ? 'Play again' : hp.done ? `Next: Hole ${hp.holeIdx + 2} (N)` : 'Back to the hole (K)';
-        $('scClose').textContent = final ? 'Back to the range' : 'Close (K)';
+        $('scClose').textContent = final ? '🏠 Back to the home screen' : 'Close (K)';      // (user request, 2026-11-20: it went to the range)
         // a career match: its own title, status and buttons, and no leaderboard
         if (m) {
           const s = matchStatus(m), nn = npcById(m.npc);
@@ -15943,7 +15943,11 @@
         if (round.match && (round.over || round.match.settled)) return matchToClubhouse();
         if (round.pvp && round.over) return pvpToClubhouse();
         if (round.tour && round.over) return tourToClubhouse();
-        if (round.over) return quitRound();
+        if (round.over) {                                    // a finished arcade round: off the course and back to the home screen
+          if (swing.active) return;
+          endRound(); if (hp.on) leaveHole();
+          return openHome();
+        }
         hideScorecard();
       }
 
