@@ -324,6 +324,9 @@ module.exports = async (req, res) => {
           bag: Object.fromEntries(Object.entries(c.bag || {}).filter(([k, v]) => /^\d{1,2}$/.test(k) && typeof v === 'string').slice(0, 16)),
           out: (c.out || []).filter(Number.isInteger).slice(0, 16), snapped: (c.snapped || []).filter(Number.isInteger).slice(0, 16),
           putter: typeof c.putter === 'string' ? c.putter : null, putters: strs(c.putters, 12), caddie: typeof c.caddie === 'string' ? c.caddie : null,
+          // (the spares: clubs they've replaced, in their locker; the page shows only model ids it knows)
+          spares: arr(c.spares).filter((s) => s && Number.isInteger(s.i) && s.i >= 0 && s.i < 16 && typeof s.id === 'string' && /^[a-z0-9-]{1,40}$/.test(s.id)).slice(0, 60)
+            .map((s) => ({ i: s.i, id: s.id, snapped: !!s.snapped })),
           stats: c.stats && typeof c.stats === 'object' ? { power: +c.stats.power || 1, dex: +c.stats.dex || 1, composure: +c.stats.composure || 1, perception: +c.stats.perception || 1 } : null,
           seed: Number.isInteger(c.seed) ? c.seed : 0,
         },

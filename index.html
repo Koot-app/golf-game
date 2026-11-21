@@ -6191,6 +6191,9 @@
       color: #f6dc95;
     }
 
+    /* a spare in the locker (a club you replaced): quieter than the bag's */
+    .br-model.spare { opacity: .78; border-style: dashed; }
+
     /* luxury gear: gold, with a slow sheen */
     #clubhouse .sh-item.lux,
     .br-model.lux {
@@ -12091,6 +12094,10 @@
           else if (typeof c[k] !== typeof d[k] || (typeof d[k] === 'number' && !Number.isFinite(c[k]))) c[k] = d[k];
         }
         c.debt = Math.max(0, Math.round(+c.debt || 0));      // the marker (audit 7.1)
+        // the locker's spare clubs (the pro shop's spareAt): a slot, a model id, snapped or not; one of each (the shop and
+        // the locker room skip a model the game doesn't know: the models aren't all defined yet when a save is read)
+        c.spares = c.spares.filter((s, k, a) => s && Number.isInteger(s.i) && CLUBS[s.i] && typeof s.id === 'string' && c.bag[s.i] !== s.id
+          && a.findIndex((t) => t && t.i === s.i && t.id === s.id) === k).map((s) => ({ i: s.i, id: s.id, snapped: !!s.snapped }));
         trimHistory(c);
         return c;
       }
@@ -12419,7 +12426,7 @@
         return {
           v: 1, name, seed: (Math.random() * 2 ** 31) >>> 0,
           cash: CAREER.cash, rep: CAREER.rep, tier: CAREER.tier, stats: { ...CAREER.stats },
-          bag: { ...CAREER.bag }, snapped: [], putter: CAREER.putter, out: [], putters: [CAREER.putter],
+          bag: { ...CAREER.bag }, snapped: [], putter: CAREER.putter, out: [], putters: [CAREER.putter], spares: [],
           unlocks: { draw: false, fade: false, stinger: false, high: false, flop: false, spin: false },
           match: null, history: [], rounds: [], pvpSeen: [], trophies: [], titles: [], created: Date.now(), stamp: 0, tierMax: 1,
         };
@@ -14564,7 +14571,8 @@
       };
       // luxury gear: how many pieces a bag holds (club models, by model, plus putters owned), for the gold bag graphics
       const isLux = (id) => !!((CLUB_MODELS[id] && CLUB_MODELS[id].lux) || (PUTTERS[id] && PUTTERS[id].lux));
-      const luxCount = (G) => !G ? 0 : new Set(Object.values(G.bag || {}).filter(isLux)).size + (G.putters || []).filter(isLux).length;
+      const luxCount = (G) => !G ? 0 : new Set([...Object.values(G.bag || {}), ...(Array.isArray(G.spares) ? G.spares : []).map((s) => s && s.id)].filter(isLux)).size
+        + (G.putters || []).filter(isLux).length;         // (the spares in the locker are yours too, as the putters there are)
       // the golf bag's colours in the trophy room and the locker room: red; cream and gold with one luxury piece; all gold with three
       function bagLook(G) {
         const n = luxCount(G), irons = G && G.bag && isLux(G.bag[7]) ? '#f0cf6e' : '';
@@ -14657,17 +14665,23 @@
       function shopItemHTML(id, m) {
         const s = shopStats(id), slots = SHOP.slots[m.kind];
         const ownedAt = slots.filter((i) => career.bag[i] === id), owned = ownedAt.length > 0;
+        const spareSlots = slots.filter((i) => spareAt(i, id)), spare = spareSlots.length > 0;     // (in your locker)
         const bias = s.bias ? 'some clubs push or pull' : s.offset >= 0.8 ? 'draw bias' : s.offset <= -0.3 ? 'fade bias' : s.offset >= 0.4 ? 'slight draw bias' : 'neutral';
         const forSale = m.price > 0;
         let btns = '';
-        if (m.kind === 'iron') btns = owned ? '<button disabled>Your irons</button>' : forSale ? `<button class="buy" data-buy="${id}" data-slots="${slots.join(',')}" ${career.cash < m.price ? 'disabled' : ''}>Buy the set (4–PW) · ${money(m.price)}</button>` : '<button disabled>Not for sale</button>';
-        else if (forSale) {
+        if (m.kind === 'iron') btns = owned ? '<button disabled>Your irons</button>' : spare ? `<button class="buy" data-swap="${id}">In your locker · swap them in</button>` : forSale ? `<button class="buy" data-buy="${id}" data-slots="${slots.join(',')}" ${career.cash < m.price ? 'disabled' : ''}>Buy the set (4–PW) · ${money(m.price)}</button>` : '<button disabled>Not for sale</button>';
+        else {
           const per = m.price;
-          for (const i of slots) btns += career.bag[i] === id ? `<button disabled>✓ ${SLOT_NAME(i)}</button>` : `<button class="buy" data-buy="${id}" data-slots="${i}" ${career.cash < per ? 'disabled' : ''}>${slots.length > 1 ? `${SLOT_NAME(i)} · ` : 'Buy · '}${money(per)}</button>`;
-        } else btns = '<button disabled>Not for sale</button>';
+          for (const i of slots) {
+            btns += career.bag[i] === id ? `<button disabled>✓ ${SLOT_NAME(i)}</button>` : spareAt(i, id) ? `<button class="buy" data-swap="${id}" data-slot="${i}">${slots.length > 1 ? `${SLOT_NAME(i)} · ` : ''}In your locker · swap in</button>`
+              : forSale ? `<button class="buy" data-buy="${id}" data-slots="${i}" ${career.cash < per ? 'disabled' : ''}>${slots.length > 1 ? `${SLOT_NAME(i)} · ` : 'Buy · '}${money(per)}</button>` : '';
+          }
+          if (!forSale && !owned && !spare) btns = '<button disabled>Not for sale</button>';      // (a used club: only yours to swap back, never to buy)
+        }
         if (!owned || m.kind !== 'iron') btns += `<button data-try="${id}">Try it on the range</button>`;
+        const where = [owned ? `✓ ${m.kind === 'iron' ? 'in your bag' : ownedAt.map(SLOT_NAME).join(', ')}` : '', spare ? `in your locker${m.kind === 'iron' ? '' : `: ${spareSlots.map(SLOT_NAME).join(', ')}`}` : ''].filter(Boolean).join(' · ');
         return `<div class="sh-item${owned ? ' owned' : ''}${m.lux ? ' lux' : ''}">
-          <div><div class="sh-name"><b>${m.lux ? '✦ ' : ''}${m.brand} ${m.name}</b>${owned ? `<span>✓ ${m.kind === 'iron' ? 'in your bag' : ownedAt.map(SLOT_NAME).join(', ')}</span>` : forSale ? `<em>${money(m.price)}${m.kind === 'iron' ? ' the set' : m.kind === 'wedge' || m.kind === 'wood' ? ' each' : ''}</em>` : ''}</div>
+          <div><div class="sh-name"><b>${m.lux ? '✦ ' : ''}${m.brand} ${m.name}</b>${where ? `<span>${where}</span>` : forSale ? `<em>${money(m.price)}${m.kind === 'iron' ? ' the set' : m.kind === 'wedge' || m.kind === 'wood' ? ' each' : ''}</em>` : ''}</div>
             <div class="sh-note">${m.note}</div><div class="sh-tag">${bias}</div></div>
           <div class="sh-bars">${barRow('Distance', shopBar(m.kind, 'carry', s.carry))}${barRow('Stopping', shopBar(m.kind, 'roll', s.roll, true))}${barRow('Forgiveness', shopBar(m.kind, 'forgive', s.forgive))}${barRow('Shaping', shopBar(m.kind, 'shape', s.shape))}</div>
           <div class="sh-btns">${btns}</div></div>`;
@@ -14713,6 +14727,20 @@
           h += `<div class="sh-row${bag ? '' : ' locker'}${snapped ? ' snapped' : ''}"><b>${CLUBS[i].name}</b><i>${modelName(id)}${snapped ? ' · snapped' : bag ? '' : ' · in your locker'}</i>${btn}</div>`;
         }
         h += `<div class="sh-row"><b>Putter</b><i>${PUTTERS[career.putter].name}</i><span></span></div>`;
+        // the clubs you've replaced: in the locker, free to swap back (an iron set as one row)
+        const sp = career.spares.filter((s) => CLUB_MODELS[s.id]);
+        if (sp.length) {
+          h += '<div class="sh-cat">Spares in your locker · the clubs you\'ve replaced: swap one back in free (the club in its place goes to the locker)</div>';
+          const sets = new Set();
+          for (const s of sp.sort((a, b) => a.i - b.i)) {
+            const iron = CLUB_MODELS[s.id].kind === 'iron';
+            if (iron && sets.has(s.id)) continue;
+            const sl = iron ? sp.filter((x) => x.id === s.id) : [s], snapped = sl.filter((x) => x.snapped);
+            if (iron) sets.add(s.id);
+            h += `<div class="sh-row locker${snapped.length ? ' snapped' : ''}"><b>${iron ? 'Irons' : CLUBS[s.i].name}</b><i>${modelName(s.id)}${iron ? ` · ${sl.map((x) => SLOT_NAME(x.i)).join(', ')}` : ''}${snapped.length ? ` · ${iron ? snapped.map((x) => SLOT_NAME(x.i)).join(', ') + ' ' : ''}snapped` : ''} · spare</i>`
+              + `<button data-swap="${s.id}" data-slot="${s.i}">Swap ${iron ? 'the set' : 'it'} into the bag</button></div>`;
+          }
+        }
         return h;
       }
       // after any change to the bag
@@ -14722,18 +14750,55 @@
         refreshShotType(); renderBag(); updateCareerUI(); renderShop();
         if (msg) setText('shMsg', msg);
       }
+      // THE LOCKER'S SPARE CLUBS (user request, 2026-11-21): a club you replace isn't thrown away. Buying a model for a slot
+      // puts the club that was there in your locker (career.spares: { i: the slot, id: the model, snapped }), snapped or
+      // not, and it swaps back in free from the pro shop (the Your bag tab, or the model's own button). An iron set swaps
+      // as a set: the one in the bag goes to the locker whole and the other comes back whole. (career.out is the other
+      // kind of locker club: one of yours left out of the 14 you carry.)
+      const spareAt = (i, id) => career.spares.find((s) => s.i === i && s.id === id);
+      function slotToLocker(i) {
+        const id = career.bag[i];
+        if (!id) return;
+        if (!spareAt(i, id)) career.spares.push({ i, id, snapped: career.snapped.includes(i) });
+        delete career.bag[i]; career.snapped = career.snapped.filter((x) => x !== i);
+      }
+      // a club into slot i: whatever was there goes to the locker (and the new one is carried, or not, as it was); a slot
+      // that was empty joins the bag if there's room, else waits in the locker. True if it had to wait.
+      function slotIn(i, id, snapped = false) {
+        const had = !!career.bag[i];
+        slotToLocker(i);
+        career.spares = career.spares.filter((s) => !(s.i === i && s.id === id));
+        career.bag[i] = id;
+        if (snapped) career.snapped.push(i);
+        if (!had) { career.out = career.out.filter((x) => x !== i); if (carried() > SHOP.bagMax) { career.out.push(i); return true; } }
+        return false;
+      }
+      const lockerNote = (old, waiting) => `${old.length ? ` Your old ${[...new Set(old)].map(modelName).join(' and ')} went to your locker: swap ${old.length > 1 ? 'them' : 'it'} back in free from the Your bag tab.` : ''}`
+        + `${waiting.length ? ` Your bag is full, so ${waiting.join(', ')} went to your locker (Your bag tab).` : ''}`;
       function shopBuy(id, slots) {
         const m = CLUB_MODELS[id], price = m.price;
+        if (slots.some((i) => career.bag[i] === id || spareAt(i, id))) return;          // (yours already: in the bag or the locker)
         if (career.cash < price || (m.lux && !luxBuyConfirm(modelName(id), price))) return;
         career.cash -= price;
-        const toLocker = [];
-        for (const i of slots) {
-          const had = !!career.bag[i];
-          career.bag[i] = id;
-          career.snapped = career.snapped.filter((x) => x !== i);
-          if (!had) { career.out = career.out.filter((x) => x !== i); if (carried() > SHOP.bagMax) { career.out.push(i); toLocker.push(CLUBS[i].name); } }
+        const old = slots.map((i) => career.bag[i]).filter(Boolean), waiting = [];
+        for (const i of slots) if (slotIn(i, id)) waiting.push(CLUBS[i].name);
+        shopChanged(`Bought: ${modelName(id)}${m.kind === 'iron' ? ' irons (4–PW)' : ` ${slots.map(SLOT_NAME).join(', ')}`} for ${money(price)}.${lockerNote(old, waiting)}`);
+      }
+      // a spare back into the bag, free: one club (wood, wedge, driver), or a whole iron set
+      function lockerSwap(id, slot) {
+        const m = CLUB_MODELS[id];
+        if (!m) return;
+        const back = career.spares.filter((s) => s.id === id && (m.kind === 'iron' || s.i === slot));
+        if (!back.length) return;
+        const old = [], waiting = [];
+        if (m.kind === 'iron') {
+          // (the set in the bag goes to the locker whole, even its clubs the other set hasn't got)
+          for (const i of SHOP.slots.iron) if (career.bag[i] && !back.some((s) => s.i === i)) { old.push(career.bag[i]); slotToLocker(i); career.out = career.out.filter((x) => x !== i); }
         }
-        shopChanged(`Bought: ${modelName(id)}${m.kind === 'iron' ? ' irons (4–PW)' : ` ${slots.map(SLOT_NAME).join(', ')}`} for ${money(price)}.${toLocker.length ? ` Your bag is full, so ${toLocker.join(', ')} went to your locker (Your bag tab).` : ''}`);
+        for (const s of back) { if (career.bag[s.i]) old.push(career.bag[s.i]); if (slotIn(s.i, s.id, s.snapped)) waiting.push(CLUBS[s.i].name); }
+        const snapped = back.filter((s) => s.snapped).map((s) => CLUBS[s.i].name);
+        shopChanged(`From your locker: ${modelName(id)}${m.kind === 'iron' ? ' irons' : ` ${SLOT_NAME(back[0].i)}`} back in the bag.${snapped.length ? ` (Still snapped: ${snapped.join(', ')}. Repair above.)` : ''}`
+          + `${old.length ? ` The ${[...new Set(old)].map(modelName).join(' and ')} went to the locker.` : ''}${waiting.length ? ` Your bag is full, so ${waiting.join(', ')} waits in the locker.` : ''}`);
       }
       function shopClick(e) {
         const b = e.target.closest('button');
@@ -14742,6 +14807,7 @@
         const d = b.dataset;
         if (d.tab) { shopTab = d.tab; setText('shMsg', ''); return renderShop(); }
         if (d.buy) return shopBuy(d.buy, d.slots.split(',').map(Number));
+        if (d.swap) return lockerSwap(d.swap, +d.slot);
         if (d.repair) { const i = +d.repair, p = repairPrice(i); if (career.cash < p) return; career.cash -= p; career.snapped = career.snapped.filter((x) => x !== i); return shopChanged(`Your ${CLUBS[i].name} is repaired (${money(p)}).`); }
         if (d.locker) { career.out.push(+d.locker); return shopChanged(`${CLUBS[+d.locker].name} went to your locker.`); }
         if (d.tobag) { if (carried() >= SHOP.bagMax) return; career.out = career.out.filter((x) => x !== +d.tobag); return shopChanged(`${CLUBS[+d.tobag].name} is back in the bag.`); }
@@ -14809,7 +14875,7 @@
         $('chScene').innerHTML = chScene('trophy'); setText('chRoomName', `${trophyView.name}'s Trophy Room`);
       }
       function renderBagRoom() {
-        const V = bagView, G = V ? V.gear : { bag: career.bag, out: career.out || [], snapped: career.snapped || [], putter: career.putter, putters: career.putters || [], caddie: career.caddie };
+        const V = bagView, G = V ? V.gear : { bag: career.bag, out: career.out || [], snapped: career.snapped || [], putter: career.putter, putters: career.putters || [], spares: career.spares || [], caddie: career.caddie };
         const cd = G.caddie ? CADDIES.find((c) => c.id === G.caddie) || null : null;
         const statsOf = () => { if (!V) return careerStats(); const s = { ...(G.stats || CAREER.stats) }, b = caddieBonus(cd); for (const k of Object.keys(b)) s[k] = Math.min(COACH.maxStat, s[k] + b[k]); return s; };
         const eff = statsOf();
@@ -14828,11 +14894,14 @@
         const models = [...new Set(Object.values(G.bag))].filter((id) => CLUB_MODELS[id])
           .sort((a, b) => Math.min(...slotsOf(a)) - Math.min(...slotsOf(b)));
         const KIND = { driver: 'Driver', wood: 'Fairway wood / hybrid', iron: 'Iron set', wedge: 'Wedge' };
-        const value = models.reduce((s, id) => s + (CLUB_MODELS[id].price || 0), 0) + (G.putters || []).reduce((s, p) => s + ((SHOP.putters[p] || {}).price || 0), 0);
+        // the spares: clubs replaced in the pro shop, kept in the locker (shown after the bag, with their bars)
+        const spares = (Array.isArray(G.spares) ? G.spares : []).filter((s) => s && CLUBS[s.i] && CLUB_MODELS[s.id]);
+        const spareModels = [...new Set(spares.map((s) => s.id))].sort((a, b) => Math.min(...spares.filter((s) => s.id === a).map((s) => s.i)) - Math.min(...spares.filter((s) => s.id === b).map((s) => s.i)));
+        const value = [...new Set([...models, ...spareModels])].reduce((s, id) => s + (CLUB_MODELS[id].price || 0), 0) + (G.putters || []).reduce((s, p) => s + ((SHOP.putters[p] || {}).price || 0), 0);
         const inb = Object.keys(G.bag).filter((k) => !(G.out || []).includes(+k)).length + 1;
         setText('brLead', V ? `${V.name}'s bag` : 'Your bag');
         setText('brValue', `${money(value)} of gear`);
-        $('brSum').innerHTML = `<div><b>${inb} / ${SHOP.bagMax}</b>clubs in the bag</div><div><b>${(G.out || []).length}</b>in the locker</div>`
+        $('brSum').innerHTML = `<div><b>${inb} / ${SHOP.bagMax}</b>clubs in the bag</div><div><b>${(G.out || []).length + spares.length}</b>in the locker</div>`
           + `<div><b>${(G.snapped || []).length}</b>snapped</div><div><b>${cd ? cd.short : '—'}</b>caddie</div>`
           + `<div><b>${CAREER_STATS.map(([k]) => eff[k]).join(' · ')}</b>Pow · Dex · Com · Per</div>`
           + (luxCount(G) ? `<div class="lux"><b>✦ ${luxCount(G)}</b>luxury piece${luxCount(G) > 1 ? 's' : ''}</div>` : '');
@@ -14852,6 +14921,13 @@
             + `<i>${m.note}</i>${m.bias ? `<i>Used: each club's lie angle is bent a little (fixed for ${V ? 'their' : 'your'} career), so some pull and some push — see Curve.</i>` : ''}`
             + `${aw ? `<i>With ${V ? 'their' : 'your'} strong-lofted irons, the gap wedge is an approach wedge (${awN.loft.toFixed(1)}°), as such sets are sold, to fill the gap below the PW.</i>` : ''}</div><div class="sh-bars">${bars}</div></div>`
             + `<table class="br-tbl"><tr><th>Club</th><th>Loft</th><th>Carry</th><th>Total</th><th>Ball mph</th><th>Launch</th><th>Spin</th><th>Apex</th><th>Curve</th><th>Spread</th></tr>${rows}</table></div>`;
+        }).join('');
+        h += spareModels.map((id) => {
+          const m = CLUB_MODELS[id], st = shopStats(id), sl = spares.filter((s) => s.id === id).sort((a, b) => a.i - b.i);
+          const bars = barRow('Distance', shopBar(m.kind, 'carry', st.carry)) + barRow('Stopping', shopBar(m.kind, 'roll', st.roll, true))
+            + barRow('Forgiveness', shopBar(m.kind, 'forgive', st.forgive)) + barRow('Shaping', shopBar(m.kind, 'shape', st.shape));
+          return `<div class="br-model spare${m.lux ? ' lux' : ''}"><div class="br-head"><div><b>${m.lux ? '✦ ' : ''}${m.brand} ${m.name}</b><em>In the locker · a spare</em><em>${KIND[m.kind]}</em>`
+            + `<i>${sl.map((s) => `${CLUBS[s.i].name}${s.snapped ? ' (snapped)' : ''}`).join(', ')}</i><i>${m.note}</i>${V ? '' : '<i>Swap it back in free at the pro shop (Your bag tab).</i>'}</div><div class="sh-bars">${bars}</div></div></div>`;
         }).join('');
         // the putter (and the others in the locker)
         const P = PUTTERS[G.putter] || {}, sp = SHOP.putters[G.putter] || {};
