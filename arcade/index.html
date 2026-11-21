@@ -4158,6 +4158,255 @@
       padding: 3px 4px;
     }
 
+    .hm-skills {
+      width: 100%;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+      padding: 9px 12px !important;
+      border-radius: 10px !important;
+      background: linear-gradient(120deg, rgba(255, 224, 102, .16), rgba(255, 255, 255, .04));
+      border: 1px solid rgba(255, 224, 102, .38);
+    }
+
+    .hm-skills:hover {
+      background: linear-gradient(120deg, rgba(255, 224, 102, .26), rgba(255, 255, 255, .08));
+    }
+
+    .hm-skills>span {
+      font-size: 20px;
+    }
+
+    .hm-skills>div {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .hm-skills b {
+      display: block;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .hm-skills i {
+      display: block;
+      font-style: normal;
+      font-size: 11.5px;
+      color: #c9d4e0;
+      margin-top: 1px;
+    }
+
+    .hm-skills em {
+      font-style: normal;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #ffe066;
+      white-space: nowrap;
+    }
+
+    #skCard {
+      position: fixed;
+      top: 82px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(540px, calc(100vw - 660px));
+      min-width: 380px;
+      padding: 10px 14px 10px;
+      display: none;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    body.skills #skCard {
+      display: block;
+    }
+
+    body.skills.sk-over #skCard {
+      display: none;
+    }
+
+    body.skills #windDial, body.skills #btnTips, body.skills #panel {
+      display: none !important;
+    }
+
+    body.skills #toast {
+      top: 33%;
+    }
+
+    .sk-top {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      font-size: 10.5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    .sk-top b {
+      color: #ffe066;
+    }
+
+    .sk-top .sk-esc {
+      margin-left: auto;
+      opacity: .7;
+    }
+
+    .sk-task {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 6px;
+    }
+
+    .sk-task em {
+      font-style: normal;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #0b1118;
+      background: #35e0ff;
+      border-radius: 99px;
+      padding: 2px 9px;
+    }
+
+    .sk-task b {
+      font-size: 18px;
+      color: #fff;
+    }
+
+    #skGoal {
+      font-size: 13px;
+      color: #dfe8f1;
+      margin-top: 3px;
+    }
+
+    #skMsg {
+      min-height: 18px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    #skMsg.ok {
+      color: #7dff9b;
+    }
+
+    #skMsg.miss {
+      color: #ffc24a;
+    }
+
+    #skDots {
+      display: flex;
+      gap: 5px;
+      margin-top: 7px;
+    }
+
+    #skDots i {
+      flex: 1;
+      height: 5px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, .14);
+    }
+
+    #skDots i.done {
+      background: #7dff9b;
+    }
+
+    #skDots i.cur {
+      background: #ffe066;
+    }
+
+    #skDone {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(500px, calc(100vw - 32px));
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      display: none;
+      z-index: 6;
+      background: rgba(9, 13, 19, .96);
+      padding-bottom: 14px;
+    }
+
+    #skDone.on {
+      display: block;
+    }
+
+    .sk-score {
+      text-align: center;
+      padding: 8px 14px 4px;
+    }
+
+    .sk-score b {
+      display: block;
+      font-size: 54px;
+      line-height: 1.05;
+      color: #ffe066;
+    }
+
+    .sk-score span {
+      display: block;
+      font-size: 12.5px;
+      color: #c9d4e0;
+    }
+
+    .sk-score i {
+      display: block;
+      font-style: normal;
+      font-size: 13px;
+      font-weight: 700;
+      color: #7dff9b;
+      margin-top: 5px;
+    }
+
+    #skDoneRows {
+      width: calc(100% - 28px);
+      margin: 10px 14px 4px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    #skDoneRows th {
+      text-align: left;
+      font-size: 10.5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--dim);
+      font-weight: 400;
+      padding: 3px 6px;
+    }
+
+    #skDoneRows td {
+      padding: 4px 6px;
+      border-top: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    #skDoneRows td:first-child, #skDoneRows td:nth-child(3) {
+      color: var(--dim);
+    }
+
+    #skDoneRows td:last-child, #skDoneRows th:last-child {
+      text-align: right;
+      font-weight: 700;
+    }
+
+    #skDoneRows td.one {
+      color: #7dff9b;
+    }
+
+    .sk-btns {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 10px 14px 0;
+    }
+
     .hm-arc-err {
       min-height: 4px;
       font-size: 12px;
@@ -4719,6 +4968,7 @@
           <button data-h="chip" title="The chipping green: round the green"><span>🪃</span><b>Chipping</b></button>
           <button data-h="putt" title="The putting green: read the break"><span>🕳️</span><b>Putting</b></button>
         </div>
+        <button id="hmSkills" class="hm-skills" title="Twelve shots to make on the range, the chipping green and the putting green"><span>🏁</span><div><b>Skills challenge</b><i>Twelve shots to make: hit greens, shape it, chip in, hole putts. Fewest attempts wins</i></div><em id="hmSkillsBest"></em></button>
         <div class="hm-arc-err" id="hmPracErr"></div>
       </div>
     </div>
@@ -5037,6 +5287,19 @@
           stats (all 8). Holes are played in order; your score goes on the Top 10.</div>
         <div id="riBtns"><button id="riStart">Start round (Enter)</button><button id="riCancel">Cancel (Esc)</button></div>
       </div>
+    </div>
+    <div id="skCard" class="card">
+      <div class="sk-top"><b>🏁 Skills challenge</b><span id="skProg"></span><span id="skTot"></span><span class="sk-esc">Esc leaves</span></div>
+      <div class="sk-task"><em id="skArea"></em><b id="skName"></b></div>
+      <div id="skGoal"></div>
+      <div id="skMsg"></div>
+      <div id="skDots"></div>
+    </div>
+    <div id="skDone" class="card">
+      <div class="card-h"><span>🏁 Skills challenge · complete</span><span class="tag" id="skDoneTag"></span></div>
+      <div class="sk-score"><b id="skDoneTot"></b><span>attempts to make all twelve · 12 is perfect</span><i id="skDoneBest"></i></div>
+      <table id="skDoneRows"></table>
+      <div class="sk-btns"><button id="skAgain" class="go">Play it again (Enter)</button><button id="skHome">🏠 Home (Esc)</button></div>
     </div>
     <div id="hint" class="card"></div>
     <div id="toast"></div>
@@ -5924,6 +6187,8 @@
       const txtCache = new Map();
       function setText(id, s) { if (txtCache.get(id) !== s) { txtCache.set(id, s); $(id).textContent = s; } }
       const PINS = [{ yd: 100, brg: -16 }, { yd: 150, brg: 12 }, { yd: 175, brg: -6 }, { yd: 225, brg: 6 }, { yd: 275, brg: 0 }];
+      const PIN_RAD = (i) => 8 + i * 1.5;
+      const sk = { on: false, i: 0, tries: [], ok: false, msg: '', timer: 0, moving: false, doneOpen: false, saved: null, at: null, drive: 0 };
 
       const state = {
         mode: 'range',
@@ -6099,7 +6364,7 @@
       scene.add(pinBeam);
       PINS.forEach((p, i) => {
         p.pos = heading(p.brg).multiplyScalar(p.yd * YD);
-        const rad = 8 + i * 1.5;
+        const rad = PIN_RAD(i);
         scene.add(flat(new THREE.CircleGeometry(rad + 3, 48), overlayMat(0x3f8a33, 1, 2), p.pos.x, p.pos.z, 3));
         scene.add(flat(new THREE.CircleGeometry(rad, 48), overlayMat(0x86d96a, 1, 3), p.pos.x, p.pos.z, 4));
         const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3.6, 6), new THREE.MeshBasicMaterial({ color: 0xf4f4f4 }));
@@ -7506,6 +7771,7 @@
       }
 
       function beginSwing(noLock = false) {
+        if (sk.on && (sk.ok || sk.doneOpen)) return;
         if (lastTrace) ghostTrace = lastTrace;
         lastTrace = null; swingReplay = null;
         Object.assign(swing, { active: true, phase: 'ready', S: [], x: 0, y: 0, hx: 0, iTop: 0, iImp: -1, impactAt: 0, locked: false, jit: 0, lockAt: 0, lastT: 0, spikes: 0, rates: [], backStart: 0, backLocked: false, scripted: noLock });
@@ -7634,6 +7900,7 @@
         clubPhiTarget = 0.45;
         if (state.practice) { clubReturnAt = performance.now() + 900; return; }
         if (hp.on) { hp.strokes++; hp.putts++; saveHoleProgress(); }
+        skAttempt();
         rollTrailN = 0; rollTrail.geometry.setDrawRange(0, 0);
         puttRun = { sim: createPutt(green, res.v0, state.aim + res.start, res.skidFt), res, markFlatFt: markRead ? markRead.flatFt : state.markDist / FT, age: 0, acc: 0, done: false, aim: state.aim, summary: null };
         state.view = 'flight';
@@ -7658,6 +7925,7 @@
         const fl = puttRun.res.flags.length ? puttRun.res.flags.join(' · ') + '\n' : '';
         const where = `${Math.abs(long) < 0.03 ? 'pin high' : `${fmtFtIn(long)} ${long > 0 ? 'long' : 'short'}`}, ${Math.abs(side) < 0.03 ? 'on line' : `${fmtFtIn(side)} ${side > 0 ? 'right' : 'left'}`}`;
         toast(q.holed ? `${fl}HOLED IT\nfrom ${green.distFt < 10 ? green.distFt.toFixed(1) : green.distFt.toFixed(0)} ft` : `${fl}${q.lip ? 'LIPPED OUT · ' : ''}${fmtFtIn(left)} left\n${where}`, 4500);
+        skShotDone({ holed: q.holed, leftFt: left / FT });
       }
 
       function readMarker() {
@@ -7721,6 +7989,7 @@
       }
       function newPutt() {
         if (swing.active) return;
+        if (sk.on) return skBlocked();
         const r = Math.random, g = state.greenCfg;
         g.distFt = Math.round(4 + 46 * r() ** 1.5);
         g.angleDeg = Math.floor(r() * 360);
@@ -7729,6 +7998,7 @@
       }
       function newGreen() {
         if (swing.active) return;
+        if (sk.on) return skBlocked();
         const r = Math.random, g = state.greenCfg;
         g.seed = 1 + Math.floor(r() * 1e6);
         g.distFt = Math.round(4 + 46 * r() ** 1.5);
@@ -7913,6 +8183,7 @@
       }
       function newChip(newSurface = false) {
         if (swing.active) return;
+        if (sk.on) return skBlocked();
         const r = Math.random, g = state.greenCfg;
         if (newSurface) g.seed = 1 + Math.floor(r() * 1e6);
         state.chipCfg.pinYd = Math.round(8 + 37 * r() ** 1.3);
@@ -7955,6 +8226,7 @@
 
       function setMode(m) {
         if (swing.active || m === state.mode) return;
+        if (sk.on && !sk.moving) return skBlocked();
         const putt = m === 'putt', chip = m === 'chip', was = state.mode;
         state.mode = m; document.body.classList.toggle('putt', putt); document.body.classList.toggle('chip', chip);
         shot = null; puttRun = null; telemetry = null; puttTel = null; lastTrace = ghostTrace = null; lastNumbers = null;
@@ -8098,6 +8370,7 @@
           pinRel: hb ? { x: hole.pin.x - hb.x, z: hole.pin.z - hb.z } : null, holed: false
         };
         if (hb) { hp.strokes++; saveHoleProgress(); }
+        skAttempt();
         state.view = 'flight';
       }
 
@@ -8113,6 +8386,7 @@
           readTxt: chipRead ? `${fmtBandBs(chipRead.bsLo, chipRead.bsHi)}` : '',
         };
         if (hp.on) { hp.strokes++; saveHoleProgress(); }
+        skAttempt();
         state.view = 'flight';
       }
       function updateChipShot(dt) {
@@ -8134,6 +8408,7 @@
         const tiltTag = state.badStreak > 0 ? ` · TILTED${state.badStreak > 1 ? ' ×' + state.badStreak : ''}` : '';
         const carry = n.carry, roll = Math.max(0, n.total - n.carry);
         toast(shot.holed ? `${flagsTxt ? flagsTxt + '\n' : ''}CHIPPED IN!` : `${flagsTxt ? flagsTxt + '\n' : ''}${carry.toFixed(carry < 10 ? 1 : 0)} yd carry · ${roll.toFixed(roll < 10 ? 1 : 0)} yd roll\n${CHIP_NAME[surfKey] || surfKey} · ${fmtFtIn(left)} from the pin${tiltTag}`, 4500);
+        skShotDone({ holed: shot.holed, leftFt: left / FT });
       }
 
       function shotNumbers(s) {
@@ -8176,6 +8451,7 @@
             const flagsTxt = shot.res.flags.length ? shot.res.flags.join(' · ') + '\n' : '';
             const tiltTag = state.badStreak > 0 ? ` · TILTED${state.badStreak > 1 ? ' ×' + state.badStreak : ''}` : '';
             toast(`${flagsTxt}${shapeName(shot.res)} · ${n.carry.toFixed(0)} carry · ${n.total.toFixed(0)} total\n${n.toPin.toFixed(1)} yds from the ${PINS[shot.pin].yd} pin${tiltTag}`, 4200);
+            skShotDone({ p: { x: f.p.x, z: f.p.z }, axis: shot.res.axis, carry: n.carry, offline: n.offline });
           }
         }
       }
@@ -8233,6 +8509,7 @@
 
       function enterHole() {
         if (swing.active) return;
+        if (sk.on) return skBlocked();
         hp.on = true; document.body.classList.add('hole'); closeDrop(true);
         Object.assign(hp, { ball: { x: 0, z: 0 }, strokes: 0, putts: 0, pen: 0, lastFrom: null, onTee: true, done: false, history: [], frame: null, aimPin: false, mapZoom: 0, grUser: null });
         if (round.on) applyRoundConditions();
@@ -9079,6 +9356,7 @@
       const fmtToPar = (d) => d === 0 ? 'E' : d > 0 ? `+${d}` : `${d}`;
       function arcadeIntro() {
         if (swing.active || round.on) return;
+        if (sk.on) endSkills();
         arcadePractice = !devOn();
         applyDevTools();
         if (hp.on) leaveHole();
@@ -9167,6 +9445,148 @@
         if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') introStart();
         else if (e.code === 'Escape') introCancel();
       }
+      const skBestKey = () => 'golfSkillsBest';
+      const skBlocked = () => toast('Skills challenge\nEsc leaves it', 1400);
+      const SK_AREA = { range: 'Range', chip: 'Chipping', putt: 'Putting' };
+      const skGreenAt = (p) => PINS.findIndex((q, i) => Math.hypot(p.x - q.pos.x, p.z - q.pos.z) <= PIN_RAD(i));
+      function skOff(p, only = -1) {
+        let b = 0, d = 1e9;
+        PINS.forEach((q, i) => { const e = Math.hypot(p.x - q.pos.x, p.z - q.pos.z) - PIN_RAD(i); if ((only < 0 || i === only) && e < d) { d = e; b = i; } });
+        return `${Math.max(1, Math.round(d / YD))} yd${Math.round(d / YD) > 1 ? 's' : ''} off the ${PINS[b].yd} green`;
+      }
+      const skCurve = (a) => (a < -14 ? 'a hook' : a < -3 ? 'a draw' : a > 14 ? 'a slice' : a > 3 ? 'a fade' : 'straight');
+      const skOnAny = (r, also = '') => { const g = skGreenAt(r.p); return g >= 0 ? { ok: true, msg: `${also}${also ? 'on' : 'On'} the ${PINS[g].yd} green` } : { ok: false, msg: `${also ? also.replace(/, $/, ' but it ') : 'It '}finished ${skOff(r.p)}` }; };
+      function skArea(m) {
+        if (shot) { shot.done = true; shot = null; }
+        puttRun = null; puttTel = null;
+        sk.moving = true;
+        if (state.mode !== m) setMode(m);
+        else { state.view = 'scout'; clubPhi = clubPhiTarget = 0; if (m === 'chip') applyChipGreen(); else if (m === 'putt') applyGreen(); }
+        sk.moving = false;
+      }
+      function skRange(o = {}) {
+        skArea('range');
+        state.lie = 'fairway'; state.slope = 'flat'; state.slopeLaunch = null; $('inLie').value = 'fairway'; $('inSlope').value = 'flat'; styleLie();
+        applyShot('straight', true); setHeight(0); setSpinCtl(0, true);
+        if (o.club !== undefined) state.club = o.club;
+        setPin(o.pin !== undefined ? o.pin : state.pin);
+        refreshShotType(); renderBag(); syncPanel();
+      }
+      function skChip(type, pinYd, cfg) {
+        Object.assign(state.greenCfg, cfg); state.chipCfg.pinYd = pinYd; state.lie = 'fairway'; state.slope = 'flat'; state.slopeLaunch = null;
+        skArea('chip');
+        applyChipType(type, true); state.club = suggestChipClub();
+        applyChipGreen();
+      }
+      function skPutt(cfg) { Object.assign(state.greenCfg, cfg); state.puttScaleAuto = true; skArea('putt'); }
+      const skType = (k, r, fn) => (sk.at.chipType !== k ? { ok: false, msg: `That was a ${CHIP_TYPES[sk.at.chipType].name.toLowerCase()}: this one asks for the ${CHIP_TYPES[k].name.toLowerCase()} (${CHIP_TYPES[k].key.slice(-1)})` } : fn(r));
+      const skHoled = (r) => (r.holed ? { ok: true, msg: 'In the hole' } : { ok: false, msg: `${fmtFtIn(r.leftFt * FT)} from the hole` });
+      const skClose = (ft) => (r) => (r.holed ? { ok: true, msg: 'In the hole' } : r.leftFt <= ft ? { ok: true, msg: `${fmtFtIn(r.leftFt * FT)} from the hole` } : { ok: false, msg: `${fmtFtIn(r.leftFt * FT)} from the hole: inside ${ft} ft makes it` });
+      const SK_CHIP = { tiltPct: 1, contours: 0.2, stimp: 10.5 };
+      const SKILLS = [
+        { area: 'range', name: 'On the green', goal: 'Finish on any target green', setup: () => skRange({ pin: 1 }), check: (r) => skOnAny(r) },
+        { area: 'range', name: 'Pick your number', goal: 'Finish on the 150 green', setup: () => skRange({ pin: 1 }),
+          check: (r) => (skGreenAt(r.p) === 1 ? { ok: true, msg: 'On the 150 green' } : { ok: false, msg: skGreenAt(r.p) >= 0 ? `That's the ${PINS[skGreenAt(r.p)].yd} green: this one is the 150` : `It finished ${skOff(r.p, 1)}` }) },
+        { area: 'range', name: 'Fade it in', goal: 'Hit a fade (F sets one up) that finishes on any target green', setup: () => skRange(),
+          check: (r) => (r.axis > 3 ? skOnAny(r, 'A fade, ') : { ok: false, msg: `Not a fade: the monitor called it ${skCurve(r.axis)}` }) },
+        { area: 'range', name: 'Draw it in', goal: 'Hit a draw (F sets one up) that finishes on any target green', setup: () => skRange(),
+          check: (r) => (r.axis < -3 ? skOnAny(r, 'A draw, ') : { ok: false, msg: `Not a draw: the monitor called it ${skCurve(r.axis)}` }) },
+        { area: 'range', name: 'Keep it low', goal: 'Set the height to Low (W) and finish on any target green', setup: () => skRange(),
+          check: (r) => (sk.at.height < 0 ? skOnAny(r, 'Low, ') : { ok: false, msg: 'The height wasn\'t set to Low: W lowers it' }) },
+        { area: 'range', name: 'Send it', goal: () => `Driver: carry ${sk.drive} yds or more, and finish within 20 yds of your target line`,
+          setup: () => { skRange({ club: 0, pin: 4 }); sk.drive = Math.floor(stockShot(0).carry * 0.92 / 5) * 5; },
+          check: (r) => (sk.at.club !== 0 ? { ok: false, msg: 'That wasn\'t the driver' }
+            : r.carry < sk.drive ? { ok: false, msg: `${r.carry.toFixed(0)} yds of carry: ${sk.drive} makes it` }
+            : Math.abs(r.offline) > 20 ? { ok: false, msg: `${r.carry.toFixed(0)} yds, but ${Math.abs(r.offline).toFixed(0)} yds ${r.offline > 0 ? 'right' : 'left'} of your line` }
+            : { ok: true, msg: `${r.carry.toFixed(0)} yds of carry, ${Math.abs(r.offline).toFixed(0)} off line` }) },
+        { area: 'chip', name: 'Bump and run', goal: 'Low runner (1) from 15 yds: finish within 6 ft of the hole', setup: () => skChip('low', 15, { ...SK_CHIP, angleDeg: 0, seed: 11 }), check: (r) => skType('low', r, skClose(6)) },
+        { area: 'chip', name: 'Chip in', goal: 'Stock chip (2) from 8 yds: into the hole', setup: () => skChip('stock', 8, { ...SK_CHIP, angleDeg: 40, seed: 12 }), check: (r) => skType('stock', r, skHoled) },
+        { area: 'chip', name: 'Flop it in', goal: 'Flop shot (4) from 10 yds: into the hole', setup: () => skChip('flop', 10, { ...SK_CHIP, angleDeg: 320, seed: 13 }), check: (r) => skType('flop', r, skHoled) },
+        { area: 'putt', name: 'Knock it in', goal: 'Hole the 6-footer', setup: () => skPutt({ distFt: 6, angleDeg: 20, tiltPct: 1, contours: 0.15, stimp: 10.5, seed: 21 }), check: skHoled },
+        { area: 'putt', name: 'Read the break', goal: 'Hole the 15-footer across the slope', setup: () => skPutt({ distFt: 15, angleDeg: 90, tiltPct: 2, contours: 0.3, stimp: 11, seed: 22 }), check: skHoled },
+        { area: 'putt', name: 'Lag it close', goal: 'From 40 ft: finish within 3 ft of the hole', setup: () => skPutt({ distFt: 40, angleDeg: 200, tiltPct: 1.5, contours: 0.4, stimp: 11, seed: 23 }), check: skClose(3) },
+      ];
+      const skTotal = () => sk.tries.reduce((a, b) => a + b, 0);
+      function renderSkills() {
+        if (!sk.on) return;
+        const T = SKILLS[sk.i], n = sk.tries[sk.i], total = skTotal();
+        setText('skProg', `Shot ${sk.i + 1} of ${SKILLS.length}`);
+        setText('skTot', `${total} attempt${total === 1 ? '' : 's'}${n > 1 || (n === 1 && !sk.ok) ? ` · ${n} on this one` : ''}`);
+        setText('skArea', SK_AREA[T.area]); setText('skName', T.name);
+        setText('skGoal', typeof T.goal === 'function' ? T.goal() : T.goal);
+        const m = $('skMsg');
+        m.className = sk.msg ? (sk.ok ? 'ok' : 'miss') : '';
+        m.textContent = sk.msg ? (sk.ok ? `✓ ${sk.msg} · made in ${n}` : `✕ ${sk.msg} · R to go again`) : '';
+        $('skDots').innerHTML = SKILLS.map((x, k) => `<i class="${k < sk.i || (k === sk.i && sk.ok) ? 'done' : k === sk.i ? 'cur' : ''}"></i>`).join('');
+      }
+      function skAttempt() {
+        if (!sk.on || sk.ok || hp.on) return;
+        sk.tries[sk.i]++; sk.msg = '';
+        sk.at = { club: state.club, height: state.height, chipType: state.chipType };
+        renderSkills();
+      }
+      function skShotDone(r) {
+        if (!sk.on || sk.ok || hp.on || !sk.at) return;
+        const res = SKILLS[sk.i].check(r);
+        sk.ok = res.ok; sk.msg = res.msg;
+        if (res.ok) { clearTimeout(sk.timer); sk.timer = setTimeout(skNext, 2600); }
+        renderSkills();
+      }
+      function skNext() {
+        if (!sk.on) return;
+        sk.ok = false; sk.msg = ''; sk.at = null;
+        if (sk.i >= SKILLS.length - 1) return skFinish();
+        sk.i++;
+        $('toast').classList.remove('on');
+        SKILLS[sk.i].setup(); renderSkills();
+      }
+      function skFinish() {
+        const total = skTotal(), best = +lsGet(skBestKey()) || 0, isBest = !best || total < best;
+        if (isBest) lsSet(skBestKey(), String(total));
+        setText('skDoneTot', String(total));
+        setText('skDoneTag', total === SKILLS.length ? 'perfect' : total <= 18 ? 'tour class' : total <= 30 ? 'sharp' : total <= 48 ? 'solid' : 'keep at it');
+        setText('skDoneBest', isBest ? (best ? `A new best: it was ${best}` : 'Your first score: that\'s the one to beat') : `Your best is ${best}`);
+        $('skDoneRows').innerHTML = '<tr><th></th><th>Shot</th><th></th><th>Attempts</th></tr>'
+          + SKILLS.map((T, k) => `<tr><td>${k + 1}</td><td>${T.name}</td><td>${SK_AREA[T.area]}</td><td class="${sk.tries[k] === 1 ? 'one' : ''}">${sk.tries[k]}</td></tr>`).join('');
+        sk.doneOpen = true; $('skDone').classList.add('on'); document.body.classList.add('sk-over'); $('toast').classList.remove('on');
+      }
+      function skDoneKey(e) {
+        if (e.repeat) return;
+        if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); startSkills(); }
+        else if (e.code === 'Escape') { e.preventDefault(); openHome(); }
+      }
+      function startSkills() {
+        if (swing.active || round.on) return;
+        if (hp.on) leaveHole();
+        clearTimeout(sk.timer);
+        if (!sk.on) sk.saved = { greenCfg: { ...state.greenCfg }, chipCfg: { ...state.chipCfg }, pin: state.pin, chipType: state.chipType, stats: { power: state.power, dex: state.dex, composure: state.composure, perception: state.perception }, mph: state.windMph, dir: state.windDir };
+        Object.assign(sk, { on: true, i: 0, tries: SKILLS.map(() => 0), ok: false, msg: '', doneOpen: false, at: null });
+        document.body.classList.add('skills'); document.body.classList.remove('sk-over'); $('skDone').classList.remove('on');
+        if (!arcadePractice) { arcadePractice = true; applyCareerClubs(); }
+        setStats(ARCADE_STATS);
+        state.windMph = 0; state.windDir = 0; $('inWind').value = 0; $('inWindDir').value = 0; orientFlags();
+        setBadStreak(0);
+        if (state.practice) togglePractice();
+        SKILLS[0].setup(); renderSkills();
+        toast(`Skills challenge\n${SKILLS.length} shots to make · every ball you hit counts`, 2600);
+      }
+      function endSkills() {
+        if (!sk.on) return;
+        clearTimeout(sk.timer);
+        const s = sk.saved;
+        Object.assign(sk, { on: false, ok: false, msg: '', doneOpen: false, saved: null, at: null });
+        document.body.classList.remove('skills', 'sk-over'); $('skDone').classList.remove('on');
+        if (shot) { shot.done = true; shot = null; }
+        puttRun = null; puttTel = null;
+        if (s) { Object.assign(state.greenCfg, s.greenCfg); Object.assign(state.chipCfg, s.chipCfg); state.chipType = s.chipType; }
+        if (state.mode !== 'range') setMode('range'); else state.view = 'scout';
+        if (s) { setPin(s.pin); if (devOn()) { setStats(s.stats); state.windMph = s.mph; state.windDir = s.dir; $('inWind').value = s.mph; $('inWindDir').value = s.dir; orientFlags(); } }
+        applyDevTools();
+      }
+      function renderSkillsTile() {
+        const best = +lsGet(skBestKey()) || 0;
+        setText('hmSkillsBest', best ? `Your best: ${best}` : 'Not played yet');
+      }
       const ARCADE_STATS = { power: 8, dex: 8, composure: 8, perception: 8 };
       function setStats(s) {
         state.power = s.power; state.dex = s.dex; state.composure = s.composure; state.perception = s.perception;
@@ -9203,11 +9623,12 @@
       function openHome() {
         if (swing.active) return;
         if (round.on) { toast('Finish or leave your round first\nThen 🏠 Home', 1800); return; }
+        if (sk.on) endSkills();
         if (introOpen) { closeRoundIntro(); if (introMode === 'test') setCourse(null); }
         if (tipsOn) setTips(false);
         hideScorecard();
         homeOpen = true; document.body.classList.add('home-on');
-        renderHome(); renderLearn();
+        renderHome(); renderLearn(); renderSkillsTile();
         lbFetch().then(renderHomeBoard); renderHomeBoard();
       }
       function closeHome() {
@@ -10286,6 +10707,7 @@
           && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.code)) return;
         if (tut.open) return tutKey(e);
         if (homeOpen) return homeKey(e);
+        if (sk.doneOpen) return skDoneKey(e);
         if (lbEntry.active) return entryKey(e);
         if (introOpen) return introKey(e);
         if (dropOpen) return dropKey(e);
@@ -10511,6 +10933,12 @@
           b.blur();
           setText('hmPracErr', ''); homeGo(b.dataset.h);
         });
+        $('hmSkills').addEventListener('click', (e) => {
+          e.currentTarget.blur();
+          setText('hmPracErr', ''); closeHome(); startSkills();
+        });
+        $('skAgain').addEventListener('click', (e) => { e.currentTarget.blur(); startSkills(); });
+        $('skHome').addEventListener('click', (e) => { e.currentTarget.blur(); openHome(); });
         $('hmArcPlay').addEventListener('click', (e) => {
           e.currentTarget.blur();
           setText('hmArcErr', ''); closeHome(); arcadeIntro();
@@ -11388,6 +11816,7 @@
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, tiltFromLie, autoSelectPuttScale, putterBars,compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight,
         openHome, closeHome, get homeOpen() { return homeOpen; }, devOn,
+        sk, SKILLS, startSkills, endSkills, skShotDone, skAttempt, PINS, PIN_RAD,
         toScreen: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (-v.y * 0.5 + 0.5) * innerHeight }; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }
       };
