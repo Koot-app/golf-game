@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Back Nine Tour</title>
-  <!-- what the site is, stated plainly (user request, 2026-11-21: no real money is involved anywhere in it) -->
+  <!-- what the site is, stated plainly -->
   <meta name="description" content="Back Nine Tour: a golf simulation game played with the mouse, with realistic ball flight, chipping and putting.">
   <meta name="rating" content="general">
   <!--
@@ -13301,7 +13301,7 @@
           if (liveMatch()) return setText('chMsg', liveMatchMsg());
           if (!tierReqs(3).every((r) => r.ok)) return;
           career.cash -= TIERS[3].entry; career.tierMax = 3; career.tier = 3; cmSel = 0;
-          setText('chMsg', `Welcome to ${TIERS[3].course}. The members play for the biggest prizes in the game.`);     // (it said "for real money": there is none, user 2026-11-21)
+          setText('chMsg', `Welcome to ${TIERS[3].course}. The members play for the biggest prizes in the game.`);
         } else return;
         careerSave(); updateCareerUI();
       }
