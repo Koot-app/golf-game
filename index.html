@@ -5,6 +5,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vector Kinematics &amp; Telemetry Lab</title>
+  <!-- what the site is, stated plainly (user request, 2026-11-21: no real money is involved anywhere in it) -->
+  <meta name="description" content="Back Nine Hustle: a golf simulation game played with the mouse, with realistic ball flight, chipping and putting. All money in it is pretend, in-game cash: nothing is bought, bet or paid out for real, and it has no real-world value.">
+  <meta name="rating" content="general">
   <!--
   PHASE 1 PROTOTYPE — driving range + mouse-vector swing.
   Built from the "Phase 1 - Audited" spec, with these deliberate deviations (search "AUDIT" in the code):
@@ -4823,6 +4826,13 @@
       color: #c9d4e0;
     }
 
+    /* the money is pretend: said on the home screen, under the name */
+    .hm-play {
+      margin-top: 3px;
+      font-size: 11.5px;
+      color: #8f9cad;
+    }
+
     .hm-h {
       font-size: 13px;
       font-weight: 700;
@@ -7258,7 +7268,9 @@
     <div class="hm-side">
       <div class="hm-brand">
         <div class="hm-logo">⛳</div>
-        <div><h1 id="hmTitle"></h1><div class="hm-sub">A golf RPG · hustle the locals, beat your friends</div></div>
+        <div><h1 id="hmTitle"></h1><div class="hm-sub">A golf RPG · hustle the locals, beat your friends</div>
+          <!-- (user request, 2026-11-21: say plainly that the money is not real) -->
+          <div class="hm-play">A golf simulation: all cash, stakes and prices are pretend, in-game money. Nothing is bought, bet or paid out for real.</div></div>
       </div>
       <div id="hmWho">
         <div class="hm-h">Who's playing?</div>
@@ -7280,7 +7292,7 @@
         <div class="hm-arc-golfer hm-car" id="hmCarStats"></div>
         <div class="hm-tiles">
           <div class="hm-cat">Career · your own golfer, stats, clubs, money and friends</div>
-          <button data-h="career" class="hm-big" id="hmCareer"><b>🏌️ Career</b><i>Hustle the locals for money, buy clubs, take lessons, move up the circuits</i></button>
+          <button data-h="career" class="hm-big" id="hmCareer"><b>🏌️ Career</b><i>Hustle the locals, buy clubs, take lessons, move up the circuits</i></button>
         </div>
         <div class="hm-foot"><button id="hmReauth" class="go" style="display:none">Sign in again</button><button id="hmSwitch">Switch player</button><label class="hm-dev" id="hmDevBox"><input type="checkbox" id="hmDev"> 🛠 Developer tools</label><span id="hmSync"></span></div>
       </div>
@@ -7730,6 +7742,7 @@
         <div class="fr-held" id="frHeld"></div>
         <details class="fr-how" id="frHow"><summary>❓ How challenges work</summary>
           <ol>
+            <li><b>It's all in-game cash</b>: stakes and pots are the game's pretend money, never real money.</li>
             <li><b>Challenge a player</b> below: pick match play, stroke play or skins, the stake and the course. Your stake
               is held from when you send it; you get it back if they decline, you call it off, or nobody answers in 7 days.</li>
             <li><b>Once accepted</b>, their stake is held too.</li>
@@ -7746,7 +7759,7 @@
         <div class="sh-list" id="frList"></div>
         <div class="ch-msg" id="frMsg"></div>
         <div class="ch-btns"><button id="frBack">Back (Esc)</button><button id="frRefresh">Refresh</button><span
-            class="cm-help">You each play the round on your own PC · the bet settles when both cards are in</span></div>
+            class="cm-help">You each play the round on your own PC · the bet (in-game cash) settles when both cards are in</span></div>
       </div>
       <div id="chChal">
         <div class="ch-lead" id="ccTitle">Challenge</div>
@@ -13297,7 +13310,7 @@
           if (liveMatch()) return setText('chMsg', liveMatchMsg());
           if (!tierReqs(3).every((r) => r.ok)) return;
           career.cash -= TIERS[3].entry; career.tierMax = 3; career.tier = 3; cmSel = 0;
-          setText('chMsg', `Welcome to ${TIERS[3].course}. The members play for real money.`);
+          setText('chMsg', `Welcome to ${TIERS[3].course}. The members play for the biggest stakes in the game.`);     // (it said "for real money": there is none, user 2026-11-21)
         } else return;
         careerSave(); updateCareerUI();
       }
@@ -15217,7 +15230,7 @@
           const won = cards.filter((c) => c.settled && c.net > 0).length, lost = cards.filter((c) => c.settled && (c.net < 0 || c.unpaid > 0)).length;     // (a loss you couldn't pay is a loss: audit 4.4)
           const net = cards.reduce((t, c) => t + (c.settled ? c.net || 0 : 0), 0), done = cards.filter((c) => c.sc.every(Boolean));
           const best = done.length ? done.reduce((a, c) => (cardTotals(c).toPar < cardTotals(a).toPar ? c : a)) : null;
-          h += `<div class="tr-sum"><div><b>${cards.length}</b>scorecards</div><div><b>${won}–${lost}</b>won–lost (for money)</div>`
+          h += `<div class="tr-sum"><div><b>${cards.length}</b>scorecards</div><div><b>${won}–${lost}</b>won–lost</div>`
             + `<div><b class="${net > 0 ? 'up' : net < 0 ? 'dn' : ''}">${sgn(net)}</b>net, all of them</div><div><b>${best ? `${cardTotals(best).strokes} (${fmtToPar(cardTotals(best).toPar)})` : '—'}</b>best 9 holes</div></div>`;
         }
         let month = '';
