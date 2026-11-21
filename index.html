@@ -13427,7 +13427,11 @@
         // (user, 2026-11-21: from 15 yds the hole was close to the fringe, so a low runner had to land short of the green
         // or run well past. Now the ball sits just off the fringe with 15 m of green to the hole: land it on and let it run)
         // (user, same day: every chip only has to finish within 3 ft of the hole; the chip and the flop had to go in)
-        chip: { area: 'chip', name: 'Chip it close', goal: 'Stock chip (2) from 8 yds: finish within 3 ft of the hole', setup: () => skChip('stock', 8, { ...SK_CHIP, angleDeg: 40, seed: 12 }), check: (r) => skType('stock', r, skClose(3)) },
+        // (user, 2026-11-21: a stock chip asked for with the hole near the edge isn't a real shot. Landed on the fringe it
+        // dies, landed on the green it runs past; only a high one fits. Measured: from 8 yds, with the hole 3.3 m on, the
+        // only made stock chips landed on the fringe. A stock chip now gets the green it needs: the made ones land
+        // 1.4–3 m onto it and run out to the hole. The holes near the edge are for the high soft chip and the flops)
+        chip: { area: 'chip', name: 'Chip it close', goal: 'Stock chip (2) from 12 yds, plenty of green to work with: finish within 3 ft of the hole', setup: () => skChip('stock', 12, { ...SK_CHIP, angleDeg: 40, seed: 12, e2p: 8.5 }), check: (r) => skType('stock', r, skClose(3)) },
         bump: { area: 'chip', name: 'Bump and run', goal: 'Low runner (1) from 20 yds, just off the green: finish within 3 ft of the hole', setup: () => skChip('low', 20, { ...SK_CHIP, angleDeg: 0, seed: 11, e2p: 15 }), check: (r) => skType('low', r, skClose(3)) },
         soft: { area: 'chip', name: 'High and soft', goal: 'High soft chip (3) from 14 yds to a hole near the edge: finish within 3 ft', setup: () => skChip('high', 14, { ...SK_CHIP, angleDeg: 150, seed: 15, e2p: 5 }), check: (r) => skType('high', r, skClose(3)) },
         flop: { area: 'chip', name: 'Flop it close', goal: 'Flop shot (4) from 10 yds: finish within 3 ft of the hole', setup: () => skChip('flop', 10, { ...SK_CHIP, angleDeg: 320, seed: 13 }), check: (r) => skType('flop', r, skClose(3)) },
@@ -13443,7 +13447,8 @@
         // ... and its mirror: tucked left, the sand left, swung in-to-out (down and right) for hook spin, which kicks it left
         hook: { area: 'chip', name: 'Hook-spin flop', goal: 'The hole is tucked left, sand past it: a flop (4) swung down and right through the ball for hook spin, within 3 ft',
           setup: () => skChip('flop', 15, { ...SK_CHIP, angleDeg: 0, seed: 14, e2p: 7, tuck: -2.5, sand: true }), check: skSpinFlop(false, 3) },
-        stiff: { area: 'chip', name: 'Stiff it', goal: 'Stock chip (2) from 12 yds: finish within 18 inches', setup: () => skChip('stock', 12, { ...SK_CHIP, angleDeg: 60, seed: 19 }), check: (r) => skType('stock', r, skClose(1.5)) },
+        // (the same: from 12 yds the hole was 4.9 m on and only fringe landings made it; now the made ones land 2.6–3.8 m on)
+        stiff: { area: 'chip', name: 'Stiff it', goal: 'Stock chip (2) from 15 yds, plenty of green to work with: finish within 18 inches', setup: () => skChip('stock', 15, { ...SK_CHIP, angleDeg: 60, seed: 19, e2p: 10 }), check: (r) => skType('stock', r, skClose(1.5)) },
         // ... the full test's: harder (the bunker and the rough add their own scatter to every shot, so they keep a little room)
         sand2: { area: 'chip', name: 'Splash it close', goal: 'From the bunker, 15 yds, any shot: finish within 4 ft', setup: () => skChip('high', 15, { ...SK_CHIP, angleDeg: 100, seed: 17, lie: 'bunker' }), check: skClose(4) },
         rough2: { area: 'chip', name: 'Short side, in the rough', goal: 'From the light rough, 14 yds, to a hole near the edge: finish within 4 ft', setup: () => skChip('high', 14, { ...SK_CHIP, angleDeg: 250, seed: 16, lie: 'light', e2p: 4 }), check: skClose(4) },
