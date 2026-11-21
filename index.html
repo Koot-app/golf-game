@@ -5119,12 +5119,97 @@
 
     .hm-board {
       align-self: flex-start;
-      width: 300px;
+      width: 340px;
+      max-height: 100%;
+      overflow-y: auto;
       padding: 14px 16px;
       border-radius: 14px;
-      background: rgba(6, 10, 16, .72);
-      border: 1px solid rgba(255, 255, 255, .1);
+      background: rgba(6, 10, 16, .78);
+      border: 1px solid rgba(255, 224, 102, .28);
       backdrop-filter: blur(4px);
+    }
+
+    /* the arcade side: its note, the three courses to pick from, the play button */
+    .hm-arc-note {
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: #c9d4e0;
+      margin: -2px 0 12px;
+    }
+
+    .hm-arc-note b {
+      color: #fff;
+    }
+
+    .hm-courses {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .hm-courses button {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1px 10px;
+      text-align: left;
+      padding: 9px 12px !important;
+      border-radius: 10px !important;
+      background: rgba(255, 255, 255, .05);
+      border: 1px solid rgba(255, 255, 255, .12);
+    }
+
+    .hm-courses button:hover {
+      background: rgba(255, 255, 255, .1);
+    }
+
+    .hm-courses button.on {
+      background: rgba(255, 224, 102, .13);
+      border-color: rgba(255, 224, 102, .7);
+    }
+
+    .hm-courses b {
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .hm-courses em {
+      font-style: normal;
+      font-size: 12px;
+      letter-spacing: .1em;
+      color: #ffe066;
+    }
+
+    .hm-courses i {
+      grid-column: 1 / -1;
+      font-style: normal;
+      font-size: 11.5px;
+      font-weight: 400;
+      color: #aab6c4;
+    }
+
+    .hm-courses em s {
+      text-decoration: none;
+      color: rgba(255, 255, 255, .22);
+    }
+
+    #home #hmArcPlay {
+      display: block;
+      width: 100%;
+      padding: 11px 12px !important;
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .hm-arc-err {
+      min-height: 4px;
+      font-size: 12px;
+      color: #ffc24a;
+      margin-bottom: 8px;
+    }
+
+    .hm-tiles .hm-wide {
+      grid-column: 1 / -1;
     }
 
     #hmBoard {
@@ -5155,9 +5240,23 @@
       color: rgba(255, 255, 255, .25);
     }
 
+    /* a narrow window: the arcade goes under the career side (it used to be hidden, when it was only the Top 10) */
     @media (max-width: 900px) {
+      #home {
+        flex-direction: column;
+        justify-content: flex-start;
+        overflow-y: auto;
+      }
+
+      .hm-side {
+        flex: 0 0 auto;
+      }
+
       .hm-board {
-        display: none;
+        align-self: stretch;
+        width: auto;
+        max-height: none;
+        flex: 0 0 auto;
       }
     }
 
@@ -6485,9 +6584,9 @@
       <div id="hmMenu">
         <div class="hm-me" id="hmMe"></div>
         <div class="hm-tiles">
+          <div class="hm-cat">Career · your own golfer, stats, clubs and money</div>
           <button data-h="career" class="hm-big" id="hmCareer"><b>🏌️ Career</b><i>Hustle the locals for money, buy clubs, take lessons, move up the circuits</i></button>
-          <button data-h="friends" id="hmFriends"><b>🤝 Friends</b><i>Bet a friend on a round</i></button>
-          <button data-h="round"><b>⛳ Play 9 holes</b><i>Standard stats, the same course for everyone · world Top 10</i></button>
+          <button data-h="friends" class="hm-wide" id="hmFriends"><b>🤝 Friends</b><i>Bet a friend on a round</i></button>
           <div class="hm-cat">Practice</div>
           <div class="hm-three">
             <button data-h="range"><b>🎯 Range</b><i>Full swings</i></button>
@@ -6498,8 +6597,15 @@
         <div class="hm-foot"><button id="hmReauth" class="go" style="display:none">Sign in again</button><button id="hmSwitch">Switch player</button><label class="hm-dev" id="hmDevBox"><input type="checkbox" id="hmDev"> 🛠 Developer tools</label><span id="hmSync"></span></div>
       </div>
     </div>
-    <div class="hm-board">
-      <div class="hm-h2">🏆 World Top 10 · 9 holes</div>
+    <!-- ARCADE (user request, 2026-11-20): apart from the career. Nine holes on any of the three courses with the same
+         stats and clubs for everyone, and a world Top 10 for each course. -->
+    <div class="hm-board" id="hmArcade">
+      <div class="hm-h">🕹 Arcade</div>
+      <div class="hm-arc-note">A level game: <b>everyone plays the same stats and the same clubs</b>, whatever their career. Pick a course, play nine holes, and your score goes on its world Top 10.</div>
+      <div class="hm-courses" id="hmCourses"></div>
+      <button id="hmArcPlay" class="go">⛳ Play 9 holes</button>
+      <div class="hm-arc-err" id="hmArcErr"></div>
+      <div class="hm-h2" id="hmBoardH">🏆 World Top 10</div>
       <table id="hmBoard"></table>
       <button id="hmBoardBtn">Full board (L)</button>
     </div>
@@ -6509,7 +6615,7 @@
     <button id="tbHome" title="Back to the home screen (Esc)">🏠<span>Home</span><kbd>Esc</kbd></button>
     <div class="tb-me" id="tbMe"></div>
     <div class="tb only-hole" id="tbHoleCell"><i id="tbHoleL">Hole 1 · Par 5</i><b id="tbHole">Shot 1</b></div>
-    <div class="tb only-round" id="tbRoundCell" title="Round score (K shows the scorecard)"><i id="tbRoundL">Test round</i><b id="tbRound">E</b></div>
+    <div class="tb only-round" id="tbRoundCell" title="Round score (K shows the scorecard)"><i id="tbRoundL">Arcade</i><b id="tbRound">E</b></div>
     <div class="tb" id="tbView"><i>Camera</i><b id="tbViewV">1 · Scout</b></div>
     <div class="tb"><i id="tbClubL">Club</i><b id="tbClub">—</b></div>
     <div class="tb"><i id="tbPinL">Target pin</i><b id="tbPin">—</b></div>
@@ -6554,7 +6660,7 @@
         <label class="row wide hole-pick round-hide"><span>Hole</span><select id="inHole"></select></label>
         <button id="btnCareer" class="pn-career round-hide" title="Career mode: hustle, upgrade, move up (J)">🏌️ Start a career</button>
         <div class="btn2 only-round" style="grid-template-columns: 1fr auto; margin-bottom: 6px">
-          <button id="btnRound" style="margin: 0">Test round · holes 1–9</button>
+          <button id="btnRound" style="margin: 0">Arcade round · 9 holes</button>
           <button id="btnBoard" style="margin: 0" title="Top 10 test-round scores (L)">🏆 Top 10</button>
         </div>
         <div class="pn-legacy">     <!-- (the old buttons: their keys still work; the tabs above replace them) -->
@@ -6596,7 +6702,7 @@
 
         <div>
           <div class="sec dev-only">Player (RPG test)</div>
-          <div class="note only-round dev-only" style="margin: 0 0 4px">Test round: everyone plays standard stats — Power, Dexterity, Composure and Perception all 5. Yours come back after the round.</div>
+          <div class="note only-round dev-only" style="margin: 0 0 4px">Arcade round: everyone plays standard stats — Power, Dexterity, Composure and Perception all 5. Yours come back after the round.</div>
           <div class="note only-career" id="careerStatNote" style="margin: 0 0 4px"></div>
           <label class="row dev-only"><span>Power</span><input type="range" id="inPower" min="1" max="10" step="1" value="5"><b
               id="outPower"></b></label>
@@ -11611,9 +11717,20 @@
         return { strokes, par, putts, pen, played, toPar: strokes - par };
       };
       const fmtToPar = (d) => d === 0 ? 'E' : d > 0 ? `+${d}` : `${d}`;
+      // ARCADE: the course preview of the arcade course picked (arcCourse), then its round. Never the career's game: the
+      // same stats and the same clubs for everyone.
+      function arcadeIntro() {
+        if (swing.active || round.on) return;
+        if (careerOn) leaveCareer(true);
+        applyDevTools();
+        if (hp.on) leaveHole();
+        setCourse(arcOf().tier);
+        openRoundIntro();
+      }
       function startRound() {
         if (swing.active) return;
         if (careerOn) leaveCareer(true);                     // the test round is standard for everyone: never the career's game
+        setCourse(arcOf().tier);                             // (the arcade course picked: its holes and conditions)
         // your own wind and stats come back after the round; in it everyone plays standard stats (all 5)
         if (!round.on) round.saved = { mph: state.windMph, dir: state.windDir, power: state.power, dex: state.dex, composure: state.composure, perception: state.perception };
         setStats(ROUND_STATS);
@@ -11645,10 +11762,11 @@
           setCourse(null);
           careerSave(); updateCareerUI();
         }
+        if (courseV) setCourse(null);                         // (an arcade round on the club's or the country club's course)
         round.on = false; round.over = false; lbEntry.active = false;
         if (round.saved) { setStats(round.saved); state.windMph = round.saved.mph; state.windDir = round.saved.dir; round.saved = null; $('inWind').value = state.windMph; $('inWindDir').value = state.windDir; orientFlags(); syncPanel(); }
         document.body.classList.remove('round'); hideScorecard();
-        $('btnRound').textContent = `Test round · holes 1–${HOLES.length}`;
+        $('btnRound').textContent = `Arcade round · ${HOLES.length} holes`;
       }
       // Audit 6.2: a career round (a match, an invitational, a friend round) saves your tilt at the end of each hole
       // (finishHole), so reopening the game part-way tees you up as tilted as you left, less what a calm caddie walks
@@ -11706,7 +11824,7 @@
         endRound();
         if (hp.on) leaveHole();
         if (wasPvp) toast('Left the round\nResume it from 🤝 Friends in the clubhouse (J)', 2400);
-        else if (!wasMatch) toast('Test round ended', 1600);
+        else if (!wasMatch) toast('Arcade round ended', 1600);
       }
       const doneHint = () => lbEntry.active ? 'Type your initials (or <kbd>↑</kbd><kbd>↓</kbd>) · <kbd>←</kbd><kbd>→</kbd> move · <kbd>Enter</kbd> save · <kbd>Esc</kbd> skip'
         : round.tour
@@ -11726,10 +11844,10 @@
         if (swing.active) return;
         introMode = mode;
         const mm = mode === 'match' && career && career.match, nn = mm && npcById(mm.npc);
-        $('roundIntro').querySelector('.card-h span').textContent = mm ? `Match vs ${npcName(nn)} · course preview` : 'Test round · course preview';
+        $('roundIntro').querySelector('.card-h span').textContent = mm ? `Match vs ${npcName(nn)} · course preview` : `🕹 Arcade · ${arcOf().name} · course preview`;
         $('roundIntro').querySelector('.ri-note').textContent = mm
           ? `${mm.format === 'skins' ? `Skins at ${money(mm.stake)} a hole against ${nn.first} “${nn.nick}”: win a hole outright to take its skin; a halved hole carries it to the next.` : `Match play for ${money(mm.stake)} against ${nn.first} “${nn.nick}”: win the most holes. Whoever is 2 down may press.`} Your own stats and bag; each hole's wind and greens are fixed. Teeing off pays the ${money(MATCH.fee[mm.tier])} green fee. Leaving before it's decided forfeits the stake.`
-          : 'Everyone plays the same course: each hole\'s wind and green speed are fixed, and everyone plays standard stats (all 5). Holes are played in order; your score goes on the Top 10.';
+          : 'Arcade: everyone plays the same game. The same stats (all 5) and the same clubs whatever your career, and each hole\'s wind and green speed are fixed. Holes are played in order; your score goes on this course\'s world Top 10.';
         const tv = mode === 'tour' && career && career.tour, TV = tv && tourById(tv.id);      // an invitational
         if (tv) {
           $('roundIntro').querySelector('.card-h span').textContent = `🏆 ${TV.name} · course preview`;
@@ -13306,7 +13424,7 @@
         if (swing.active) return;
         if (round.on) { toast('Finish or leave your round first\nThen 🏠 Home', 1800); return; }
         if (clubOpen) closeClubhouse();
-        if (introOpen) closeRoundIntro();
+        if (introOpen) { closeRoundIntro(); if (introMode === 'test') setCourse(null); }      // (an arcade course's preview: its course is put away)
         if (tipsOn) setTips(false);
         hideScorecard();
         if (!career) career = careerLoad();
@@ -13417,7 +13535,7 @@
           if (what === 'friends' && career && clubOpen) openFriends();
           return;
         }
-        if (what === 'round') { if (careerOn) leaveCareer(true); applyDevTools(); return openRoundIntro(); }
+        if (what === 'round') return arcadeIntro();
         // practice: your career's game (stats and bag) if you have one; the admin's developer tools play the sandbox
         if (hp.on) leaveHole();
         if (career && !devOn()) { if (!careerOn) enterCareer(); }
@@ -13426,7 +13544,14 @@
         else if (what === 'chip') { setMode('chip'); toast('The chipping green\nN a new chip · Esc for 🏠 Home', 2200); }
         else if (what === 'putt') { setMode('putt'); toast('The putting green\nN a new putt · Esc for 🏠 Home', 2200); }
       }
+      // the arcade side: the three courses (the one picked lit), its play button, and that course's Top 10
+      const arcYds = {};
+      const arcadeYards = (id) => (arcYds[id] ??= Math.round(arcHoles(id).reduce((s, hd) => s + new THREE.CatmullRomCurve3(hd.path.map(([x, z]) => new THREE.Vector3(x * YD, 0, z * YD)), false, 'centripetal').getLength(), 0) / YD));
       function renderHomeBoard() {
+        $('hmCourses').innerHTML = ARCADE.map((a) => `<button data-arc="${a.id}" class="${a.id === arcCourse ? 'on' : ''}"><b>${a.name}</b><em title="How hard it plays">${'★'.repeat(a.stars)}<s>${'★'.repeat(3 - a.stars)}</s></em>`
+          + `<i>Par ${arcHoles(a.id).reduce((s, hd) => s + hd.par, 0)} · ${arcadeYards(a.id).toLocaleString()} yds · ${a.blurb}</i></button>`).join('');
+        setText('hmArcPlay', `⛳ Play ${arcOf().name}`);
+        setText('hmBoardH', `🏆 ${lbOnline === false ? 'Top 10 on this device' : 'World Top 10'} · ${arcOf().short}`);
         const L = lbList();
         let h = '';
         for (let i = 0; i < 10; i++) {
@@ -15538,6 +15663,7 @@
           return;
         }
         if (introMode === 'match' && career && career.match && !career.match.feePaid) { career.match = null; careerSave(); setCourse(null); openClubhouse(); openMatchPicker(); }
+        else if (introMode === 'test') { setCourse(null); openHome(); }      // (an arcade course's preview: back to the home screen it came from)
       }
       // TEST ROUND conditions: the hole's own wind and green speed, the same for every player (the sliders are hidden)
       const holeStimp = () => (round.on && HOLE.stimp) || state.greenCfg.stimp;
@@ -15552,7 +15678,7 @@
       let holeTitleTimer = 0;
       function showHoleTitle() {
         const el = $('holeTitle'), yds = Math.round(pinDist() / YD), w = round.on ? (HOLE.wind || { mph: 0, from: 0 }) : { mph: state.windMph, from: state.windDir };
-        setText('htCourse', courseV && courseV.course ? courseV.course : '');
+        setText('htCourse', courseV && courseV.course ? courseV.course : round.on && !round.match && !round.tour && !round.pvp ? arcOf().name : '');
         setText('htNum', HOLE.name || `Hole ${hp.holeIdx + 1}`);
         setText('htPar', `Par ${HOLE.par}`);
         setText('htDist', `${yds} yards to the pin`);
@@ -15674,7 +15800,7 @@
         const crsTier = m ? m.tier : round.tour ? round.tour.tier : careerOn && career ? career.tier : 0;
         setText('scCourse', `${crsTier && TIERS[crsTier] ? TIERS[crsTier].course : pv ? 'Friends\' challenge' : 'The test course'} · ${new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`);
         $('scTitle').textContent = final ? 'Final scorecard' : 'Scorecard';
-        $('scTag').textContent = final ? `${t.strokes} strokes · ${fmtToPar(t.toPar)}` : t.played ? `${fmtToPar(t.toPar)} thru ${t.played}` : 'Test round';
+        $('scTag').textContent = final ? `${t.strokes} strokes · ${fmtToPar(t.toPar)}` : t.played ? `${fmtToPar(t.toPar)} thru ${t.played}` : round.match || round.tour || round.pvp ? 'Round' : `Arcade · ${arcOf().name}`;
         $('scMsg').textContent = final
           ? `${msg ? msg + '\n\n' : ''}Round complete: ${t.strokes} strokes on a par ${totPar} (${fmtToPar(t.toPar)}) · ${t.putts} putts`
           : msg;
@@ -15739,7 +15865,7 @@
       function scorecardNext() {
         if (scMode === 'arch') return closeArchivedCard();
         if (scMode === 'pvp') return closeSharedCard();
-        if (scMode === 'board') { if (round.on) return hideScorecard(); hideScorecard(); return openRoundIntro(); }
+        if (scMode === 'board') { if (round.on) return hideScorecard(); hideScorecard(); return arcadeIntro(); }
         if (outcomeDue()) return;
         if (round.match) { if (round.over) return matchToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
         if (round.pvp) { if (round.over) return pvpToClubhouse(); if (hp.done) return nextRoundHole(); return hideScorecard(); }
@@ -15768,17 +15894,37 @@
       // one board per round length: a 6-hole score is not a 9-hole score (the old 6-hole board stays under 'golfLeaderboard')
       const LB_KEY = `golfLeaderboard_${HOLES.length}holes`, LB_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       const LB_API = '/api/leaderboard';
-      let lbMem = null, scMode = 'round';
+      // ARCADE (user request, 2026-11-20): the home screen's arcade side plays nine holes on any of the three courses with
+      // the same stats and clubs for everyone, and each course has its own Top 10. Course 1 is the first course at its
+      // standard conditions (the "test round" there has always been, so its board carries on); 2 and 3 are the club's and
+      // the country club's courses as their circuits set them up (TIERS). arcCourse: the course picked (remembered).
+      const ARCADE = [
+        { id: 1, tier: null, name: TIERS[1].course, short: 'Rolling Pines', stars: 1, blurb: 'The opener: wide enough, slow enough' },
+        { id: 2, tier: 2, name: TIERS[2].course, short: 'Cedar Hollow', stars: 2, blurb: 'Ponds, trees and faster greens' },
+        { id: 3, tier: 3, name: TIERS[3].course, short: 'Hawthorne', stars: 3, blurb: 'Long, narrow, deep sand, lightning greens' },
+      ];
+      let arcCourse = ARCADE.some((a) => String(a.id) === lsGet('golfArcadeCourse')) ? +lsGet('golfArcadeCourse') : 1;
+      const arcOf = (id = arcCourse) => ARCADE.find((a) => a.id === id) || ARCADE[0];
+      const arcHoles = (id = arcCourse) => holesFor(arcOf(id).tier ? TIERS[arcOf(id).tier] : null);
+      const lbKeyOf = (id = arcCourse) => (id > 1 ? `${LB_KEY}_c${id}` : LB_KEY);
+      const lbMemBy = {};
+      let scMode = 'round';
       let lbWorld = [], lbOnline = null, lbBusy = false;     // lbOnline: null = not asked yet, true = world board, false = this device
       const lbInfo = { total: 0, rank: 0, note: '' };
       const lbEntry = { active: false, chars: ['A', 'A', 'A'], pos: 0, mineT: null };
-      function lbLoad() {                                    // this browser's own board (the fallback)
-        if (lbMem) return lbMem;
-        try { lbMem = JSON.parse(localStorage.getItem(LB_KEY) || '[]'); } catch { lbMem = []; }
-        if (!Array.isArray(lbMem)) lbMem = [];
-        return lbMem;
+      function lbLoad() {                                    // this browser's own board for the course picked (the fallback)
+        if (lbMemBy[arcCourse]) return lbMemBy[arcCourse];
+        let m;
+        try { m = JSON.parse(localStorage.getItem(lbKeyOf()) || '[]'); } catch { m = []; }
+        return (lbMemBy[arcCourse] = Array.isArray(m) ? m : []);
       }
-      function lbSave(list) { lbMem = list; try { localStorage.setItem(LB_KEY, JSON.stringify(list)); } catch { /* storage unavailable: kept for this session */ } }
+      function lbSave(list) { lbMemBy[arcCourse] = list; try { localStorage.setItem(lbKeyOf(), JSON.stringify(list)); } catch { /* storage unavailable: kept for this session */ } }
+      // pick an arcade course: its board (the last one's rows are another course's)
+      function setArcCourse(id) {
+        if (!ARCADE.some((a) => a.id === id) || id === arcCourse) return;
+        arcCourse = id; lsSet('golfArcadeCourse', String(id));
+        lbWorld = []; lbOnline = null; lbInfo.total = 0; lbInfo.rank = 0; lbInfo.note = ''; lbEntry.mineT = null;
+      }
       const lbCmp = (a, b) => a.strokes - b.strokes || a.putts - b.putts || a.t - b.t;
       const lbList = () => (lbOnline ? lbWorld : lbLoad());
       function lbQualifies(t) {
@@ -15788,25 +15934,29 @@
       const lbBoardShown = () => $('scorecard').classList.contains('board');
       // fetch the world board; re-draw it if it's on screen
       async function lbFetch() {
+        const c = arcCourse;                                 // (an answer for a course no longer picked is dropped)
         try {
-          const r = await fetch(`${LB_API}?holes=${HOLES.length}`, { cache: 'no-store' });
+          const r = await fetch(`${LB_API}?holes=${HOLES.length}${c > 1 ? `&course=${c}` : ''}`, { cache: 'no-store' });
           if (!r.ok) throw new Error(r.status);
           const j = await r.json();
+          if (c !== arcCourse) return;
           lbWorld = Array.isArray(j.top) ? j.top : []; lbInfo.total = j.total || 0; lbOnline = true;
-        } catch { lbOnline = false; }
+        } catch { if (c === arcCourse) lbOnline = false; }
         if (lbBoardShown()) renderBoard();
       }
       // post a finished round; on any failure keep it on this device instead
       async function lbSubmit(entry, scores) {
+        const c = arcCourse;
         lbBusy = true; lbInfo.rank = 0; lbInfo.note = '';
         if (lbBoardShown()) renderBoard();
         try {
           const r = await fetch(LB_API, {
             method: 'POST', headers: { 'Content-Type': 'application/json', ...(entry.pro && session ? { Authorization: `Bearer ${session.token}` } : {}) },
-            body: JSON.stringify({ name: entry.name, strokes: entry.strokes, putts: entry.putts, par: entry.par, holes: HOLES.length, scores }),
+            body: JSON.stringify({ name: entry.name, strokes: entry.strokes, putts: entry.putts, par: entry.par, holes: HOLES.length, course: c, scores }),
           });
           const j = await r.json().catch(() => ({}));
           if (!r.ok) throw new Error(j.error || r.status);
+          if (c !== arcCourse) { lbBusy = false; return; }
           lbWorld = j.top || []; lbInfo.total = j.total || 0; lbInfo.rank = j.rank || 0; lbOnline = true;
           if (j.entry) lbEntry.mineT = j.entry.t;
         } catch (e) {
@@ -15900,7 +16050,7 @@
         if (!row || !confirm(`Take ${row.name}'s ${row.strokes} (${fmtToPar(row.toPar)}) off the world board? It can't be put back.`)) return;
         let j = {};
         try {
-          const r = await fetch(LB_API, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` }, body: JSON.stringify({ action: 'remove', t: +t, id }) });
+          const r = await fetch(LB_API, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` }, body: JSON.stringify({ action: 'remove', t: +t, id, course: arcCourse }) });
           j = await r.json().catch(() => ({}));
           if (!r.ok) throw new Error(j.error || r.status);
           lbWorld = j.top || []; lbInfo.total = j.total || 0; lbInfo.note = `Removed ${row.name}'s round`;
@@ -15917,9 +16067,9 @@
         scMode = 'board';
         sc.classList.remove('entry', 'pvp');
         sc.classList.add('board', 'lbonly', 'on');
-        $('scTitle').textContent = 'Top 10 · test round';
-        $('scTag').textContent = `holes 1–${HOLES.length} · par ${HOLES.reduce((s, h) => s + h.par, 0)}`;
-        $('scNext').textContent = round.on ? 'Back to the round' : 'Play a test round';
+        $('scTitle').textContent = `Arcade Top 10 · ${arcOf().name}`;
+        $('scTag').textContent = `9 holes · par ${arcHoles().reduce((s, h) => s + h.par, 0)} · same stats and clubs for everyone`;
+        $('scNext').textContent = round.on ? 'Back to the round' : 'Play this course';
         $('scClose').textContent = 'Close (L)';
       }
 
@@ -16295,7 +16445,7 @@
           const t = roundTotals();
           const pv = round.pvp;
           setText('tbRoundL', round.match ? (round.match.format === 'skins' ? `Skins · ${money(round.match.stake)} a hole` : `Match · ${money(round.match.stake)}`)
-            : pv ? `${FR_FMT[pv.format]} · ${money(pv.stake)}` : round.tour ? `🏆 ${tourById(round.tour.id).short}` : 'Test round');
+            : pv ? `${FR_FMT[pv.format]} · ${money(pv.stake)}` : round.tour ? `🏆 ${tourById(round.tour.id).short}` : `🕹 Arcade · ${arcOf().short}`);
           const tps = round.tour && t.played ? tourStandings(round.tour, t.played).find((r) => r.me) : null;
           const mt = round.match ? `${round.match.settled ? round.match.result.replace(/:.*/, '') : `${matchLine(round.match)} vs ${npcById(round.match.npc).nick}`} · ` : pv ? `vs ${pv.vsName} · ` : tps ? `${posText(tps)} · ` : '';
           setText('tbRound', mt + (t.played ? `${fmtToPar(t.toPar)} thru ${t.played} · Hole ${hp.holeIdx + 1}/${HOLES.length}` : `Hole ${hp.holeIdx + 1}/${HOLES.length}`));
@@ -16972,8 +17122,7 @@
         $('btnRound').addEventListener('click', (e) => {          // the course preview first; a test round never plays the career
           e.currentTarget.blur();
           if (round.on) return quitRound();
-          if (careerOn) leaveCareer();
-          openRoundIntro();
+          arcadeIntro();
         });
         $('btnCareer').addEventListener('click', (e) => { e.currentTarget.blur(); if (!clubOpen) openClubhouse(); else if (career) careerToRange(); else closeClubhouse(); });
         $('chCreate').addEventListener('click', (e) => { e.currentTarget.blur(); submitSignIn(); });
@@ -17037,6 +17186,18 @@
         $('hmDev').addEventListener('change', (e) => { lsSet('golfDevTools', e.target.checked ? 'on' : 'off'); e.target.blur(); applyDevTools(); });
         $('hmMenu').querySelector('.hm-tiles').addEventListener('click', (e) => { const b = e.target.closest('button[data-h]'); if (b) { b.blur(); homeGo(b.dataset.h); } });
         $('hmBoardBtn').addEventListener('click', (e) => { e.currentTarget.blur(); closeHome(); showLeaderboard(); });
+        // the arcade side: pick a course (its board follows), and play it
+        $('hmCourses').addEventListener('click', (e) => {
+          const b = e.target.closest('button[data-arc]');
+          if (!b) return;
+          setArcCourse(+b.dataset.arc); setText('hmArcErr', '');
+          renderHomeBoard(); lbFetch().then(renderHomeBoard);
+        });
+        $('hmArcPlay').addEventListener('click', (e) => {
+          e.currentTarget.blur();
+          if (!homeSigned()) return setText('hmArcErr', 'Pick who\'s playing first, or play as a guest');
+          setText('hmArcErr', ''); closeHome(); arcadeIntro();
+        });
         $('lbTable').addEventListener('click', lbAdminClick);         // the admin's ✕ on a world-board round (audit 3.6)
         $('frList').addEventListener('click', friendsClick);           // friends and challenges (M3)
         $('frBack').addEventListener('click', (e) => { e.currentTarget.blur(); openClubhouse(); });

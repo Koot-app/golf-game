@@ -1,7 +1,7 @@
 // Shared test-round leaderboard, stored in Upstash Redis (REST API, no dependencies).
 //
-//   GET  /api/leaderboard?holes=9            -> { top: [...10], total }
-//   POST /api/leaderboard  { name, strokes, putts, par, holes, scores: [per-hole strokes] }
+//   GET  /api/leaderboard?holes=9&course=1   -> { top: [...10], total }      (course 1-3, the arcade's; 1 if left out)
+//   POST /api/leaderboard  { name, strokes, putts, par, holes, course, scores: [per-hole strokes] }
 //     (signed in, with the session token in Authorization: the profile's name is used instead of `name`)
 //                                           -> { entry, rank, total, top }
 //
@@ -20,11 +20,13 @@
 const MAX_KEEP = 1000;
 const TOP_N = 10;
 const RATE_MAX = 5, RATE_WINDOW_S = 60;
-// the test round's holes (index.html HOLES): the only board there is. A score must be one a real round could have
-// (audit 3.6: nine holes-in-one went straight to the top): no better than two under par on any hole (so a hole-in-one
-// only on a par 3), and the round no better than one under par a hole.
-const PARS = [5, 3, 4, 4, 3, 5, 4, 3, 4];
-const PAR = PARS.reduce((a, b) => a + b, 0);
+// The arcade's three courses (index.html ARCADE), a board each: course 1 is the first course (HOLES, the board there
+// has always been: its key is unchanged), 2 is HOLES_T2 and 3 is HOLES_T3 (user request, 2026-11-20). A score must be
+// one a real round could have (audit 3.6: nine holes-in-one went straight to the top): no better than two under par on
+// any hole (so a hole-in-one only on a par 3), and the round no better than one under par a hole.
+const PARS_BY_COURSE = { 1: [5, 3, 4, 4, 3, 5, 4, 3, 4], 2: [4, 5, 4, 4, 3, 4, 3, 5, 4], 3: [4, 4, 4, 5, 4, 3, 5, 3, 4] };
+const courseOf = (v) => { const c = parseInt(v === undefined || v === null || v === '' ? '1' : v, 10); return PARS_BY_COURSE[c] ? c : 0; };
+const keyOf = (holes, course) => `golf:lb:${holes}h${course > 1 ? `:c${course}` : ''}`;
 
 // The storage helpers (finding the credentials, the Redis pipeline, reading the body, the rate limit) are the shared
 // ones in _redis.js (audit 9.2: this file used to carry its own copies).
@@ -55,8 +57,9 @@ module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
       const holes = parseInt((req.query && req.query.holes) || '9', 10);
-      if (!isInt(holes, 1, 18)) return send(400, { error: 'Bad holes' });
-      const key = `golf:lb:${holes}h`;
+      const course = courseOf(req.query && req.query.course);
+      if (!isInt(holes, 1, 18) || !course) return send(400, { error: 'Bad holes' });
+      const key = keyOf(holes, course);
       const [members, total] = await redis([['ZRANGE', key, 0, TOP_N - 1], ['ZCARD', key]]);
       return send(200, { top: members.map(clean).filter(Boolean), total });
     }
@@ -68,7 +71,9 @@ module.exports = async (req, res) => {
         let me = null;
         try { me = await sessionId(req); } catch { me = null; }
         if (!me || !isAdmin(me)) return send(403, { error: 'Only the admin can remove a round' });
-        const key = `golf:lb:${PARS.length}h`;
+        const rc = courseOf(b.course);
+        if (!rc) return send(400, { error: 'Bad course' });
+        const key = keyOf(PARS_BY_COURSE[rc].length, rc);
         const [all] = await redis([['ZRANGE', key, 0, -1]]);
         const hit = (all || []).find((m) => { const e = clean(m); return e && e.t === b.t && e.id === b.id; });
         if (!hit) return send(404, { error: 'That round isn\'t on the board' });
@@ -90,12 +95,13 @@ module.exports = async (req, res) => {
       if (!Array.isArray(scores) || scores.length !== holes || !scores.every((s) => isInt(s, 1, 40))) return send(400, { error: 'Bad scorecard' });
       if (!isInt(strokes, holes, holes * 40) || scores.reduce((a, s) => a + s, 0) !== strokes) return send(400, { error: 'Scorecard does not add up' });
       if (!isInt(putts, 0, strokes - 1)) return send(400, { error: 'Bad putts' });
-      if (holes !== PARS.length || par !== PAR) return send(400, { error: 'Bad course' });
+      const course = courseOf(b.course), PARS = PARS_BY_COURSE[course], PAR = PARS ? PARS.reduce((a, s) => a + s, 0) : 0;
+      if (!course || holes !== PARS.length || par !== PAR) return send(400, { error: 'Bad course' });
       if (scores.some((s, i) => s < Math.max(1, PARS[i] - 2)) || strokes < PAR - PARS.length) return send(400, { error: 'That score isn\'t possible' });
 
       if (!(await rateLimit(`golf:rl:${clientIp(req)}`, RATE_MAX, RATE_WINDOW_S))) return send(429, { error: 'Too many saves — try again in a minute' });
 
-      const key = `golf:lb:${holes}h`, t = Date.now();
+      const key = keyOf(holes, course), t = Date.now();
       const id = Math.random().toString(36).slice(2, 8);                 // two identical rounds in the same ms stay two
       const member = JSON.stringify({ t, id, name, strokes, putts, par, ...(pro ? { pro: true } : {}) });
       const [, rank, total, top] = await redis([
