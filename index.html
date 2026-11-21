@@ -47,7 +47,8 @@
    P2. Push/pull direction follows AUDIT 15: drifting UP the screen (toward the golfer) pulls the putt left,
        drifting DOWN pushes it right. The spec had these the other way round, like its full-swing path.
    P3. Tempo needed a measurable definition: it is backstroke time / forward-stroke time, so 1.00 is a true
-       pendulum. A pause at the top is not counted against the forward stroke.
+       pendulum. A pause at the top is not counted against the forward stroke. (Putting audit PT2: both times are
+       taken over the same middle stretch of the stroke, so one rhythm reads the same at every stroke length.)
    P4. 100% stroke length uses the calibrated swing length, not a fixed 250 px.
    P5. The spec assumes a green; the prototype had none. Added a practice green with adjustable distance, side
        slope, up/down slope, contours and Stimp, real break physics and hole capture.
@@ -101,8 +102,9 @@
    C8. Practice green: a 16.5 m round green; the pin sits on the ball's side, further on for longer chips; a mown approach
        runs from the ball to the green; the chosen lie surrounds the ball.
    C9. Tilt (bad streak), changed after playtest for every stroke: only the lie the ball finishes in counts (tiltFromLie).
-       Rough or sand adds a level; green, fringe, fairway or tee clears it; hardpan leaves it alone. The swing itself no
-       longer adds Tilt.
+       Rough or sand adds a level; fairway or tee clears it; hardpan leaves it alone. The swing itself no longer adds
+       Tilt. (User, 2026-11-20, putting audit PT7: the green or fringe takes one level off; it used to clear it, so Tilt
+       never reached a putt or the next tee. A putt that stays on the green leaves Tilt as it is.)
 -->
   <style>
     :root {
@@ -7889,9 +7891,14 @@
       const FT = 0.3048, INCH = 0.0254, HOLE_R = 0.054;
       const PUTT = {
         scales: [{ name: 'Short', ft: 15 }, { name: 'Medium', ft: 40 }, { name: 'Lag', ft: 90 }],
+        scaleFill: 1.0,                  // Auto takes the smallest scale whose 100% × this covers the top of the marker's band (a stroke can go to 110%)
         stimpRelease: 1.83,              // m/s a Stimpmeter releases the ball at; with the Stimp reading this gives the green's friction
         minBack: 0.02, topHyst: 0.012,   // a putt can be a tiny stroke, so the swing thresholds are much smaller
         gateZone: 0.25,                  // the gate is a short tunnel: only the last 25% of stroke length before the ball is judged
+        dexLine: [1.16, 0.80],           // Dexterity 1 → 10: the share of the putter's start-line gain that applies (1 at Dexterity 5)
+        dexStrike: [1.20, 0.75],         // ...and of a miss's millimetres off the middle of the face (1 at Dexterity 5)
+        tiltShake: 0.006, tiltShakeMin: 0.25,   // tilted hands shake: sideways, this share of a full stroke per unit of Tilt (swingSample); the least Tilt it shakes as
+        tempoSpan: [0.2, 0.8],           // tempo is timed over this stretch of the stroke's length, measured from the ball (puttTempo)
         tempoRamp: 0.15,                 // tempo past the putter's green zone ramps to the full fault over this much
         hotSpeed: 0.12,                  // a fully jabbed putt leaves the face this much faster...
         hotScatter: 0.12,                // ...give or take this much (no two jabs come off the face the same: nothing extra to +24%),
@@ -7900,9 +7907,16 @@
         skidHotFt: 2.5,                  // ...and it skids this much further. A skidding ball slides, so the slope pulls it harder (stepPutt)
         skidPureFt: 0.5,                 // skid of a pure stroke on a 20-ft putt (scales with length)
         decelSpeed: 0.12,                // a fully decelerated putt leaves this much slower...
+        decelScatter: 0.10,              // ...give or take this much (no two come off the same: PT11)...
         decelTwistDeg: 1.5,              // ...with up to this much random face twist
-        railTwistDeg: 0.8, railTwistMax: 2.0,     // random face twist per gate-width the stroke strays outside the rails
-        strikeLossMin: 0.05, strikeLossMax: 0.12, // rollout lost to a heel/toe strike outside the putter's sweet spot
+        railTwistDeg: 2.5, railTwistMax: 3.0,     // random face twist per gate-width the stroke strays outside the rails...
+        railSlow: 0.20, railSlowMax: 0.25,        // ...and the share of the ball's speed the clip takes off, per gate-width outside.
+                                                  // (Putting audit PT4: the twist was 0.8 up to 2.0 and no pace was lost, so a clip
+                                                  // cost nothing a score could show and a wide gate was worth nothing.)
+        strikeMm: 400,                            // mm off the putter's centre per unit of miss: 1% of a full stroke wide of the ball = 4 mm
+                                                  // (it was about 1 mm, so every hand struck it within 1–3 mm and no sweet spot was ever left: PT5)
+        strikeLoss: 0.02, strikeLossMax: 0.20,    // rollout lost per mm a heel/toe strike is outside the putter's sweet spot...
+        strikeTwistDeg: 0.10, strikeTwistMax: 1.0, // ...and the degrees it starts toward that side (toe right, heel left)
         captureSpeed: 1.6,               // m/s: fastest a dead-centre putt can be going and still drop (swing audit S8.3: was 1.3; Holmes 1991 ≈ 1.6)
         diePastFt: 1.5,                  // the target pace finishes this far past the hole
         fringeDrag: 2.5, roughDrag: 6,   // friction multipliers on the collar and rough off the green
@@ -8057,15 +8071,31 @@
         return { playsFt: Math.max(0.5, v2 / (2 * green.decel) / FT), elevIn: dh / INCH };
       }
 
+      // TEMPO (P3; putting audit PT2, PT3) = the time the putter takes going back ÷ the time it takes coming forward, each
+      // timed over the same middle stretch of the stroke (PUTT.tempoSpan of its length, measured from the ball). A stroke that
+      // comes through at the pace it went back reads 1.00 at any length, and neither the takeaway nor the turn at the top (a
+      // pause there, the hand still or not) is in it. It was the whole back time ÷ the whole forward time, with the back clock
+      // starting only once the hand had moved 1% of a full swing: one true 1:1 rhythm read 0.63 on a tap-in and 0.87 on a lag,
+      // and a 300 ms pause with one count of mouse jitter read 0.53.
+      function puttTempo(S, iTop, iImp) {
+        const L = Math.abs(S[iTop].x), lvA = Math.max(PUTT.tempoSpan[0] * L, Math.abs(S[Math.min(1, iTop)].x)), lvB = PUTT.tempoSpan[1] * L;
+        if (iTop < 2 || lvB - lvA < 2) {         // too short a stroke to time a stretch of: the whole back ÷ the whole forward, as before
+          const pause = Math.max(0, (S[Math.min(iTop + 1, iImp)].t - S[iTop].t) - 40);
+          return Math.max(1, S[iTop].t - S[Math.min(1, iTop)].t) / Math.max(1, S[iImp].t - S[iTop].t - pause);
+        }
+        const at = (i, lv) => { const p = S[i - 1], q = S[i]; return q.x === p.x ? q.t : lerp(p.t, q.t, clamp((-lv - p.x) / (q.x - p.x), 0, 1)); };
+        let iB = 1; while (S[iB].x > -lvB) iB++;                                             // going back: it first reaches the far level here...
+        let iA = iB; while (iA > 1 && S[iA - 1].x <= -lvA) iA--;                             // ...having last passed the near level here
+        let jB = iTop; for (let i = iTop + 1; i < iImp; i++) if (S[i].x <= -lvB) jB = i;     // coming forward: it last leaves the far level after this...
+        let jA = jB + 1; while (jA < iImp && S[jA].x < -lvA) jA++;                           // ...and then first reaches the near level here
+        return Math.max(1, at(iB, lvB) - at(iA, lvA)) / Math.max(1, at(jA, lvA) - at(jB + 1, lvB));
+      }
       // Stroke -> putt numbers. Adds rhythm and gate excursion to the shared stroke analysis.
       function analyzePutt(S, iTop, iImp, cal) {
         const a = analyzeSwing(S, iTop, iImp, cal);
-        const tBack = Math.max(1, S[iTop].t - S[Math.min(1, iTop)].t);
-        const pause = Math.max(0, (S[Math.min(iTop + 1, iImp)].t - S[iTop].t) - 40);        // a pause at the top is not part of the stroke
-        const tFwd = Math.max(1, S[iImp].t - S[iTop].t - pause);
         let exc = 0;
         for (let i = iTop; i <= iImp; i++) if (S[i].x >= -PUTT.gateZone * cal.swingPx) exc = Math.max(exc, Math.abs(S[i].y));
-        return { ...a, len: Math.min(1.10, Math.abs(S[iTop].x) / cal.swingPx), tempo: tBack / tFwd, excursion: exc / cal.swingPx };
+        return { ...a, len: Math.min(1.10, Math.abs(S[iTop].x) / cal.swingPx), tempo: puttTempo(S, iTop, iImp), excursion: exc / cal.swingPx };
       }
 
       // cfg = { scaleFt, stimp, composure, badStreak, dex }
@@ -8074,34 +8104,48 @@
         const comp = tilt > 0.005 ? 'tilted' : 'neutral', dexF = (cfg.dex - 1) / 9, flags = [];
         const gate = puttGate(putter, cfg.composure, cfg.badStreak);
 
+        // (Putting audit PT8) DEXTERITY is the hands: it sets how much of the stroke's direction reaches the ball, and how far
+        // off the middle a miss strikes it. Both are 1 at Dexterity 5 (the test round's standard), so nothing moves there. It
+        // used to trim only the wobble part of the strike, which changed no score at any level.
+        const dexLine = lerp(PUTT.dexLine[0], PUTT.dexLine[1], dexF), dexStrike = lerp(PUTT.dexStrike[0], PUTT.dexStrike[1], dexF);
+
         // start line: stroke direction, plus a twist if the stroke strayed outside the gate
         let path = sw.thetaMouse;
-        let start = path * putter.pathGain;
+        let start = path * putter.pathGain * dexLine;
         const over = Math.max(0, sw.excursion / gate - 1);
-        if (over > 0) { flags.push('HIT THE RAIL'); start += Math.min(PUTT.railTwistMax, PUTT.railTwistDeg * over) * (rnd() * 2 - 1); }
+        let railV = 0;
+        if (over > 0) { flags.push('HIT THE RAIL'); start += Math.min(PUTT.railTwistMax, PUTT.railTwistDeg * over) * (rnd() * 2 - 1); railV = Math.min(PUTT.railSlowMax, PUTT.railSlow * over); }
 
         // tempo
         const hot = clamp((sw.tempo - (1 + putter.tempoZone)) / PUTT.tempoRamp, 0, 1);
         const dec = clamp(((1 - putter.tempoZone) - sw.tempo) / PUTT.tempoRamp, 0, 1);
         if (hot >= 0.66) flags.push('SKID / HOT');
         if (dec >= 0.66) flags.push('DECEL');
-        if (dec > 0) start += PUTT.decelTwistDeg * dec * (rnd() * 2 - 1);
+        // (putting audit PT11) ...and a decel is not repeatable in pace either. It was an exact −12% of speed below the ramp,
+        // so a hand with a loose rhythm did better decelerating every putt, with a longer stroke, than trying for a pure one.
+        let decV = PUTT.decelSpeed * dec;
+        if (dec > 0) { start += PUTT.decelTwistDeg * dec * (rnd() * 2 - 1); decV += PUTT.decelScatter * dec * (rnd() * 2 - 1); }
         // (putting audit PT1) a jab is not square or repeatable either: a twist, and a pace that is hot by a different amount each time
         let hotV = PUTT.hotSpeed * hot;
         if (hot > 0) { start += PUTT.hotTwistDeg * hot * (rnd() * 2 - 1); hotV += PUTT.hotScatter * hot * (rnd() * 2 - 1); }
 
-        // strike: wobble plus how far off the ball's centre line the putter came through
-        let mm = sw.sigma * 1.2 * (1 - 0.4 * dexF) + Math.abs(sw.miss || 0) / gate * 3;
+        // strike: wobble plus how far off the ball's centre line the putter came through. (Putting audit PT5: the miss was
+        // divided by the putter's gate, so a wide gate and a big sweet spot were one forgiveness counted twice and a mallet could
+        // not leave its sweet spot; and the loss was 5% the moment the strike was past the edge. Now a miss is the same
+        // millimetres for every putter, and outside the sweet spot the ball loses rollout, and starts toward the toe's or the
+        // heel's side, by how far outside it was struck: nothing at the edge, as the full swing's strike does.)
+        let mm = sw.sigma * 1.2 * (1 - 0.4 * dexF) + Math.abs(sw.miss || 0) * PUTT.strikeMm * dexStrike;
         mm = Math.min(15, mm * (comp === 'tilted' ? 1 + Math.min(0.5, tilt * 0.6) : 1));
         const strike = mm * (Math.abs(sw.miss || 0) > 0.004 ? (sw.miss < 0 ? 1 : -1) : sw.lateSign);
-        const loss = mm > putter.sweet ? lerp(PUTT.strikeLossMin, PUTT.strikeLossMax, clamp((mm - putter.sweet) / 8, 0, 1)) : 0;
+        const offSweet = Math.max(0, mm - putter.sweet), loss = Math.min(PUTT.strikeLossMax, PUTT.strikeLoss * offSweet);
+        if (offSweet > 0) start += Math.sign(strike) * Math.min(PUTT.strikeTwistMax, PUTT.strikeTwistDeg * offSweet);     // the toe opens the face (right), the heel shuts it
 
         // pace
         const flatFt = Math.min(1.10, sw.len) * cfg.scaleFt;
-        const v0 = Math.sqrt(2 * rollDecel(cfg.stimp) * flatFt * FT * (1 - loss)) * (1 + hotV - PUTT.decelSpeed * dec);
+        const v0 = Math.sqrt(2 * rollDecel(cfg.stimp) * flatFt * FT * (1 - loss)) * (1 + hotV - decV - railV);
         const skidFt = PUTT.skidPureFt * clamp(flatFt / 20, 0.3, 2) + PUTT.skidHotFt * hot;
-        const roll = hot >= 0.66 ? 'SKID' : dec >= 0.66 ? 'DECEL' : loss ? (strike > 0 ? 'TOE' : 'HEEL') : 'PURE';
-        return { path, start, v0, skidFt, flatFt, len: sw.len, tempo: sw.tempo, hot, hotV, dec, strike, mm, loss, over, gate, comp, roll, flags };
+        const roll = hot >= 0.66 ? 'SKID' : dec >= 0.66 ? 'DECEL' : loss ? (strike > 0 ? 'TOE' : 'HEEL') : over > 0 ? 'RAIL' : 'PURE';
+        return { path, start, v0, skidFt, flatFt, len: sw.len, tempo: sw.tempo, hot, hotV, dec, decV, strike, mm, loss, over, railV, gate, comp, roll, flags, dexLine };
       }
 
       function createPutt(green, v0, dirDeg, skidFt = 0) {
@@ -9571,7 +9615,7 @@
         if (S.length && t <= S[S.length - 1].t) t = S[S.length - 1].t + 0.01;
         const puttTilt = isPutt() && s.phase !== 'through' ? tiltPenalty(state.composure, state.badStreak) : 0;
         if (puttTilt > 0.005) {      // knee-knocker: the hands shake when tilted
-          const j = px * 0.006 * clamp(puttTilt, 0.25, 1.4) * Math.sin(t * 0.021);
+          const j = px * PUTT.tiltShake * clamp(puttTilt, PUTT.tiltShakeMin, 1.4) * Math.sin(t * 0.021);
           dy += j - (s.jit || 0); s.jit = j;
         }
 
@@ -9656,11 +9700,16 @@
         if (state.practice) { clubReturnAt = performance.now() + 900; return; }
         launch(res);           // Tilt is decided by where the ball finishes (tiltFromLie), not by the swing itself
       }
-      // TILT: only the lie the ball finishes in counts. Rough or sand adds a level; the green, fringe, fairway or tee clears
-      // it; anything else (hardpan) leaves it as it is.
+      // TILT: only the lie the ball finishes in counts. Rough or sand adds a level; the fairway or a tee clears it; anything
+      // else (hardpan) leaves it as it is.
+      // (User, 2026-11-20, putting audit PT7) Reaching the green or its fringe takes ONE level off. It used to clear Tilt like
+      // the fairway does, so Tilt was always zero on a green and at the end of every hole: nobody putted under pressure,
+      // nothing followed you to the next tee and a caddie's calm had nothing to walk off. A putt that stays on the green
+      // leaves Tilt as it is (updatePutt), and so does holing it: what is left goes to the next tee.
       function tiltFromLie(key) {
         if (key === 'light' || key === 'heavy' || key === 'bunker' || key === 'fbunker' || key === 'ob') setBadStreak(state.badStreak + 1);
-        else if (key === 'green' || key === 'fringe' || key === 'fairway' || key === 'tee') setBadStreak(0);
+        else if (key === 'green' || key === 'fringe') setBadStreak(state.badStreak - 1);
+        else if (key === 'fairway' || key === 'tee') setBadStreak(0);
       }
 
       // ---- putting: stroke -> roll
@@ -9692,8 +9741,9 @@
         // where it finished relative to the hole: along and across the ball-to-hole line
         const long = -(q.p.z - green.hole.z), side = q.p.x - green.hole.x, left = Math.hypot(long, side);
         puttRun.summary = { holed: q.holed, lip: q.lip, long, side, left, holeSpeed: q.holeSpeed };
-        // a putt that stays on the green (or its collar) clears Tilt; one that runs off into the rough adds to it
-        tiltFromLie(q.holed || !green.inside || green.inside(q.p.x, q.p.z, 1.3) ? 'green' : 'light');
+        // a putt that stays on the green (or its collar), holed or not, leaves Tilt as it is; one that runs off into the rough
+        // adds to it. (Putting audit PT7: it used to clear it.)
+        if (!q.holed && green.inside && !green.inside(q.p.x, q.p.z, 1.3)) tiltFromLie('light');
         const fl = puttRun.res.flags.length ? puttRun.res.flags.join(' · ') + '\n' : '';
         const where = `${Math.abs(long) < 0.03 ? 'pin high' : `${fmtFtIn(long)} ${long > 0 ? 'long' : 'short'}`}, ${Math.abs(side) < 0.03 ? 'on line' : `${fmtFtIn(side)} ${side > 0 ? 'right' : 'left'}`}`;
         toast(q.holed ? `${fl}HOLED IT\nfrom ${green.distFt < 10 ? green.distFt.toFixed(1) : green.distFt.toFixed(0)} ft` : `${fl}${q.lip ? 'LIPPED OUT · ' : ''}${fmtFtIn(left)} left\n${where}`, 4500);
@@ -9721,10 +9771,14 @@
         const pLo = Math.round(lo / scaleFt * 100), pHi = Math.round(hi / scaleFt * 100);
         return pLo === pHi ? `~${pLo}%` : `${pLo}–${pHi}%`;
       }
+      // The smallest scale whose full stroke still reaches the top of the marker's band, so the stroke is as long, and so as
+      // fine, as it can be. (Putting audit PT9: it switched when the band's middle passed 11 and 30 ft, with the smaller scale
+      // only three-quarters used. A 10 ft putt with the marker 1.5 ft past the cup got the 40 ft scale and a 29% stroke, where
+      // 1% of stroke is 0.4 ft, not 0.15.) At Perception 5 the switches are now at about 14 and 37 ft.
       function autoSelectPuttScale() {
         if (!state.puttScaleAuto || !markRead) return;
-        const mid = 0.5 * (markRead.lo + markRead.hi);
-        state.puttScale = mid <= 11 ? 0 : mid <= 30 ? 1 : 2;
+        const i = PUTT.scales.findIndex((s) => markRead.hi <= s.ft * PUTT.scaleFill);
+        state.puttScale = i < 0 ? PUTT.scales.length - 1 : i;
       }
       function clampMarkerToGreen(aimDeg, distM) {
         const aim = clamp(aimDeg, -45, 45);
@@ -10828,19 +10882,26 @@
           ]);
           sec('The putting card', 'bottom right', [
             `${n(1)}<b>Stroke:</b> how far back — finish inside the amber marker band`,
-            `${n(2)}<b>Tempo:</b> 1.00× is the same rhythm back and through · in the green zone is pure · <span class="con">faster</span> jabs it: skids, and runs hot and offline by a different amount each time ·<span class="con">slower</span> decelerates: short and offline`,
-            `${n(3)}<b>Gate:</b> how much of the gate you used — over 100% clipped a rail and twists it offline`,
+            `${n(2)}<b>Tempo:</b> 1.00× is the same pace back and through, at any stroke length (a pause at the top doesn't count) · in the green zone is pure · <span class="con">faster</span> jabs it: skids, and runs hot and offline · <span class="con">slower</span> decelerates: short and offline · either way by a different amount each time`,
+            `${n(3)}<b>Gate:</b> how much of the gate you used — over 100% clipped a rail: it twists offline and loses pace`,
             `${n(4)}<b>Stroke path</b> and ${n(5)}<b>start line:</b> where the putter went and where the ball started`,
-            `${n(6)}<b>Roll:</b> PURE, or what went wrong — SKID, DECEL, or a TOE / HEEL strike that loses roll`,
+            `${n(6)}<b>Roll:</b> PURE, or what went wrong — SKID, DECEL, RAIL, or a TOE / HEEL strike outside the sweet spot: it loses roll and starts toward that side`,
           ], '', tipsPuttCard(putter));
           sec('Putters & green speed', `${putter.name} · ${scale.name} scale`, [
             `${state.putter === 'blade' ? '<span class="cur"><b>Blade ◀:</b>' : '<span><b>Blade:</b>'} forgiving on rhythm · <span class="con">a narrow gate, the line matters more, a small sweet spot</span></span>`,
             `${state.putter === 'mallet' ? '<span class="cur"><b>Mallet ◀:</b>' : '<span><b>Mallet:</b>'} <span class="pro">a wide gate, steadier on line, a big sweet spot</span> · stricter on rhythm</span>`,
             '<b>[ ]</b> switch putters',
-            '<b>Stroke scale (1 · 2 · 3):</b> Short, Medium or Lag — how far a full stroke rolls. It picks itself to suit the putt',
+            '<span class="pro">Dexterity</span> steadies your hands: less of a crooked stroke reaches the ball, and a miss strikes nearer the middle',
+            '<b>Stroke scale (1 · 2 · 3):</b> Short, Medium or Lag — how far a full stroke rolls. Auto picks the shortest one that reaches your marker, so the stroke is as long and as fine as it can be',
             '<b>Faster greens</b> (higher Stimp) roll further and break more — a lighter touch',
             !hp.on && '<b>Practice:</b> <b>N</b> new putt · <b>Shift+N</b> new green · <b>G</b> back to the range',
           ]);
+          sec('Tilt on the green', state.badStreak > 0 ? `you're tilted${state.badStreak > 1 ? ' ×' + state.badStreak : ''}` : 'calm', [
+            'Nerves <b>follow you onto the green</b>: reaching it takes only <b>one level</b> off',
+            'Tilted, the <b>gate narrows</b>, your <b>hands shake</b> and your strike spreads · one level is barely felt, each one after costs a lot more',
+            '<span class="pro">A wide gate shrugs it off</span> · <span class="pro">Composure</span> offsets it',
+            'A putt leaves it as it is, holed or not' + (round.on ? ': what is left goes to the next tee' : ''),
+          ], state.badStreak > 0 ? 'warn' : '');
           return out;
         }
         const club = CLUBS[state.club], chip = isChip(), fit = clubFit(club, state.lie, isTeed(club));
@@ -10966,7 +11027,8 @@
           'Tilt is <b>nerves after bad shots</b>: finishing in rough, sand or out of bounds adds a level',
           'One bad shot only <b>rattles you a little</b>; bad shots in a row <b>stack</b>, and each level costs a lot more than the last',
           'It adds to the difficulty <b>and exaggerates your swing</b>: a crooked line curves more, an off-centre strike drifts further',
-          '<span class="pro">Reach the fairway or green</span> and it clears completely · hardpan leaves it as it is',
+          '<span class="pro">Reach the fairway</span> and it clears completely · the <span class="pro">green or fringe</span> takes one level off · hardpan leaves it as it is',
+          'It <b>follows you onto the green</b>: a narrower gate and shaking hands',
           round.on && 'In a round it follows you to the next tee',
           'Shows as <b>TILTED</b> on the swing card',
         ], state.badStreak > 0 ? 'warn' : '', tipsTiltLadder());
@@ -12965,18 +13027,23 @@
         'w-rosegold': { kind: 'wedge', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Rose Gold', price: 4000, add: {}, x: { spin: 1.0, sweet: 1.0, gear: 1.0, work: 1.05 }, set: { consist: 1.0, bounce: 12 }, note: 'Rose-gold plating over a soft forging. It will scuff in the first bunker, and you\'ll buy another' },
         'w-damascus': { kind: 'wedge', cat: 'Luxury', lux: true, brand: 'Hawthorne Atelier', name: 'Damascus', price: 7500, add: {}, x: { spin: 1.02, sweet: 1.0, gear: 1.0, work: 1.1 }, set: { consist: 1.0, bounce: 10, flopX: 0.95 }, note: 'Hand-folded Damascus steel: no two faces have the same ripples. Spins like a tour wedge' },
       };
-      // putters: added to PUTTERS (the range's own blade / mallet stay as they are). Swing audit S5.7: the OZ.1's start line
-      // (pathGain 0.18 → 0.22) and rhythm window (0.045 → 0.03, now the strictest) and the blades' wider windows (Newport
-      // 0.11, Anser 0.10) make a trade: the zero-torque mallet holes more from 20 ft, the blades leave long putts closer
-      // (a third as many lag putts finish more than 4 ft away). The luxury mallet plays just below the Spider.
+      // putters: added to PUTTERS (the range's own blade / mallet stay as they are). Putting audit PT6: these are a TRADE, not
+      // a ladder. The blades forgive a shaky rhythm (wide tempo windows); the mallets forgive a shaky line (a straighter start,
+      // a wide gate, a big sweet spot). The start lines are close together (0.34–0.38 against 0.31 and 0.23; they were 0.38–0.42
+      // against 0.27 and 0.22, which was worth more than the other three numbers together and put the mallets on top for every
+      // hand). Measured (tools/test/putt-fix5.js): a steady or average hand scores the same with any of the four bought
+      // putters (within 0.05 of a putt per nine); a loose hand is 0.4–0.7 better with a mallet; a good line with a shaky rhythm
+      // is 0.6–1.3 better with a blade; a good rhythm with a shaky line 0.8–1.5 better with a mallet, the OZ.1 most of all.
+      // The Anser sits between the Newport and the mallets. The Circle T is the Newport; the luxury mallet plays just below
+      // the Spider. The starter is 0.3–0.6 behind the bought blades (0.7–0.9 for a loose hand).
       Object.assign(PUTTERS, {
-        'p-wh2': { name: 'Odyssey White Hot Pro 2.0 #1 (2016)', model: true, gate: 0.028, pathGain: 0.42, sweet: 3.5, tempoZone: 0.085 },
-        'p-newport': { name: 'Scotty Cameron Newport 2', model: true, gate: 0.030, pathGain: 0.40, sweet: 4, tempoZone: 0.11 },
-        'p-pldanser': { name: 'Ping PLD Anser', model: true, gate: 0.031, pathGain: 0.38, sweet: 4.5, tempoZone: 0.10 },
-        'p-spider': { name: 'TaylorMade Spider Tour', model: true, gate: 0.050, pathGain: 0.27, sweet: 10, tempoZone: 0.04 },
-        'p-oz1': { name: 'LAB Golf OZ.1', model: true, gate: 0.046, pathGain: 0.22, sweet: 8, tempoZone: 0.03 },
-        'p-circlet': { name: 'Scotty Cameron Circle T tour putter', model: true, lux: true, gate: 0.030, pathGain: 0.40, sweet: 4, tempoZone: 0.11 },
-        'p-atelier': { name: 'Hawthorne Atelier platinum mallet', model: true, lux: true, gate: 0.048, pathGain: 0.27, sweet: 9, tempoZone: 0.04 },
+        'p-wh2': { name: 'Odyssey White Hot Pro 2.0 #1 (2016)', model: true, gate: 0.028, pathGain: 0.38, sweet: 3.5, tempoZone: 0.085 },
+        'p-newport': { name: 'Scotty Cameron Newport 2', model: true, gate: 0.030, pathGain: 0.34, sweet: 4, tempoZone: 0.12 },
+        'p-pldanser': { name: 'Ping PLD Anser', model: true, gate: 0.034, pathGain: 0.35, sweet: 5.5, tempoZone: 0.10 },
+        'p-spider': { name: 'TaylorMade Spider Tour', model: true, gate: 0.050, pathGain: 0.31, sweet: 10, tempoZone: 0.06 },
+        'p-oz1': { name: 'LAB Golf OZ.1', model: true, gate: 0.044, pathGain: 0.23, sweet: 7.5, tempoZone: 0.03 },
+        'p-circlet': { name: 'Scotty Cameron Circle T tour putter', model: true, lux: true, gate: 0.030, pathGain: 0.34, sweet: 4, tempoZone: 0.12 },
+        'p-atelier': { name: 'Hawthorne Atelier platinum mallet', model: true, lux: true, gate: 0.048, pathGain: 0.31, sweet: 9, tempoZone: 0.06 },
       });
       const modelName = (id) => (CLUB_MODELS[id] ? `${CLUB_MODELS[id].brand} ${CLUB_MODELS[id].name}` : '');
       // what a model does to one club (index i) of the bag
@@ -13712,17 +13779,35 @@
           <div class="sh-bars">${barRow('Distance', shopBar(m.kind, 'carry', s.carry))}${barRow('Stopping', shopBar(m.kind, 'roll', s.roll, true))}${barRow('Forgiveness', shopBar(m.kind, 'forgive', s.forgive))}${barRow('Shaping', shopBar(m.kind, 'shape', s.shape))}</div>
           <div class="sh-btns">${btns}</div></div>`;
       }
+      // The four PUTTER BARS: one set of names and one scale, wherever they are drawn (the shop, the bag screen, the putting
+      // green's putter card). Each bar is where the putter's number sits between the least and the most forgiving of all
+      // the putters, 15–100, so it stays right when the numbers are re-tuned. (Putting audit PT10: the shop said "Stability"
+      // and "Pace feel" where the other two said "Stroke gate" and "Tempo" / "Tempo window", the shop scaled across its own
+      // putters and the others on fixed ranges the numbers had outgrown: one putter's rhythm bar read 100 in the shop and
+      // 114%, clamped, on the card, and another's 15 and 4.)
+      const PUTTER_BARS = [      // [name, the number (more = more forgiving), what it means]
+        ['Stability', (p) => p.gate, 'How far your stroke can wander before it clips a rail, which twists the ball off line and takes pace off: more forgives a wandering stroke'],
+        ['Start line', (p) => -p.pathGain, 'How little of a crooked stroke reaches the ball: more starts it straighter'],
+        ['Sweet spot', (p) => p.sweet, 'How big the sweet spot is: a strike inside it loses nothing; outside it, pace and line go by how far'],
+        ['Pace feel', (p) => p.tempoZone, 'How wide a tempo still counts as a pure stroke: more forgives your rhythm'],
+      ];
+      function putterBars(p) {
+        const all = Object.values(PUTTERS);
+        return PUTTER_BARS.map(([label, f, tip]) => {
+          const v = all.map(f), lo = Math.min(...v), hi = Math.max(...v);
+          return { label, tip, pct: Math.round(15 + 85 * (hi > lo ? clamp((f(p) - lo) / (hi - lo), 0, 1) : 1)) };
+        });
+      }
+      const putterBarsHTML = (p) => putterBars(p).map((b) => barRow(b.label, b.pct)).join('');
       function shopPuttersHTML() {
         const ids = Object.keys(SHOP.putters), P = (id) => PUTTERS[id];
-        const rng = (f) => { const v = ids.map((id) => f(P(id))); return [Math.min(...v), Math.max(...v)]; };
-        const bar = (f, v) => { const [lo, hi] = rng(f); return Math.round(15 + 85 * (hi > lo ? (f(v) - lo) / (hi - lo) : 1)); };
         let h = '', cat = '';
         for (const id of ids) {
           const sp = SHOP.putters[id], p = P(id), owned = career.putters.includes(id), using = career.putter === id;
           if (sp.cat !== cat) { cat = sp.cat; h += LUX_CAT(cat); }
           const btn =using ? '<button disabled>✓ In your bag</button>' : owned ? `<button data-useputter="${id}">Put it in the bag</button>` : sp.price ? `<button class="buy" data-buyputter="${id}" ${career.cash < sp.price ? 'disabled' : ''}>Buy · ${money(sp.price)}</button>` : '<button disabled>Not for sale</button>';
           h += `<div class="sh-item${owned ? ' owned' : ''}${p.lux ? ' lux' : ''}"><div><div class="sh-name"><b>${p.lux ? '✦ ' : ''}${p.name}</b>${owned ? '<span>✓ yours</span>' : sp.price ? `<em>${money(sp.price)}</em>` : ''}</div><div class="sh-note">${sp.note}</div></div>
-            <div class="sh-bars">${barRow('Stability', bar((q) => q.gate, p))}${barRow('Start line', bar((q) => -q.pathGain, p))}${barRow('Sweet spot', bar((q) => q.sweet, p))}${barRow('Pace feel', bar((q) => q.tempoZone, p))}</div>
+            <div class="sh-bars">${putterBarsHTML(p)}</div>
             <div class="sh-btns">${btn}${owned ? '' : `<button data-tryputter="${id}">Try it on the putting green</button>`}</div></div>`;
         }
         return h;
@@ -13877,10 +13962,9 @@
         }).join('');
         // the putter (and the others in the locker)
         const P = PUTTERS[G.putter] || {}, sp = SHOP.putters[G.putter] || {};
-        const pbar = (lbl, v) => barRow(lbl, Math.round(clamp(v, 0.04, 1) * 100));
         h += `<div class="br-model${P.lux ? ' lux' : ''}"><div class="br-head"><div><b>${P.lux ? '✦ ' : ''}${P.name || '—'}</b><em>${P.lux ? `Luxury · ${money(sp.price)}` : sp.cat || 'Putter'}</em><em>Putter</em><i>${sp.note || ''}</i>`
           + `${(G.putters || []).length > 1 ? `<i>In the locker: ${G.putters.filter((p) => p !== G.putter && PUTTERS[p]).map((p) => PUTTERS[p].name).join(', ')}</i>` : ''}</div>`
-          + `<div class="sh-bars">${pbar('Stroke gate', (P.gate - 0.025) / 0.03)}${pbar('Start line', (0.45 - P.pathGain) / 0.3)}${pbar('Sweet spot', (P.sweet - 3) / 9)}${pbar('Tempo', (P.tempoZone - 0.03) / 0.07)}</div></div></div>`;
+          + `<div class="sh-bars">${P.name ? putterBarsHTML(P) : ''}</div></div></div>`;
         if (cd) {
           const b = caddieBonus(cd), help = [['power', 'Power'], ['dex', 'Dexterity'], ['composure', 'Composure'], ['perception', 'Perception']].filter(([k]) => b[k]).map(([k, n]) => `+${b[k]} ${n}`);
           h += `<div class="br-model"><div class="br-head"><div><b>🧢 ${cd.name}</b><em>Caddie</em><i>${cd.bio}</i><i>${help.join(' · ')}${cd.calm ? ` · ${cd.calm >= 2 ? 'every hole starts with no tilt' : 'walks off one level of tilt each hole'}` : ''} · ${money(cd.loop)} a match</i></div><div></div></div></div>`;
@@ -13906,12 +13990,6 @@
       }
       const putterIsDemo = (k) => careerOn && !!demo && demo.putter === k && !(career.putters || []).includes(k);
       function renderPutterCard() {
-        const STATS = [      // [label, 0..1 from the putter's numbers (more = more forgiving), what it means]
-          ['Stroke gate', (p) => (p.gate - 0.025) / 0.03, 'How far your stroke can wander before it catches the rail: wider forgives more'],
-          ['Start line', (p) => (0.45 - p.pathGain) / 0.3, 'How little your stroke\'s path pushes the ball off line: more is steadier'],
-          ['Sweet spot', (p) => (p.sweet - 3) / 9, 'How big the sweet spot is: off-centre strikes lose less pace'],
-          ['Tempo window', (p) => (p.tempoZone - 0.03) / 0.07, 'How wide a tempo still counts as a pure stroke'],
-        ];
         const list = puttersAvail(), cur = state.putter, mine = careerOn ? career.putter : null;
         setText('ptTitle', list.length > 1 ? 'Putters' : 'Putter');
         setText('ptTag', putterIsDemo(cur) ? 'demo' : careerOn ? (cur === mine ? 'in your bag' : 'locker') : 'practice');
@@ -13920,9 +13998,9 @@
           return `<div class="pt-row${k === cur ? ' on' : ''}${dm ? ' demo' : ''}" data-putter="${k}"><kbd>${dm ? '⇄' : careerOn && k === mine ? '✓' : '·'}</kbd>`
             + `<span>${p.name}</span><i>${dm ? 'demo' : careerOn ? (k === mine ? 'in your bag' : 'locker') : ''}</i></div>`;
         }).join('');
-        const P = PUTTERS[cur], Y = putterIsDemo(cur) && mine && PUTTERS[mine] ? PUTTERS[mine] : null, pc = (f, p) => Math.round(clamp(f(p), 0.04, 1) * 100);
-        $('ptStats').innerHTML = P ? STATS.map(([lbl, f, tip]) => `<div class="pt-stat" title="${tip}${Y ? ` · yours (${Y.name}): the white tick` : ''}"><span>${lbl}</span>`
-          + `<div><i class="${Y ? 'demo' : ''}" style="width:${pc(f, P)}%"></i>${Y ? `<u style="left:${pc(f, Y)}%"></u>` : ''}</div></div>`).join('') : '';
+        const P = PUTTERS[cur], Y = putterIsDemo(cur) && mine && PUTTERS[mine] ? PUTTERS[mine] : null, yours = Y ? putterBars(Y) : null;
+        $('ptStats').innerHTML = P ? putterBars(P).map((b, i) => `<div class="pt-stat" title="${b.tip}${Y ? ` · yours (${Y.name}): the white tick` : ''}"><span>${b.label}</span>`
+          + `<div><i class="${Y ? 'demo' : ''}" style="width:${b.pct}%"></i>${Y ? `<u style="left:${yours[i].pct}%"></u>` : ''}</div></div>`).join('') : '';
         setText('ptFoot', hp.on && careerOn ? 'On the course: the putter in your bag' : list.length > 1 ? '[ ] or a click switches putter' : careerOn ? 'More putters in the pro shop' : '');
       }
       // switch putter (the practice green; on the course a career putts with the one in its bag)
@@ -17011,7 +17089,7 @@
         if (txtCache.get('tmCx') !== l1) { txtCache.set('tmCx', l1); $('tmCx').innerHTML = l1; }
         if (txtCache.get('tmDex') !== l2) { txtCache.set('tmDex', l2); $('tmDex').innerHTML = l2; }
         let l3 = '', cls = '';
-        if (res) { if (gr <= 1) { l3 = 'Through the gate cleanly'; cls = 'ok'; } else { l3 = `Clipped the rail — ${Math.round((gr - 1) * 100)}% outside the gate`; cls = gr > 1.5 ? 'off' : 'near'; } }
+        if (res) { if (gr <= 1) { l3 = 'Through the gate cleanly'; cls = 'ok'; } else { l3 = `Clipped the rail — ${Math.round((gr - 1) * 100)}% outside the gate · −${Math.round(res.railV * 100)}% pace`; cls = gr > 1.5 ? 'off' : 'near'; } }
         setText('tmPass', l3); $('tmPass').className = cls;
 
         let badges = '';
@@ -17027,7 +17105,7 @@
         if (res) {
           setText('tmPath', signed(res.path)); setText('tmPathL', Math.abs(res.path) < 0.5 ? 'Straight' : res.path > 0 ? 'Pushing right' : 'Pulling left');
           setText('tmFace', signed(res.start, 2)); setText('tmFaceL', Math.abs(res.start) < 0.15 ? 'On line' : res.start > 0 ? 'Right' : 'Left');
-          setText('tmFtp', res.roll); setText('tmFtpL', res.loss ? `−${Math.round(res.loss * 100)}% rollout` : res.hot > 0 ? `+${Math.max(0, Math.round(res.hotV * 100))}% hot` : res.dec > 0 ? `−${Math.round(res.dec * PUTT.decelSpeed * 100)}% short` : 'true roll');
+          setText('tmFtp', res.roll); setText('tmFtpL', res.loss ? `−${Math.round(res.loss * 100)}% rollout` : res.hot > 0 ? `+${Math.max(0, Math.round(res.hotV * 100))}% hot` : res.dec > 0 ? `−${Math.max(0, Math.round(res.decV * 100))}% short` : res.railV > 0 ? `−${Math.round(res.railV * 100)}% off the rail` : 'true roll');
           const mm = Math.abs(res.strike);
           setText('tmStrike', mm < 1 ? 'Centre' : `${mm.toFixed(1)} mm ${res.strike > 0 ? 'Toe' : 'Heel'}`);
           setText('tmStrikeL', mm <= putter.sweet ? 'inside sweet spot' : `${(mm - putter.sweet).toFixed(1)} mm outside`);
@@ -17391,12 +17469,15 @@
         const feed = (nx, ny, nt) => { swingSample(nx - x, ny - y, nt); x = nx; y = ny; };
         // angle > 0 = in-to-out (draw): back up-and-inside, then down-and-right through the ball
         const slope = -Math.tan(angle * D2R), yTop = slope * Math.abs(top) + miss * state.cal.swingPx;
-        if (isPutt()) {            // a pendulum: back in ~600 ms, forward in tBack / tempo
+        if (isPutt()) {            // a pendulum: back in 600 ms, then forward from rest at the top, at its fastest through the ball
           for (let i = 1; i <= 60; i++) { const u = 0.5 - 0.5 * Math.cos(Math.PI * i / 60); feed(top * u, yTop * u, t += 10); }
-          const tBack = swing.S.length > 1 ? swing.S[swing.iTop].t - swing.S[1].t : 600;
+          // Putting audit PT2: tempo is read over the middle stretch of the stroke (puttTempo), so the forward stroke's time
+          // is set for that stretch to take the back stroke's time over it ÷ the tempo asked for.
+          const [a, b] = PUTT.tempoSpan, spanBack = 600 * (Math.acos(1 - 2 * b) - Math.acos(1 - 2 * a)) / Math.PI;
+          const tFwd = spanBack / tempo / ((Math.acos(a) - Math.acos(b)) / (Math.PI / 2));
           for (let i = 1; i <= 70 && swing.phase !== 'through'; i++) {
-            const dx = Math.abs(top) * (Math.sin(Math.PI / 2 * Math.min(1, i / 60)) + Math.max(0, i - 60) * 0.03);
-            feed(top + dx, yTop - slope * dx + wobble * Math.sin(i * 0.3), t += tBack / tempo / 60);
+            const dx = Math.abs(top) * (1 - Math.cos(Math.PI / 2 * Math.min(1, i / 60)) + Math.max(0, i - 60) * 0.026);
+            feed(top + dx, yTop - slope * dx + wobble * Math.sin(i * 0.3), t += tFwd / 60);
           }
           return puttTel;
         }
@@ -17431,7 +17512,7 @@
         fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock, flatChipView, treeDeflect, treePart, TREE, previewTrack, previewSide, spreadRatio, dexSpreadAt, lowRunnerHeight, fitApproachWedge, APPROACH, bagClubNumbers, greenInReach, setGreenRead, get greenReadOpen() { return greenRead.open; },
         BUNKER, bunkerH, bunkerGrad, inBowl, bunkerSlopeLie, stepChip, createChip, chipBounce, env, fullFaceRead, rigY, playTarget, suggestClub, setCourse, TIERS,
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
-        get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
+        get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, tiltFromLie, autoSelectPuttScale, putterBars, createCareer, openShop, openBagRoom, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
         npc, npcPlan, npcHoleScore, npcHurry, condAvg, NPCS, npcRating, npcPresses, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, holeStrokes, submitPvp, playFriend, startFriendRound, showSharedCard, closeSharedCard, checkNewResults, h2h, openHome, closeHome, get homeOpen() { return homeOpen; }, devOn, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }

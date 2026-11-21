@@ -1649,6 +1649,8 @@ the ZXi7 and the 620 CB. The full rows, with spin and landing angle, are the scr
   It's now a trade. The mallets hole more from mid range, and the blades leave long putts close (a third as many
   three-putt-length leaves). By a rough count of expected strokes from 40 ft they come out about even. These numbers
   still rest on the assumed stroke errors.
+- **Superseded 2026-11-20:** the putting audit measured these again with strokes through the real reader and found
+  the mallets ahead for every hand. The putters were re-tuned there: see PT6 in `PUTTING_AUDIT_FINDINGS.md`.
 - **Measured** (2,000 putts each, flat Stimp 11, Dexterity 5, the same stroke errors for every putter: path ±1° sd,
   tempo ±8% sd, gate excursion |0.03| sd, wobble 1–4 px, length ±6% sd; % holed and the average leave of a miss in ft):
 
