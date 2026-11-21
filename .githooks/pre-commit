@@ -1,0 +1,6 @@
+#!/bin/sh
+# THE ARCADE SITE'S GUARD (user request, 2026-11-21): backninegolf.vercel.app deploys arcade/, which
+# tools/arcade/build.js writes from index.html. A commit that changes what arcade/ is built from must carry a fresh,
+# staged arcade/ too, or the arcade site quietly falls behind the full game. (The logic is in the build script, in
+# Node, so it runs the same in any shell.) Turned on once per clone with:  git config core.hooksPath .githooks
+exec node tools/arcade/build.js --precommit

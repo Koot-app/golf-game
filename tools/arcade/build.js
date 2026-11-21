@@ -8,6 +8,8 @@
 //   node tools/arcade/build.js --lines f   write index.html's arcade version to f with the same line numbers as
 //                                          index.html (the tour parts blanked, comments kept): for finding a problem
 //   node tools/arcade/build.js --peek f    write the arcade page to f as built, even with words it mustn't have
+//   node tools/arcade/build.js --precommit the git hook (.githooks/pre-commit; on with git config core.hooksPath .githooks):
+//                                          a commit touching what arcade/ is built from must carry a fresh, staged arcade/
 //
 // index.html stays the one source. Markers in it say what is the full game's only; they are comments, so the full
 // game runs exactly as written:
@@ -23,7 +25,7 @@
 // api/_store.js) and vercel.json, so it deploys on its own: its Vercel project's Root Directory is `arcade`.
 const fs = require('fs'), path = require('path');
 const ROOT = path.resolve(__dirname, '..', '..'), OUT = path.join(ROOT, 'arcade');
-const args = process.argv.slice(2), CHECK = args.includes('--check'), LINES = args.includes('--lines') ? args[args.indexOf('--lines') + 1] : null;
+const args = process.argv.slice(2), PRECOMMIT = args.includes('--precommit'), CHECK = PRECOMMIT || args.includes('--check'), LINES =args.includes('--lines') ? args[args.indexOf('--lines') + 1] : null;
 
 // ---- the markers
 const S = '\u0000';                  // stands where something was taken out (a line left with only this is dropped)
@@ -188,6 +190,11 @@ function scan(text) {
   return { hits, soft };
 }
 
+// ---- the commit guard: only a commit that touches what arcade/ is built from (or arcade/ itself) is checked
+const { execSync } = require('child_process');
+const git = (c) => execSync(`git ${c}`, { cwd: ROOT, encoding: 'utf8' });
+if (PRECOMMIT && !git('diff --cached --name-only').split('\n').some((f) => /^(index\.html|api\/leaderboard\.js|api\/_store\.js|vercel\.json|tutorial\/|arcade\/|tools\/arcade\/)/.test(f))) process.exit(0);
+
 // ---- the build
 // (line endings as git stores them, whatever the checkout has: so a Windows checkout builds the same bytes)
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8').replace(/\r\n?/g, '\n');
@@ -220,6 +227,13 @@ const PEEK = args.includes('--peek') ? args[args.indexOf('--peek') + 1] : null; 
 if (PEEK) { fs.writeFileSync(path.resolve(PEEK), page); console.log('wrote', PEEK); process.exit(0); }
 if (CHECK) {
   if (stale.length) console.log(`\narcade/ is out of date (${stale.slice(0, 8).join(', ')}${stale.length > 8 ? ', ...' : ''}): run node tools/arcade/build.js`);
+  if (PRECOMMIT) {
+    // rebuilt but not staged: the commit would still carry the old copy
+    const unstaged = !stale.length && !hits.length && (git('diff --name-only -- arcade').trim() || git('ls-files --others --exclude-standard -- arcade').trim());
+    if (stale.length || hits.length) console.log('\nCommit stopped: the arcade site (arcade/) has to be rebuilt with this change.\n  node tools/arcade/build.js\n  git add arcade\nthen commit again.\n');
+    else if (unstaged) console.log('\nCommit stopped: arcade/ was rebuilt, but the new copy isn\'t staged.\n  git add arcade\nthen commit again.\n');
+    process.exit(stale.length || hits.length || unstaged ? 1 : 0);
+  }
   process.exit(stale.length || hits.length ? 1 : 0);
 }
 if (hits.length) { console.log('\nNot written: the arcade page must have none of these.'); process.exit(1); }

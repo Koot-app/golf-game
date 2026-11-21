@@ -1,0 +1,2 @@
+# git hooks are shell scripts: they must keep LF line endings on a Windows checkout, or they won't run
+.githooks/* text eol=lf
