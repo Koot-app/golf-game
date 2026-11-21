@@ -1,8 +1,8 @@
 // ARCADE (user request, 2026-11-20): the home screen's arcade side. Nine holes on any of the three courses, the same
 // stats and clubs for everyone, a Top 10 for each course. Checks: the home screen (no 9-hole tile on the career side,
 // three courses on the arcade side); for each course a round played from the home screen (its holes, standard stats,
-// the arcade's forgiving bag, its conditions) that goes on ITS board and no other; and the plain holes and the range's
-// clubs back afterwards.
+// the arcade's forgiving bag, its conditions) that goes on ITS board and no other; and the plain holes back afterwards,
+// with the range still on the arcade's bag and stats (user request, 2026-11-21: outside a career it always is).
 // DEV server only (it posts scores).
 //   node tools/test/probe.js http://127.0.0.1:8090/ <shot|-> @tools/test/arcade.js 0 arcade
 // (window.__shot = 1 stops on the home screen with the arcade side showing, for a screenshot)

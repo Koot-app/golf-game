@@ -12642,7 +12642,7 @@
         }
         /*</tour>*/if (courseV) setCourse(null);                         // (an arcade round on the club's or the country club's course)
         round.on = false; round.over = false; lbEntry.active = false;
-        /*<tour>*/if (!careerOn) /*</tour>*/{ applyCareerClubs(); refreshShotType(); renderBag(); }      // (the arcade's bag is put away: the range's clubs are back)
+        /*<tour>*/if (!careerOn) /*</tour>*/{ applyCareerClubs(); refreshShotType(); renderBag(); }      // (the range's bag after the round: the arcade's, or the admin's base clubs)
         if (round.saved) { setStats(arcadePractice /*<tour>*/&& !careerOn /*</tour>*/? ARCADE_STATS : round.saved); state.windMph = round.saved.mph; state.windDir = round.saved.dir; round.saved = null; $('inWind').value = state.windMph; $('inWindDir').value = state.windDir; orientFlags(); syncPanel(); }
         document.body.classList.remove('round'); hideScorecard();
         $('btnRound').textContent = `Arcade round · ${HOLES.length} holes`;
@@ -12785,8 +12785,6 @@
         if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') introStart();
         else if (e.code === 'Escape') introCancel();
       }
-      // TEST ROUND stats: the same for every player
-      const ROUND_STATS = { power: 5, dex: 5, composure: 5, perception: 5 };      // (the standard game: the range outside a career)
       // ARCADE stats (user request, 2026-11-20): everyone plays 8 across the board in an arcade round (it was 5, the
       // standard). 8 is tour-average Dexterity and a strong Power (design direction 14: Power 5 is the tour average)
       const ARCADE_STATS = { power: 8, dex: 8, composure: 8, perception: 8 };
@@ -12816,7 +12814,7 @@
       /*<tour>*/
       let career = null, careerOn = false, clubOpen = false, careerOwnStats = null;
       /*</tour>*/
-      let arcadePractice = false;                            // (practice from the home screen's arcade side: arcadeBagOn)
+      let arcadePractice = false;                            // (outside a career, the range plays the arcade's bag and stats: applyDevTools sets it, arcadeBagOn reads it)
 /*<tour>*/
 
       // ---- PROFILES (MULTIPLAYER_PLAN.md, M1). Signed in, the career lives on the server (api/profile.js) and this PC keeps a
@@ -13250,10 +13248,11 @@
         applyCareerClubs();                                   // back to the full-spec clubs
         if (careerOwnStats) { state.putter = careerOwnStats.putter; state.club = careerOwnStats.club; setStats(careerOwnStats); }
         careerOwnStats = null;
+        applyDevTools();                                      // (out of the career: the arcade's bag and stats, or the admin's sandbox)
         refreshShotType();
         updateLockUI();
         closeClubhouse(); updateCareerUI();
-        if (!quiet) toast('Left your career\nYour own stats are back', 1800);
+        if (!quiet) toast(`Left your career\n${devOn() ? 'Your own stats are back' : 'The arcade\'s clubs and stats (all 8) are back'}`, 1800);
       }
       const money = (n) => `${n < 0 ? '−' : ''}$${Math.abs(Math.round(n)).toLocaleString()}`;
       /*</tour>*/
@@ -14460,11 +14459,21 @@
         document.body.classList.toggle('dev', on);
         /*<tour>*/$('chAdmin').classList.toggle('on', !!session && adminOk && !!career);   // (the admin's money: also when the rights arrive late)
         $('chAdminBtn').classList.toggle('on', !!session && adminOk && !!career);
-        /*</tour>*/if (on && arcadePractice) { arcadePractice = false; applyCareerClubs(); renderBag(); }     // (the admin's sandbox: the base clubs)
-        if (!on && /*<tour>*/!careerOn && /*</tour>*/!round.on && typeof setStats === 'function') {        // everyone else plays the standard game
-          setStats(arcadePractice ? ARCADE_STATS : ROUND_STATS);                       // (the arcade's, practising from its side)
-          state.windMph = 0; state.windDir = 0; $('inWind').value = 0; $('inWindDir').value = 0;
-          orientFlags(); syncPanel();
+        /*</tour>*/// Outside a career (and a round), the range, the chipping green and the putting green play the arcade's game:
+        // its bag and its stats, all 8 (user request, 2026-11-21: they were the base clubs at a standard 5 unless the
+        // practice was started from the home screen). In a career it's your own gear and stats. The admin's developer
+        // tools play the sandbox instead: the base clubs, and the sliders.
+        if (/*<tour>*/!careerOn && /*</tour>*/!round.on) {
+          if (arcadePractice !== !on) {
+            arcadePractice = !on; applyCareerClubs();
+            if (!canUseClub(state.club)) state.club = usableClub(0);
+            refreshShotType(); renderBag();
+          }
+          if (!on) {
+            setStats(ARCADE_STATS);
+            state.windMph = 0; state.windDir = 0; $('inWind').value = 0; $('inWindDir').value = 0;
+            orientFlags(); syncPanel();
+          }
         }
       }
       /*<tour>*/const homeSigned = () => !!session || playMode === 'local';
@@ -14705,8 +14714,9 @@
       // the CB 12, can't, and the country club's bunkers need one). It used to be the base clubs. The putter is still
       // the player's pick of the two standard ones.
       const ARCADE_BAG = { 0: 'd-g440k', 1: 'f-g440k', 2: 'f-g440k', 3: 'f-g440k', 4: 'i-qimax', 5: 'i-qimax', 6: 'i-qimax', 7: 'i-qimax', 8: 'i-qimax', 9: 'i-qimax', 10: 'i-qimax', 11: 'w-cbx2', 12: 'w-cbx2', 13: 'w-cbx2' };
-      // (round.on in a career is a match, an invitational or a friend round. arcadePractice: the range, chipping or putting
-      // started from the home screen's arcade side plays the arcade's bag and stats too, user request 2026-11-20)
+      // (round.on in a career is a match, an invitational or a friend round. arcadePractice: outside a career the range,
+      // chipping and putting play the arcade's bag and stats too, user requests 2026-11-20 and 2026-11-21; not the admin's
+      // developer tools, which play the base clubs)
       const arcadeBagOn = () => /*<tour>*/!careerOn && /*</tour>*/(round.on || arcadePractice);
       const CLUB_MODELS = {
         /*<tour>*/

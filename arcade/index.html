@@ -9167,7 +9167,6 @@
         if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') introStart();
         else if (e.code === 'Escape') introCancel();
       }
-      const ROUND_STATS = { power: 5, dex: 5, composure: 5, perception: 5 };
       const ARCADE_STATS = { power: 8, dex: 8, composure: 8, perception: 8 };
       function setStats(s) {
         state.power = s.power; state.dex = s.dex; state.composure = s.composure; state.perception = s.perception;
@@ -9188,11 +9187,17 @@
       function applyDevTools() {
         const on = devOn();
         document.body.classList.toggle('dev', on);
-        if (on && arcadePractice) { arcadePractice = false; applyCareerClubs(); renderBag(); }
-        if (!on && !round.on && typeof setStats === 'function') {
-          setStats(arcadePractice ? ARCADE_STATS : ROUND_STATS);
-          state.windMph = 0; state.windDir = 0; $('inWind').value = 0; $('inWindDir').value = 0;
-          orientFlags(); syncPanel();
+        if (!round.on) {
+          if (arcadePractice !== !on) {
+            arcadePractice = !on; applyCareerClubs();
+            if (!canUseClub(state.club)) state.club = usableClub(0);
+            refreshShotType(); renderBag();
+          }
+          if (!on) {
+            setStats(ARCADE_STATS);
+            state.windMph = 0; state.windDir = 0; $('inWind').value = 0; $('inWindDir').value = 0;
+            orientFlags(); syncPanel();
+          }
         }
       }
       function openHome() {
