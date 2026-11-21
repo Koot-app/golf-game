@@ -5,8 +5,9 @@
 //   POST /api/leaderboard  { name, strokes, putts, par, holes, course, scores: [per-hole strokes] }
 //     (signed in, with the session token in Authorization: the profile's name is used instead of `name`)
 //                                           -> { entry, rank, total, top }
-//   GET  /api/leaderboard?kind=skills        -> the skills challenge's board: { top: [...10], total }
-//   POST /api/leaderboard  { kind: 'skills', name, tries: [attempts at each of the 12 shots] } -> { entry, rank, total, top }
+//   GET  /api/leaderboard?kind=skills&set=range   -> a skills challenge's board: { top: [...10], total }  (set: range,
+//                                                    chip, putt or full; full if left out; all: { boards: { set: {...} } })
+//   POST /api/leaderboard  { kind: 'skills', set, name, tries: [attempts at each shot] } -> { entry, rank, total, top }
 //
 // Credentials come from the Vercel project's environment variables. Connecting Upstash through Vercel's Storage tab
 // sets KV_REST_API_URL / KV_REST_API_TOKEN (possibly with a custom prefix); adding them by hand from the Upstash console
@@ -56,21 +57,24 @@ function clean(member) {
   } catch { return null; }
 }
 
-// THE SKILLS CHALLENGE's board (user request, 2026-11-21; index.html SKILLS): ?kind=skills / { kind: 'skills' }. One
-// board, the fewest attempts to make all thirteen shots; a tie goes to the earlier one (the member starts with its time).
-// A believable card: the attempts at each of the thirteen shots, at least one each, adding up to the total. (Like the
-// rounds, the browser sends it, so a careful cheat could still post a fake one.)
-// (the key names the shot count: when the challenge changes, a new board, since the scores no longer compare. It was
-// twelve shots on golf:lb:skills; the cut flop made it thirteen, user request 2026-11-21)
-const SKILLS_N = 13, SKILLS_KEY = 'golf:lb:skills:' + SKILLS_N;
-function cleanSkills(member) {
+// THE SKILLS CHALLENGES' boards (user request, 2026-11-21; index.html SK_SETS): ?kind=skills&set= / { kind: 'skills',
+// set }. A board for each challenge (one for each practice area, and the full test), the fewest attempts to make all
+// its shots; a tie goes to the earlier one (the member starts with its time). A believable card: the attempts at each
+// shot, at least one each, adding up to the total. (Like the rounds, the browser sends it, so a careful cheat could
+// still post a fake one.)
+// (a key names its challenge and shot count: when a challenge changes, a new board, since the scores no longer
+// compare. It was one challenge: twelve shots on golf:lb:skills, then thirteen on golf:lb:skills:13)
+const SKILLS_SETS = { range: 10, chip: 10, putt: 10, full: 15 };
+const skillsSet = (v) => (v === undefined || v === null || v === '' ? 'full' : Object.prototype.hasOwnProperty.call(SKILLS_SETS, v) ? v : '');
+const skillsKey = (set) => `golf:lb:skills:${set}:${SKILLS_SETS[set]}`;
+const cleanSkills = (set) => (member) => {
   try {
-    const e = JSON.parse(member);
+    const e = JSON.parse(member), n = SKILLS_SETS[set];
     const okName = e.pro ? PROFILE_NAME.test(e.name) : /^[A-Z0-9]{3}$/.test(e.name);
-    if (!okName || !isInt(e.total, SKILLS_N, SKILLS_N * 99)) return null;
+    if (!okName || !isInt(e.total, n, n * 99)) return null;
     return { t: +e.t || 0, id: /^[a-z0-9]{1,8}$/.test(e.id || '') ? e.id : '', name: e.name, pro: !!e.pro, total: e.total };
   } catch { return null; }
-}
+};
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -81,8 +85,18 @@ module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
       if (req.query && req.query.kind === 'skills') {
-        const [members, total] = await redis([['ZRANGE', SKILLS_KEY, 0, TOP_N - 1], ['ZCARD', SKILLS_KEY]]);
-        return send(200, { top: members.map(cleanSkills).filter(Boolean), total });
+        // every board at once (the home screen's tile), or one
+        if (req.query.set === 'all') {
+          const sets = Object.keys(SKILLS_SETS);
+          const got = await redis(sets.flatMap((k) => [['ZRANGE', skillsKey(k), 0, TOP_N - 1], ['ZCARD', skillsKey(k)]]));
+          const boards = {};
+          sets.forEach((k, i) => { boards[k] = { top: (got[2 * i] || []).map(cleanSkills(k)).filter(Boolean), total: got[2 * i + 1] || 0 }; });
+          return send(200, { boards });
+        }
+        const set = skillsSet(req.query.set);
+        if (!set) return send(400, { error: 'Bad challenge' });
+        const [members, total] = await redis([['ZRANGE', skillsKey(set), 0, TOP_N - 1], ['ZCARD', skillsKey(set)]]);
+        return send(200, { top: members.map(cleanSkills(set)).filter(Boolean), total });
       }
       const holes = parseInt((req.query && req.query.holes) || '9', 10);
       const course = courseOf(req.query && req.query.course);
@@ -99,9 +113,9 @@ module.exports = async (req, res) => {
         let me = null;
         try { me = await sessionId(req); } catch { me = null; }
         if (!me || !isAdmin(me)) return send(403, { error: 'Only the admin can remove a round' });
-        const sk = b.kind === 'skills', rc = courseOf(b.course);
-        if (!sk && !rc) return send(400, { error: 'Bad course' });
-        const key = sk ? SKILLS_KEY : keyOf(PARS_BY_COURSE[rc].length, rc), cl = sk ? cleanSkills : clean;
+        const sk = b.kind === 'skills', rc = courseOf(b.course), set = sk ? skillsSet(b.set) : '';
+        if (sk ? !set : !rc) return send(400, { error: sk ? 'Bad challenge' : 'Bad course' });
+        const key = sk ? skillsKey(set) : keyOf(PARS_BY_COURSE[rc].length, rc), cl = sk ? cleanSkills(set) : clean;
         const [all] = await redis([['ZRANGE', key, 0, -1]]);
         const hit = (all || []).find((m) => { const e = cl(m); return e && e.t === b.t && e.id === b.id; });
         if (!hit) return send(404, { error: 'That round isn\'t on the board' });
@@ -117,10 +131,12 @@ module.exports = async (req, res) => {
         if (pn && PROFILE_NAME.test(pn)) { name = pn; pro = true; }
       }
       if (!pro && (typeof name !== 'string' || !/^[A-Z0-9]{3}$/.test(name))) return send(400, { error: 'Initials must be 3 letters or digits' });
-      // the skills challenge: the attempts at each of its thirteen shots
+      // a skills challenge: the attempts at each of its shots
       if (b.kind === 'skills') {
-        const tries = b.tries;
-        if (!Array.isArray(tries) || tries.length !== SKILLS_N || !tries.every((n) => isInt(n, 1, 99))) return send(400, { error: 'Bad card' });
+        const tries = b.tries, set = skillsSet(b.set);
+        if (!set) return send(400, { error: 'Bad challenge' });
+        if (!Array.isArray(tries) || tries.length !== SKILLS_SETS[set] || !tries.every((n) => isInt(n, 1, 99))) return send(400, { error: 'Bad card' });
+        const SKILLS_KEY = skillsKey(set);
         const sum = tries.reduce((a, n) => a + n, 0);
         if (b.total !== undefined && b.total !== sum) return send(400, { error: 'Card does not add up' });
         if (!(await rateLimit(`golf:rl:${clientIp(req)}`, RATE_MAX, RATE_WINDOW_S))) return send(429, { error: 'Too many saves — try again in a minute' });
@@ -133,7 +149,7 @@ module.exports = async (req, res) => {
           ['ZRANGE', SKILLS_KEY, 0, TOP_N - 1],
           ['ZREMRANGEBYRANK', SKILLS_KEY, MAX_KEEP, -1],
         ]);
-        return send(200, { entry: cleanSkills(member), rank: rank + 1, total: Math.min(total, MAX_KEEP), top: top.map(cleanSkills).filter(Boolean) });
+        return send(200, { entry: cleanSkills(set)(member), rank: rank + 1, total: Math.min(total, MAX_KEEP), top: top.map(cleanSkills(set)).filter(Boolean) });
       }
       const { strokes, putts, par, holes, scores } = b || {};
       // a believable round: a name, whole numbers, a per-hole card that adds up

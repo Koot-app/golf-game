@@ -4159,38 +4159,30 @@
     }
 
     #home .hm-skills {
-      width: 100%;
       margin-top: 18px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-align: left;
-      padding: 9px 12px !important;
-      border-radius: 10px !important;
+      padding: 9px 12px 10px;
+      border-radius: 10px;
       background: linear-gradient(120deg, rgba(255, 224, 102, .16), rgba(255, 255, 255, .04));
       border: 1px solid rgba(255, 224, 102, .38);
     }
 
-    .hm-skills:hover {
-      background: linear-gradient(120deg, rgba(255, 224, 102, .26), rgba(255, 255, 255, .08));
+    .hm-sk-h {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .hm-skills>span {
+    .hm-sk-h>span {
       font-size: 20px;
     }
 
-    .hm-skills>div {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .hm-skills b {
+    .hm-sk-h b {
       display: block;
       font-size: 14px;
       color: #fff;
     }
 
-    .hm-skills i {
+    .hm-sk-h i {
       display: block;
       font-style: normal;
       font-size: 11.5px;
@@ -4198,12 +4190,70 @@
       margin-top: 1px;
     }
 
-    .hm-skills em {
+    .hm-sk-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    #home .hm-sk-row button {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1px;
+      min-width: 0;
+      text-align: left;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .05);
+      border: 1px solid rgba(255, 255, 255, .14);
+    }
+
+    #home .hm-sk-row button:hover {
+      background: rgba(255, 224, 102, .14);
+    }
+
+    #home .hm-sk-row button.full {
+      border-color: rgba(255, 224, 102, .55);
+      background: rgba(255, 224, 102, .1);
+    }
+
+    .hm-sk-row b {
+      font-size: 13px;
+      color: #fff;
+    }
+
+    .hm-sk-row i {
+      font-style: normal;
+      font-size: 11px;
+      font-weight: 400;
+      color: #c9d4e0;
+    }
+
+    .hm-sk-row em {
       font-style: normal;
       font-size: 11.5px;
       font-weight: 700;
       color: #ffe066;
       white-space: nowrap;
+      margin-top: 2px;
+    }
+
+    .hm-sk-row small {
+      font-size: 10.5px;
+      font-weight: 400;
+      color: #9fb0c2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    @media (max-width: 700px) {
+      .hm-sk-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
 
     #skCard {
@@ -5084,7 +5134,10 @@
           <button data-h="chip" title="The chipping green: round the green"><span>🪃</span><b>Chipping</b></button>
           <button data-h="putt" title="The putting green: read the break"><span>🕳️</span><b>Putting</b></button>
         </div>
-        <button id="hmSkills" class="hm-skills" title="Thirteen shots to make on the range, the chipping green and the putting green"><span>🏁</span><div><b>Skills challenge</b><i>Thirteen shots to make: hit greens, shape it, chip it close, cut a flop, hole putts. Fewest attempts wins</i></div><em id="hmSkillsBest"></em></button>
+        <div id="hmSkills" class="hm-skills">
+          <div class="hm-sk-h"><span>🏁</span><div><b>Skills challenges</b><i>Shots to make, scored by the attempts they take · fewest wins</i></div></div>
+          <div class="hm-sk-row" id="hmSkRow"></div>
+        </div>
         <div class="hm-arc-err" id="hmPracErr"></div>
       </div>
     </div>
@@ -5405,14 +5458,14 @@
       </div>
     </div>
     <div id="skCard" class="card">
-      <div class="sk-top"><b>🏁 Skills challenge</b><span id="skProg"></span><span id="skTot"></span><span class="sk-esc">Esc leaves</span></div>
+      <div class="sk-top"><b id="skTitle">🏁 Skills challenge</b><span id="skProg"></span><span id="skTot"></span><span class="sk-esc">Esc leaves</span></div>
       <div class="sk-task"><em id="skArea"></em><b id="skName"></b></div>
       <div id="skGoal"></div>
       <div id="skMsg"></div>
       <div id="skDots"></div>
     </div>
     <div id="skDone" class="card">
-      <div class="card-h"><span>🏁 Skills challenge · complete</span><span class="tag" id="skDoneTag"></span></div>
+      <div class="card-h"><span id="skDoneH">🏁 Skills challenge · complete</span><span class="tag" id="skDoneTag"></span></div>
       <div class="sk-score"><b id="skDoneTot"></b><span id="skDoneSub"></span><i id="skDoneBest"></i></div>
       <div class="sk-cols">
         <table id="skDoneRows"></table>
@@ -6312,7 +6365,7 @@
       function setText(id, s) { if (txtCache.get(id) !== s) { txtCache.set(id, s); $(id).textContent = s; } }
       const PINS = [{ yd: 100, brg: -16 }, { yd: 150, brg: 12 }, { yd: 175, brg: -6 }, { yd: 225, brg: 6 }, { yd: 275, brg: 0 }];
       const PIN_RAD = (i) => 8 + i * 1.5;
-      const sk = { on: false, i: 0, tries: [], ok: false, msg: '', timer: 0, moving: false, doneOpen: false, saved: null, at: null, drive: 0 };
+      const sk = { on: false, set: 'full', i: 0, tries: [], ok: false, msg: '', timer: 0, moving: false, doneOpen: false, saved: null, at: null, drive: 0 };
 
       const state = {
         mode: 'range',
@@ -6363,8 +6416,21 @@
         const dir = { x: -Math.sin(a), z: Math.cos(a) };
         const cupPos = { x: -dir.x * d / 2, z: -dir.z * d / 2 };
         const ballPos = { x: dir.x * d / 2, z: dir.z * d / 2 };
-        const surf = randomSurface(cfg.seed, { tiltPct: cfg.tiltPct, contours: cfg.contours, stimp: cfg.stimp, pin: cupPos });
+        const surf = cfg.shape ? shapedSurface(cfg, ballPos, cupPos) : randomSurface(cfg.seed, { tiltPct: cfg.tiltPct, contours: cfg.contours, stimp: cfg.stimp, pin: cupPos });
         return greenView(surf, ballPos);
+      }
+      function shapedSurface(cfg, ball, cup) {
+        const s = cfg.shape, d = Math.max(0.1, Math.hypot(cup.x - ball.x, cup.z - ball.z));
+        const t = { x: (cup.x - ball.x) / d, z: (cup.z - ball.z) / d }, rt = { x: -t.z, z: t.x };
+        const up = (s.up || 0) / 100, side = (s.side || 0) / 100;
+        const tilt = { x: t.x * up + rt.x * side, z: t.z * up + rt.z * side }, ang = Math.atan2(t.z, t.x);
+        const tiers = (s.steps || []).map((k) => ({ x: ball.x + t.x * d * k.at, z: ball.z + t.z * d * k.at, ang, rise: k.rise * INCH, width: k.width * FT }));
+        const r = rng32(cfg.seed || 1), bumps = [];
+        for (let i = 0; i < Math.round(5 * (cfg.contours || 0)); i++) {
+          const a = r() * Math.PI * 2, dd = 3 + r() * 13;
+          bumps.push({ x: Math.cos(a) * dd, z: Math.sin(a) * dd, amp: (r() < 0.5 ? -1 : 1) * (0.02 + 0.04 * r()) * cfg.contours, sigma: 2.5 + 3 * r() });
+        }
+        return makeSurface({ tilt, bumps, tiers, outline: { x: 0, z: 0, rx: 16.5, rz: 16.5, rot: 0 }, pin: cup, stimp: cfg.stimp, seed: cfg.seed });
       }
       let green = makePracticeView(state.greenCfg);
       let puttRun = null;
@@ -8049,7 +8115,7 @@
         const fl = puttRun.res.flags.length ? puttRun.res.flags.join(' · ') + '\n' : '';
         const where = `${Math.abs(long) < 0.03 ? 'pin high' : `${fmtFtIn(long)} ${long > 0 ? 'long' : 'short'}`}, ${Math.abs(side) < 0.03 ? 'on line' : `${fmtFtIn(side)} ${side > 0 ? 'right' : 'left'}`}`;
         toast(q.holed ? `${fl}HOLED IT\nfrom ${green.distFt < 10 ? green.distFt.toFixed(1) : green.distFt.toFixed(0)} ft` : `${fl}${q.lip ? 'LIPPED OUT · ' : ''}${fmtFtIn(left)} left\n${where}`, 4500);
-        skShotDone({ holed: q.holed, leftFt: left / FT });
+        skShotDone({ holed: q.holed, leftFt: left / FT, longFt: long / FT });
       }
 
       function readMarker() {
@@ -8145,13 +8211,14 @@
         const g = state.greenCfg, R = 16.5, D = state.chipCfg.pinYd * YD, a = (g.angleDeg || 0) * D2R;
         const dir = { x: -Math.sin(a), z: Math.cos(a) };
         const e2p = state.chipCfg.e2p ? clamp(state.chipCfg.e2p, 3, Math.min(2 * R - 4, D - 2.5)) : Math.min(clamp(D * 0.45, 3, 2 * R - 4), D - 2.5);
-        const rx = Math.cos(a), rz = Math.sin(a), gOpt = { tiltPct: g.tiltPct, contours: g.contours, stimp: g.stimp };
+        const tk = state.chipCfg.tuck || 0, sg = tk < 0 ? -1 : 1;
+        const rx = Math.cos(a) * sg, rz = Math.sin(a) * sg, gOpt = { tiltPct: g.tiltPct, contours: g.contours, stimp: g.stimp };
         let sd = 0;
-        if (state.chipCfg.tuck) {
+        if (tk) {
           const p0 = { x: dir.x * (R - e2p), z: dir.z * (R - e2p) }, s0 = randomSurface(g.seed, { ...gOpt, pin: p0 });
           let t = 0;
           while (t < 30 && s0.inside(p0.x + rx * t, p0.z + rz * t)) t += 0.1;
-          sd = Math.max(0, t - state.chipCfg.tuck);
+          sd = Math.max(0, t - Math.abs(tk));
         }
         const pin = { x: dir.x * (R - e2p) + rx * sd, z: dir.z * (R - e2p) + rz * sd }, at = { x: pin.x + dir.x * D, z: pin.z + dir.z * D };
         const surf = randomSurface(g.seed, { ...gOpt, pin });
@@ -8590,7 +8657,7 @@
             const flagsTxt = shot.res.flags.length ? shot.res.flags.join(' · ') + '\n' : '';
             const tiltTag = state.badStreak > 0 ? ` · TILTED${state.badStreak > 1 ? ' ×' + state.badStreak : ''}` : '';
             toast(`${flagsTxt}${shapeName(shot.res)} · ${n.carry.toFixed(0)} carry · ${n.total.toFixed(0)} total\n${n.toPin.toFixed(1)} yds from the ${PINS[shot.pin].yd} pin${tiltTag}`, 4200);
-            skShotDone({ p: { x: f.p.x, z: f.p.z }, axis: shot.res.axis, carry: n.carry, offline: n.offline });
+            skShotDone({ p: { x: f.p.x, z: f.p.z }, axis: shot.res.axis, carry: n.carry, offline: n.offline, apex: n.apex });
           }
         }
       }
@@ -9584,7 +9651,7 @@
         if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') introStart();
         else if (e.code === 'Escape') introCancel();
       }
-      const skBestKey = () => 'golfSkillsBest13';
+      const skBestKey = (set = sk.set) => `golfSkillsBest_${set}${SK_SETS[set].shots.length}`;
       const skBlocked = () => toast('Skills challenge\nEsc leaves it', 1400);
       const SK_AREA = { range: 'Range', chip: 'Chipping', putt: 'Putting' };
       const skGreenAt = (p) => PINS.findIndex((q, i) => Math.hypot(p.x - q.pos.x, p.z - q.pos.z) <= PIN_RAD(i));
@@ -9613,50 +9680,109 @@
       }
       const SK_PLACE = ['e2p', 'tuck', 'sand'];
       function skChip(type, pinYd, cfg) {
-        const gc = { ...cfg };
-        for (const k of SK_PLACE) { if (cfg[k]) state.chipCfg[k] = cfg[k]; else delete state.chipCfg[k]; delete gc[k]; }
-        Object.assign(state.greenCfg, gc); state.chipCfg.pinYd = pinYd; state.lie = 'fairway'; state.slope = 'flat'; state.slopeLaunch = null;
+        const { lie = 'fairway', ...gc } = cfg;
+        for (const k of SK_PLACE) { if (gc[k]) state.chipCfg[k] = gc[k]; else delete state.chipCfg[k]; delete gc[k]; }
+        Object.assign(state.greenCfg, gc); delete state.greenCfg.shape;
+        state.chipCfg.pinYd = pinYd; state.lie = lie; state.slope = 'flat'; state.slopeLaunch = null; $('inLie').value = lie; $('inSlope').value = 'flat'; styleLie();
         skArea('chip');
         applyChipType(type, true); state.club = suggestChipClub();
         applyChipGreen();
       }
-      function skPutt(cfg) { Object.assign(state.greenCfg, cfg); state.puttScaleAuto = true; skArea('putt'); }
+      function skPutt(cfg) {
+        if (!cfg.shape) delete state.greenCfg.shape;
+        Object.assign(state.greenCfg, cfg); state.puttScaleAuto = true; skArea('putt');
+      }
+      const skMiss = (also, msg) => ({ ok: false, msg: also ? `${also.replace(/, $/, ', but ')}${msg}` : msg[0].toUpperCase() + msg.slice(1) });
+      const skFt = (ft) => (ft < 2 ? `${Math.round(ft * 12)} inches` : Number.isInteger(ft) ? `${ft} ft` : fmtFtIn(ft * FT));
       const skType = (k, r, fn) => (sk.at.chipType !== k ? { ok: false, msg: `That was a ${CHIP_TYPES[sk.at.chipType].name.toLowerCase()}: this one asks for the ${CHIP_TYPES[k].name.toLowerCase()} (${CHIP_TYPES[k].key.slice(-1)})` } : fn(r));
       const skHoled = (r) => (r.holed ? { ok: true, msg: 'In the hole' } : { ok: false, msg: `${fmtFtIn(r.leftFt * FT)} from the hole` });
-      const skClose = (ft) => (r) => (r.holed ? { ok: true, msg: 'In the hole' } : r.leftFt <= ft ? { ok: true, msg: `${fmtFtIn(r.leftFt * FT)} from the hole` } : { ok: false, msg: `${fmtFtIn(r.leftFt * FT)} from the hole: inside ${ft} ft makes it` });
+      const skClose = (ft) => (r) => (r.holed ? { ok: true, msg: 'In the hole' } : r.leftFt <= ft ? { ok: true, msg: `${fmtFtIn(r.leftFt * FT)} from the hole` } : { ok: false, msg: `${fmtFtIn(r.leftFt * FT)} from the hole: inside ${skFt(ft)} makes it` });
+      const skPast = (ft) => (r) => (r.holed ? { ok: true, msg: 'In the hole' } : r.longFt <= 0 ? { ok: false, msg: `${fmtFtIn(-r.longFt * FT)} short: it has to get past the hole` }
+        : r.leftFt <= ft ? { ok: true, msg: `${fmtFtIn(r.leftFt * FT)} past` } : { ok: false, msg: `${fmtFtIn(r.leftFt * FT)} past: inside ${skFt(ft)} makes it` });
+      const skOnGreen = (i) => (r, also = '') => (skGreenAt(r.p) === i ? { ok: true, msg: `${also}${also ? 'on' : 'On'} the ${PINS[i].yd} green` }
+        : skMiss(also, skGreenAt(r.p) >= 0 ? `that's the ${PINS[skGreenAt(r.p)].yd} green: this one is the ${PINS[i].yd}` : `it finished ${skOff(r.p, i)}`));
+      const skNear = (i, yd) => (r, also = '') => {
+        const d = Math.hypot(r.p.x - PINS[i].pos.x, r.p.z - PINS[i].pos.z) / YD, s = `${d.toFixed(1)} yds from the ${PINS[i].yd} pin`;
+        return d <= yd ? { ok: true, msg: `${also}${s}` } : skMiss(also, `${s}: inside ${yd} makes it`);
+      };
+      const skFade = (fn) => (r) => (r.axis > 3 ? fn(r, 'A fade, ') : { ok: false, msg: `Not a fade: the monitor called it ${skCurve(r.axis)}` });
+      const skDraw = (fn) => (r) => (r.axis < -3 ? fn(r, 'A draw, ') : { ok: false, msg: `Not a draw: the monitor called it ${skCurve(r.axis)}` });
+      const skLow = (fn) => (r) => (sk.at.height < 0 ? fn(r, 'Low, ') : { ok: false, msg: 'The height wasn\'t set to Low: W lowers it' });
+      const skHigh = (fn) => (r) => (sk.at.height > 0 ? fn(r, 'High, ') : { ok: false, msg: 'The height wasn\'t set to High: S raises it' });
+      const skCarry = (yd, tol) => (r) => (Math.abs(r.carry - yd) <= tol ? { ok: true, msg: `${r.carry.toFixed(1)} yds of carry` } : { ok: false, msg: `${r.carry.toFixed(1)} yds of carry: ${yd - tol} to ${yd + tol} makes it` });
+      const skDrive = (pct, line) => ({
+        goal: () => `Driver: carry ${sk.drive} yds or more, and finish within ${line} yds of your target line`,
+        setup: () => { skRange({ club: 0, pin: 4 }); sk.drive = Math.floor(stockShot(0).carry * pct / 5) * 5; },
+        check: (r) => (sk.at.club !== 0 ? { ok: false, msg: 'That wasn\'t the driver' }
+          : r.carry < sk.drive ? { ok: false, msg: `${r.carry.toFixed(0)} yds of carry: ${sk.drive} makes it` }
+          : Math.abs(r.offline) > line ? { ok: false, msg: `${r.carry.toFixed(0)} yds, but ${Math.abs(r.offline).toFixed(0)} yds ${r.offline > 0 ? 'right' : 'left'} of your line` }
+          : { ok: true, msg: `${r.carry.toFixed(0)} yds of carry, ${Math.abs(r.offline).toFixed(0)} off line` }),
+      });
+      const skSpinFlop = (cut, ft) => (r) => skType('flop', r, (x) => (cut ? !(x.axis >= 5) : !(x.axis <= -5))
+        ? { ok: false, msg: cut ? (x.axis < -5 ? 'That was hook spin: a cut is up and right through the ball' : 'No cut on it: swing up and right through the ball')
+          : (x.axis > 5 ? 'That was cut spin: hook spin is down and right through the ball' : 'No hook spin on it: swing down and right through the ball') }
+        : x.surf === 'bunker' ? { ok: false, msg: 'In the sand' } : skClose(ft)(x));
       const SK_CHIP = { tiltPct: 1, contours: 0.2, stimp: 10.5 };
-      const SKILLS = [
-        { area: 'range', name: 'On the green', goal: 'Finish on any target green', setup: () => skRange({ pin: 1 }), check: (r) => skOnAny(r) },
-        { area: 'range', name: 'Pick your number', goal: 'Finish on the 150 green', setup: () => skRange({ pin: 1 }),
-          check: (r) => (skGreenAt(r.p) === 1 ? { ok: true, msg: 'On the 150 green' } : { ok: false, msg: skGreenAt(r.p) >= 0 ? `That's the ${PINS[skGreenAt(r.p)].yd} green: this one is the 150` : `It finished ${skOff(r.p, 1)}` }) },
-        { area: 'range', name: 'Fade it in', goal: 'Hit a fade (F sets one up) that finishes on any target green', setup: () => skRange(),
-          check: (r) => (r.axis > 3 ? skOnAny(r, 'A fade, ') : { ok: false, msg: `Not a fade: the monitor called it ${skCurve(r.axis)}` }) },
-        { area: 'range', name: 'Draw it in', goal: 'Hit a draw (F sets one up) that finishes on any target green', setup: () => skRange(),
-          check: (r) => (r.axis < -3 ? skOnAny(r, 'A draw, ') : { ok: false, msg: `Not a draw: the monitor called it ${skCurve(r.axis)}` }) },
-        { area: 'range', name: 'Keep it low', goal: 'Set the height to Low (W) and finish on any target green', setup: () => skRange(),
-          check: (r) => (sk.at.height < 0 ? skOnAny(r, 'Low, ') : { ok: false, msg: 'The height wasn\'t set to Low: W lowers it' }) },
-        { area: 'range', name: 'Send it', goal: () => `Driver: carry ${sk.drive} yds or more, and finish within 20 yds of your target line`,
-          setup: () => { skRange({ club: 0, pin: 4 }); sk.drive = Math.floor(stockShot(0).carry * 0.92 / 5) * 5; },
-          check: (r) => (sk.at.club !== 0 ? { ok: false, msg: 'That wasn\'t the driver' }
-            : r.carry < sk.drive ? { ok: false, msg: `${r.carry.toFixed(0)} yds of carry: ${sk.drive} makes it` }
-            : Math.abs(r.offline) > 20 ? { ok: false, msg: `${r.carry.toFixed(0)} yds, but ${Math.abs(r.offline).toFixed(0)} yds ${r.offline > 0 ? 'right' : 'left'} of your line` }
-            : { ok: true, msg: `${r.carry.toFixed(0)} yds of carry, ${Math.abs(r.offline).toFixed(0)} off line` }) },
-        { area: 'chip', name: 'Bump and run', goal: 'Low runner (1) from 20 yds, just off the green: finish within 3 ft of the hole', setup: () => skChip('low', 20, { ...SK_CHIP, angleDeg: 0, seed: 11, e2p: 15 }), check: (r) => skType('low', r, skClose(3)) },
-        { area: 'chip', name: 'Chip it close', goal: 'Stock chip (2) from 8 yds: finish within 3 ft of the hole', setup: () => skChip('stock', 8, { ...SK_CHIP, angleDeg: 40, seed: 12 }), check: (r) => skType('stock', r, skClose(3)) },
-        { area: 'chip', name: 'Flop it close', goal: 'Flop shot (4) from 10 yds: finish within 3 ft of the hole', setup: () => skChip('flop', 10, { ...SK_CHIP, angleDeg: 320, seed: 13 }), check: (r) => skType('flop', r, skClose(3)) },
-        { area: 'chip', name: 'Cut flop', goal: 'The hole is tucked right, sand past it: a flop (4) swung up and right through the ball for cut spin, within 3 ft',
-          setup: () => skChip('flop', 15, { ...SK_CHIP, angleDeg: 0, seed: 14, e2p: 7, tuck: 2.5, sand: true }),
-          check: (r) => skType('flop', r, (x) => (x.axis === undefined || x.axis < 5
-            ? { ok: false, msg: x.axis < -5 ? 'That was hook spin: a cut is up and right through the ball' : 'No cut on it: swing up and right through the ball' }
-            : x.surf === 'bunker' ? { ok: false, msg: 'In the sand' } : skClose(3)(x))) },
-        { area: 'putt', name: 'Knock it in', goal: 'Hole the 6-footer', setup: () => skPutt({ distFt: 6, angleDeg: 20, tiltPct: 1, contours: 0.15, stimp: 10.5, seed: 21 }), check: skHoled },
-        { area: 'putt', name: 'Read the break', goal: 'Hole the 15-footer across the slope', setup: () => skPutt({ distFt: 15, angleDeg: 90, tiltPct: 2, contours: 0.3, stimp: 11, seed: 22 }), check: skHoled },
-        { area: 'putt', name: 'Lag it close', goal: 'From 40 ft: finish within 3 ft of the hole', setup: () => skPutt({ distFt: 40, angleDeg: 200, tiltPct: 1.5, contours: 0.4, stimp: 11, seed: 23 }), check: skClose(3) },
-      ];
+      const skGreen = (distFt, angleDeg, seed, stimp, shape) => () => skPutt({ distFt, angleDeg, seed, stimp, tiltPct: 0, contours: 0.15, shape });
+      const SK = {
+        green: { area: 'range', name: 'On the green', goal: 'Finish on any target green', setup: () => skRange({ pin: 1 }), check: (r) => skOnAny(r) },
+        g175: { area: 'range', name: 'Pick your number', goal: 'Finish on the 175 green', setup: () => skRange({ pin: 2 }), check: (r) => skOnGreen(2)(r) },
+        w100: { area: 'range', name: 'Wedge it close', goal: 'Finish within 6 yds of the 100 pin', setup: () => skRange({ pin: 0 }), check: (r) => skNear(0, 6)(r) },
+        fade: { area: 'range', name: 'Fade it in', goal: 'Hit a fade (F sets one up) that finishes on any target green', setup: () => skRange(), check: skFade(skOnAny) },
+        draw: { area: 'range', name: 'Draw it in', goal: 'Hit a draw (F sets one up) that finishes on any target green', setup: () => skRange(), check: skDraw(skOnAny) },
+        low: { area: 'range', name: 'Keep it low', goal: 'Set the height to Low (W) and finish on any target green', setup: () => skRange(), check: skLow(skOnAny) },
+        high: { area: 'range', name: 'Hit it high', goal: 'Set the height to High (S) and finish on any target green', setup: () => skRange(), check: skHigh(skOnAny) },
+        carry: { area: 'range', name: 'Dial it in', goal: 'Carry it 140 yds, give or take 4 (any club: the launch monitor says)', setup: () => skRange({ pin: 1 }), check: skCarry(140, 4) },
+        g225: { area: 'range', name: 'Long iron', goal: 'Finish on the 225 green', setup: () => skRange({ pin: 3 }), check: (r) => skOnGreen(3)(r) },
+        send: { area: 'range', name: 'Send it', ...skDrive(0.92, 20) },
+        fade175: { area: 'range', name: 'Fade it on', goal: 'A fade (F sets one up) that finishes on the 175 green', setup: () => skRange({ pin: 2 }), check: skFade(skOnGreen(2)) },
+        draw150: { area: 'range', name: 'Draw it close', goal: 'A draw (F sets one up) that finishes within 8 yds of the 150 pin', setup: () => skRange({ pin: 1 }), check: skDraw(skNear(1, 8)) },
+        knock: { area: 'range', name: 'Knockdown', goal: 'Set the height to Low (W) and finish on the 150 green', setup: () => skRange({ pin: 1 }), check: skLow(skOnGreen(1)) },
+        w100t: { area: 'range', name: 'Wedge it tight', goal: 'Finish within 4 yds of the 100 pin', setup: () => skRange({ pin: 0 }), check: (r) => skNear(0, 4)(r) },
+        send2: { area: 'range', name: 'Send it', ...skDrive(0.95, 15) },
+        chip: { area: 'chip', name: 'Chip it close', goal: 'Stock chip (2) from 8 yds: finish within 3 ft of the hole', setup: () => skChip('stock', 8, { ...SK_CHIP, angleDeg: 40, seed: 12 }), check: (r) => skType('stock', r, skClose(3)) },
+        bump: { area: 'chip', name: 'Bump and run', goal: 'Low runner (1) from 20 yds, just off the green: finish within 3 ft of the hole', setup: () => skChip('low', 20, { ...SK_CHIP, angleDeg: 0, seed: 11, e2p: 15 }), check: (r) => skType('low', r, skClose(3)) },
+        soft: { area: 'chip', name: 'High and soft', goal: 'High soft chip (3) from 14 yds to a hole near the edge: finish within 3 ft', setup: () => skChip('high', 14, { ...SK_CHIP, angleDeg: 150, seed: 15, e2p: 5 }), check: (r) => skType('high', r, skClose(3)) },
+        flop: { area: 'chip', name: 'Flop it close', goal: 'Flop shot (4) from 10 yds: finish within 3 ft of the hole', setup: () => skChip('flop', 10, { ...SK_CHIP, angleDeg: 320, seed: 13 }), check: (r) => skType('flop', r, skClose(3)) },
+        rough: { area: 'chip', name: 'From the rough', goal: 'From the light rough, 12 yds, any shot: finish within 4 ft', setup: () => skChip('stock', 12, { ...SK_CHIP, angleDeg: 250, seed: 16, lie: 'light' }), check: skClose(4) },
+        sand: { area: 'chip', name: 'Splash it out', goal: 'From the bunker, 12 yds, any shot: finish within 6 ft', setup: () => skChip('high', 12, { ...SK_CHIP, angleDeg: 100, seed: 17, lie: 'bunker' }), check: skClose(6) },
+        pitch: { area: 'chip', name: 'Pitch it close', goal: 'From 30 yds, any shot: finish within 5 ft', setup: () => skChip('stock', 30, { ...SK_CHIP, angleDeg: 200, seed: 18 }), check: skClose(5) },
+        cut: { area: 'chip', name: 'Cut flop', goal: 'The hole is tucked right, sand past it: a flop (4) swung up and right through the ball for cut spin, within 3 ft',
+          setup: () => skChip('flop', 15, { ...SK_CHIP, angleDeg: 0, seed: 14, e2p: 7, tuck: 2.5, sand: true }), check: skSpinFlop(true, 3) },
+        hook: { area: 'chip', name: 'Hook-spin flop', goal: 'The hole is tucked left, sand past it: a flop (4) swung down and right through the ball for hook spin, within 3 ft',
+          setup: () => skChip('flop', 15, { ...SK_CHIP, angleDeg: 0, seed: 14, e2p: 7, tuck: -2.5, sand: true }), check: skSpinFlop(false, 3) },
+        stiff: { area: 'chip', name: 'Stiff it', goal: 'Stock chip (2) from 12 yds: finish within 18 inches', setup: () => skChip('stock', 12, { ...SK_CHIP, angleDeg: 60, seed: 19 }), check: (r) => skType('stock', r, skClose(1.5)) },
+        sand2: { area: 'chip', name: 'Splash it close', goal: 'From the bunker, 15 yds, any shot: finish within 4 ft', setup: () => skChip('high', 15, { ...SK_CHIP, angleDeg: 100, seed: 17, lie: 'bunker' }), check: skClose(4) },
+        rough2: { area: 'chip', name: 'Short side, in the rough', goal: 'From the light rough, 14 yds, to a hole near the edge: finish within 4 ft', setup: () => skChip('high', 14, { ...SK_CHIP, angleDeg: 250, seed: 16, lie: 'light', e2p: 4 }), check: skClose(4) },
+        p5: { area: 'putt', name: 'Knock it in', goal: 'Hole the 5-footer', setup: () => skPutt({ distFt: 5, angleDeg: 20, tiltPct: 1, contours: 0.15, stimp: 10.5, seed: 21 }), check: skHoled },
+        up: { area: 'putt', name: 'Uphill', goal: 'Hole the 12-footer, straight up the slope', setup: skGreen(12, 30, 31, 11, { up: 2.5 }), check: skHoled },
+        brk: { area: 'putt', name: 'Read the break', goal: 'Hole the 15-footer across the slope', setup: () => skPutt({ distFt: 15, angleDeg: 90, tiltPct: 2, contours: 0.3, stimp: 11, seed: 22 }), check: skHoled },
+        slider: { area: 'putt', name: 'Downhill slider', goal: 'Hole the 10-footer: downhill, breaking left, on a quick green', setup: skGreen(10, 140, 32, 12, { up: -2, side: 1.5 }), check: skHoled },
+        past: { area: 'putt', name: 'Never up, never in', goal: 'From 18 ft: hole it, or finish past the hole within 2 ft', setup: skGreen(18, 210, 33, 11, { up: 0.8, side: -1.5 }), check: skPast(2) },
+        crown: { area: 'putt', name: 'Over the crown', goal: '28 ft, up over a crown and down to the hole: finish within 3 ft', setup: skGreen(28, 330, 34, 12, { side: 0.8, steps: [{ at: 0.35, rise: 2.8, width: 9 }, { at: 0.75, rise: -2.8, width: 9 }] }), check: skClose(3) },
+        tierUp: { area: 'putt', name: 'Up a tier', goal: '30 ft, up to the hole on the top tier: finish within 3 ft', setup: skGreen(30, 60, 35, 11, { side: 0.8, steps: [{ at: 0.5, rise: 3, width: 10 }] }), check: skClose(3) },
+        tierDn: { area: 'putt', name: 'Down a tier', goal: '30 ft, down to the hole on the bottom tier: finish within 3 ft', setup: skGreen(30, 240, 36, 11, { side: -0.8, steps: [{ at: 0.5, rise: -3, width: 10 }] }), check: skClose(3) },
+        swale: { area: 'putt', name: 'Through the swale', goal: '35 ft, down into a dip and up the other side: finish within 3 ft', setup: skGreen(35, 170, 37, 11, { steps: [{ at: 0.3, rise: -3, width: 10 }, { at: 0.7, rise: 3, width: 10 }] }), check: skClose(3) },
+        lag: { area: 'putt', name: 'Monster lag', goal: 'From 55 ft, up and over a ridge: finish within 4 ft', setup: skGreen(55, 290, 38, 11, { up: 0.6, steps: [{ at: 0.4, rise: 2.5, width: 10 }, { at: 0.62, rise: -2.5, width: 10 }] }), check: skClose(4) },
+        slider2: { area: 'putt', name: 'Downhill slider', goal: 'Hole the 12-footer: downhill, breaking right, on a quick green', setup: skGreen(12, 20, 41, 12.5, { up: -2.4, side: -1.8 }), check: skHoled },
+        past2: { area: 'putt', name: 'Never up, never in', goal: 'From 20 ft: hole it, or finish past the hole within 18 inches', setup: skGreen(20, 120, 42, 11.5, { up: -0.8, side: 1.6 }), check: skPast(1.5) },
+        crown2: { area: 'putt', name: 'Over the crown', goal: '32 ft, up over a crown and down to the hole: finish within 2 ft', setup: skGreen(32, 250, 43, 11.5, { side: -0.8, steps: [{ at: 0.3, rise: 3, width: 10 }, { at: 0.68, rise: -3, width: 10 }] }), check: skClose(2) },
+        tiers2: { area: 'putt', name: 'Two tiers up', goal: '40 ft, up two tiers to the hole: finish within 3 ft', setup: skGreen(40, 80, 44, 11.5, { side: 0.8, steps: [{ at: 0.3, rise: 3, width: 10 }, { at: 0.68, rise: 3, width: 10 }] }), check: skClose(3) },
+        lag2: { area: 'putt', name: 'Monster lag', goal: 'From 60 ft, over a ridge and down to the hole: finish within 3 ft', setup: skGreen(60, 200, 45, 12, { up: -0.5, side: 0.6, steps: [{ at: 0.35, rise: 3, width: 10 }, { at: 0.6, rise: -3.5, width: 10 }] }), check: skClose(3) },
+      };
+      const SK_SETS = {
+        range: { name: 'Range challenge', short: 'Range', ids: ['green', 'g175', 'w100', 'fade', 'draw', 'low', 'high', 'carry', 'g225', 'send'] },
+        chip: { name: 'Chipping challenge', short: 'Chipping', ids: ['chip', 'bump', 'soft', 'flop', 'rough', 'sand', 'pitch', 'cut', 'hook', 'stiff'] },
+        putt: { name: 'Putting challenge', short: 'Putting', ids: ['p5', 'up', 'brk', 'slider', 'past', 'crown', 'tierUp', 'tierDn', 'swale', 'lag'] },
+        full: { name: 'Skills challenge', short: 'The full test', ids: ['fade175', 'draw150', 'knock', 'w100t', 'send2', 'sand2', 'cut', 'hook', 'rough2', 'stiff', 'slider2', 'past2', 'crown2', 'tiers2', 'lag2'] },
+      };
+      for (const k in SK_SETS) SK_SETS[k].shots = SK_SETS[k].ids.map((id) => ({ id, ...SK[id] }));
+      let SKILLS = SK_SETS.full.shots;
       const skTotal = () => sk.tries.reduce((a, b) => a + b, 0);
       function renderSkills() {
         if (!sk.on) return;
         const T = SKILLS[sk.i], n = sk.tries[sk.i], total = skTotal();
+        setText('skTitle', `🏁 ${SK_SETS[sk.set].name}`);
         setText('skProg', `Shot ${sk.i + 1} of ${SKILLS.length}`);
         setText('skTot', `${total} attempt${total === 1 ? '' : 's'}${n > 1 || (n === 1 && !sk.ok) ? ` · ${n} on this one` : ''}`);
         setText('skArea', SK_AREA[T.area]); setText('skName', T.name);
@@ -9694,17 +9820,18 @@
         SKILLS[sk.i].setup(); renderSkills();
       }
       function skFinish() {
-        const total = skTotal(), best = +lsGet(skBestKey()) || 0, isBest = !best || total < best;
+        const n = SKILLS.length, total = skTotal(), best = +lsGet(skBestKey()) || 0, isBest = !best || total < best;
         if (isBest) lsSet(skBestKey(), String(total));
+        setText('skDoneH', `🏁 ${SK_SETS[sk.set].name} · complete`);
         setText('skDoneTot', String(total));
-        setText('skDoneSub', `attempts to make all ${SKILLS.length} shots · ${SKILLS.length} is perfect`);
-        setText('skDoneTag', total === SKILLS.length ? 'perfect' : total <= 18 ? 'tour class' : total <= 30 ? 'sharp' : total <= 48 ? 'solid' : 'keep at it');
+        setText('skDoneSub', `attempts to make all ${n} shots · ${n} is perfect`);
+        setText('skDoneTag', total === n ? 'perfect' : total <= n * 1.4 ? 'tour class' : total <= n * 2.3 ? 'sharp' : total <= n * 3.7 ? 'solid' : 'keep at it');
         setText('skDoneBest', isBest ? (best ? `A new best: it was ${best}` : 'Your first score: that\'s the one to beat') : `Your best is ${best}`);
         $('skDoneRows').innerHTML = '<tr><th></th><th>Shot</th><th></th><th>Attempts</th></tr>'
           + SKILLS.map((T, k) => `<tr><td>${k + 1}</td><td>${T.name}</td><td>${SK_AREA[T.area]}</td><td class="${sk.tries[k] === 1 ? 'one' : ''}">${sk.tries[k]}</td></tr>`).join('');
         sk.doneOpen = true; $('skDone').classList.add('on'); document.body.classList.add('sk-over'); $('toast').classList.remove('on');
         Object.assign(skLb, { saved: false, busy: false, mineT: null, rank: 0, note: '', entry: false });
-        skFetchBoard();
+        skFetchBoard(sk.set);
         if (skSignedIn()) skSubmit('');
         else {
           let last = 'AAA';
@@ -9719,19 +9846,23 @@
         if (e.code === 'Enter' || e.code === 'NumpadEnter') {
           e.preventDefault();
           if (skLb.entry && !skLb.saved) { if (!skLb.busy) skSaveInitials(); return; }
-          startSkills();
+          startSkills(sk.set);
         } else if (e.code === 'Escape') { e.preventDefault(); openHome(); }
       }
-      const skLb = { top: [], total: 0, online: null, busy: false, saved: false, entry: false, mineT: null, rank: 0, note: '' };
+      const skLb = { boards: {}, online: null, busy: false, saved: false, entry: false, mineT: null, rank: 0, note: '' };
+      const skBoardOf = (set = sk.set) => skLb.boards[set] || { top: [], total: 0 };
       const skSignedIn = () => false;
-      async function skFetchBoard() {
+      async function skFetchBoard(set = 'all') {
         try {
-          const r = await fetch(`${LB_API}?kind=skills`, { cache: 'no-store' });
+          const r = await fetch(`${LB_API}?kind=skills&set=${set}`, { cache: 'no-store' });
           const j = await r.json();
           if (!r.ok) throw new Error(j.error || r.status);
-          skLb.top = Array.isArray(j.top) ? j.top : []; skLb.total = j.total || 0; skLb.online = true;
+          const got = set === 'all' ? (j.boards || {}) : { [set]: j };
+          for (const k in got) if (SK_SETS[k] && got[k]) skLb.boards[k] = { top: Array.isArray(got[k].top) ? got[k].top : [], total: got[k].total || 0 };
+          skLb.online = true;
         } catch { skLb.online = false; }
-        renderSkBoard(); if (homeOpen) renderSkillsTile();
+        if (sk.doneOpen) renderSkBoard();
+        if (homeOpen) renderSkillsTile();
       }
       function skSaveInitials() {
         const v = $('skInit').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -9742,14 +9873,16 @@
       }
       async function skSubmit(name) {
         skLb.busy = true; skLb.note = ''; renderSkBoard();
+        const set = sk.set;
         try {
           const r = await fetch(LB_API, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ kind: 'skills', name, tries: sk.tries, total: skTotal() }),
+            body: JSON.stringify({ kind: 'skills', set, name, tries: sk.tries, total: skTotal() }),
           });
           const j = await r.json().catch(() => ({}));
           if (!r.ok) throw new Error(j.error || r.status);
-          Object.assign(skLb, { top: j.top || [], total: j.total || 0, rank: j.rank || 0, mineT: j.entry ? j.entry.t : null, online: true, saved: true, entry: false });
+          skLb.boards[set] = { top: j.top || [], total: j.total || 0 };
+          Object.assign(skLb, { rank: j.rank || 0, mineT: j.entry ? j.entry.t : null, online: true, saved: true, entry: false });
           skLb.note = `Saved: you're ${j.rank}${['th', 'st', 'nd', 'rd'][(j.rank % 100 > 10 && j.rank % 100 < 14) || j.rank % 10 > 3 ? 0 : j.rank % 10]} of ${j.total} on the world board`;
         } catch (e) {
           skLb.note = `Couldn't save it to the world board${e && e.message && !/^\d+$/.test(e.message) ? ` (${e.message})` : ''}`;
@@ -9757,24 +9890,27 @@
         skLb.busy = false; renderSkBoard();
       }
       function renderSkBoard() {
+        const B = skBoardOf();
         let h = '<tr><th></th><th>Name</th><th>Attempts</th><th>Date</th></tr>';
         for (let i = 0; i < 10; i++) {
-          const r = skLb.top[i];
+          const r = B.top[i];
           if (!r) { h += `<tr class="empty"><td>${i + 1}</td><td>---</td><td>--</td><td></td></tr>`; continue; }
           const d = new Date(r.t), mine = skLb.mineT && r.t === skLb.mineT;
           h += `<tr class="${mine ? 'mine' : ''}"><td>${i + 1}</td><td>${escH(r.name)}</td><td>${r.total}</td><td>${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}${''}</td></tr>`;
         }
         $('skBoard').innerHTML = h;
         setText('skNote', skLb.busy ? 'Saving to the world board…' : skLb.note
-          || (skLb.online === false ? 'The world board can\'t be reached right now' : skLb.online ? `${skLb.total} score${skLb.total === 1 ? '' : 's'} on the world board` : 'Loading the world board…'));
+          || (skLb.online === false ? 'The world board can\'t be reached right now' : skLb.online ? `${B.total} score${B.total === 1 ? '' : 's'} on the world board` : 'Loading the world board…'));
         $('skEntry').classList.toggle('on', skLb.entry && !skLb.saved);
         $('skSave').disabled = skLb.busy;
       }
-      function startSkills() {
+      function startSkills(set = sk.set) {
         if (swing.active || round.on) return;
+        if (!SK_SETS[set]) set = 'full';
         if (hp.on) leaveHole();
         clearTimeout(sk.timer);
-        if (!sk.on) sk.saved = { greenCfg: { ...state.greenCfg }, chipCfg: { ...state.chipCfg }, pin: state.pin, chipType: state.chipType, stats: { power: state.power, dex: state.dex, composure: state.composure, perception: state.perception }, mph: state.windMph, dir: state.windDir };
+        if (!sk.on) sk.saved = { greenCfg: { ...state.greenCfg }, chipCfg: { ...state.chipCfg }, pin: state.pin, chipType: state.chipType, lie: state.lie, stats: { power: state.power, dex: state.dex, composure: state.composure, perception: state.perception }, mph: state.windMph, dir: state.windDir };
+        sk.set = set; SKILLS = SK_SETS[set].shots;
         Object.assign(sk, { on: true, i: 0, tries: SKILLS.map(() => 0), ok: false, msg: '', doneOpen: false, at: null });
         document.body.classList.add('skills'); document.body.classList.remove('sk-over'); $('skDone').classList.remove('on');
         if (!arcadePractice) { arcadePractice = true; applyCareerClubs(); }
@@ -9784,7 +9920,7 @@
         if (state.practice) togglePractice();
         skClearTracers();
         SKILLS[0].setup(); renderSkills();
-        toast(`Skills challenge\n${SKILLS.length} shots to make · every ball you hit counts`, 2600);
+        toast(`${SK_SETS[set].name}\n${SKILLS.length} shots to make · every ball you hit counts`, 2600);
       }
       function endSkills() {
         if (!sk.on) return;
@@ -9795,15 +9931,21 @@
         if (shot) { shot.done = true; shot = null; }
         puttRun = null; puttTel = null;
         for (const k of SK_PLACE) delete state.chipCfg[k];
+        delete state.greenCfg.shape;
         if (s) { Object.assign(state.greenCfg, s.greenCfg); Object.assign(state.chipCfg, s.chipCfg); state.chipType = s.chipType; }
         if (state.mode !== 'range') setMode('range'); else state.view = 'scout';
+        if (s && state.lie !== s.lie) { state.lie = s.lie; $('inLie').value = s.lie; styleLie(); }
         if (s) { setPin(s.pin); if (devOn()) { setStats(s.stats); state.windMph = s.mph; state.windDir = s.dir; $('inWind').value = s.mph; $('inWindDir').value = s.dir; orientFlags(); } }
         applyDevTools();
       }
       function renderSkillsTile() {
-        const best = +lsGet(skBestKey()) || 0, w = skLb.top[0];
-        $('hmSkillsBest').innerHTML = `${best ? `Your best: ${best}` : 'Not played yet'}${w ? `<small>World best: ${w.total} · ${escH(w.name)}</small>` : ''}`;
-        if (skLb.online === null) skFetchBoard();
+        $('hmSkRow').innerHTML = Object.entries(SK_SETS).map(([k, S]) => {
+          const best = +lsGet(skBestKey(k)) || 0, w = skBoardOf(k).top[0];
+          return `<button data-sk="${k}" class="${k === 'full' ? 'full' : ''}" title="${S.name}: ${S.shots.length} shots to make${k === 'full' ? ' across the range, the chipping green and the putting green' : ''}">`
+            + `<b>${S.short}</b><i>${S.shots.length} shots${k === 'full' ? ' · harder' : ''}</i><em>${best ? `Your best: ${best}` : 'Not played yet'}</em>`
+            + `${w ? `<small>World best: ${w.total} · ${escH(w.name)}</small>` : ''}</button>`;
+        }).join('');
+        if (skLb.online === null) { skLb.online = undefined; skFetchBoard(); }
       }
       const ARCADE_STATS = { power: 8, dex: 8, composure: 8, perception: 8 };
       function setStats(s) {
@@ -11151,9 +11293,11 @@
           b.blur();
           setText('hmPracErr', ''); homeGo(b.dataset.h);
         });
-        $('hmSkills').addEventListener('click', (e) => {
-          e.currentTarget.blur();
-          setText('hmPracErr', ''); closeHome(); startSkills();
+        $('hmSkRow').addEventListener('click', (e) => {
+          const b = e.target.closest('button[data-sk]');
+          if (!b) return;
+          b.blur();
+          setText('hmPracErr', ''); closeHome(); startSkills(b.dataset.sk);
         });
         $('skAgain').addEventListener('click', (e) => { e.currentTarget.blur(); startSkills(); });
         $('skSave').addEventListener('click', (e) => { e.currentTarget.blur(); if (!skLb.busy && !skLb.saved) skSaveInitials(); });
@@ -12036,7 +12180,7 @@
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, tiltFromLie, autoSelectPuttScale, putterBars,compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight,
         openHome, closeHome, get homeOpen() { return homeOpen; }, devOn,
-        sk, skLb, chipLaunch, SKILLS, startSkills, endSkills, skShotDone, skAttempt, PINS, PIN_RAD, get trailCount() { return trails.length; },
+        sk, skLb, chipLaunch, get SKILLS() { return SKILLS; }, SK_SETS, SK, skNext, startSkills, endSkills, skShotDone, skAttempt, PINS, PIN_RAD, get trailCount() { return trails.length; },
         toScreen: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (-v.y * 0.5 + 0.5) * innerHeight }; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }
       };
