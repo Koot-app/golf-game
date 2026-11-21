@@ -1,4 +1,4 @@
-// The tier 2 course (HOLES_T2, user request 2026-11-20: its own nine holes from the user's screenshots). Builds each
+// A career course of its own (tier 2: HOLES_T2; tier 3: HOLES_T3, with window.__tier = 3). Builds each
 // hole on that course and prints its par, length, fairway gaps and bunkers, checks the switch back to the plain holes,
 // and the course-aware pars/stroke indexes used away from the course (tour leaderboard, challenge cards).
 //   node tools/test/probe.js "http://127.0.0.1:8090/?nohome" <shot|-> @tools/test/course-t2.js "0" t2
@@ -8,8 +8,9 @@
   for (let i = 0; i < 50 && !window.__golf; i++) await sleep(200);
   const g = window.__golf, YD = 0.9144, out = [];
   const plainPars = g.HOLES.map((h) => h.par).join(',');
-  g.setCourse(2);
-  out.push(`TIER 2: ${g.TIERS[2].course} · pars ${g.HOLES.map((h) => h.par).join(',')} = ${g.HOLES.reduce((s, h) => s + h.par, 0)} · si ${g.HOLES.map((h) => h.si).join(',')}`);
+  const T = window.__tier || 2;
+  g.setCourse(T);
+  out.push(`TIER ${T}: ${g.TIERS[T].course} · pars ${g.HOLES.map((h) => h.par).join(',')} = ${g.HOLES.reduce((s, h) => s + h.par, 0)} · si ${g.HOLES.map((h) => h.si).join(',')}`);
   let yds = 0;
   for (let i = 0; i < g.HOLES.length; i++) {
     g.selectHole(i); await sleep(20);
@@ -26,11 +27,11 @@
   out.push(`  total ${yds.toFixed(0)} yds`);
   g.setCourse(null);
   out.push(`back to the plain holes: pars ${g.HOLES.map((h) => h.par).join(',')} (${g.HOLES.map((h) => h.par).join(',') === plainPars ? 'as before' : 'CHANGED'}) · hole 1 ${g.HOLES[0].desc}`);
-  g.setCourse(3);
-  out.push(`tier 3: pars ${g.HOLES.map((h) => h.par).join(',')} · hole 2 ${g.HOLE ? g.HOLE.desc : ''}`);
+  g.setCourse(1);
+  out.push(`tier 1: pars ${g.HOLES.map((h) => h.par).join(',')} (${g.HOLES.map((h) => h.par).join(',') === plainPars ? 'the plain holes' : 'CHANGED'})`);
   g.setCourse(null);
   if (window.__shot !== undefined) {
-    g.setCourse(2); g.selectHole(window.__shot); g.enterHole(); await sleep(400);
+    g.setCourse(T); g.selectHole(window.__shot); g.enterHole(); await sleep(400);
     if (window.__map) { g.hp.mapZoom = 0; }
     g.state.view = 'scout'; await sleep(1800);
   }

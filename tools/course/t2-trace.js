@@ -1,16 +1,9 @@
-// The tier 2 course's holes (HOLES_T2 in index.html), traced from the user's GPS-app screenshots (2026-11-20).
-// Everything below is in screenshot pixels (923 x 2000 as displayed) except sizes given in yards; this script scales
-// each hole so the app's own aiming line (tee -> targets -> green: `ref`) is the scorecard yardage, turns it into
-// the hole's frame (yards, +x right, -z up the screen from the tee) and writes the HOLES_T2 block into index.html.
-//   node tools/course/t2-trace.js          (rewrites the block between "const HOLES_T2 = [" and "const HOLES_BASE")
+// The tier 2 course, Cedar Hollow (HOLES_T2 in index.html), traced from the user's GPS-app screenshots (2026-11-20).
+// The trace is in screenshot pixels; trace-lib.js explains the fields, scales each hole so the app's aiming line is the
+// scorecard yardage, and writes the block into index.html.
+//   node tools/course/t2-trace.js          (rewrites HOLES_T2 in index.html)
 //   node tools/course/t2-trace.js --print  (prints it instead)
-// path: the centre line (down the middle of the fairway). stations: [point on the line, left px, right px] = the
-// fairway's half-widths there, measured square to the line. green.shape: see kidney / egg / peanut below.
-const fs = require('fs'), path = require('path');
-// green outlines: radius x (1 + sum amp*cos(k*theta - phase)); theta from the green's own +x (0 right, 90 the far side)
-const kidney = (at, a2 = 0.08, a3 = 0.09) => [[2, -a2, (2 * at + 720) % 360], [3, -a3, (3 * at + 1080) % 360]];   // a bite out of the edge at `at` degrees
-const egg = (at, a = 0.1) => [[1, -a, (at + 360) % 360], [3, a, (3 * at + 1080) % 360]];                           // the narrow end at `at`
-const peanut = (a = 0.24) => [[2, -a, 0]];                                                                          // a waist across the middle
+const { kidney, egg, peanut, build } = require('./trace-lib');
 const H = [
   { yds: 315, par: 4, hcp: 13, desc: 'Straight down a tree-lined chute', ob: 36, wind: [6, 20], stimp: 11, halfWidth: 17, firstCut: 8,
     ref: [[552, 1525], [490, 860], [462, 397]],
@@ -102,42 +95,4 @@ const H = [
       { c: [640, 512], rx: 10, rz: 6, rot: 0.1, type: 'fbunker', depth: 2.5, note: 'right of the approach' }],
     water: [{ c: [660, 977], rx: 50, rz: 26 }] },                // (about 100 x 52 yds: the carry off the tee)
 ];
-const len = (p) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return L; };
-const n1 = (v) => { const r = Math.round(v * 2) / 2; return Object.is(r, -0) ? 0 : r; }, n0 = (v) => { const r = Math.round(v); return Object.is(r, -0) ? 0 : r; };
-const order = H.map((h, i) => [h.hcp, i]).sort((a, b) => a[0] - b[0]).map(([, i]) => i);          // handicap 1..17 -> stroke index 1..9
-const shapeStr = (sh) => `[${sh.map(([k, a, ph]) => `[${k}, ${a}, ${n0(ph)}]`).join(', ')}]`;
-const inShape = (g, x, z) => {                               // inEllipse with the shape, in yards (the pin check)
-  const X = x, Y = -z, c = Math.cos(g.rot), s = Math.sin(g.rot), u = (X * c + Y * s) / g.rx, v = (-X * s + Y * c) / g.rz, th = Math.atan2(v, u);
-  let R = 1; for (const [k, a, ph] of g.shape) R += a * Math.cos(k * th - ph * Math.PI / 180);
-  return (u * u + v * v) / (R * R);
-};
-const I = '        ', out = [];
-H.forEach((h, i) => {
-  const s = h.yds / len(h.ref), [tx, ty] = h.tee || h.path[0];
-  const P = (p) => [n0((p[0] - tx) * s), n0((p[1] - ty) * s)], g = P(h.green.c);
-  if (inShape(h.green, h.pinOff[0], h.pinOff[1]) > 0.55) throw new Error(`hole ${i + 1}: the pin is too near the green's edge (${inShape(h.green, h.pinOff[0], h.pinOff[1]).toFixed(2)})`);
-  const el = (o) => { const c = P(o.c); return `{ x: ${c[0]}, z: ${c[1]}, rx: ${o.rx}, rz: ${o.rz}${o.rot ? `, rot: ${o.rot}` : ''} }`; };
-  const L = [];
-  L.push(`${I}{`);
-  L.push(`${I}  name: 'Hole ${i + 1}', par: ${h.par}, si: ${order.indexOf(i) + 1}, desc: '${h.desc}', ob: ${h.ob}, wind: { mph: ${h.wind[0]}, from: ${h.wind[1]} }, stimp: ${h.stimp},`);
-  L.push(`${I}  path: [${h.path.map((p) => `[${P(p).join(', ')}]`).join(', ')}],          // ${n0(len(h.path) * s)} yds along the fairway, ${n0(Math.hypot(h.green.c[0] - tx, h.green.c[1] - ty) * s)} from tee to green`);
-  L.push(`${I}  halfWidth: ${h.halfWidth}, firstCut: ${h.firstCut},`);
-  L.push(`${I}  fairway: [${h.stations.map(([p, l, r]) => `[${P(p).join(', ')}, ${n1(l * s)}, ${n1(r * s)}]`).join(', ')}],`);
-  if (h.gaps) L.push(`${I}  fairwayGaps: [${h.gaps.map(([a, b]) => `[[${P(a).join(', ')}], [${P(b).join(', ')}]]`).join(', ')}],`);
-  L.push(`${I}  green: { x: ${g[0]}, z: ${g[1]}, rx: ${h.green.rx}, rz: ${h.green.rz}, rot: ${h.green.rot}, shape: ${shapeStr(h.green.shape)} }, pin: [${g[0] + h.pinOff[0]}, ${g[1] + h.pinOff[1]}],`);
-  L.push(`${I}  greenSurface: ${h.surface},`);
-  L.push(`${I}  bunkers: [`);
-  for (const b of h.bunkers) { const c = P(b.c); L.push(`${I}    { x: ${c[0]}, z: ${c[1]}, rx: ${b.rx}, rz: ${b.rz}, rot: ${b.rot}, type: '${b.type}', depth: ${b.depth} },        // ${b.note}`); }
-  L.push(`${I}  ],`);
-  L.push(`${I}  hardpan: [], water: [${(h.water || []).map(el).join(', ')}],${h.groves ? ` groves: [${h.groves.map(el).join(', ')}],` : ''}`);
-  L.push(`${I}},`);
-  out.push(L.join('\n'));
-  console.error(`hole ${i + 1}: ${s.toFixed(4)} yd/px · line ${n0(len(h.path) * s)} yds · tee to green ${n0(Math.hypot(h.green.c[0] - tx, h.green.c[1] - ty) * s)}`);
-});
-const block = `      const HOLES_T2 = [\n${out.join('\n')}\n      ];\n`;
-if (process.argv.includes('--print')) { console.log(block); process.exit(0); }
-const file = path.join(__dirname, '..', '..', 'index.html'), src = fs.readFileSync(file, 'utf8');
-const a = src.indexOf('      const HOLES_T2 = ['), b = src.indexOf('      const HOLES_BASE = HOLES.slice();');
-if (a < 0 || b < a) throw new Error('markers not found in index.html');
-fs.writeFileSync(file, src.slice(0, a) + block.replace(/\n/g, src.includes('\r\n') ? '\r\n' : '\n') + src.slice(b));
-console.error('HOLES_T2 written to index.html');
+build('HOLES_T2', H);

@@ -23,10 +23,10 @@ const { redis, readBody, sessionId, updateCareer, rateLimit } = require('./_redi
 
 const FORMATS = ['match', 'stroke', 'skins'];
 const HOLES = 9;
-// each hole's stroke index (1 = hardest), by circuit — the `si` in index.html's HOLES (the muni and the country club) and
-// HOLES_T2 (the resort's own course, since 2026-11-20)
+// each hole's stroke index (1 = hardest), by circuit — the `si` in index.html's HOLES (the muni), HOLES_T2 (the club's
+// own course) and HOLES_T3 (the country club's own course), both since 2026-11-20
 const SI_BASE = [5, 9, 4, 2, 7, 3, 6, 8, 1];
-const SI_BY_TIER = { 1: SI_BASE, 2: [7, 5, 3, 6, 1, 8, 2, 9, 4], 3: SI_BASE };
+const SI_BY_TIER = { 1: SI_BASE, 2: [7, 5, 3, 6, 1, 8, 2, 9, 4], 3: [3, 7, 5, 4, 6, 8, 1, 9, 2] };
 const DAYS = 7 * 24 * 3600 * 1000;               // to play it, once accepted (and how long an unanswered one waits)
 const KEEP = 60 * 24 * 3600 * 1000;              // finished challenges drop off the list after this
 const MAX_ACTIVE = 12;                           // pending + open challenges a player can be in
@@ -238,9 +238,9 @@ function cleanCard(card) {
 //     replayed and the card can't be rewritten at the end; the card is the holes the server has;
 //   - when the holes came in faster than a round can be played (the whole card within 3 minutes: sent all at once), the
 //     card is marked, and both players see it on the shared card.
-// index.html HOLES (the muni and the country club) and HOLES_T2 (the resort's own course)
+// index.html HOLES (the muni), HOLES_T2 (the club) and HOLES_T3 (the country club)
 const PARS_BASE = [5, 3, 4, 4, 3, 5, 4, 3, 4];
-const PARS_BY_TIER = { 1: PARS_BASE, 2: [4, 5, 4, 4, 3, 4, 3, 5, 4], 3: PARS_BASE };
+const PARS_BY_TIER = { 1: PARS_BASE, 2: [4, 5, 4, 4, 3, 4, 3, 5, 4], 3: [4, 4, 4, 5, 4, 3, 5, 3, 4] };
 const parsOf = (tier) => PARS_BY_TIER[tier] || PARS_BASE;
 const parOf = (tier) => parsOf(tier).reduce((a, b) => a + b, 0);
 const holePossible = (h, i, tier) => h.strokes >= Math.max(1, parsOf(tier)[i] - 3);

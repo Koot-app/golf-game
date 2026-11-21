@@ -58,15 +58,15 @@
   // 5. a hustler's ball never stops in water, on any hole of this course
   if (g.career) {
     let wet = 0, stops = 0;
-    for (let i = 0; i < 9; i++) {
-      g.selectHole(i);
+    for (const tier of [2, 3]) for (let i = 0; i < 9; i++) {
+      g.setCourse(tier); g.selectHole(i);
       if (!g.hole.water.length) continue;
       for (let t = 0; t < 300; t++) {
-        const fm = { npc: t % 2 ? 'marco' : 'dale', tier: 2, no: t + 1, salt: t * 7919 }, S = g.npcHoleScore(fm, i);
+        const fm = { npc: t % 2 ? 'marco' : 'dale', tier, no: t + 1, salt: t * 7919 }, S = g.npcHoleScore(fm, i);
         for (const st of g.npcPlan(fm, i, S)) { stops++; if (g.surfaceAt(st.to.x, st.to.z) === 'water' && !st.ob) wet++; }
       }
     }
-    out.push(`5. hustlers on the holes with water: ${stops} strokes planned, ${wet} stop in water`);
+    out.push(`5. hustlers on the holes with water (tiers 2 and 3): ${stops} strokes planned, ${wet} stop in water`);
   } else out.push('5. (no career on this profile: the hustlers\' plans are skipped)');
   g.setCourse(null);
   return out.join('\n');
