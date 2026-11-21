@@ -9309,7 +9309,9 @@
         //  built, where under the deep ones it takes a flop)
         1: { course: 'Rolling Pines Muni', stimpAdd: -1, windMult: 0.7, mirror: false, obMult: 1, treeMult: 1, bunkerDepth: 0.75, bunkerFaceDeg: 22, rep: 0, entry: 0, desc: 'Public tracks, scruffy slow greens, small-time hustlers' },
         // (holes: a course of its own, user request 2026-11-20: tier 2 plays HOLES_T2, not the muni's holes mirrored)
-        2: { course: 'Palm Crest Resort', holes: HOLES_T2, stimpAdd: 1, windMult: 1.0, mirror: false, obMult: 1, treeMult: 1.5, bunkerDepth: 1, rep: 40, entry: 0, desc: 'A course of its own: tight tree-lined holes, faster greens, bigger money' },
+        // (course: user request 2026-11-20, a name that feels vaguely familiar, like somewhere you've played before; it was
+        //  Palm Crest Resort while it played the muni's holes mirrored)
+        2: { course: 'Cedar Hollow Golf Club', holes: HOLES_T2, stimpAdd: 1, windMult: 1.0, mirror: false, obMult: 1, treeMult: 1.5, bunkerDepth: 1, rep: 40, entry: 0, desc: 'A course of its own: tight tree-lined holes, faster greens, bigger money' },
         3: { course: 'Hawthorne Country Club', stimpAdd: 2.5, windMult: 1.3, mirror: false, obMult: 0.8, treeMult: 1.3, bunkerDepth: 1.3, rep: 120, entry: 500, desc: 'Lightning greens, stronger wind, tight out of bounds, high rollers' },
       };
       let courseV = null;
@@ -14856,7 +14858,7 @@
       const TOURS = [
         { id: 'muniopen', name: 'The Rolling Pines Muni Open', short: 'Muni Open', tier: 1, rep: 20, entry: 250, purse: [1500, 700, 400], repWin: [15, 8, 4], form: 0, art: 'cup-silver',
           desc: 'The muni\'s summer stroke-play shootout. Every hustler in town turns up, even the country-club ones.' },
-        { id: 'palmproam', name: 'The Palm Crest Pro-Am', short: 'Palm Crest Pro-Am', tier: 2, rep: 80, entry: 1500, purse: [9000, 4000, 2000], repWin: [30, 15, 8], form: -0.05, art: 'salver',
+        { id: 'palmproam', name: 'The Cedar Hollow Pro-Am', short: 'Cedar Hollow Pro-Am', tier: 2, rep: 80, entry: 1500, purse: [9000, 4000, 2000], repWin: [30, 15, 8], form: -0.05, art: 'salver',
           desc: 'Resort money, resort greens. The pros play for pride; you play for the purse.' },
         { id: 'hawthorne', name: 'The Hawthorne Members\' Invitational', short: 'Hawthorne Invitational', tier: 3, rep: 150, entry: 7500, purse: [30000, 12000, 6000], repWin: [60, 30, 15], form: -0.1, art: 'cup-gold',
           desc: 'Jackets, juleps and lightning greens. The members don\'t like losing their own trophy.' },

@@ -30,7 +30,7 @@
     out.push(`${id.padEnd(8)} $${String(stake).padEnd(6)}${cells.join('')}`);
   }
   // ---- invitationals: the field is all twelve hustlers on the event's circuit (plus the event's form)
-  const TOURS = [['Muni Open', 1, 250, [1500, 700, 400], 0], ['Palm Crest Pro-Am', 2, 1500, [9000, 4000, 2000], -0.05], ['Hawthorne Invitational', 3, 7500, [50000, 20000, 10000], -0.1], ['Hustlers\' Classic', 3, 25000, [150000, 60000, 30000], -0.2]];
+  const TOURS = [['Muni Open', 1, 250, [1500, 700, 400], 0], ['Cedar Hollow Pro-Am', 2, 1500, [9000, 4000, 2000], -0.05], ['Hawthorne Invitational', 3, 7500, [50000, 20000, 10000], -0.1], ['Hustlers\' Classic', 3, 25000, [150000, 60000, 30000], -0.2]];
   out.push('', 'Invitationals: the field\'s top three (to par, median of 2,000 events), and the value of entering by the player\'s average:');
   out.push('event                     entry   1st  2nd  3rd ' + MUS.map((m) => `μ +${m.toFixed(1)}`.padStart(12)).join(''));
   for (const [name, tier, entry, purse, form] of TOURS) {
