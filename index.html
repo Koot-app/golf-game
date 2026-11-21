@@ -6618,9 +6618,8 @@
       <div id="hmMenu">
         <div class="hm-me" id="hmMe"></div>
         <div class="hm-tiles">
-          <div class="hm-cat">Career · your own golfer, stats, clubs and money</div>
+          <div class="hm-cat">Career · your own golfer, stats, clubs, money and friends</div>
           <button data-h="career" class="hm-big" id="hmCareer"><b>🏌️ Career</b><i>Hustle the locals for money, buy clubs, take lessons, move up the circuits</i></button>
-          <button data-h="friends" class="hm-wide" id="hmFriends"><b>🤝 Friends</b><i>Bet a friend on a round</i></button>
         </div>
         <div class="hm-foot"><button id="hmReauth" class="go" style="display:none">Sign in again</button><button id="hmSwitch">Switch player</button><label class="hm-dev" id="hmDevBox"><input type="checkbox" id="hmDev"> 🛠 Developer tools</label><span id="hmSync"></span></div>
       </div>
@@ -13505,15 +13504,16 @@
             + `<span>Circuit<em>${CAREER.tiers[c.tier || 1]}</em></span>${rec && rec.n ? `<span>vs friends<em>${rec.w}–${rec.l}–${rec.h}</em></span>` : ''}`
             + (collectionOf(c.trophies).value ? `<span>🏆 Collection<em>${money(collectionOf(c.trophies).value)}</em></span>` : '')
             : `<span>${session ? 'Loading your career…' : 'Guest · nothing saved online · no career yet'}</span>`) + '</div></div>';
+        // (Friends lives in the clubhouse only, user request 2026-11-20: the career tile carries its news and its badge)
         const m = c && c.match, pc = c && c.pvpCard;
-        $('hmCareer').innerHTML = `<b>🏌️ ${c ? 'Career' : 'Start a career'}</b><i>${m && !m.settled && m.feePaid ? `Resume your match vs ${npcById(m.npc).nick}`
-          : pc && pc.holes.length ? `Resume your round vs ${pc.vsName} (thru ${pc.holes.filter(Boolean).length})`
-          : c ? `${CAREER.tiers[c.tier || 1]} circuit · hustle the locals, buy clubs, take lessons` : 'Start with $150 and a tired bag. Hustle your way up.'}</i>`;
         const me = session && session.id, wait = me ? fr.list.filter((x) => x.status === 'pending' && x.to === me).length : 0;
         const play = me ? fr.list.filter((x) => x.status === 'open' && !x.cards[me]).length : 0, news = me ? fr.list.filter((x) => x.status === 'done' && !pvpSeen(x.id)).length : 0;
         const badge = wait + play + news;
-        $('hmFriends').innerHTML = `<b>🤝 Friends</b><i>${!session ? 'Make a profile to bet your friends'
-          : news ? `${news} result${news > 1 ? 's' : ''} in` : wait ? `${wait} challenge${wait > 1 ? 's' : ''} waiting for you` : play ? `${play} round${play > 1 ? 's' : ''} to play` : 'Bet a friend on a round'}</i>${badge ? `<em class="hm-badge">${badge}</em>` : ''}`;
+        const frNews = news ? `🤝 ${news} friend result${news > 1 ? 's' : ''} in` : wait ? `🤝 ${wait} friend challenge${wait > 1 ? 's' : ''} waiting for you` : play ? `🤝 ${play} friend round${play > 1 ? 's' : ''} to play` : '';
+        $('hmCareer').innerHTML = `<b>🏌️ ${c ? 'Career' : 'Start a career'}</b><i>${m && !m.settled && m.feePaid ? `Resume your match vs ${npcById(m.npc).nick}`
+          : pc && pc.holes.length ? `Resume your round vs ${pc.vsName} (thru ${pc.holes.filter(Boolean).length})`
+          : frNews ? `${frNews} · in the clubhouse`
+          : c ? `${CAREER.tiers[c.tier || 1]} circuit · hustle the locals, bet your friends, buy clubs, take lessons` : 'Start with $150 and a tired bag. Hustle your way up.'}</i>${badge ? `<em class="hm-badge">${badge}</em>` : ''}`;
         $('hmDev').checked = devOn();
         setText('hmSync', !session ? 'Guest · saved on this PC only'
           : sync.state === 'offline' ? '⚠ not synced (offline)' : sync.state === 'signedout' ? '⚠ Your sign-in has expired' : 'Saved to your profile');
@@ -13570,12 +13570,10 @@
       }
       // the menu's tiles
       function homeGo(what) {
-        if (what === 'friends' && !session) { setText('hmSync', 'Friends need a profile: Switch player → New profile'); return; }
         closeHome();
-        if (what === 'career' || what === 'friends') {
+        if (what === 'career') {                             // (Friends is in the clubhouse: user request, 2026-11-20)
           if (!career && !session) siMode = 'local';        // a guest's first career: its name
           openClubhouse();
-          if (what === 'friends' && career && clubOpen) openFriends();
           return;
         }
         if (what === 'round') return arcadeIntro();
