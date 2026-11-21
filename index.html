@@ -5183,6 +5183,479 @@
       backdrop-filter: blur(4px);
     }
 
+    /* HOW TO PLAY, front and centre (TUTORIAL_PLAN.md): the three lessons between the career and the arcade */
+    .hm-mid {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .hm-learn {
+      position: relative;
+      width: min(100%, 560px);
+      padding: 14px 16px 16px;
+      border-radius: 14px;
+      background: rgba(6, 10, 16, .8);
+      border: 1px solid rgba(53, 224, 255, .4);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, .35);
+      backdrop-filter: blur(4px);
+    }
+
+    .hm-learn.new::after {
+      content: 'NEW';
+      position: absolute;
+      top: -9px;
+      right: 14px;
+      padding: 1px 8px;
+      border-radius: 99px;
+      background: #ff5d6c;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .hm-learn-h {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px 10px;
+      margin-bottom: 10px;
+    }
+
+    .hm-learn-h b {
+      font-size: 18px;
+      color: #fff;
+    }
+
+    .hm-learn-h span {
+      font-size: 12px;
+      color: #8f9cad;
+    }
+
+    .hm-learn-tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
+    }
+
+    .hm-learn-tiles button {
+      display: grid;
+      grid-template-rows: auto auto auto;
+      gap: 2px;
+      text-align: left;
+      padding: 0 0 9px !important;
+      border-radius: 10px !important;
+      overflow: hidden;
+      background: rgba(255, 255, 255, .05);
+      border: 1px solid rgba(255, 255, 255, .12);
+    }
+
+    .hm-learn-tiles button:hover {
+      background: rgba(53, 224, 255, .1);
+      border-color: rgba(53, 224, 255, .55);
+    }
+
+    .hm-learn-tiles .hl-pic {
+      aspect-ratio: 16 / 9;
+      background: #121a24 center / cover no-repeat;
+      margin-bottom: 6px;
+      display: grid;
+      place-items: center;
+      font-size: 28px;
+    }
+
+    .hm-learn-tiles b {
+      padding: 0 10px;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .hm-learn-tiles .hl-sub {
+      padding: 0 10px;
+      font-size: 11.5px;
+      font-weight: 400;
+      color: #aab6c4;
+    }
+
+    .hm-learn-tiles .hl-n {
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #35e0ff;
+    }
+
+    .hm-learn-tiles .hl-n.done {
+      color: #5ee08a;
+    }
+
+    /* a narrower middle (a laptop window): each lesson a row, its picture small beside the words */
+    @media (min-width: 901px) and (max-width: 1480px) {
+      .hm-learn-tiles {
+        grid-template-columns: 1fr;
+      }
+
+      .hm-learn-tiles button {
+        grid-template-columns: 96px 1fr;
+        grid-template-rows: auto auto auto;
+        column-gap: 10px;
+        align-items: center;
+        padding: 7px !important;
+      }
+
+      .hm-learn-tiles .hl-pic {
+        grid-row: 1 / 4;
+        margin: 0;
+        border-radius: 6px;
+        font-size: 20px;
+      }
+
+      .hm-learn-tiles b,
+      .hm-learn-tiles .hl-sub,
+      .hm-learn-tiles .hl-n {
+        padding: 0;
+      }
+
+      .hm-learn-tiles .hl-sub {
+        font-size: 11px;
+        line-height: 1.3;
+      }
+    }
+
+    /* the lessons' viewer: over everything (the home screen too), one slide at a time */
+    #tut {
+      position: fixed;
+      inset: 0;
+      z-index: 9;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(3, 6, 10, .74);
+      backdrop-filter: blur(3px);
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+
+    body.tut-on #tut {
+      display: flex;
+    }
+
+    .tut-box {
+      width: min(1000px, calc(100vw - 24px));
+      max-height: calc(100vh - 24px);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      background: rgba(9, 13, 19, .97);
+      border: 1px solid rgba(53, 224, 255, .4);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
+    }
+
+    /* (a did-this / got-that pair: wider, so each picture stays readable) */
+    #tut.pair .tut-box {
+      width: min(1280px, calc(100vw - 24px));
+    }
+
+    .tut-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tut-head b {
+      flex: 1;
+      font-size: 17px;
+      color: #fff;
+    }
+
+    .tut-head button,
+    .tut-nav button {
+      width: auto;
+      margin: 0;
+      padding: 6px 12px;
+    }
+
+    #tut.cats #tutAll,
+    #tut.cats #tutNav,
+    #tut.cats #tutPage {
+      display: none;
+    }
+
+    .tut-intro {
+      margin: 0 0 4px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #c9d4e0;
+    }
+
+    .tut-cats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .tut-cats button {
+      display: grid;
+      gap: 3px;
+      text-align: left;
+      padding: 0 0 12px !important;
+      margin: 0;
+      border-radius: 12px !important;
+      overflow: hidden;
+      background: rgba(255, 255, 255, .05);
+      border: 1px solid rgba(255, 255, 255, .14);
+    }
+
+    .tut-cats button:hover {
+      background: rgba(53, 224, 255, .1);
+      border-color: rgba(53, 224, 255, .6);
+    }
+
+    .tut-cats .tc-pic {
+      aspect-ratio: 16 / 9;
+      background: #121a24 center / cover no-repeat;
+      margin-bottom: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 40px;
+    }
+
+    .tut-cats b {
+      padding: 0 14px;
+      font-size: 17px;
+      color: #fff;
+    }
+
+    .tut-cats .tc-sub {
+      padding: 0 14px;
+      font-size: 12.5px;
+      font-weight: 400;
+      color: #aab6c4;
+    }
+
+    .tut-cats .tc-n {
+      padding: 0 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #35e0ff;
+    }
+
+    .tut-cats .tc-n.done {
+      color: #5ee08a;
+    }
+
+    .tut-cats kbd,
+    .tut-nav kbd {
+      font-size: 10.5px;
+    }
+
+    .tut-pics {
+      display: grid;
+      gap: 10px;
+      align-items: center;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .tut-pics.n1 {
+      width: min(100%, calc((100vh - 330px) * 16 / 9));
+    }
+
+    .tut-pics.n2 {
+      grid-template-columns: 1fr auto 1fr;
+      width: min(100%, calc((100vh - 360px) * 16 / 9 * 2 + 44px));
+    }
+
+    .tut-arrow {
+      font-size: 24px;
+      font-weight: 800;
+      color: #ffe066;
+    }
+
+    .tut-fig {
+      margin: 0;
+      min-width: 0;
+    }
+
+    .tut-img {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #121a24;
+      border: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    .tut-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .tut-img.svg {
+      aspect-ratio: auto;
+      background: none;
+      border: 0;
+    }
+
+    .tut-img.svg svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .tut-ph {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      text-align: center;
+      font-size: 13px;
+      color: #5c6b7d;
+    }
+
+    .tut-fig figcaption {
+      margin-top: 5px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #8f9cad;
+    }
+
+    .tut-mark,
+    .tut-n {
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ffe066;
+      color: #14181f;
+      font-size: 12.5px;
+      font-weight: 800;
+      font-style: normal;
+    }
+
+    .tut-mark {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, .6), 0 0 14px rgba(255, 224, 102, .6);
+    }
+
+    .tut-t {
+      margin: 2px 0 0;
+      font-size: 19px;
+      color: #fff;
+    }
+
+    .tut-pts {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 6px;
+    }
+
+    .tut-pts li {
+      display: grid;
+      grid-template-columns: 22px 1fr;
+      gap: 9px;
+      align-items: start;
+      font-size: 14px;
+      line-height: 1.45;
+      color: #d6e0ea;
+    }
+
+    .tut-pts li b {
+      color: #fff;
+    }
+
+    .tut-pts kbd,
+    .tut-intro kbd {
+      font: inherit;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(255, 255, 255, .12);
+      border: 1px solid rgba(255, 255, 255, .22);
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      padding: 0 6px;
+      margin: 0 1px;
+    }
+
+    .tut-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    #tutDots {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    #tutDots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .18);
+    }
+
+    #tutDots span.on {
+      background: #35e0ff;
+    }
+
+    .tut-end {
+      display: flex;
+      gap: 8px;
+    }
+
+    #tutTry {
+      display: none;
+    }
+
+    #tut.last.home #tutTry {
+      display: inline-block;
+    }
+
+    #tipsTut {
+      width: auto;
+      margin: 0;
+      padding: 3px 9px;
+      font-size: 11.5px;
+    }
+
+    @media (max-width: 760px) {
+      .tut-cats {
+        grid-template-columns: 1fr;
+      }
+
+      .tut-cats .tc-pic {
+        display: none;
+      }
+
+      .tut-pics.n2 {
+        grid-template-columns: 1fr;
+      }
+
+      .tut-arrow {
+        justify-self: center;
+        transform: rotate(90deg);
+      }
+    }
+
     /* the arcade side: its note, the three courses to pick from, the play button */
     .hm-arc-note {
       font-size: 12.5px;
@@ -5256,6 +5729,36 @@
 
     .hm-arc-golfer .ch-pips i.on {
       background: #ffe066;
+    }
+
+    .hm-arc-golfer .hm-st-foot {
+      margin: 6px 0 0;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    /* the career side's golfer: your own stats, in the career's cyan; a caddie's help in green */
+    .hm-arc-golfer.hm-car {
+      margin: 0 0 14px;
+      border-color: rgba(53, 224, 255, .22);
+    }
+
+    .hm-arc-golfer.hm-car .ch-pips i.on {
+      background: #35e0ff;
+    }
+
+    .hm-arc-golfer.hm-car .hm-st b {
+      color: #35e0ff;
+    }
+
+    .hm-arc-golfer .ch-pips i.cad,
+    .hm-arc-golfer .cadk {
+      background: #5ee08a;
+      color: #5ee08a;
+    }
+
+    .hm-arc-golfer .cadk {
+      background: none;
     }
 
     .hm-courses {
@@ -5401,6 +5904,15 @@
 
       .hm-side {
         flex: 0 0 auto;
+      }
+
+      .hm-mid {
+        flex: 0 0 auto;
+        justify-content: stretch;
+      }
+
+      .hm-learn {
+        width: 100%;
       }
 
       .hm-board {
@@ -6737,11 +7249,21 @@
       </div>
       <div id="hmMenu">
         <div class="hm-me" id="hmMe"></div>
+        <!-- your golfer's stats, as the arcade side shows its own (user request, 2026-11-21) -->
+        <div class="hm-arc-golfer hm-car" id="hmCarStats"></div>
         <div class="hm-tiles">
           <div class="hm-cat">Career · your own golfer, stats, clubs, money and friends</div>
           <button data-h="career" class="hm-big" id="hmCareer"><b>🏌️ Career</b><i>Hustle the locals for money, buy clubs, take lessons, move up the circuits</i></button>
         </div>
         <div class="hm-foot"><button id="hmReauth" class="go" style="display:none">Sign in again</button><button id="hmSwitch">Switch player</button><label class="hm-dev" id="hmDevBox"><input type="checkbox" id="hmDev"> 🛠 Developer tools</label><span id="hmSync"></span></div>
+      </div>
+    </div>
+    <!-- HOW TO PLAY (TUTORIAL_PLAN.md; user request, 2026-11-21: front and centre on the home screen): three lessons of
+         slides with pictures from the game. Shown signed out and signed in. -->
+    <div class="hm-mid">
+      <div class="hm-learn" id="hmLearn">
+        <div class="hm-learn-h"><b>📖 How to play</b><span>Three quick lessons, with pictures from the game</span></div>
+        <div class="hm-learn-tiles" id="hmLearnTiles"></div>
       </div>
     </div>
     <!-- ARCADE (user request, 2026-11-20): apart from the career. Nine holes on any of the three courses with the same
@@ -7055,9 +7577,17 @@
       <div id="scBtns"><button id="scNext">Next hole (N)</button><button id="scClose">Close (K)</button></div>
     </div>
     <div id="tipsCard" class="card">
-      <div class="card-h"><span>💡 Caddie tips</span><span style="display:flex;align-items:center;gap:8px"><span class="tag" id="tipsPage"></span><button id="tipsClose" title="Close (Esc)">✕</button></span></div>
+      <div class="card-h"><span>💡 Caddie tips</span><span style="display:flex;align-items:center;gap:8px"><button id="tipsTut" title="The how-to-play lesson for this, with pictures">📖 How-to slides</button><span class="tag" id="tipsPage"></span><button id="tipsClose" title="Close (Esc)">✕</button></span></div>
       <div id="tipsBody"></div>
       <div id="tipsNav"><button id="tipsBack">← Back</button><div id="tipsDots"></div><button id="tipsNext">Next →</button></div>
+    </div>
+    <!-- HOW TO PLAY: the lessons' viewer (TUTORIAL, openTut): a chooser of the three lessons, then one lesson's slides -->
+    <div id="tut" role="dialog" aria-modal="true" aria-labelledby="tutTitle">
+      <div class="tut-box">
+        <div class="tut-head"><button id="tutAll" title="All three lessons (Home)">‹ All lessons</button><b id="tutTitle">How to play</b><span class="tag" id="tutPage"></span><button id="tutClose" title="Close (Esc)">✕</button></div>
+        <div id="tutBody"></div>
+        <div class="tut-nav" id="tutNav"><button id="tutBack">← Back</button><div id="tutDots"></div><span class="tut-end"><button id="tutTry" class="go"></button><button id="tutNext" class="go">Next →</button></span></div>
+      </div>
     </div>
     <div id="dropCard" class="card">
       <div class="card-h"><span>Take a drop · one penalty stroke</span><span class="tag" id="dropTag"></span></div>
@@ -11798,6 +12328,163 @@
         setText('tipsNext', tipsPage >= tipsCount - 1 ? 'Done ✓' : 'Next →');
       }
 
+      // =====================================================================================================
+      //  HOW TO PLAY (TUTORIAL_PLAN.md; user request, 2026-11-21). Three lessons, the full swing, chipping and putting, each
+      //  a few slides: a picture from the game (or two: what you did → what the ball did), a title and up to three lines.
+      //  The pictures are tutorial/<img>.webp, made by tools/tutorial/capture.js from the game itself (re-run it when the
+      //  look of the swing guide, the greens or the cards changes). marks: numbered discs on a picture, [x %, y %, n, which
+      //  picture]; the numbers match the lines. Every line must match what the game does today (the user: the wording
+      //  changes, never the game). Opened from the home screen (front and centre) and the caddie tips' 📖 button.
+      // =====================================================================================================
+      const tutK = (k) => `<kbd>${k}</kbd>`;
+      const TUTORIAL = {
+        swing: {
+          name: 'The full swing', sub: 'Driver, woods and irons: distance, a draw or a fade by hand, spin', icon: '⛳', go: 'range', tryName: 'Try it on the range',
+          slides: [
+            { img: 'swing-01', marks: [[52.6, 49, 1], [74.6, 10.5, 2], [23.8, 95.5, 3]], t: 'Look, aim, pick a club', pts: [`${tutK('A')} ${tutK('D')} turn your aim.`, `The bag shows how far each club carries and rolls: ${tutK('[')} ${tutK(']')} or the wheel picks one.`, `${tutK('Space')} steps in to the ball.`] },
+            { img: 'swing-02', marks: [[82, 56, 1], [10, 81, 2]], t: 'The swing guide', pts: ['The ring is your club, the white ball is the ball.', 'The marks along the line are how far back you swing: <b>100%</b> is a full swing.', `Hold ${tutK('Left-click')} to start a swing.`] },
+            { img: 'swing-03', marks: [[20.5, 56, 1], [36.5, 80, 2]], t: 'Back for distance', pts: ['Pull the ring <b>left</b>, along the line.', 'The further back, the further the ball goes.', 'Past 100% adds a little distance, and a little risk.'] },
+            { img: 'swing-04', t: 'Through the ball', pts: ['Swing the ring back <b>through the ball</b>.', 'Keep it moving: slowing down into the ball comes up short and crooked.', 'Missing the ball with the ring costs the most.'] },
+            { img: ['swing-05a', 'swing-05b'], marks: [[50.5, 66.4, 2, 1]], cap: ['Your swing', 'The result'], t: 'A draw, by hand', pts: ['Swing <b>down and right</b> through the ball (in-to-out).', 'It curves <b>right to left</b>, and runs out further when it lands.', 'The steeper the line, the bigger the curve.'] },
+            { img: ['swing-06a', 'swing-06b'], marks: [[49.6, 66.4, 2, 1]], cap: ['Your swing', 'The result'], t: 'A fade, by hand', pts: ['Swing <b>up and right</b> through the ball (out-to-in).', 'It curves <b>left to right</b>, and lands softer.', 'Straight along the line is your set-up shape.'] },
+            { img: 'swing-07', marks: [[56, 37.5, 1], [56, 68.6, 2], [78.6, 83.5, 3]], t: 'What your swing did', pts: ['<b>Backswing</b>: how far back. <b>Downswing</b>: how briskly you came through.', '<b>Swing path</b> and <b>face</b>: why it curved.', '<b>Strike</b>: where on the face you hit it. Off the sweet spot loses distance.'] },
+            { img: 'swing-08', marks: [[75.8, 52, 1], [75.8, 69, 2]], t: 'Set it up before you swing', pts: [`${tutK('F')} sets a draw or a fade, ${tutK('W')} ${tutK('S')} lower or higher, ${tutK('B')} more or less spin.`, 'Each one adds to the <b>difficulty</b>.', 'Stack several and even good swings start to miss.'] },
+            { img: ['swing-09a', 'swing-09b'], marks: [[91.1, 49.9, 1, 0], [27.9, 81.4, 2, 1], [13.7, 89.3, 2, 1]], cap: ['The set-up', 'The result'], t: 'Spin it back: a high pitch', pts: [`A lofted wedge, <b>High</b> (${tutK('S')}) and <b>More spin</b> (${tutK('B')}), from 50 to 70 yards.`, 'It lands steep, bites, and rolls <b>back</b> toward you: the total ends up shorter than the carry.', 'So land it past the pin.'] },
+            { img: 'swing-10', marks: [[75.8, 20.4, 1], [90.5, 26, 2]], t: 'Where the ball lies', pts: ['From rough or sand, take more loft: the bag marks risky clubs ⚠ and wrong ones ✕.', 'The bag shows a <b>range</b> of distances from a bad lie, not one number.', `More in 💡 <b>Caddie tips</b> (${tutK('I')}) on any hole: wind, lies, nerves, hazards.`] },
+          ],
+        },
+        chip: {
+          name: 'Chipping', sub: 'Round the green: pick a landing spot, read the slope, spin it', icon: '🪃', go: 'chip', tryName: 'Try it on the chipping green',
+          slides: [
+            { img: 'chip-01', t: 'Near the green, you chip', pts: ['Close to the green the game switches to chipping, and picks a club for you.', 'The cyan ring is where the ball will <b>land</b>, not where it stops.'] },
+            { img: 'chip-02', marks: [[33.4, 89.6, 1], [52.5, 48, 2], [40.3, 89.6, 3]], t: 'Aim at the landing spot, not the pin', pts: [`${tutK('W')} ${tutK('A')} ${tutK('S')} ${tutK('D')} move the ring.`, 'The dashed amber line is how far it rolls on a <b>flat</b> green.', 'The read at the bottom: how far to carry it, how far back to swing, and the roll.'] },
+            { img: 'chip-03', t: 'Read the slope from above', pts: [`${tutK('V')} looks straight down.`, 'The white marbles roll downhill: faster where it\'s steeper.', 'Click or drag to place the ring.'] },
+            { img: 'chip-04', t: 'Let the slope do its part', pts: ['Uphill it stops sooner, downhill it runs on.', 'A side slope carries it toward the low side: land it on the high side.'] },
+            { img: 'chip-05', marks: [[54.3, 55.5, 1], [48.3, 50, 2]], t: 'The chip swing', pts: [`${tutK('Space')} steps in. Pull the ring back into the amber <b>LANDING</b> band.`, 'That length carries it to your ring.', 'Swing straight through the ball.'] },
+            { svg: () => tipsChipSvg('stock'), t: 'Four ways to chip it', pts: [`${tutK('1')} <b>Low runner</b>: lands early, runs like a putt.`, `${tutK('2')} <b>Stock</b> and ${tutK('3')} <b>High soft</b>: higher, and less roll each time.`, `${tutK('4')} <b>Flop</b>: straight up, stops dead. A 50°+ wedge, and the hardest to hit.`] },
+            { img: ['chip-07a', 'chip-07b'], marks: [[55.6, 64.3, 2, 1]], cap: ['Normal spin', 'More spin'], t: 'Make it check', pts: [`${tutK('B')} adds spin: the ball bites and stops sooner.`, '<b>High soft</b> with more spin stops almost where it lands.', 'Wedges only, and not from rough or sand.'] },
+            { img: ['chip-08a', 'chip-08b'], marks: [[42.2, 5.2, 1, 1], [54.9, 41.7, 2, 1]], cap: ['Your swing', 'The result'], t: 'Side spin, by hand', pts: ['Swing <b>down and right</b> (in-to-out): it kicks <b>left</b> when it lands, and runs on.', 'Swing <b>up and right</b> (out-to-in): it kicks <b>right</b>, and checks.', 'A spinning wedge does it most, a low runner hardly at all.'] },
+            { img: 'chip-09', t: 'From rough and sand', pts: ['It comes out with less spin and runs further: land it shorter.', 'In a greenside bunker, under the face, go <b>High</b> or <b>Flop</b>.'] },
+          ],
+        },
+        putt: {
+          name: 'Putting', sub: 'Read the green, set the pace, hole it', icon: '🕳️', go: 'putt', tryName: 'Try it on the putting green',
+          slides: [
+            { img: 'putt-01', marks: [[53.2, 50.6, 1], [33.4, 89.6, 2], [53.8, 6, 3]], t: 'The marker is your putt', pts: ['The cyan marker is where a <b>flat</b> putt would stop. It starts on the cup.', `${tutK('W')} ${tutK('A')} ${tutK('S')} ${tutK('D')} move it.`, 'The read at the top tells you how hard to hit it.'] },
+            { img: 'putt-02', t: 'Read the slope from above', pts: [`${tutK('V')} looks straight down.`, 'The white marbles roll downhill; the lines mark the height.', 'Click or drag the marker.'] },
+            { img: 'putt-03', marks: [[53.6, 15.5, 1]], t: 'Pace: uphill and downhill', pts: ['Uphill: put the marker <b>past</b> the cup.', 'Downhill: put it <b>short</b> of the cup.', 'Faster greens roll further, and break more.'] },
+            { img: 'putt-04', marks: [[43.2, 24, 2]], t: 'Line: aim up the slope', pts: ['The ball falls toward the low side.', 'Put the marker on the <b>high</b> side, and let it fall in.'] },
+            { img: 'putt-05', marks: [[42.6, 37, 1], [70.5, 41, 3]], t: 'The stroke', pts: ['Pull back into the amber <b>MARKER</b> band: that sets the pace.', 'Stroke through at the <b>same rhythm</b> you took it back.', 'Keep the putter between the <b>GATE</b> rails.'] },
+            { img: 'putt-06', marks: [[42, 22.5, 1], [42, 29.2, 2], [41.6, 51, 3]], t: 'What the stroke did', pts: ['<b>Tempo</b> 1.00× is even. Faster jabs it long, slower leaves it short.', '<b>Gate</b> over 100% clipped a rail: it twists off line.', '<b>Roll</b>: PURE, or what went wrong.'] },
+            { img: 'putt-07', marks: [[75.9, 16.8, 1], [31.6, 5, 2]], t: 'Putters, and the long ones', pts: [`${tutK('[')} ${tutK(']')} switches putter: a blade forgives your rhythm, a mallet your line.`, `${tutK('1')} ${tutK('2')} ${tutK('3')} set how far a full stroke rolls. <b>Auto</b> picks for you.`] },
+          ],
+        },
+      };
+      const TUT_ORDER = ['swing', 'chip', 'putt'];
+      const tut = { open: false, cat: null, page: 0, home: false };
+      const tutImgSrc = (id) => `tutorial/${id}.webp`;
+      const tutDone = () => { try { return JSON.parse(localStorage.getItem('golfTutDone') || '[]'); } catch { return []; } };
+      function tutMarkDone(k) { const d = tutDone(); if (!d.includes(k)) { d.push(k); try { localStorage.setItem('golfTutDone', JSON.stringify(d)); } catch { /* fine */ } } }
+      const tutSeen = () => { try { return localStorage.getItem('golfTutSeen') === '1'; } catch { return true; } };
+      // the first picture of a lesson, for its tile (a diagram slide has none)
+      const tutCover = (k) => { const s = TUTORIAL[k].slides.find((x) => x.img); return s ? tutImgSrc([].concat(s.img)[0]) : ''; };
+      // the home screen's block: one tile per lesson, a NEW tag until one has been opened
+      function renderLearn() {
+        const el = $('hmLearnTiles');
+        if (!el) return;
+        const done = tutDone();
+        el.innerHTML = TUT_ORDER.map((k) => {
+          const L = TUTORIAL[k];
+          return `<button data-tut="${k}"><span class="hl-pic" style="background-image:url('${tutCover(k)}')">${L.icon}</span><b>${L.name}</b><span class="hl-sub">${L.sub}</span>`
+            + `<span class="hl-n${done.includes(k) ? ' done' : ''}">${done.includes(k) ? '✓ done · ' : ''}${L.slides.length} slides</span></button>`;
+        }).join('');
+        $('hmLearn').classList.toggle('new', !tutSeen());
+      }
+      // cat: a lesson to open on, or null for the chooser; fromHome: "Try it" can take you to that practice area
+      function openTut(cat = null, fromHome = homeOpen) {
+        if (swing.active) return;
+        if (tipsOn) setTips(false);
+        try { localStorage.setItem('golfTutSeen', '1'); } catch { /* fine */ }
+        Object.assign(tut, { open: true, cat: TUTORIAL[cat] ? cat : null, page: 0, home: !!fromHome });
+        document.body.classList.add('tut-on');
+        renderTut(); renderLearn();
+      }
+      function closeTut() {
+        tut.open = false; document.body.classList.remove('tut-on');
+        if (homeOpen) renderLearn();
+        if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+      }
+      function tutGo(d) {
+        if (!tut.cat) return;
+        const n = TUTORIAL[tut.cat].slides.length;
+        if (d > 0 && tut.page >= n - 1) { tutMarkDone(tut.cat); tut.cat = null; tut.page = 0; return renderTut(); }    // Done: back to the three
+        tut.page = clamp(tut.page + d, 0, n - 1);
+        renderTut();
+      }
+      // a picture (or a "not taken yet" panel if the file is missing), with its numbered marks
+      function tutFigHTML(id, marks, cap, alt) {
+        const m = marks.map(([x, y, n]) => `<em class="tut-mark" style="left:${x}%;top:${y}%">${n}</em>`).join('');
+        return `<figure class="tut-fig"><div class="tut-img"><img src="${tutImgSrc(id)}" alt="${alt}" width="1280" height="720" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">`
+          + `<div class="tut-ph" style="display:none">Picture to come: ${alt}</div>${m}</div>${cap ? `<figcaption>${cap}</figcaption>` : ''}</figure>`;
+      }
+      function renderTut() {
+        const box = $('tut'), k = tut.cat;
+        box.classList.toggle('cats', !k);
+        if (!k) box.classList.remove('pair');
+        if (!k) {                                            // the chooser
+          const done = tutDone();
+          setText('tutTitle', '📖 How to play');
+          $('tutBody').innerHTML = '<p class="tut-intro">Three short lessons, with pictures from the game. Pick one: <b>1</b>, <b>2</b> or <b>3</b>, or click it. You can come back to them any time from the home screen, or from 💡 Caddie tips.</p>'
+            + `<div class="tut-cats">${TUT_ORDER.map((c, i) => {
+              const L = TUTORIAL[c];
+              return `<button data-tut="${c}"><span class="tc-pic" style="background-image:url('${tutCover(c)}')">${L.icon}</span><b>${i + 1} · ${L.name}</b><span class="tc-sub">${L.sub}</span>`
+                + `<span class="tc-n${done.includes(c) ? ' done' : ''}">${done.includes(c) ? '✓ done · ' : ''}${L.slides.length} slides</span></button>`;
+            }).join('')}</div>`;
+          box.classList.remove('last');
+          return;
+        }
+        const L = TUTORIAL[k], n = L.slides.length, s = L.slides[tut.page], last = tut.page >= n - 1;
+        setText('tutTitle', `${L.icon} ${L.name}`);
+        setText('tutPage', `${tut.page + 1} / ${n}`);
+        const imgs = s.img ? [].concat(s.img) : [], marks = s.marks || [];
+        const pics = s.svg ? `<div class="tut-pics n1"><figure class="tut-fig"><div class="tut-img svg">${s.svg()}</div></figure></div>`
+          : `<div class="tut-pics n${imgs.length}">${imgs.map((id, i) => (i ? '<span class="tut-arrow" aria-hidden="true">→</span>' : '')
+            + tutFigHTML(id, marks.filter((m) => (m[3] || 0) === i), s.cap && s.cap[i], `${s.t}${s.cap ? ` (${s.cap[i].toLowerCase()})` : ''}`)).join('')}</div>`;
+        $('tutBody').innerHTML = `${pics}<h3 class="tut-t">${s.t}</h3><ol class="tut-pts">${s.pts.map((p, i) => `<li><em class="tut-n">${i + 1}</em><span>${p}</span></li>`).join('')}</ol>`;
+        $('tutDots').innerHTML = L.slides.map((_, i) => `<span class="${i === tut.page ? 'on' : ''}"></span>`).join('');
+        $('tutBack').disabled = tut.page === 0;
+        setText('tutNext', last ? 'Done ✓' : 'Next →');
+        setText('tutTry', `${L.tryName} →`);
+        box.classList.toggle('last', last); box.classList.toggle('home', tut.home); box.classList.toggle('pair', imgs.length > 1);
+        // the next slide's pictures, ready before they're asked for
+        const nx = L.slides[tut.page + 1];
+        if (nx && nx.img) for (const id of [].concat(nx.img)) { const im = new Image(); im.src = tutImgSrc(id); }
+      }
+      // "Try it": out of the tutorial and the home screen, into that practice area (the arcade's, as the home tiles)
+      function tutTry() {
+        const L = TUTORIAL[tut.cat];
+        if (!L) return;
+        tutMarkDone(tut.cat);
+        closeTut();
+        if (!homeOpen) return;
+        if (!homeSigned()) return setText('hmErr', 'Pick who\'s playing first, or play as a guest: then try it');
+        homeGo(L.go);
+      }
+      function tutKey(e) {
+        const c = e.code;
+        if (['ArrowRight', 'ArrowLeft', 'Enter', 'NumpadEnter', 'Space', 'Backspace', 'Escape', 'Home', 'Digit1', 'Digit2', 'Digit3', 'Numpad1', 'Numpad2', 'Numpad3', 'KeyI'].includes(c)) e.preventDefault();
+        if (e.repeat) return;
+        if (c === 'Escape') return closeTut();
+        if (!tut.cat) {
+          const m = /^(Digit|Numpad)([1-3])$/.exec(c);
+          if (m) openTut(TUT_ORDER[+m[2] - 1], tut.home);
+          return;
+        }
+        if (c === 'Home') { tut.cat = null; return renderTut(); }
+        if (c === 'ArrowRight' || c === 'Enter' || c === 'NumpadEnter' || c === 'Space') tutGo(1);
+        else if (c === 'ArrowLeft' || c === 'Backspace') tutGo(-1);
+      }
+
       // Move the ball to where a stroke finished. Out of bounds is stroke and distance: one penalty stroke, and the ball
       // goes back to where it was hit from (re-teed if it was the tee shot).
       function landBall(nb) {
@@ -13720,7 +14407,7 @@
         homeOpen = true; document.body.classList.add('home-on');
         $('home').classList.remove('adding');
         setText('hmErr', '');
-        renderHome();
+        renderHome(); renderLearn();
         lbFetch().then(renderHomeBoard); renderHomeBoard();
         if (!homeSigned()) loadRoster();
         else if (session) { syncLoad(); loadFriends(true); }
@@ -13761,6 +14448,7 @@
           : pc && pc.holes.length ? `Resume your round vs ${pc.vsName} (thru ${pc.holes.filter(Boolean).length})`
           : frNews ? `${frNews} · in the clubhouse`
           : c ? `${CAREER.tiers[c.tier || 1]} circuit · hustle the locals, bet your friends, buy clubs, take lessons` : 'Start with $150 and a tired bag. Hustle your way up.'}</i>${badge ? `<em class="hm-badge">${badge}</em>` : ''}`;
+        renderCareerStats();
         $('hmDev').checked = devOn();
         setText('hmSync', !session ? 'Guest · saved on this PC only'
           : sync.state === 'offline' ? '⚠ not synced (offline)' : sync.state === 'signedout' ? '⚠ Your sign-in has expired' : 'Saved to your profile');
@@ -13843,20 +14531,34 @@
       const arcadeYards = (id) => (arcYds[id] ??= Math.round(arcHoles(id).reduce((s, hd) => s + new THREE.CatmullRomCurve3(hd.path.map(([x, z]) => new THREE.Vector3(x * YD, 0, z * YD)), false, 'centripetal').getLength(), 0) / YD));
       // the arcade's golfer (user request, 2026-11-21): a figure at address and the stats everyone plays, each out of 10, with
       // what it does, so a new player sees what Power, Dexterity and the rest are (ARCADE_STATS; the words: CAREER_STATS)
-      const ARC_GOLFER_SVG = `<svg viewBox="0 0 62 104" aria-hidden="true"><ellipse cx="34" cy="100" rx="24" ry="3" fill="rgba(0,0,0,.35)"/>`
+      // (the same golfer on the career side, in your own stats: user request, 2026-11-21; shirt = its colour)
+      const golferSvg = (shirt) => `<svg viewBox="0 0 62 104" aria-hidden="true"><ellipse cx="34" cy="100" rx="24" ry="3" fill="rgba(0,0,0,.35)"/>`
         + `<g fill="none" stroke-linecap="round" stroke-linejoin="round">`
         + `<path d="M24 52 L29 73 L24 97 M27 52 L35 72 L33 97" stroke="#2f4a6b" stroke-width="6"/>`                 // legs, knees flexed
-        + `<path d="M33 27 L25 53" stroke="#ffe066" stroke-width="9"/>`                                             // shirt, bent over the ball
+        + `<path d="M33 27 L25 53" stroke="${shirt}" stroke-width="9"/>`                                            // shirt, bent over the ball
         + `<path d="M32 29 L39 53 M34 28 L40 53" stroke="#e8c9a0" stroke-width="3.6"/>`                            // arms hanging
         + `<path d="M40 54 L53 95" stroke="#c9d4e0" stroke-width="1.8"/><path d="M51 95 L57 96" stroke="#c9d4e0" stroke-width="3.5"/>`   // the club
         + `<path d="M20 97 L27 97 M30 97 L37 97" stroke="#14202e" stroke-width="3.5"/></g>`                         // shoes
         + `<circle cx="36" cy="18" r="7" fill="#e8c9a0"/><path d="M28.5 16 Q36 7 43.5 16 Z M41 15 L48 17" fill="#ffffff" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>`   // head and cap
         + `<circle cx="59" cy="95" r="2.6" fill="#fff"/></svg>`;
+      // one stat as a row: its name, ten pips (lit to v, then green to e: a caddie's help), the number, what it does
+      const statRowHTML = (n, what, v, e = v) => `<div class="hm-st"><span>${n}</span><div class="ch-pips">${Array.from({ length: COACH.maxStat }, (_, i) => `<i class="${i < v ? 'on' : i < e ? 'cad' : ''}"></i>`).join('')}</div>`
+        + `<b>${e}<small>/${COACH.maxStat}</small></b><p>${what[0].toUpperCase() + what.slice(1)}</p></div>`;
       function renderArcStats() {
-        $('hmArcStats').innerHTML = `${ARC_GOLFER_SVG}<div><div class="hm-st-h">Everyone's golfer · out of 10</div>`
-          + CAREER_STATS.map(([k, n, what]) => `<div class="hm-st"><span>${n}</span><div class="ch-pips">${Array.from({ length: COACH.maxStat }, (_, i) => `<i class="${i < ARCADE_STATS[k] ? 'on' : ''}"></i>`).join('')}</div>`
-            + `<b>${ARCADE_STATS[k]}<small>/${COACH.maxStat}</small></b><p>${what[0].toUpperCase() + what.slice(1)}</p></div>`).join('')
-          + `<div class="hm-st-h" style="margin:6px 0 0;text-transform:none;letter-spacing:0">A new career starts at ${CAREER.stats.power} and builds them up with lessons</div></div>`;
+        $('hmArcStats').innerHTML = `${golferSvg('#ffe066')}<div><div class="hm-st-h">Everyone's golfer · out of 10</div>`
+          + CAREER_STATS.map(([k, n, what]) => statRowHTML(n, what, ARCADE_STATS[k])).join('')
+          + `<div class="hm-st-h hm-st-foot">A new career starts at ${CAREER.stats.power} and builds them up with lessons</div></div>`;
+      }
+      // the career side's golfer (user request, 2026-11-21): your own stats, a hired caddie's help in green; no career yet,
+      // where one starts
+      function renderCareerStats() {
+        const c = career, el = $('hmCarStats');
+        if (!el) return;
+        const st = c && c.stats ? c.stats : CAREER.stats, cd = c && c.caddie ? CADDIES.find((x) => x.id === c.caddie) || null : null, b = caddieBonus(cd);
+        const rows = CAREER_STATS.map(([k, n, what]) => { const v = Math.min(COACH.maxStat, st[k] || 1); return statRowHTML(n, what, v, Math.min(COACH.maxStat, v + (b[k] || 0))); }).join('');
+        const foot = !c ? `Every career starts at ${CAREER.stats.power} in each: lessons from the coach build them up`
+          : `${cd ? `<span class="cadk">■</span> ${cd.short}'s help · ` : ''}Lessons from the coach (in the clubhouse) build them up · the arcade plays everyone at ${ARCADE_STATS.power}`;
+        el.innerHTML = `${golferSvg('#35e0ff')}<div><div class="hm-st-h">${c ? 'Your golfer' : 'A new golfer'} · out of 10</div>${rows}<div class="hm-st-h hm-st-foot">${foot}</div></div>`;
       }
       function renderHomeBoard() {
         renderArcStats();
@@ -17316,6 +18018,7 @@
         // the developer sliders wouldn't move); every other key still drives the game
         if (e.target instanceof HTMLInputElement && (e.target.type === 'range' || e.target.type === 'number')
           && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.code)) return;
+        if (tut.open) return tutKey(e);                  // the how-to-play lessons, over everything (the home screen too)
         if (homeOpen) return homeKey(e);                 // the home screen (typing a password, Esc back to the game)
         if (beatOpen) return beatKey(e);                 // the loan shark's beating (Enter to get up)
         if (outOpen) return outcomeKey(e);               // the payoff screen at the end of a match / invitational
@@ -17663,6 +18366,16 @@
         $('ttGo').addEventListener('click', (e) => { e.currentTarget.blur(); closeToss(); });
         $('dropOpts').addEventListener('click', (e) => { const o = e.target.closest('.drop-opt'); if (o) takeDrop(+o.dataset.i); });
         $('btnTips').addEventListener('click', (e) => { setTips(!tipsOn); e.currentTarget.blur(); });
+        // the how-to-play lessons: the home screen's tiles, the caddie tips' button, the viewer's own buttons
+        $('hmLearnTiles').addEventListener('click', (e) => { const b = e.target.closest('[data-tut]'); if (b) openTut(b.dataset.tut, true); });
+        $('tipsTut').addEventListener('click', () => { const k = tipsKind(); openTut(k === 'putt' ? 'putt' : k === 'chip' ? 'chip' : 'swing', false); });
+        $('tutBody').addEventListener('click', (e) => { const b = e.target.closest('[data-tut]'); if (b) openTut(b.dataset.tut, tut.home); });
+        $('tutClose').addEventListener('click', closeTut);
+        $('tutAll').addEventListener('click', () => { tut.cat = null; renderTut(); });
+        $('tutBack').addEventListener('click', () => tutGo(-1));
+        $('tutNext').addEventListener('click', () => tutGo(1));
+        $('tutTry').addEventListener('click', tutTry);
+        $('tut').addEventListener('mousedown', (e) => { if (e.target === e.currentTarget) closeTut(); });     // a click outside the box
         $('tipsNext').addEventListener('click', (e) => { tipsGo(1); e.currentTarget.blur(); });
         $('tipsBack').addEventListener('click', (e) => { tipsGo(-1); e.currentTarget.blur(); });
         $('tipsClose').addEventListener('click', (e) => { setTips(false); e.currentTarget.blur(); });
@@ -18603,6 +19316,8 @@
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, tiltFromLie, autoSelectPuttScale, putterBars, createCareer, openShop, openBagRoom, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },
         npc, npcPlan, npcHoleScore, npcHurry, condAvg, NPCS, npcRating, npcPresses, closeToss, settleMatch, creditLeft, tourWait, TOURS, openTours, get session() { return session; }, sync, syncNow, syncLoad, careerSave, fr, loadFriends, openFriends, openInvForm, openClubhouse, holeStrokes, submitPvp, playFriend, startFriendRound, showSharedCard, closeSharedCard, checkNewResults, h2h, openHome, closeHome, get homeOpen() { return homeOpen; }, devOn, get npcTurn() { return npcTurn; }, get tossOpen() { return tossOpen; },
+        // (tools/tutorial: a world point's spot on the screen, in CSS px, for cropping pictures and placing their marks)
+        toScreen: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (-v.y * 0.5 + 0.5) * innerHeight }; },
         get shot() { return shot; }, get telemetry() { return telemetry; }, get green() { return green; }, get puttRun() { return puttRun; }, get puttTel() { return puttTel; }, get markRead() { return markRead; }, get paceRead() { return markRead; }
       };
 
