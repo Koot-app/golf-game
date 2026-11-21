@@ -5888,9 +5888,11 @@
     }
 
     /* SKILLS CHALLENGE: its tile on the home screen, under the practice buttons */
-    .hm-skills {
+    /* (#home: "#home button" sets every home button's margin to 0, and an id outranks a class, so the gap never showed.
+       User request, 2026-11-21: it sat right against the practice buttons) */
+    #home .hm-skills {
       width: 100%;
-      margin-top: 8px;
+      margin-top: 18px;
       display: flex;
       align-items: center;
       gap: 10px;
