@@ -4,9 +4,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vector Kinematics &amp; Telemetry Lab</title>
+  <title>Back Nine Tour</title>
   <!-- what the site is, stated plainly (user request, 2026-11-21: no real money is involved anywhere in it) -->
-  <meta name="description" content="Back Nine Hustle: a golf simulation game played with the mouse, with realistic ball flight, chipping and putting. All money in it is pretend, in-game cash: nothing is bought, bet or paid out for real, and it has no real-world value.">
+  <meta name="description" content="Back Nine Tour: a golf simulation game played with the mouse, with realistic ball flight, chipping and putting. All money in it is pretend, in-game cash: nothing is bought, sold or paid out for real, and it has no real-world value.">
   <meta name="rating" content="general">
   <!--
   PHASE 1 PROTOTYPE — driving range + mouse-vector swing.
@@ -43,7 +43,7 @@
       through the ball is in-to-out (draw), UP-and-right is out-to-in (fade). The spec had up = in-to-out, which
       contradicted the on-screen golfer once the swing was drawn over the real ball.
 
-  PHASE 2 — PUTTING (press G). Built from the putting spec, with these deviations (search "PUTTING" in the code):
+  PHASE 2 — PUTTING (double G). Built from the putting spec, with these deviations (search "PUTTING" in the code):
    P1. The "Putter Gate oscilloscope" is drawn on the turf around the real ball, not in the corner card, because
        the corner chart was replaced by the on-screen swing ring in Phase 1. The gate is a short tunnel just
        before the ball; judging the whole stroke against it made long lag strokes clip the rails every time.
@@ -2456,7 +2456,7 @@
       max-width: 230px;
     }
 
-    /* the press offer on a match's scorecard (user request: easy to miss, so loud and explained) */
+    /* the double offer on a match's scorecard (user request: easy to miss, so loud and explained) */
     #scPressBox {
       display: none;
       margin: 12px 16px 0;
@@ -2606,7 +2606,7 @@
       color: var(--dim);
     }
 
-    /* the stake on credit */
+    /* the entry on credit */
     .cm-red {
       color: #ff5d6c;
       font-weight: 700;
@@ -2618,7 +2618,7 @@
       color: var(--dim);
     }
 
-    /* the loan-shark beating (chunk 4) */
+    /* the debt collector's visit (chunk 4) */
     #beating {
       position: fixed;
       inset: 0;
@@ -3592,7 +3592,7 @@
     #scorecard #scTable .rcv { color: #a8801f; }
     #scorecard #scTable .nocard { color: #8a7a58; }
 
-    /* the bets: the running status pencilled in green (up) or red (down) */
+    /* the matches: the running status pencilled in green (up) or red (down) */
     #scorecard #scTable tr.mrow td {
       font-size: 12px;
       background: rgba(201, 162, 83, .07);
@@ -3624,7 +3624,7 @@
       line-height: 1.2;
     }
 
-    /* the bets strip under the card */
+    /* the matches strip under the card */
     #scBets {
       margin: 12px 18px 0;
       padding: 10px 12px 12px;
@@ -3718,7 +3718,7 @@
       color: #6a5a38;
     }
 
-    /* the press offer and the buttons, on paper */
+    /* the double offer and the buttons, on paper */
     #scorecard #scPressBox {
       margin: 12px 18px 0;
       background: linear-gradient(180deg, #1f2a1f, #16201a);
@@ -4566,7 +4566,7 @@
       line-height: 1;
     }
 
-    /* a hustler match: his shots on this hole and where his ball is, in his ball's orange (user request) */
+    /* a rival match: his shots on this hole and where his ball is, in his ball's orange (user request) */
     #holeBadge .hb-npc {
       display: none;
       min-width: 118px;
@@ -7120,7 +7120,7 @@
       display: block;
     }
 
-    /* the hustlers on the first tee (click to pick), and their portraits on the cards */
+    /* the rivals on the first tee (click to pick), and their portraits on the cards */
     #teeSpots {
       display: none;
     }
@@ -7268,9 +7268,9 @@
     <div class="hm-side">
       <div class="hm-brand">
         <div class="hm-logo">⛳</div>
-        <div><h1 id="hmTitle"></h1><div class="hm-sub">A golf RPG · hustle the locals, beat your friends</div>
+        <div><h1 id="hmTitle"></h1><div class="hm-sub">A golf RPG · take on the locals, beat your friends</div>
           <!-- (user request, 2026-11-21: say plainly that the money is not real) -->
-          <div class="hm-play">A golf simulation: all cash, stakes and prices are pretend, in-game money. Nothing is bought, bet or paid out for real.</div></div>
+          <div class="hm-play">A golf simulation: all cash, entry fees and prices are pretend, in-game money. Nothing is bought, sold or paid out for real.</div></div>
       </div>
       <div id="hmWho">
         <div class="hm-h">Who's playing?</div>
@@ -7292,7 +7292,7 @@
         <div class="hm-arc-golfer hm-car" id="hmCarStats"></div>
         <div class="hm-tiles">
           <div class="hm-cat">Career · your own golfer, stats, clubs, money and friends</div>
-          <button data-h="career" class="hm-big" id="hmCareer"><b>🏌️ Career</b><i>Hustle the locals, buy clubs, take lessons, move up the circuits</i></button>
+          <button data-h="career" class="hm-big" id="hmCareer"><b>🏌️ Career</b><i>Take on the locals, buy clubs, take lessons, move up the circuits</i></button>
         </div>
         <div class="hm-foot"><button id="hmReauth" class="go" style="display:none">Sign in again</button><button id="hmSwitch">Switch player</button><label class="hm-dev" id="hmDevBox"><input type="checkbox" id="hmDev"> 🛠 Developer tools</label><span id="hmSync"></span></div>
       </div>
@@ -7376,7 +7376,7 @@
           <button data-area="hole" title="Play a hole (H)"><i>⛳</i>Hole</button>
         </div>
         <label class="row wide hole-pick round-hide"><span>Hole</span><select id="inHole"></select></label>
-        <button id="btnCareer" class="pn-career round-hide" title="Career mode: hustle, upgrade, move up (J)">🏌️ Start a career</button>
+        <button id="btnCareer" class="pn-career round-hide" title="Career mode: compete, upgrade, move up (J)">🏌️ Start a career</button>
         <div class="btn2 only-round" style="grid-template-columns: 1fr auto; margin-bottom: 6px">
           <button id="btnRound" style="margin: 0">Arcade round · 9 holes</button>
           <button id="btnBoard" style="margin: 0" title="Top 10 test-round scores (L)">🏆 Top 10</button>
@@ -7599,9 +7599,9 @@
       <div class="card-h"><span id="scTitle">Scorecard</span><span class="tag" id="scTag"></span></div>
       <div id="scCourse"></div>
       <div id="scMsg"></div>
-      <!-- a career match: the press offer when you're 2 down (or the news that he pressed), explained. Above the table
+      <!-- a career match: the double offer when you're 2 down (or the news that he doubled), explained. Above the table
            (audit 5.2: below it, it was out of sight on any screen under about 1,000 px tall) -->
-      <div id="scPressBox"><div id="scPressTxt"></div><div class="pr-btns"><button id="scPress">Press (P)</button><span id="scPressAlt"></span></div></div>
+      <div id="scPressBox"><div id="scPressTxt"></div><div class="pr-btns"><button id="scPress">Double the prize (P)</button><span id="scPressAlt"></span></div></div>
       <table id="scTable"></table>
       <div id="scBets"></div>
       <div id="lbEntry">
@@ -7633,7 +7633,7 @@
     <div id="dropCard" class="card">
       <div class="card-h"><span>Take a drop · one penalty stroke</span><span class="tag" id="dropTag"></span></div>
       <div id="dropOpts"></div>
-      <div class="drop-help">Press <b>1</b>–<b id="dropMax">3</b> or click an option · <b>Esc</b> to cancel</div>
+      <div class="drop-help">Double <b>1</b>–<b id="dropMax">3</b> or click an option · <b>Esc</b> to cancel</div>
     </div>
     <div id="roundIntro" class="card">
       <div class="card-h"><span>Test round · course preview</span><span class="tag" id="riTag"></span></div>
@@ -7649,7 +7649,7 @@
       <div class="ch-scene ch-spots" id="chSpots">
         <!-- the trophy room's golf bag: click it for that player's bag in detail -->
         <button id="trBagSpot" title="Look in the bag"><span id="trBagTag">🎒 Your bag</span></button>
-        <!-- the first tee's hustlers: click one to pick him -->
+        <!-- the first tee's rivals: click one to pick him -->
         <div id="teeSpots"></div>
       </div>
       <div class="ch-room"><span id="chRoomName">The Clubhouse</span></div>
@@ -7681,10 +7681,10 @@
         <div class="ch-stats" id="chStats"></div>
         <div class="ch-tiers" id="chTiers"></div>
         <div class="ch-menu">
-          <button data-go="match" id="chMatchBtn"><b>⛳ Play a match</b><i>Hustle a local, or enter an invitational</i></button>
+          <button data-go="match" id="chMatchBtn"><b>⛳ Play a match</b><i>Take on a local, or enter an invitational</i></button>
           <button data-go="shop"><b>🛒 Pro shop</b><i>Clubs, repairs and your bag</i></button>
           <button data-go="coach"><b>🎓 Coach</b><i>Lessons and new shots</i></button>
-          <button data-go="friends" id="chFriendsBtn"><b>🤝 Friends</b><i>Bet a friend on a round</i></button>
+          <button data-go="friends" id="chFriendsBtn"><b>🤝 Friends</b><i>Challenge a friend to a round</i></button>
           <button data-go="range" class="wide"><b>🎯 Practice range</b><i>Hit balls with your own game (Esc)</i></button>
           <button data-go="caddie"><b>🧢 Caddie shack</b><i>Hire a looper</i></button>
           <button data-go="trophy"><b>🏆 Trophy room</b><i>Your collection</i></button>
@@ -7742,53 +7742,53 @@
         <div class="fr-held" id="frHeld"></div>
         <details class="fr-how" id="frHow"><summary>❓ How challenges work</summary>
           <ol>
-            <li><b>It's all in-game cash</b>: stakes and pots are the game's pretend money, never real money.</li>
-            <li><b>Challenge a player</b> below: pick match play, stroke play or skins, the stake and the course. Your stake
+            <li><b>It's all in-game cash</b>: entry fees and prizes are the game's pretend money, never real money.</li>
+            <li><b>Challenge a player</b> below: pick match play, stroke play or skins, the entry and the course. Your entry
               is held from when you send it; you get it back if they decline, you call it off, or nobody answers in 7 days.</li>
-            <li><b>Once accepted</b>, their stake is held too.</li>
+            <li><b>Once accepted</b>, their entry is held too.</li>
             <li><b>You each play the 9 holes on your own PC, whenever you like</b> (within 7 days). You don't play at the same
               time and you don't see each other's shots: the course, wind and greens are the same for both.</li>
-            <li><b>When both cards are in</b>, it settles by itself, handicap strokes included: the winner gets the pot and you
+            <li><b>When both cards are in</b>, it settles by itself, handicap strokes included: the winner gets the prize and you
               both see the shared scorecard.</li>
-            <li><b>Not played in time?</b> Whoever didn't play forfeits; if neither did, both get their stake back.</li>
+            <li><b>Not played in time?</b> Whoever didn't play forfeits; if neither did, both get their entry back.</li>
             <li><b>More than one friend?</b> Host an invitational: invite as many as you like to stroke play or skins, start
-              it once at least one has accepted, and the pot goes to the best net score.</li>
+              it once at least one has accepted, and the prize goes to the best net score.</li>
           </ol>
         </details>
         <div class="fr-new"><button id="frInvBtn" class="go">🏆 Host an invitational · two or more players</button></div>
         <div class="sh-list" id="frList"></div>
         <div class="ch-msg" id="frMsg"></div>
         <div class="ch-btns"><button id="frBack">Back (Esc)</button><button id="frRefresh">Refresh</button><span
-            class="cm-help">You each play the round on your own PC · the bet (in-game cash) settles when both cards are in</span></div>
+            class="cm-help">You each play the round on your own PC · the result (in-game cash) settles when both cards are in</span></div>
       </div>
       <div id="chChal">
         <div class="ch-lead" id="ccTitle">Challenge</div>
         <div class="cc-how"><b>How it works</b> — you don't play at the same time, and you won't see each other's shots:
           <ol>
-            <li><b>Send it.</b> Your stake is held from now (back to you if they decline or you call it off).</li>
-            <li><b>They accept:</b> their stake is held too, until it's settled.</li>
+            <li><b>Send it.</b> Your entry is held from now (back to you if they decline or you call it off).</li>
+            <li><b>They accept:</b> their entry is held too, until it's settled.</li>
             <li><b>Each of you plays the 9 holes on your own PC</b>, whenever you like, within 7 days. Same course, same wind,
               same greens for both. Your friend's card stays hidden until yours is in.</li>
-            <li><b>When both cards are in</b> the bet settles by itself (handicap strokes come off the scores first): the
-              winner gets the pot, and you both see the shared scorecard.</li>
-            <li><b>Not played in time?</b> Whoever didn't play loses by forfeit; if neither of you played, both stakes come back.</li>
+            <li><b>When both cards are in</b> the match settles by itself (handicap strokes come off the scores first): the
+              winner gets the prize, and you both see the shared scorecard.</li>
+            <li><b>Not played in time?</b> Whoever didn't play loses by forfeit; if neither of you played, both entries come back.</li>
           </ol>
         </div>
         <div class="cc-how cc-inv-how"><b>How an invitational works</b> — the same as a challenge, for as many friends as you like:
           <ol>
-            <li><b>Pick your friends and send it.</b> Your stake is held from now.</li>
-            <li><b>Each friend accepts or declines.</b> A friend's stake is held when they accept.</li>
+            <li><b>Pick your friends and send it.</b> Your entry is held from now.</li>
+            <li><b>Each friend accepts or declines.</b> A friend's entry is held when they accept.</li>
             <li><b>You start it</b> once at least one friend is in. Anyone who hasn't accepted by then is left out and pays nothing.</li>
             <li><b>Everyone plays the 9 holes on their own PC</b> within 7 days: same course, wind and greens for all.</li>
-            <li><b>When every card is in</b> it settles. Stroke play: the lowest net total takes the whole pot (a tie splits it).
-              Skins: each hole is worth the stake from everyone, won by the one lowest score; a tie carries.</li>
+            <li><b>When every card is in</b> it settles. Stroke play: the lowest net total takes the whole prize (a tie splits it).
+              Skins: each hole is worth the entry from everyone, won by the one lowest score; a tie carries.</li>
           </ol>
         </div>
         <div class="cm-bet">
           <div class="cm-row" id="ccPickRow"><span>Players</span><div class="cc-pick" id="ccPick"></div></div>
           <div class="cm-row"><span>Format</span><div class="cm-fmt" id="ccFmt"><button data-fmt="match">Match play</button><button data-fmt="stroke">Stroke play</button><button
                 data-fmt="skins">Skins</button></div><i class="cm-fmtnote" id="ccFmtNote"></i></div>
-          <div class="cm-row"><span id="ccStakeL">Stake</span><input type="range" id="ccStake" min="5" max="100" step="5" value="20"><b id="ccStakeV"></b></div>
+          <div class="cm-row"><span id="ccStakeL">Entry</span><input type="range" id="ccStake" min="5" max="100" step="5" value="20"><b id="ccStakeV"></b></div>
           <div class="cm-row"><span>Held</span><b id="ccEscrow" class="cm-note"></b></div>
           <div class="cm-row"><span>Circuit</span><div class="cm-fmt" id="ccTier"></div></div>
           <div class="cm-row"><span>Handicap</span><div class="cm-fmt" id="ccHcp"><button data-h="auto">Auto</button><button data-h="agreed">Agreed</button><button
@@ -7801,25 +7801,25 @@
         <div class="ch-btns"><button id="ccGo" class="go">Send the challenge (Enter)</button><button id="ccBack">Back (Esc)</button></div>
       </div>
       <div id="chTour">
-        <div class="sh-top"><div class="ch-lead">Invitationals</div><button id="toHustle">⛳ Hustle a local instead</button><span class="sh-cash" id="toCash"></span></div>
-        <p class="ch-p">Nine holes of stroke play against all twelve hustlers. A big entry fee, a purse for the top three, and a trophy
+        <div class="sh-top"><div class="ch-lead">Invitationals</div><button id="toHustle">⛳ Take on a local instead</button><span class="sh-cash" id="toCash"></span></div>
+        <p class="ch-p">Nine holes of stroke play against all twelve rivals. A big entry fee, a purse for the top three, and a trophy
           for your trophy room if you win.</p>
         <div class="sh-list" id="toList"></div>
         <div class="ch-msg" id="toMsg"></div>
         <div class="ch-btns"><button id="toBack">Back to the clubhouse (Esc)</button></div>
       </div>
       <div id="chMatch">
-        <div class="sh-top"><div class="ch-lead">Pick a hustler</div><button id="cmTours">🏆 Invitationals</button></div>
+        <div class="sh-top"><div class="ch-lead">Pick a rival</div><button id="cmTours">🏆 Invitationals</button></div>
         <div class="cm-npcs" id="cmNpcs"></div>
         <div class="cm-bet">
           <div class="cm-row"><span>Format</span><div class="cm-fmt" id="cmFmt"><button data-fmt="match">Match play</button><button data-fmt="skins">Skins</button></div><i id="cmFmtNote" class="cm-fmtnote"></i></div>
-          <div class="cm-row"><span id="cmStakeL">Stake</span><input type="range" id="cmStake" min="10" max="40" step="5" value="20"><b id="cmStakeV"></b></div>
+          <div class="cm-row"><span id="cmStakeL">Entry</span><input type="range" id="cmStake" min="10" max="40" step="5" value="20"><b id="cmStakeV"></b></div>
           <div class="cm-row"><span>Credit</span><b id="cmCredit" class="cm-note"></b></div>
           <div class="cm-row"><span>Green fee</span><b id="cmFee"></b></div>
         </div>
         <div class="ch-err" id="cmErr"></div>
         <div class="ch-btns"><button id="cmGo" class="go">Tee off (Enter)</button><button id="cmBack">Back (Esc)</button><span
-            class="cm-help">↑ ↓ pick a player · F format · ← → stake</span></div>
+            class="cm-help">↑ ↓ pick a player · F format · ← → entry</span></div>
       </div>
       </div>
     </div>
@@ -10333,7 +10333,7 @@
         // (bunkerFaceDeg, user direction 2026-11-20: on the beginner course a stock shot must always get out of a bunker,
         //  so no face is steeper than this from its foot to its top (makeDips); the later courses have the faces as
         //  built, where under the deep ones it takes a flop)
-        1: { course: 'Rolling Pines Muni', stimpAdd: -1, windMult: 0.7, mirror: false, obMult: 1, treeMult: 1, bunkerDepth: 0.75, bunkerFaceDeg: 22, rep: 0, entry: 0, desc: 'Public tracks, scruffy slow greens, small-time hustlers' },
+        1: { course: 'Rolling Pines Muni', stimpAdd: -1, windMult: 0.7, mirror: false, obMult: 1, treeMult: 1, bunkerDepth: 0.75, bunkerFaceDeg: 22, rep: 0, entry: 0, desc: 'Public tracks, scruffy slow greens, small-time locals' },
         // (holes: a course of its own, user request 2026-11-20: tier 2 plays HOLES_T2, not the muni's holes mirrored)
         // (course: user request 2026-11-20, a name that feels vaguely familiar, like somewhere you've played before; it was
         //  Palm Crest Resort while it played the muni's holes mirrored)
@@ -11428,7 +11428,7 @@
 
       canvas.addEventListener('pointerdown', (e) => {
         canvas.focus();
-        if (npcTurn || npc.starting) { npcHurry(); return; }  // the hustler is playing (or about to tee off): a click hurries him up
+        if (npcTurn || npc.starting) { npcHurry(); return; }  // the rival is playing (or about to tee off): a click hurries him up
         if (e.button === 2) { state.peekMouse = true; return; }
         if (e.button === 0 && onGreenView() && state.view === 'overhead' && !swing.active && !(hp.on && hp.done)) {
           markerDragging = true;
@@ -11630,7 +11630,7 @@
         if (state.mode !== 'range') setMode('range');
         setupNextShot(); camReady = false;
         npcTurn = false;
-        if (round.match) npcHoleStart(); else npc.plan = null;     // a career match: the hustler's hole (and the tee toss)
+        if (round.match) npcHoleStart(); else npc.plan = null;     // a career match: the rival's hole (and the tee toss)
         showHoleTitle();                                     // the hole's title card, for a couple of seconds
       }
       function selectHole(idx) {
@@ -11663,7 +11663,7 @@
       function setupNextShot() {
         shot = null; puttRun = null; telemetry = null;
         saveHoleProgress();                                    // where the ball lies now, and the strokes so far (audit 1.4)
-        if (round.match && !hp.onTee && !hp.done) setTimeout(() => npcTakeTurns(), 0);     // a match: is the hustler away?
+        if (round.match && !hp.onTee && !hp.done) setTimeout(() => npcTakeTurns(), 0);     // a match: is the rival away?
         if (!hp.onTee && hp.mapZoom === 0) hp.mapZoom = 1;    // automatically zoom minimap in on shot 2+
         const surf = surfaceAt(hp.ball.x, hp.ball.z);
         if (surf === 'water') return openWaterDrop();          // (WATER: it's played from a drop, one penalty stroke)
@@ -12554,7 +12554,7 @@
           if (crT) { crT.tilt = state.badStreak; crT.cur = null; }                   // saved with the hole just below (audit 6.2); the hole is done (1.4)
           $('toast').classList.remove('on');
           const pv = round.pvp && pvpAfterHole(hp.holeIdx);                         // a friend round: the card so far (M3)
-          const vs = round.match ? `\n${matchAfterHole(hp.holeIdx)}` : pv ? `\n${pv}` : round.tour ? `\n\n${tourAfterHole(hp.holeIdx)}` : '';   // a career match: the hustler's score, the match; an invitational: the board
+          const vs = round.match ? `\n${matchAfterHole(hp.holeIdx)}` : pv ? `\n${pv}` : round.tour ? `\n\n${tourAfterHole(hp.holeIdx)}` : '';   // a career match: the rival's score, the match; an invitational: the board
           const cr = round.match || round.pvp || round.tour;
           const hc = cr && careerOn ? recordCareerRound(cr) : '';                     // all 9 played: it counts for your handicap (M2)
           archiveRound();                                                              // the card goes in the trophy room's history
@@ -12641,8 +12641,8 @@
       }
       // AUDIT 1.4: the hole in progress is saved with the round (cr.cur), after every stroke, so reopening the game puts you
       // back where your ball lies, with the strokes, putts and penalties you've taken, your tilt, and (in a match) how far
-      // the hustler has got. It used to restart the hole from the tee with nothing on the card: in a money match the
-      // hustler's score is fixed in advance, so a bad hole could be replayed until it beat him. A stroke is saved as it's
+      // the rival has got. It used to restart the hole from the tee with nothing on the card: in a prize match the
+      // rival's score is fixed in advance, so a bad hole could be replayed until it beat him. A stroke is saved as it's
       // hit, before the ball lands: a shot still in the air when the game closed counts, and you play again from where
       // you hit it.
       const liveRound = () => (round.on && careerOn && hp.on && !hp.done ? round.match || round.tour || round.pvp : null);
@@ -12711,12 +12711,12 @@
         const mm = mode === 'match' && career && career.match, nn = mm && npcById(mm.npc);
         $('roundIntro').querySelector('.card-h span').textContent = mm ? `Match vs ${npcName(nn)} · course preview` : `🕹 Arcade · ${arcOf().name} · course preview`;
         $('roundIntro').querySelector('.ri-note').textContent = mm
-          ? `${mm.format === 'skins' ? `Skins at ${money(mm.stake)} a hole against ${nn.first} “${nn.nick}”: win a hole outright to take its skin; a halved hole carries it to the next.` : `Match play for ${money(mm.stake)} against ${nn.first} “${nn.nick}”: win the most holes. Whoever is 2 down may press.`} Your own stats and bag; each hole's wind and greens are fixed. Teeing off pays the ${money(MATCH.fee[mm.tier])} green fee. Leaving before it's decided forfeits the stake.`
+          ? `${mm.format === 'skins' ? `Skins at ${money(mm.stake)} a hole against ${nn.first} “${nn.nick}”: win a hole outright to take its skin; a halved hole carries it to the next.` : `Match play for ${money(mm.stake)} against ${nn.first} “${nn.nick}”: win the most holes. Whoever is 2 down may double the prize.`} Your own stats and bag; each hole's wind and greens are fixed. Teeing off pays the ${money(MATCH.fee[mm.tier])} green fee. Leaving before it's decided forfeits the entry.`
           : `Arcade: everyone plays the same game. The same stats (all 8) and the same clubs whatever your career: a forgiving full bag (${modelName(ARCADE_BAG[0])} driver and woods, ${modelName(ARCADE_BAG[7])} irons, ${modelName(ARCADE_BAG[12])} wedges). Each hole's wind and green speed are fixed. Holes are played in order; your score goes on this course's world Top 10.`;
         const tv = mode === 'tour' && career && career.tour, TV = tv && tourById(tv.id);      // an invitational
         if (tv) {
           $('roundIntro').querySelector('.card-h span').textContent = `🏆 ${TV.name} · course preview`;
-          $('roundIntro').querySelector('.ri-note').textContent = `Stroke play at ${TIERS[tv.tier].course} against all twelve hustlers. Lowest score wins: `
+          $('roundIntro').querySelector('.ri-note').textContent = `Stroke play at ${TIERS[tv.tier].course} against all twelve rivals. Lowest score wins: `
             + `${money(TV.purse[0])} · ${money(TV.purse[1])} · ${money(TV.purse[2])} for the top three. Your own stats, bag and caddie; each hole's wind and greens are fixed. `
             + `${tv.paid ? 'You\'ve paid your entry.' : `Teeing off pays the ${money(TV.entry)} entry fee.`} Leaving before the 9th is a withdrawal: no refund.`;
           $('riStart').textContent = tv.holes.length ? `Resume on hole ${tv.holes.length + 1} (Enter)` : `Tee off · ${money(TV.entry)} (Enter)`;
@@ -12731,7 +12731,7 @@
           $('roundIntro').querySelector('.card-h span').textContent = `vs ${pv.vsName} · ${FR_FMT[pv.format]} · course preview`;
           $('roundIntro').querySelector('.ri-note').textContent = `${FR_FMT[pv.format]} for ${money(pv.stake)}${pv.format === 'skins' ? ' a skin' : ''} against ${pv.vsName} at ${TIERS[pv.tier].course}. `
             + `${strokesText({ player: pv.n ? (pv.mine ? session.id : pv.vs) : null, n: pv.n }, { [pv.vs]: pv.vsName }, pv.tier)}. ${pv.vsName} plays the same holes, wind and greens on their own PC; `
-            + `the bet settles when both cards are in. You can leave and resume until ${frDate(pv.deadline)}.`;
+            + `the match settles when both cards are in. You can leave and resume until ${frDate(pv.deadline)}.`;
         }
         if (!tv) $('riStart').textContent = mm || pv ? (pv && pv.holes.length ? `Resume on hole ${pv.holes.length + 1} (Enter)` : 'Tee off (Enter)') : 'Start round (Enter)';
         hideScorecard();
@@ -12858,7 +12858,7 @@
           else if (isObj(d[k])) c[k] = { ...d[k], ...(isObj(c[k]) ? c[k] : {}) };
           else if (typeof c[k] !== typeof d[k] || (typeof d[k] === 'number' && !Number.isFinite(c[k]))) c[k] = d[k];
         }
-        c.debt = Math.max(0, Math.round(+c.debt || 0));      // the marker (audit 7.1)
+        c.debt = Math.max(0, Math.round(+c.debt || 0));      // the debt (audit 7.1)
         // the locker's spare clubs (the pro shop's spareAt): a slot, a model id, snapped or not; one of each (the shop and
         // the locker room skip a model the game doesn't know: the models aren't all defined yet when a save is read)
         c.spares = c.spares.filter((s, k, a) => s && Number.isInteger(s.i) && CLUBS[s.i] && typeof s.id === 'string' && c.bag[s.i] !== s.id
@@ -12869,8 +12869,8 @@
       // Audit 2.6: the history used to grow for ever (about 170 characters a match), and at about 1,160 matches the
       // career passed the server's 250,000-character limit: every save was refused from then on. It keeps the last
       // HIST_KEEP lines, plus every line something reads for all time: each friend challenge (your record against them,
-      // the rivalry wall), the first hustler win and the first $1,000 win (trophies), and your best finish in each
-      // invitational. The rest (old hustler matches, entries, sales) goes. Nothing adds the old lines up: no screen reads
+      // the rivalry wall), the first rival win and the first $1,000 win (trophies), and your best finish in each
+      // invitational. The rest (old rival matches, entries, sales) goes. Nothing adds the old lines up: no screen reads
       // a total from them (the Scorecards tab counts its own archived cards).
       const HIST_KEEP = 300;
       function trimHistory(c) {
@@ -13141,11 +13141,11 @@
         return `\n\nRound recorded for your handicap: ${gross} (${fmtToPar(gross - par)}) at ${TIERS[m.tier].course}. `
           + (h === null ? `${n} of ${HCP.min} rounds needed for a handicap.` : before === null ? `Your first handicap: ${fmtHcp(h)}.` : `Handicap ${fmtHcp(before)} → ${fmtHcp(h)}.`);
       }
-      // ---- THE SCORECARD ARCHIVE (user request, 2026-11-19): every career round's card (hustler matches, invitationals,
+      // ---- THE SCORECARD ARCHIVE (user request, 2026-11-19): every career round's card (rival matches, invitationals,
       // friend challenges) is kept in career.cards (the last CARD_KEEP, oldest first), written after every hole so a match
       // decided early or forfeited still has its card. The trophy room's Scorecards tab lists them and redraws any of them.
       // { id, date, kind: match | tour | pvp, tier, pars, winds: [[mph, from]], sc: [[strokes, putts, pen] | 0], o: [his] (a
-      //   match), npc, format, stake, presses, settled, result, net, unpaid, tour, place, prize, vs, vsName }
+      //   match), npc, format, entry, doubles, settled, result, net, unpaid, tour, place, prize, vs, vsName }
       const CARD_KEEP = 100;
       function archiveRound() {
         if (!careerOn || !career || !round.on) return;
@@ -13164,7 +13164,7 @@
         career.cards = [...cards.filter((c) => c.id !== id), card].sort((a, b) => a.date - b.date).slice(-CARD_KEEP);
         careerSave();
       }
-      // an archived card as a match the scorecard's functions understand (his scores, the bets, how it settled)
+      // an archived card as a match the scorecard's functions understand (his scores, the matches, how it settled)
       const cardAsMatch = (c) => ({ npc: c.npc, format: c.format, stake: c.stake, presses: c.presses || [], settled: !!c.settled, result: c.result, net: c.net, unpaid: c.unpaid,
         holes: c.pars.map((par, i) => (c.sc[i] && c.o && c.o[i] ? { me: c.sc[i][0], npc: c.o[i], par } : null)) });
       // the career changed under us (a sync): re-apply it to the game and the clubhouse
@@ -13244,7 +13244,7 @@
         const colv = collectionOf(career.trophies).value;
         setText('chRank', `${rankOf(career.rep || 0)} · ${CAREER.tiers[career.tier]} circuit${caddieOf() ? ` · 🧢 ${caddieOf().short}` : ''}${colv ? ` · 🏆 ${money(colv)}` : ''}`);
         $('chCash').innerHTML = career.debt ? `${money(career.cash)} <span class="owe">owe ${money(career.debt)}</span>` : money(career.cash);
-        $('chCash').title = career.debt ? `You owe ${money(career.debt)} on your marker: it comes out of your cash when your next match or invitational is settled` : '';
+        $('chCash').title = career.debt ? `You owe ${money(career.debt)}: it comes out of your cash when your next match or invitational is settled` : '';
         setText('chRep', String(career.rep));
         setText('chTier', `${career.tier} · ${CAREER.tiers[career.tier]}`);
         {   // the handicap (M2): or how many rounds until there is one; the recent rounds on hover
@@ -13260,7 +13260,7 @@
         const m = career.match, live = m && !m.settled && m.feePaid;
         $('chMatchBtn').innerHTML = live
           ? `<b>⛳ Resume your match</b><i>vs ${npcById(m.npc).nick} · ${matchLine(m)} thru ${matchStatus(m).played} · ${money(m.stake)}${m.format === 'skins' ? ' a hole' : ' on it'}</i>`
-          : tourLive() ? `<b>🏆 Resume your invitational</b><i>${tourById(career.tour.id).short} · thru ${career.tour.holes.filter(Boolean).length}</i>` : '<b>⛳ Play a match</b><i>Hustle a local, or enter an invitational</i>';
+          : tourLive() ? `<b>🏆 Resume your invitational</b><i>${tourById(career.tour.id).short} · thru ${career.tour.holes.filter(Boolean).length}</i>` : '<b>⛳ Play a match</b><i>Take on a local, or enter an invitational</i>';
         $('chStats').innerHTML = CAREER_STATS.map(([k, n, what]) => {
           const v = career.stats[k], cd = caddieOf();                     // the caddie's help: green pips past your own
           const e = cd ? Math.min(COACH.maxStat, v + caddieBonus(cd)[k]) : v;
@@ -13268,7 +13268,7 @@
         }).join('');
       }
       // ---- the circuits (chunk 8): tier 2 opens at 40 reputation; tier 3 needs 120, players' irons, a newer driver and a
-      // $500 membership. Once open, a circuit stays open; you choose which one to hustle on.
+      // $500 membership. Once open, a circuit stays open; you choose which one to play on.
       function tierReqs(t) {
         const T = TIERS[t], iron = CLUB_MODELS[career.bag[7] || career.bag[5]], drv = CLUB_MODELS[career.bag[0]];
         if (t === 1) return [];
@@ -13305,12 +13305,12 @@
           const t = +b.dataset.tier;
           if (career.tierMax < t || (career.match && !career.match.settled && career.match.feePaid)) return;
           career.tier = t; cmSel = 0;
-          setText('chMsg', `You'll hustle at ${TIERS[t].course} now.`);
+          setText('chMsg', `You'll compete at ${TIERS[t].course} now.`);
         } else if (b.dataset.join) {
           if (liveMatch()) return setText('chMsg', liveMatchMsg());
           if (!tierReqs(3).every((r) => r.ok)) return;
           career.cash -= TIERS[3].entry; career.tierMax = 3; career.tier = 3; cmSel = 0;
-          setText('chMsg', `Welcome to ${TIERS[3].course}. The members play for the biggest stakes in the game.`);     // (it said "for real money": there is none, user 2026-11-21)
+          setText('chMsg', `Welcome to ${TIERS[3].course}. The members play for the biggest prizes in the game.`);     // (it said "for real money": there is none, user 2026-11-21)
         } else return;
         careerSave(); updateCareerUI();
       }
@@ -13366,7 +13366,7 @@
         setText('chTag', 'Profiles');
         $('chNew').className = siMode + (siMode === 'local' && local ? ' continue' : '') + (local ? '' : ' nobring');
         for (const b of $('siTabs').children) b.classList.toggle('on', b.dataset.si === siMode);
-        setText('siIntro', siMode === 'in' ? 'Sign in to your profile: your career follows you to any PC, and you can bet your friends.'
+        setText('siIntro', siMode === 'in' ? 'Sign in to your profile: your career follows you to any PC, and you can challenge your friends.'
           : siMode === 'new' ? 'Make a profile: your career is saved online, so you can play it on any PC. No email needed — pick a password you don\'t use anywhere else.'
           : local ? `Carry on ${local.name}'s career, saved on this PC only (${money(local.cash)}).` : 'Start a career saved on this PC only, without a profile.');
         setText('siNameL', siMode === 'local' ? 'Your golfer\'s name' : 'Profile name');
@@ -13507,7 +13507,7 @@
         openClubhouse();                                      // straight to a new one
         toast('Career deleted', 1600);
       }
-      // a hustler match teed off and not settled (the game was closed part-way): the stake is riding on your cash, so the
+      // a rival match teed off and not settled (the game was closed part-way): the entry is riding on your cash, so the
       // rooms that spend it stay shut until it's finished or forfeited (audit 1.2). The range and the bag room stay open.
       const liveMatch = () => !!(career && career.match && career.match.feePaid && !career.match.settled);
       const liveMatchMsg = () => { const m = career.match; return `You've got a match on vs ${npcById(m.npc).nick} (${money(m.stake)}${m.format === 'skins' ? ' a hole' : ''}): finish it or forfeit it first. The money riding on it isn't yours to spend yet.`; };
@@ -13552,7 +13552,7 @@
           else if (dg) { e.preventDefault(); shopTab = tabs[+dg[1] - 1]; setText('shMsg', ''); renderShop(); }
           return;
         }
-        if ($('clubhouse').classList.contains('match')) {      // the match picker: ↑ ↓ pick, ← → stake, Enter tees off, Esc back
+        if ($('clubhouse').classList.contains('match')) {      // the match picker: ↑ ↓ pick, ← → entry, Enter tees off, Esc back
           const c = e.code, list = tierNpcs(), inp = $('cmStake');
           if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'NumpadEnter', 'Escape'].includes(c)) e.preventDefault();
           if (c === 'ArrowUp' || c === 'ArrowDown') { cmSel = (cmSel + (c === 'ArrowDown' ? 1 : -1) + list.length) % list.length; renderMatchPicker(); }
@@ -13582,11 +13582,11 @@
 
       // ---- THE CLUBHOUSE'S ROOMS: an illustrated scene behind each view (drawn here as SVG, 1600 × 900, covering the
       // screen), swapped whenever the view changes. lobby = the hub (its doors and signs are the menu), shop, coach,
-      // bar = the 19th hole (friends), tee = the first tee (the hustlers). The panel sits where the picture is plain.
+      // bar = the 19th hole (friends), tee = the first tee (the rivals). The panel sits where the picture is plain.
       const CH_ROOMS = {
         lobby: { name: 'The Clubhouse', panel: '🏌️ Clubhouse' }, shop: { name: 'The Pro Shop', panel: '🛒 Pro shop' },
         coach: { name: 'The Teaching Bay', panel: '🎓 The coach' }, bar: { name: 'The 19th Hole', panel: '🤝 Friends' },
-        tee: { name: 'The First Tee', panel: '⛳ Hustlers' }, shack: { name: 'The Caddie Shack', panel: '🧢 Caddies' },
+        tee: { name: 'The First Tee', panel: '⛳ Rivals' }, shack: { name: 'The Caddie Shack', panel: '🧢 Caddies' },
         trophy: { name: 'The Trophy Room', panel: '🏆 Trophy room' }, tourney: { name: 'The First Tee', panel: '🏆 Invitationals' }, locker: { name: 'The Locker Room', panel: '🎒 Your bag' },
       };
       const chRoomOf = (cl) => (cl.contains('bagroom') ? 'locker' : cl.contains('tour') ? 'tourney' : cl.contains('trophy') ? 'trophy' : cl.contains('caddie') ? 'shack' :cl.contains('coach') ? 'coach' : cl.contains('shop') ? 'shop' : cl.contains('friends') || cl.contains('chal') ? 'bar' : cl.contains('match') ? 'tee' : 'lobby');
@@ -13602,7 +13602,7 @@
       new MutationObserver(chSetRoom).observe($('clubhouse'), { attributes: true, attributeFilter: ['class'] });
       $('chSpots').appendChild($('clubhouse').querySelector('.ch-menu'));          // the lobby's menu hangs on its doors
       // the career's standing, as a title under the name (reputation)
-      const RANKS = [[0, 'Muni rat'], [15, 'Range regular'], [40, 'Weekend hustler'], [80, 'Local legend'], [120, 'Club shark'], [200, 'Country-club menace'], [320, 'Legend of the links']];
+      const RANKS = [[0, 'Muni rat'], [15, 'Range regular'], [40, 'Weekend warrior'], [80, 'Local legend'], [120, 'Club champion'], [200, 'Country-club menace'], [320, 'Legend of the links']];
       const rankOf = (rep) => RANKS.filter(([r]) => rep >= r).pop()[1];
 
       function chScene(room) {
@@ -13868,10 +13868,10 @@
           ${room === 'tee' && career ? teeHustlers() : ''}</svg>`;
       }
 
-      // ---- FRIENDS (MULTIPLAYER_PLAN.md, M3). Challenges live on the server (api/challenge.js): it holds both stakes
-      // (escrow) once a challenge is accepted and settles the bet when both cards are in, so both players see the same
+      // ---- FRIENDS (MULTIPLAYER_PLAN.md, M3). Challenges live on the server (api/challenge.js): it holds both entries
+      // (escrow) once a challenge is accepted and settles the match when both cards are in, so both players see the same
       // result. Each player plays the round on their own PC; the card in progress is career.pvpCard, so leaving and coming
-      // back resumes it. One round at a time: a hustler match and a friend round can't both be in progress.
+      // back resumes it. One round at a time: a rival match and a friend round can't both be in progress.
       const CH_API = '/api/challenge';
       const FR_FMT = { match: 'Match play', stroke: 'Stroke play', skins: 'Skins' };
       const fr = { list: [], players: [], loaded: 0, busy: false, form: null, sending: false, err: '' };
@@ -13898,7 +13898,7 @@
         const who = st.player === session.id ? 'You get' : `${names[st.player] || st.player} gets`;
         return `${who} ${st.n} stroke${st.n === 1 ? '' : 's'} (${holes.length === 1 ? 'hole' : 'holes'} ${list}${st.n > HOLES.length ? `; two on the hardest ${st.n - HOLES.length}` : ''})`;
       }
-      // the stakes this player has held in challenges that aren't settled
+      // the entries this player has held in challenges that aren't settled
       const heldCash = () => fr.list.filter((c) => (c.status === 'open' || c.status === 'pending') && c.held && c.held[session.id]).reduce((s, c) => s + escrowOf(c.format, c.stake), 0);
       async function loadFriends(quiet = false) {
         if (!session || fr.busy) return;
@@ -13922,11 +13922,11 @@
       }
       function updateFriendsTile() {
         const b = $('chFriendsBtn');
-        if (!session) { b.innerHTML = '<b>🤝 Friends</b><i>Sign in to a profile to bet your friends</i>'; return; }
+        if (!session) { b.innerHTML = '<b>🤝 Friends</b><i>Sign in to a profile to challenge your friends</i>'; return; }
         const me = session.id, wait = fr.list.filter((c) => chAsksMe(c, me)).length;
         const play = fr.list.filter((c) => chToPlay(c, me)).length, pc = career && career.pvpCard;
         b.innerHTML = `<b>🤝 Friends</b><i>${pc && pc.holes.length ? `Resume your round vs ${pc.vsName} (thru ${pc.holes.filter(Boolean).length})`
-          : wait ? `${wait} challenge${wait > 1 ? 's' : ''} waiting for you` : play ? `${play} round${play > 1 ? 's' : ''} to play` : 'Bet a friend on a round'}</i>`;
+          : wait ? `${wait} challenge${wait > 1 ? 's' : ''} waiting for you` : play ? `${play} round${play > 1 ? 's' : ''} to play` : 'Challenge a friend to a round'}</i>`;
       }
       function openFriends(msg = '') {
         if (!career) return;
@@ -13943,7 +13943,7 @@
         setText('frCash', money(career.cash));
         if (fr.loaded && !fr.howSet) { fr.howSet = true; $('frHow').open = !L.length; }    // open until you've had a challenge
         const held = heldCash(), nOpen = L.filter((c) => (c.status === 'open' || c.status === 'pending') && c.held && c.held[me]).length;
-        setText('frHeld', held ? `${money(held)} of your stakes held in ${nOpen} challenge${nOpen > 1 ? 's' : ''} until ${nOpen > 1 ? 'they settle' : 'it settles'} (already out of your cash)` : '');
+        setText('frHeld', held ? `${money(held)} of your entries held in ${nOpen} challenge${nOpen > 1 ? 's' : ''} until ${nOpen > 1 ? 'they settle' : 'it settles'} (already out of your cash)` : '');
         const row = (c, cls, status, btns) => {
           const o = chOther(c), sk = c.format === 'skins';
           return `<div class="fr-ch ${cls}"><div><b>vs ${c.names[o]}</b> · ${FR_FMT[c.format]} · ${money(c.stake)}${sk ? ' a skin' : ''} · ${TIERS[c.tier].course}`
@@ -13988,7 +13988,7 @@
           // (an invitational you declined, dropped out of, or that started without you is here too: you play no part)
           ['Finished', L.filter((c) => c.status === 'done' || c.status === 'closed' || (isInvCh(c) && ((c.status === 'pending' && c.declined[me]) || (c.status === 'open' && !inField(c, me))))).slice(0, 8).map((c) => {
             if (isInvCh(c) && c.status === 'pending') return irow(c, '', `You declined · ${c.names[c.host]} hasn't started it yet`, '');
-            if (isInvCh(c) && c.status === 'open') return irow(c, '', (c.forfeits || {})[me] ? `You forfeited: your stake stays in the pot · the others play until ${frDate(c.deadline)}` : 'It started without you: you play no part', '');
+            if (isInvCh(c) && c.status === 'open') return irow(c, '', (c.forfeits || {})[me] ? `You forfeited: your entry stays in the prize pool · the others play until ${frDate(c.deadline)}` : 'It started without you: you play no part', '');
             const mine = c.result && c.result.net && c.result.net[me] !== undefined, net = mine ? c.result.net[me] : 0;
             const money_ = c.status === 'done' && mine ? ` · <span class="${net > 0 ? 'won' : net < 0 ? 'lost' : ''}">${net > 0 ? '+' : net < 0 ? '−' : '±'}${money(Math.abs(net))}</span>` : '';
             return R(c, c.status === 'done' && mine && !pvpSeen(c.id) ? 'hot' : '', `${(c.result && c.result.line) || c.status}${money_} · ${frDate(c.finished || c.created)}`,
@@ -14019,10 +14019,10 @@
         if (act === 'send') return submitPvp();
         if (act === 'view') return showSharedCard(c);
         const inv = isInvCh(c), E = c ? escrowOf(c.format, c.stake) : 0;
-        if (act === 'forfeit' && !confirm(inv ? `Forfeit ${c.names[c.host]}'s invitational? Your ${money(E)} stays in the pot.` : `Forfeit against ${c.names[chOther(c)]}? They win the ${money(2 * E)} pot.`)) return;
+        if (act === 'forfeit' && !confirm(inv ? `Forfeit ${c.names[c.host]}'s invitational? Your ${money(E)} stays in the prize pool.` : `Forfeit against ${c.names[chOther(c)]}? They win the ${money(2 * E)} prize.`)) return;
         if (act === 'decline' && !confirm(inv ? `Decline ${c.names[c.host]}'s invitational?` : `Decline ${c.names[c.from]}'s challenge?`)) return;
         if (act === 'drop' && !confirm(`Drop out of ${c.names[c.host]}'s invitational? Your ${money(E)} comes back.`)) return;
-        if (act === 'cancel' && inv && !confirm('Call off your invitational? Everyone\'s stake comes back.')) return;
+        if (act === 'cancel' && inv && !confirm('Call off your invitational? Everyone\'s entry comes back.')) return;
         if (act === 'start' && !confirm(`Start it with the ${c.players.filter((p) => c.accepted[p]).length} players who are in? Anyone who hasn't accepted is left out.`)) return;
         b.disabled = true; setText('frMsg', '…');
         let r;
@@ -14031,13 +14031,13 @@
         const ch = r.data.challenge, o = inv ? null : chOther(ch);
         if (act === 'forfeit') { if (career.pvpCard && career.pvpCard.id === id) career.pvpCard = null; markSeen(id); careerSave(); }   // (your own forfeit isn't news)
         const msg = inv ? ({ accept: `You're in: your ${money(E)} is held until it settles. ${ch.names[ch.host]} starts it once everyone's had their say.`, decline: 'Declined.', drop: `You dropped out: your ${money(E)} is back.`,
-          cancel: 'Invitational called off: every stake is back.', start: `It's on: ${(ch.field || []).length} players, play by ${frDate(ch.deadline)}.`, forfeit: 'You forfeited: your stake stays in the pot.' }[act])
+          cancel: 'Invitational called off: every entry is back.', start: `It's on: ${(ch.field || []).length} players, play by ${frDate(ch.deadline)}.`, forfeit: 'You forfeited: your entry stays in the prize pool.' }[act])
           : act === 'accept' ? `Game on: ${money(escrowOf(ch.format, ch.stake))} each is held until it settles. Play by ${frDate(ch.deadline)}.`
-          : act === 'decline' ? 'Declined.' : act === 'cancel' ? 'Challenge called off.' : `You forfeited: ${ch.names[o]} takes the pot.`;
+          : act === 'decline' ? 'Declined.' : act === 'cancel' ? 'Challenge called off.' : `You forfeited: ${ch.names[o]} takes the prize.`;
         await syncLoad();                                    // the server moved money: pick up the new cash
         openFriends(msg);
       }
-      // ---- the challenge form: format, stake (no more than both of you have), a circuit you both have open, handicap strokes
+      // ---- the challenge form: format, entry (no more than both of you have), a circuit you both have open, handicap strokes
       function openChalForm(to) {
         const p = fr.players.find((x) => x.name.toLowerCase() === to);
         if (!p) return;
@@ -14057,7 +14057,7 @@
         return { player: n ? (hm > ht ? session.id : f.to) : null, n, why: 'auto' };
       }
       // ---- the invitational form: the challenge form (#chChal) with .inv on: pick the friends, stroke play or skins, the
-      // stake, a circuit everyone picked has open, handicaps auto or off
+      // entry, a circuit everyone picked has open, handicaps auto or off
       function openInvForm() {
         if (!career || !session) return;
         if (liveMatch()) return setText('frMsg', liveMatchMsg());
@@ -14075,15 +14075,15 @@
         setText('ccTitle', `Host an invitational${picked.length ? ` · ${picked.length + 1} players` : ''}`);
         $('ccPick').innerHTML = others.map((p) => `<button data-pick="${p.name.toLowerCase()}" class="${f.picked.includes(p.name.toLowerCase()) ? 'on' : ''}">${escH(p.name)}<i>${p.handicap === null || p.handicap === undefined ? 'no hcp' : fmtHcp(p.handicap)} · ${money(p.cash)}</i></button>`).join('');
         for (const b of $('ccFmt').children) b.classList.toggle('on', b.dataset.fmt === f.format);
-        setText('ccFmtNote', { stroke: 'The lowest net total takes the whole pot', skins: 'A stake per hole from everyone; the one lowest score takes it, a tie carries' }[f.format]);
+        setText('ccFmtNote', { stroke: 'The lowest net total takes the whole prize', skins: 'An entry per hole from everyone; the one lowest score takes it, a tie carries' }[f.format]);
         f.tiers = [1, 2, 3].filter((t) => t <= (career.tierMax || 1) && picked.every((p) => t <= (p.tierMax || 1)));
         if (!f.tiers.includes(f.tier)) f.tier = f.tiers[f.tiers.length - 1];
         const cap = Math.floor(career.cash / per / 5) * 5, inp = $('ccStake');
         inp.min = 5; inp.max = Math.max(5, Math.min(cap, 2000)); f.stake = clamp(f.stake, 5, +inp.max); inp.value = f.stake;
-        setText('ccStakeL', sk ? 'Per skin' : 'Stake');
+        setText('ccStakeL', sk ? 'Per skin' : 'Entry');
         setText('ccStakeV', money(f.stake));
         const n = picked.length + 1, short = picked.filter((p) => (p.cash ?? 0) < f.stake * per).map((p) => p.name);
-        setText('ccEscrow', `${money(f.stake * per)} from each player: yours is held from when you send it, each friend's when they accept · ${sk ? `each hole is worth up to ${money(f.stake * n)}` : `the pot is up to ${money(f.stake * n)}`}`
+        setText('ccEscrow', `${money(f.stake * per)} from each player: yours is held from when you send it, each friend's when they accept · ${sk ? `each hole is worth up to ${money(f.stake * n)}` : `the prize is up to ${money(f.stake * n)}`}`
           + (short.length ? ` · ${short.join(', ')} can't cover it right now` : ''));
         $('ccTier').innerHTML = [1, 2, 3].map((t) => `<button data-t="${t}" class="${f.tier === t ? 'on' : ''}" ${f.tiers.includes(t) ? '' : 'disabled title="Not open to everyone you picked"'}>${TIERS[t].course}</button>`).join('');
         for (const b of $('ccHcp').children) b.classList.toggle('on', b.dataset.h === f.hcp);
@@ -14099,10 +14099,10 @@
         const f = fr.form, sk = f.format === 'skins', per = sk ? HOLES.length : 1;
         setText('ccTitle', `Challenge ${f.name}`);
         for (const b of $('ccFmt').children) b.classList.toggle('on', b.dataset.fmt === f.format);
-        setText('ccFmtNote', { match: 'Most holes won (net)', stroke: 'Lowest net total', skins: 'A stake per hole; a halved hole carries' }[f.format]);
+        setText('ccFmtNote', { match: 'Most holes won (net)', stroke: 'Lowest net total', skins: 'An entry per hole; a halved hole carries' }[f.format]);
         const cap = Math.floor(Math.min(career.cash, f.p.cash ?? 0) / per / 5) * 5, inp = $('ccStake');
         inp.min = 5; inp.max = Math.max(5, Math.min(cap, 2000)); f.stake = clamp(f.stake, 5, +inp.max); inp.value = f.stake;
-        setText('ccStakeL', sk ? 'Per skin' : 'Stake');
+        setText('ccStakeL', sk ? 'Per skin' : 'Entry');
         setText('ccStakeV', money(f.stake));
         setText('ccEscrow', `${money(f.stake * per)} from each of you: yours is held from when you send it, ${f.name}'s from when they accept · the winner takes ${sk ? 'what the skins pay' : money(2 * f.stake)}`);
         $('ccTier').innerHTML = [1, 2, 3].map((t) => `<button data-t="${t}" class="${f.tier === t ? 'on' : ''}" ${f.tiers.includes(t) ? '' : 'disabled title="Not open to both of you"'}>${TIERS[t].course}</button>`).join('');
@@ -14138,17 +14138,17 @@
         $('ccGo').disabled = false;
         if (r.status !== 200) return setText('ccErr', r.data.error || `Something went wrong (${r.status})`);
         fr.form = null; $('chChal').classList.remove('inv');
-        await syncLoad();                                    // (the server took your stake: pick up the new cash)
+        await syncLoad();                                    // (the server took your entry: pick up the new cash)
         openFriends(f.inv ? `Invitations sent to ${f.picked.length} friend${f.picked.length > 1 ? 's' : ''}. Your ${money(escrowOf(f.format, f.stake))} is held until it settles. Start it once someone's in.`
           : `Challenge sent to ${f.name}. Your ${money(escrowOf(f.format, f.stake))} is held until it settles; you get it back if they decline.`);
       }
       // ---- playing it: the same course and conditions as the friend (the circuit's holes, each hole's fixed wind and
-      // greens), the career's own stats and bag; no hustler, no tee toss, no presses
+      // greens), the career's own stats and bag; no rival, no tee toss, no doubles
       function playFriend(id) {
         const ch = fr.list.find((c) => c.id === id), me = session.id;
         if (!ch || ch.status !== 'open' || ch.cards[me]) return;
         const m = career.match;
-        if (m && !m.settled && m.feePaid) return setText('frMsg', 'Finish (or forfeit) your hustler match first');
+        if (m && !m.settled && m.feePaid) return setText('frMsg', 'Finish (or forfeit) your rival match first');
         const pc = career.pvpCard;
         if (pc && pc.id !== id && pc.holes.length) return setText('frMsg', `Finish your round against ${pc.vsName} first`);
         if (!pc || pc.id !== id) {
@@ -14310,7 +14310,7 @@
         $('scTag').textContent = `${TIERS[ch.tier].course} · ${st.length ? `strokes: ${st.map((p) => `${ch.names[p]} ${ch.strokes[p]}`).join(', ')}` : 'no strokes'}`;
         const nm_ = (res.net || {})[me];
         $('scMsg').textContent = `${headline ? headline + '\n' : ''}${res.line}\n`
-          + (nm_ === undefined ? 'You didn\'t play in this one' : nm_ > 0 ? `+${money(nm_)}: your ${money(escrowOf(ch.format, ch.stake))} back and ${money(nm_)} from the pot` : nm_ < 0 ? `−${money(-nm_)} of your held stake` : 'You broke even: your stake is back')
+          + (nm_ === undefined ? 'You didn\'t play in this one' : nm_ > 0 ? `+${money(nm_)}: your ${money(escrowOf(ch.format, ch.stake))} back and ${money(nm_)} from the prize pool` : nm_ < 0 ? `−${money(-nm_)} of your held entry` : 'You broke even: your entry is back')
           + F.filter((p) => ch.fast && ch.fast[p]).map((p) => `\n⚠ ${p === me ? 'Your' : `${ch.names[p]}'s`} card was sent all at once, not hole by hole as it was played`).join('');
         const inRound = !!round.pvp;
         $('scNext').textContent = inRound ? 'Back to the clubhouse (N)' : 'OK (Enter)';
@@ -14342,7 +14342,7 @@
             + `<td class="tot">${sum((i) => c[i].strokes)}</td></tr>`;
           if (p === rcv && ch.strokes.n) html += `<tr class="mrow"><td>${ch.names[p]} net</td>${HOLES.map((_, i) => `<td>${net(p, i)}</td>`).join('')}<td class="tot">${sum((i) => net(p, i))}</td></tr>`;
         }
-        if (card(me) && card(o)) {                           // the bet, hole by hole, from your side
+        if (card(me) && card(o)) {                           // the match, hole by hole, from your side
           const w = HOLES.map((_, i) => Math.sign(net(o, i) - net(me, i)));          // +1 you won the hole (net)
           if (ch.format === 'skins') {
             let carry = 0, row = '<tr class="mrow"><td>Skins</td>', tot = 0;
@@ -14369,7 +14369,7 @@
         const nm = (ch.result.net || {})[me] || 0;
         $('scMsg').textContent = `${headline ? headline + '\n' : ''}${ch.result.line}\n`
           + (framed ? (nm > 0 ? `${ch.names[me]} took ${money(nm)} off ${ch.names[o]}` : nm < 0 ? `${ch.names[o]} took ${money(-nm)} off ${ch.names[me]}` : 'Nobody paid')
-            : nm > 0 ? `+${money(nm)}: your ${money(escrowOf(ch.format, ch.stake))} back and ${money(nm)} of ${ch.names[o]}'s` : nm < 0 ? `−${money(-nm)}: ${ch.names[o]} takes it from your held stake` : 'Nobody pays: your stake is back')
+            : nm > 0 ? `+${money(nm)}: your ${money(escrowOf(ch.format, ch.stake))} back and ${money(nm)} of ${ch.names[o]}'s` : nm < 0 ? `−${money(-nm)}: ${ch.names[o]} takes it from your held entry` : 'Nobody pays: your entry is back')
           // (audit 3.4: a card whose holes all came in within 3 minutes was sent at once, not hole by hole as it was played)
           + [me, o].filter((p) => ch.fast && ch.fast[p]).map((p) => `\n⚠ ${p === me && !framed ? 'Your' : `${ch.names[p]}'s`} card was sent all at once, not hole by hole as it was played`).join('');
         const inRound = !!round.pvp;
@@ -14416,7 +14416,7 @@
       //  9-hole round, the practice areas, and the world Top 10. The developer tools (the sliders that change the game:
       //  stats, wind, green speed and slope) are only for an admin profile, and the admin can switch them off.
       // =====================================================================================================
-      const GAME_NAME = 'Back Nine Hustle';
+      const GAME_NAME = 'Back Nine Tour';
       let homeOpen = false, homeSel = '';
       const roster = { list: [], loaded: false, err: '' };
       const devOn = () => !!session && adminOk && lsGet('golfDevTools') !== 'off';
@@ -14489,7 +14489,7 @@
         $('hmCareer').innerHTML = `<b>🏌️ ${c ? 'Career' : 'Start a career'}</b><i>${m && !m.settled && m.feePaid ? `Resume your match vs ${npcById(m.npc).nick}`
           : pc && pc.holes.length ? `Resume your round vs ${pc.vsName} (thru ${pc.holes.filter(Boolean).length})`
           : frNews ? `${frNews} · in the clubhouse`
-          : c ? `${CAREER.tiers[c.tier || 1]} circuit · hustle the locals, bet your friends, buy clubs, take lessons` : 'Start with $150 and a tired bag. Hustle your way up.'}</i>${badge ? `<em class="hm-badge">${badge}</em>` : ''}`;
+          : c ? `${CAREER.tiers[c.tier || 1]} circuit · take on the locals, challenge your friends, buy clubs, take lessons` : 'Start with $150 and a tired bag. Play your way up.'}</i>${badge ? `<em class="hm-badge">${badge}</em>` : ''}`;
         renderCareerStats();
         $('hmDev').checked = devOn();
         setText('hmSync', !session ? 'Guest · saved on this PC only'
@@ -14916,7 +14916,7 @@
       //  CADDIES (user request, 2026-11-19): an end-game money sink. A caddie adds Composure and / or Perception (on top of
       //  your own, up to the usual 10) whenever the career plays, and the better ones walk off your tilt between holes of a
       //  round (calm 1 = one level, 2 = all of it), which still matters once your stats are maxed. Hire = a one-time fee;
-      //  loop = paid each hustler match with the green fee (can't pay it: the caddie sits that match out). One at a time;
+      //  loop = paid each rival match with the green fee (can't pay it: the caddie sits that match out). One at a time;
       //  hiring another replaces yours, no refunds. career.caddie = the id.
       // =====================================================================================================
       const CADDIES = [
@@ -15010,7 +15010,7 @@
       //  The top shelf holds trophies that are earned, not bought (worked out from the career, nothing stored).
       // =====================================================================================================
       const TROPHIES = [
-        { tag: 'THE LEDGER', id: 'ledger', name: 'Gus “Gravel” Haney\'s betting ledger', era: 'the muni, last summer', price: 1250, art: 'ledger', note: 'Every bet he ever won at Rolling Pines. Your name is in it. Twice.' },
+        { tag: 'THE LEDGER', id: 'ledger', name: 'Gus “Gravel” Haney\'s match ledger', era: 'the muni, last summer', price: 1250, art: 'ledger', note: 'Every match he ever won at Rolling Pines. Your name is in it. Twice.' },
         { tag: '1870s', id: 'gutta', name: 'Gutta-percha ball', era: '1870s', price: 2000, art: 'gutta', note: 'Hand-hammered rubber: the ball that put the featherie out of business.' },
         { tag: '1910s', id: 'mashie', name: 'Hickory-shafted mashie', era: '1910s', price: 3750, art: 'mashie', note: 'A hand-forged mid-iron on a hickory shaft. Still swings sweet.' },
         { tag: '1960s', id: 'persimmon', name: 'Persimmon driver', era: '1960s', price: 6000, art: 'persimmon', note: 'Oil-hardened persimmon with a fibre insert, and the click you can\'t buy any more.' },
@@ -15022,7 +15022,7 @@
         { tag: '24 CARAT', id: 'goldputter', name: 'The golden putter', era: 'commissioned', price: 75000, art: 'goldputter', note: 'Solid gold head, hand-milled face. It has never missed, because nobody dares putt with it.' },
       ];
       const EARNED = [
-        { id: 'firstwin', name: 'First hustle won', art: 'cup-bronze', how: 'Win a match against a hustler', got: (c) => (c.history || []).some((h) => h.npc && h.net > 0) },
+        { id: 'firstwin', name: 'First rival beaten', art: 'cup-bronze', how: 'Win a match against a rival', got: (c) => (c.history || []).some((h) => h.npc && h.net > 0) },
         { id: 'resort', name: 'Club card', art: 'cup-silver', how: 'Open the club circuit', got: (c) => (c.tierMax || 1) >= 2 },
         { id: 'member', name: 'Country-club member', art: 'cup-gold', how: 'Join the country club', got: (c) => (c.tierMax || 1) >= 3 },
         { id: 'friendly', name: 'Friendly fire', art: 'cup-silver', how: 'Beat a friend in a challenge', got: (c) => (c.history || []).some((h) => (h.friend && /^won/.test(h.result || '')) || invVs(h).some((v) => v.r === 'won')) },
@@ -15223,7 +15223,7 @@
       let trTab = 'trophies';
       function renderCardHistory() {
         const cards = [...(career.cards || [])].reverse();
-        setText('trIntro', 'Every round you\'ve played in your career since scorecards were kept: hustler matches, invitationals and friend challenges. View any of them full size.');
+        setText('trIntro', 'Every round you\'ve played in your career since scorecards were kept: rival matches, invitationals and friend challenges. View any of them full size.');
         const sgn = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${money(Math.abs(v))}`;
         let h = '';
         if (cards.length) {
@@ -15238,9 +15238,9 @@
           const d = new Date(c.date), mo = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
           const head = mo !== month ? `<div class="sh-cat">${(month = mo)}</div>` : '';
           const tt = cardTotals(c), played = c.sc.filter(Boolean).length;
-          const title = c.kind === 'match' ? (() => { const n = npcById(c.npc); return n ? `vs ${n.first} “${n.nick}” ${n.last}` : 'vs a hustler'; })()
+          const title = c.kind === 'match' ? (() => { const n = npcById(c.npc); return n ? `vs ${n.first} “${n.nick}” ${n.last}` : 'vs a rival'; })()
             : c.kind === 'tour' ? (tourById(c.tour) ? tourById(c.tour).name : 'An invitational') : `vs ${escH(c.vsName || 'a friend')}`;
-          const what = c.kind === 'match' ? `${c.format === 'skins' ? 'Skins' : 'Match play'} · ${money(c.stake)}${c.format === 'skins' ? ' a hole' : ''}${(c.presses || []).length ? ` · ${c.presses.length} press${c.presses.length > 1 ? 'es' : ''}` : ''}`
+          const what = c.kind === 'match' ? `${c.format === 'skins' ? 'Skins' : 'Match play'} · ${money(c.stake)}${c.format === 'skins' ? ' a hole' : ''}${(c.presses || []).length ? ` · ${c.presses.length} double${c.presses.length > 1 ? 's' : ''}` : ''}`
             : c.kind === 'tour' ? 'Invitational · stroke play' : `Friend challenge · ${FR_FMT[c.format] || c.format} · ${money(c.stake)}`;
           const res = c.kind === 'match' ? (c.settled ? c.result || '' : 'not finished')
             : c.kind === 'tour' ? (c.wd ? 'withdrew' : c.settled ? (c.place === 1 ? 'won it' : `finished ${c.place === 2 ? '2nd' : c.place === 3 ? '3rd' : `${c.place}th`}`) : 'not finished')
@@ -15251,10 +15251,10 @@
             + `<div><b>${c.kind === 'match' ? '🤝' : c.kind === 'tour' ? '🏆' : '👥'} ${title}</b><i>${what} · ${TIERS[c.tier] ? TIERS[c.tier].course : ''}</i>`
             + `<i>${played === c.pars.length ? `${tt.strokes} (${fmtToPar(tt.toPar)})` : `${played} of ${c.pars.length} holes · ${fmtToPar(tt.toPar)}`} · ${res}</i></div>`
             + `<div class="tr-acts"><span class="sch-net ${mv > 0 ? 'up' : mv < 0 || c.unpaid ? 'dn' : ''}">${money_}</span><button data-histcard="${c.id}">View card</button></div></div>`;
-        }).join('') : '<div class="fr-empty">No scorecards yet. Play a hustler match, an invitational or a friend challenge and its card is kept here.</div>';
+        }).join('') : '<div class="fr-empty">No scorecards yet. Play a rival match, an invitational or a friend challenge and its card is kept here.</div>';
         // older results, from before cards were kept: just the line
         const first = (career.cards || [])[0], old = (career.history || []).filter((x) => !x.sale && (!first || x.date < first.date - 60000)).slice(-30).reverse();
-        if (old.length) h += '<div class="sh-cat">Earlier (before scorecards were kept): results only</div>' + old.map((x) => `<div class="tr-row earned"><div class="sch-date"><b>${new Date(x.date).getDate()}</b>${new Date(x.date).toLocaleDateString(undefined, { month: 'short' })}</div><div><b>${x.npc ? (npcById(x.npc) ? `vs ${npcById(x.npc).first} “${npcById(x.npc).nick}”` : 'a hustler') : x.tour ? (tourById(x.tour) || {}).name || 'an invitational' : x.friend ? `vs ${escH(x.friendName || x.friend)}` : 'a round'}</b><i>${escH(x.result || '')}</i></div><span class="sch-net ${x.net > 0 ? 'up' : x.net < 0 ? 'dn' : ''}">${sgn(x.net || 0)}</span></div>`).join('');
+        if (old.length) h += '<div class="sh-cat">Earlier (before scorecards were kept): results only</div>' + old.map((x) => `<div class="tr-row earned"><div class="sch-date"><b>${new Date(x.date).getDate()}</b>${new Date(x.date).toLocaleDateString(undefined, { month: 'short' })}</div><div><b>${x.npc ? (npcById(x.npc) ? `vs ${npcById(x.npc).first} “${npcById(x.npc).nick}”` : 'a rival') : x.tour ? (tourById(x.tour) || {}).name || 'an invitational' : x.friend ? `vs ${escH(x.friendName || x.friend)}` : 'a round'}</b><i>${escH(x.result || '')}</i></div><span class="sch-net ${x.net > 0 ? 'up' : x.net < 0 ? 'dn' : ''}">${sgn(x.net || 0)}</span></div>`).join('');
         $('trList').innerHTML = h;
       }
       const cardTotals = (c) => scoreTotals(c.sc.map((s, i) => (s ? { strokes: s[0], putts: s[1], pen: s[2], par: c.pars[i] } : null)));
@@ -15267,7 +15267,7 @@
         const m = c.kind === 'match' ? cardAsMatch(c) : null;
         $('scTable').innerHTML = r.head + r.parRow + r.windRow + r.scRow + (m ? matchRowsHTML(m) : '') + r.ptRow + r.pnRow + r.tpRow;
         const tt = cardTotals(c), n = m && npcById(c.npc), T = c.kind === 'tour' && tourById(c.tour);
-        $('scTitle').textContent = c.kind === 'match' ? `${c.format === 'skins' ? `Skins at ${money(c.stake)} a hole` : 'Match'} vs ${n ? `${n.first} “${n.nick}” ${n.last}` : 'a hustler'}`
+        $('scTitle').textContent = c.kind === 'match' ? `${c.format === 'skins' ? `Skins at ${money(c.stake)} a hole` : 'Match'} vs ${n ? `${n.first} “${n.nick}” ${n.last}` : 'a rival'}`
           : T ? T.name : `Challenge vs ${c.vsName || 'a friend'}`;
         $('scTag').textContent = tt.played < c.pars.length ? `${tt.played} holes played · ${fmtToPar(tt.toPar)}` : `${tt.strokes} strokes · ${fmtToPar(tt.toPar)}`;
         setText('scCourse', `${TIERS[c.tier] ? TIERS[c.tier].course : ''} · ${new Date(c.date).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`);
@@ -15820,16 +15820,16 @@
       }
 
       // =====================================================================================================
-      //  CAREER MATCHES (CAMPAIGN_PLAN.md, chunk 3): match play for a stake against a simulated hustler, on the 9 holes with
+      //  CAREER MATCHES (CAMPAIGN_PLAN.md, chunk 3): match play for an entry against a simulated rival, on the 9 holes with
       //  their own wind and greens. A match is a round (round.match = career.match) played with the career's stats and bag.
-      //  The hustler's score on each hole is rolled when you hole out, from a seed fixed by the career and the match, so a
+      //  The rival's score on each hole is rolled when you hole out, from a seed fixed by the career and the match, so a
       //  reload can't re-roll it. The match ends as soon as it's decided; the rest can be played for practice. Leaving a
-      //  match that isn't decided forfeits the stake.
+      //  match that isn't decided forfeits the entry.
       // =====================================================================================================
-      // credit (chunk 4): you may stake up to base + perRep x reputation more than you have; the green fee is cash only
+      // credit (chunk 4): you may put up an entry worth up to base + perRep x reputation more than you have; the green fee is cash only
       const MATCH = { fee: { 1: 10, 2: 60, 3: 300 }, minStake: 10, minSkin: 5, credit: { base: 100, perRep: 2, floor: 25 }, rep: { win: { 1: 5, 2: 12, 3: 25 }, loss: 2, forfeit: 2, cantPay: 10 } };
       const creditLine = () => MATCH.credit.base + MATCH.credit.perRep * career.rep;
-      // THE MARKER (audit 7.1): what you couldn't pay isn't wiped by the beating any more. It's a debt (career.debt) that
+      // THE DEBT (audit 7.1): what you couldn't pay isn't wiped by the collection any more. It's a debt (career.debt) that
       // comes out of your cash when the next match or invitational is settled, and it uses up your credit while you owe
       // it (a little credit always stays, so a broke player can still play for the minimum and work it off).
       const creditLeft = () => Math.max(MATCH.credit.floor, creditLine() - (career.debt || 0));
@@ -15839,27 +15839,27 @@
         return take;
       }
       const markerText = (took) => (took ? `\nYour marker: ${money(took)} of it went to pay what you owed${career.debt ? ` (${money(career.debt)} still owed)` : '. Paid off.'}` : '');
-      // skill = strokes over par per hole on average; spread = how much that varies hole to hole. The muni's top stakes
+      // skill = strokes over par per hole on average; spread = how much that varies hole to hole. The muni's top entries
       // were raised for a quicker start (audit 7.3): Dale $40 → $80, Terry $80 → $150, Sal $150 → $200
       const NPCS = [
-        { id: 'dale', tier: 1, first: 'Dale', nick: 'Dew Sweeper', last: 'Pruitt', skill: 1.775, spread: 1.0, maxStake: 80, press: 1, desc: 'Out at dawn every day; hacks it round, loves a bet', lines: { hello: 'Early bird gets the cash, kid.', win: 'Pleasure doing business.', lose: 'Ah, nuts. Double or nothing tomorrow?', halve: 'Nobody wins, nobody cries.', cantPay: 'No cash? Then I\'ll take it in clubs.', press: 'Double or nothing on the rest!', pressed: 'Ha! You\'re on.' } },
-        { id: 'terry', tier: 1, first: 'Terry', nick: 'Two-Putt', last: 'Vance', skill: 1.375, spread: 0.8, maxStake: 150, press: 0, desc: 'A steady bogey golfer who never three-putts', lines: { hello: 'Slow and steady, friend. Slow and steady.', win: 'Told you. Never three-putt.', lose: 'Well. That stings.', halve: 'Square. I\'ll take it.', cantPay: 'You bet money you didn\'t have? Steady on. Steady.', press: 'I don\'t press. Never have.', pressed: 'If you must. Steady, though.' } },
+        { id: 'dale', tier: 1, first: 'Dale', nick: 'Dew Sweeper', last: 'Pruitt', skill: 1.775, spread: 1.0, maxStake: 80, press: 1, desc: 'Out at dawn every day; hacks it round, loves a match', lines: { hello: 'Early bird gets the cash, kid.', win: 'Pleasure doing business.', lose: 'Ah, nuts. Rematch tomorrow?', halve: 'Nobody wins, nobody cries.', cantPay: 'No cash? Then I\'ll take it in clubs.', press: 'Double the prize on the rest!', pressed: 'Ha! You\'re on.' } },
+        { id: 'terry', tier: 1, first: 'Terry', nick: 'Two-Putt', last: 'Vance', skill: 1.375, spread: 0.8, maxStake: 150, press: 0, desc: 'A steady bogey golfer who never three-putts', lines: { hello: 'Slow and steady, friend. Slow and steady.', win: 'Told you. Never three-putt.', lose: 'Well. That stings.', halve: 'Square. I\'ll take it.', cantPay: 'You played for money you didn\'t have? Steady on. Steady.', press: 'I don\'t double. Never have.', pressed: 'If you must. Steady, though.' } },
         { id: 'sal', tier: 1, first: 'Sal', nick: 'Sandbag', last: 'Moretti', skill: 1.075, spread: 0.9, maxStake: 200, press: 0.6, desc: 'Says he\'s a 20 handicap. He isn\'t.', lines: { hello: 'Go easy on me, I\'m just a hacker.', win: 'Huh, lucky day I guess. Pay up.', lose: 'Fine. You got me.', halve: 'Even. Rematch?', cantPay: 'Hacker, huh? So am I. Hold still.', press: 'Let\'s make it interesting, shall we?', pressed: 'Sure, sure. Whatever you say.' } },
-        { id: 'gus', tier: 1, first: 'Gus', nick: 'Gravel', last: 'Haney', skill: 0.775, spread: 0.8, maxStake: 250, press: 1, desc: 'The best player at the muni, and he knows it', lines: { hello: 'You sure about this?', win: 'Thought so.', lose: '...Nobody beats me here. Nobody.', halve: 'Not bad. Not good either.', cantPay: 'Nobody stiffs Gravel Haney.', press: 'Press. You got lucky.', pressed: 'Your funeral.' } },
+        { id: 'gus', tier: 1, first: 'Gus', nick: 'Gravel', last: 'Haney', skill: 0.775, spread: 0.8, maxStake: 250, press: 1, desc: 'The best player at the muni, and he knows it', lines: { hello: 'You sure about this?', win: 'Thought so.', lose: '...Nobody beats me here. Nobody.', halve: 'Not bad. Not good either.', cantPay: 'Nobody stiffs Gravel Haney.', press: 'Double it. You got lucky.', pressed: 'Your funeral.' } },
         // ---- tier 2: the club circuit (chunk 8; the resort circuit until 2026-11-20)
-        { id: 'chad', tier: 2, first: 'Chad', nick: 'Trust Fund', last: 'Whitmore', skill: 0.7, spread: 0.9, maxStake: 400, press: 1, desc: 'Plays with his father\'s money and presses everything', lines: { hello: 'Let\'s make this worth my time, yeah?', win: 'Put it on my tab. Oh wait — you pay me.', lose: 'Whatever. Dad\'s good for it.', halve: 'Boring. Again tomorrow.', cantPay: 'You don\'t have it? That\'s embarrassing. For you.', press: 'Press. Money\'s no object.', pressed: 'Sure, bro. Love it.' } },
-        { id: 'marco', tier: 2, first: 'Marco', nick: 'Mulligan', last: 'Bellini', skill: 0.65, spread: 1.15, maxStake: 300, press: 0.8, desc: 'Brilliant one hole, a disaster the next', lines: { hello: 'No mulligans today. Probably.', win: 'Bellissimo. Pay the man.', lose: 'Bah! The wind, the greens, everything.', halve: 'A draw. Like football.', cantPay: 'In my family we have a word for this.', press: 'Press! Now it gets fun.', pressed: 'Ah, you have courage. I like it.' } },
-        { id: 'rita', tier: 2, first: 'Rita', nick: 'The Closer', last: 'Delgado', skill: 0.55, spread: 0.7, maxStake: 500, press: 0.5, desc: 'Never misses a short putt when money is on it', lines: { hello: 'Bring your putter. You\'ll need it.', win: 'Closed. As always.', lose: 'Fair. You earned that.', halve: 'Even. Don\'t get used to it.', cantPay: 'Then we settle it another way.', press: 'Let\'s press. I close better than you.', pressed: 'Bold. Fine.' } },
-        { id: 'jim', tier: 2, first: 'Jim', nick: 'Pro-Am', last: 'Kessler', skill: 0.45, spread: 0.6, maxStake: 800, press: 0.3, desc: 'A retired club pro who plays Cedar Hollow every day', lines: { hello: 'Thirty years teaching this game. Let\'s see.', win: 'Lesson\'s free. The bet isn\'t.', lose: 'Well struck, son. Well struck.', halve: 'A fair contest.', cantPay: 'I taught you better than that.', press: 'Alright. Press.', pressed: 'Accepted.' } },
+        { id: 'chad', tier: 2, first: 'Chad', nick: 'Trust Fund', last: 'Whitmore', skill: 0.7, spread: 0.9, maxStake: 400, press: 1, desc: 'Plays with his father\'s money and doubles everything', lines: { hello: 'Let\'s make this worth my time, yeah?', win: 'Put it on my tab. Oh wait — you pay me.', lose: 'Whatever. Dad\'s good for it.', halve: 'Boring. Again tomorrow.', cantPay: 'You don\'t have it? That\'s embarrassing. For you.', press: 'Double it. Money\'s no object.', pressed: 'Sure, bro. Love it.' } },
+        { id: 'marco', tier: 2, first: 'Marco', nick: 'Mulligan', last: 'Bellini', skill: 0.65, spread: 1.15, maxStake: 300, press: 0.8, desc: 'Brilliant one hole, a disaster the next', lines: { hello: 'No mulligans today. Probably.', win: 'Bellissimo. Pay the man.', lose: 'Bah! The wind, the greens, everything.', halve: 'A draw. Like football.', cantPay: 'In my family we have a word for this.', press: 'Double it! Now it gets fun.', pressed: 'Ah, you have courage. I like it.' } },
+        { id: 'rita', tier: 2, first: 'Rita', nick: 'The Closer', last: 'Delgado', skill: 0.55, spread: 0.7, maxStake: 500, press: 0.5, desc: 'Never misses a short putt when a prize is on it', lines: { hello: 'Bring your putter. You\'ll need it.', win: 'Closed. As always.', lose: 'Fair. You earned that.', halve: 'Even. Don\'t get used to it.', cantPay: 'Then we settle it another way.', press: 'Let\'s double it. I close better than you.', pressed: 'Bold. Fine.' } },
+        { id: 'jim', tier: 2, first: 'Jim', nick: 'Pro-Am', last: 'Kessler', skill: 0.45, spread: 0.6, maxStake: 800, press: 0.3, desc: 'A retired club pro who plays Cedar Hollow every day', lines: { hello: 'Thirty years teaching this game. Let\'s see.', win: 'Lesson\'s free. The match isn\'t.', lose: 'Well struck, son. Well struck.', halve: 'A fair contest.', cantPay: 'I taught you better than that.', press: 'Alright. Double it.', pressed: 'Accepted.' } },
         // ---- tier 3: the country club (chunk 8)
-        { id: 'whit', tier: 3, first: 'Whitaker', nick: 'Old Money', last: 'Pell', skill: 0.5, spread: 0.6, maxStake: 1500, press: 0.3, desc: 'Fourth-generation member; never hurried, never rattled', lines: { hello: 'Shall we say a modest wager?', win: 'Splendid. My man will collect.', lose: 'Hm. Most irregular.', halve: 'A gentleman\'s draw.', cantPay: 'One simply does not welch at Hawthorne.', press: 'I believe I shall press.', pressed: 'If you insist.' } },
+        { id: 'whit', tier: 3, first: 'Whitaker', nick: 'Old Money', last: 'Pell', skill: 0.5, spread: 0.6, maxStake: 1500, press: 0.3, desc: 'Fourth-generation member; never hurried, never rattled', lines: { hello: 'Shall we play for a modest prize?', win: 'Splendid. My man will collect.', lose: 'Hm. Most irregular.', halve: 'A gentleman\'s draw.', cantPay: 'One simply settles up at Hawthorne.', press: 'I believe I shall double it.', pressed: 'If you insist.' } },
         { id: 'ana', tier: 3, first: 'Ana', nick: 'Ice', last: 'Lindqvist', skill: 0.3, spread: 0.5, maxStake: 2500, press: 0, desc: 'A former college star: says nothing, misses nothing', lines: { hello: '...', win: 'Good game.', lose: 'Good game.', halve: 'Good game.', cantPay: 'That was a mistake.', press: '...', pressed: 'Fine.' } },
-        { id: 'duke', tier: 3, first: 'Duke', nick: 'Club Champ', last: 'Harrington', skill: 0.0, spread: 0.5, maxStake: 3000, press: 0.6, desc: 'Eleven-time club champion. It\'s his course', lines: { hello: 'Welcome to my course.', win: 'They don\'t give eleven titles away.', lose: '...Rematch. Tomorrow. Same stakes.', halve: 'You\'ve got game. Not enough, but some.', cantPay: 'Members pay their debts.', press: 'Press. Let\'s see what you\'re made of.', pressed: 'Ha! Gladly.' } },
-        { id: 'vic', tier: 3, first: 'Victor', nick: 'The Shark', last: 'Kane', skill: 0.2, spread: 0.7, maxStake: 5000, press: 1, desc: 'Plays for life-changing money, and collects in person', lines: { hello: 'I hear you like to gamble.', win: 'Nothing personal. Just business.', lose: 'Enjoy it. It won\'t happen twice.', halve: 'Interesting.', cantPay: 'I was hoping you\'d say that.', press: 'Press. Always press.', pressed: 'Now we\'re talking.' } },
+        { id: 'duke', tier: 3, first: 'Duke', nick: 'Club Champ', last: 'Harrington', skill: 0.0, spread: 0.5, maxStake: 3000, press: 0.6, desc: 'Eleven-time club champion. It\'s his course', lines: { hello: 'Welcome to my course.', win: 'They don\'t give eleven titles away.', lose: '...Rematch. Tomorrow. Same prize.', halve: 'You\'ve got game. Not enough, but some.', cantPay: 'Members pay their debts.', press: 'Double it. Let\'s see what you\'re made of.', pressed: 'Ha! Gladly.' } },
+        { id: 'vic', tier: 3, first: 'Victor', nick: 'The Hammer', last: 'Kane', skill: 0.2, spread: 0.7, maxStake: 5000, press: 1, desc: 'Plays for the biggest prizes, and collects in person', lines: { hello: 'I hear you like a challenge.', win: 'Nothing personal. Just business.', lose: 'Enjoy it. It won\'t happen twice.', halve: 'Interesting.', cantPay: 'I was hoping you\'d say that.', press: 'Double it. Always double it.', pressed: 'Now we\'re talking.' } },
       ];
       const npcById = (id) => NPCS.find((n) => n.id === id);
       const npcName = (n) => `${n.first} “${n.nick}” ${n.last}`;
-      // ---- the hustlers drawn (user request, 2026-11-19): on the first tee and on their cards. How good they are shows on
+      // ---- the rivals drawn (user request, 2026-11-19): on the first tee and on their cards. How good they are shows on
       // them: 1–5 golf-ball pips, and the better ones dress sharper and carry more bag (1: untucked tee, backwards cap,
       // sneakers, a pencil bag … 5: crisp polo and belt, a glove, a tour staff bag).
       const npcRating = (n) => clamp(Math.round((2.1 - n.skill) / 0.33), 1, 5);     // Dale 1 · Terry 2 · Sal 3 · Gus 4 · the resort 4–5 · the country club 5 (skills as now measured, audit 4.1)
@@ -15877,7 +15877,7 @@
         duke: { shirt: '#8a1c22', pants: '#2b2b2b', hat: '#ffffff', skin: '#d8a57c' },
         vic: { shirt: '#151515', pants: '#151515', hat: '#151515', skin: '#c9946a', prop: 'chain' },
       };
-      // a hustler standing at (x, y) = their feet, s = scale; lit = the one you've picked (a spotlight on them)
+      // a rival standing at (x, y) = their feet, s = scale; lit = the one you've picked (a spotlight on them)
       function hustlerFig(n, x, y, s = 1, lit = false, card = false) {     // (card: a portrait — no spotlight, full colour)
         const L = LOOKS[n.id] || { shirt: '#888', pants: '#444', hat: '#fff', skin: '#c58c5c' }, r = npcRating(n);
         const shoe = r <= 2 ? '#f2f2f2' : '#222', tucked = r >= 3;
@@ -15909,7 +15909,7 @@
         const glow = lit ? `<ellipse cx="0" cy="2" rx="62" ry="14" fill="#ffe066" opacity=".55"/><path d="M-30 -330 L-95 6 H95 L30 -330 Z" fill="#fff6c8" opacity=".14"/>` : `<ellipse cx="0" cy="2" rx="40" ry="9" fill="#000" opacity=".25"/>`;
         return `<g transform="translate(${x} ${y}) scale(${s})" opacity="${lit || card ? 1 : 0.82}">${card ? '' : glow}${bag}${legs}${torso}${arms}${club}${head}${hat}</g>`;
       }
-      // the circuit's four hustlers on the first tee (the match picker's scene): the one you've picked in a spotlight, with
+      // the circuit's four rivals on the first tee (the match picker's scene): the one you've picked in a spotlight, with
       // his name and skill over his head; click one to pick him (#teeSpots)
       const TEE_SPOTS = [[150, 804], [368, 816], [588, 804], [806, 816]];
       function teeHustlers() {
@@ -15934,18 +15934,18 @@
       const ratingPips = (n, x, y, size = 7) => Array.from({ length: 5 }, (_, k) => `<circle cx="${x + (k - 2) * size * 2.4}" cy="${y}" r="${size}" fill="${k < npcRating(n) ? '#fff' : 'rgba(255,255,255,.18)'}" stroke="rgba(0,0,0,.4)" stroke-width="1"/>`).join('');
       let cmSel = 0, introMode = 'test', cmFormat = 'match';
       const statusText = (d) => (d === 0 ? 'AS' : d > 0 ? `${d} UP` : `${-d} DN`);
-      // a bet so far (the match, or a press that started on hole `from`): holes won minus lost, and whether it's decided
+      // a match so far (the match, or a double that started on hole `from`): holes won minus lost, and whether it's decided
       function matchStatus(m, from = 0) {
         let diff = 0, played = 0;
         m.holes.forEach((h, i) => { if (h && i >= from) { played++; diff += h.me < h.npc ? 1 : h.me > h.npc ? -1 : 0; } });
         const left = HOLES.length - m.holes.filter(Boolean).length;
         return { diff, played, left, decided: Math.abs(diff) > left || left === 0 };
       }
-      // ---- chunk 7: presses and skins
-      // every bet in a match-play game: the match itself, then each press (a new bet of the same stake on the holes left)
+      // ---- chunk 7: doubles and skins
+      // every match in a match-play game: the match itself, then each double (a new match of the same entry on the holes left)
       const matchBets = (m) => [{ label: 'Match', from: 0, stake: m.stake, by: null },
-        ...(m.presses || []).map((p, k) => ({ label: `Press ${k + 1}${p.by === 'npc' ? ' (his)' : ''}`, ...p }))];
-      // a bet as it stood on the hole it was decided (play can go on for the other bets, so read it from that hole)
+        ...(m.presses || []).map((p, k) => ({ label: `Double ${k + 1}${p.by === 'npc' ? ' (his)' : ''}`, ...p }))];
+      // a match as it stood on the hole it was decided (play can go on for the other matches, so read it from that hole)
       function betFinal(m, b) {
         for (let L = b.from + 1; L <= m.holes.length; L++) { const s = matchStatus({ holes: m.holes.slice(0, L) }, b.from); if (s.decided) return s; }
         return matchStatus(m, b.from);
@@ -15963,7 +15963,7 @@
         });
         return { me, npc, carry, holes };
       }
-      // the money if it all ended now; forfeit = every bet still in play counts as lost (skins: the pot and every hole left)
+      // the money if it all ended now; forfeit = every match still in play counts as lost (skins: the prize and every hole left)
       function matchNet(m, forfeit = false) {
         const left = HOLES.length - m.holes.filter(Boolean).length;
         if (m.format === 'skins') { const s = skinsState(m); return s.me - s.npc - (forfeit ? (s.carry - 1 + left) * m.stake : 0); }
@@ -15980,7 +15980,7 @@
         const s = matchStatus(m), np = (m.presses || []).length;
         return `${statusText(s.diff)}${np ? ` · ${np} press${np > 1 ? 'es' : ''}` : ''}`;
       }
-      // the latest bet still in play, and whether you (2 down in it) may press: at most 3 presses, at least a hole left
+      // the latest match still in play, and whether you (2 down in it) may double the prize: at most 3 doubles, at least a hole left
       function lastLiveBet(m) { const live = matchBets(m).filter((b) => !matchStatus(m, b.from).decided); return live[live.length - 1] || null; }
       function canPress(m) {
         if (!m || m.format !== 'match' || m.settled || !hp.done || (m.presses || []).length >= 3) return false;
@@ -15988,14 +15988,14 @@
         return !!b && next < HOLES.length && matchStatus(m, b.from).diff <= -2;
       }
       // THE PRESS OFFER (user request: it was a small button that was easy to miss): a loud box on the scorecard between
-      // holes, when you may press, that says what a press is, what it can win or cost, what's riding on the match now, and
-      // that it's optional. When the hustler has just pressed, the same box (red, no button) says what that means for you.
-      // THE BETS strip under a match's scorecard (user request: show what's riding): every bet with its stake and where it
+      // holes, when you may double the prize, that says what a double is, what it can win or cost, what's riding on the match now, and
+      // that it's optional. When the rival has just doubled, the same box (red, no button) says what that means for you.
+      // THE MATCHES strip under a match's scorecard (user request: show what's riding): every match with its entry and where it
       // stands, then the money: what's on the line, where you'd be if it ended now, and the best and worst case from here
       function betsStrip(m) {
         const n = npcById(m.npc), sgn = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${money(Math.abs(v))}`, cls = (v) => (v > 0 ? 'mw' : v < 0 ? 'ml' : '');
         const cell = (k, v, sub = '', c = '') => `<div><b>${k}</b><span class="${c}">${v}</span>${sub ? `<i>${sub}</i>` : ''}</div>`;
-        if (m.settled) return `<div class="sb-h">The bets</div><div class="sb-grid">${cell('Settled', sgn(m.net || 0), m.result || '', cls(m.net || 0))}${m.unpaid ? cell('Couldn\'t pay', money(m.unpaid), 'a club snapped, and it\'s on your marker', 'ml') : ''}</div>`;
+        if (m.settled) return `<div class="sb-h">The matches</div><div class="sb-grid">${cell('Settled', sgn(m.net || 0), m.result || '', cls(m.net || 0))}${m.unpaid ? cell('Couldn\'t pay', money(m.unpaid), 'a club snapped, and it\'s added to your debt', 'ml') : ''}</div>`;
         const left = HOLES.length - m.holes.filter(Boolean).length;
         if (m.format === 'skins') {
           const s = skinsState(m), net = s.me - s.npc;
@@ -16008,17 +16008,17 @@
         const settledNet = bets.filter((x) => x.f.decided).reduce((t, x) => t + Math.sign(x.f.diff) * x.b.stake, 0);
         const live = bets.filter((x) => !x.f.decided), liveStake = live.reduce((t, x) => t + x.b.stake, 0);
         const now = bets.reduce((t, x) => t + Math.sign(x.f.diff) * x.b.stake, 0);
-        // the best and worst each live bet can still end (audit 4.2): 2 down with 2 to play can at best be halved, and 1 up
+        // the best and worst each live match can still end (audit 4.2): 2 down with 2 to play can at best be halved, and 1 up
         // with 1 to play at worst halved
         const bestNet = settledNet + live.reduce((t, x) => t + (x.f.diff + x.f.left > 0 ? x.b.stake : 0), 0);
         const worstNet = settledNet - live.reduce((t, x) => t + (x.f.diff - x.f.left < 0 ? x.b.stake : 0), 0);
         const chips = bets.map(({ b, f }) => {
-          const who = b.by === 'npc' ? `${n.first}'s press` : b.by === 'me' ? 'your press' : 'the match';
+          const who = b.by === 'npc' ? `${n.first}'s double` : b.by === 'me' ? 'your double' : 'the match';
           const st = f.decided ? betResult(f) : f.diff ? `${statusText(f.diff)} with ${left} to play` : `all square, ${left} to play`;
           return `<div class="sb-bet${f.decided ? ' done' : ''}"><b>${b.label.replace(/ \(his\)/, '')}</b> <em>${money(b.stake)}</em> <i>${who} · ${st}</i></div>`;
         }).join('');
-        return `<div class="sb-h">The bets</div><div class="sb-bets">${chips}</div><div class="sb-grid">`
-          + cell('On the line', money(liveStake), `${live.length} bet${live.length === 1 ? '' : 's'} still live`, 'gold')
+        return `<div class="sb-h">The matches</div><div class="sb-bets">${chips}</div><div class="sb-grid">`
+          + cell('On the line', money(liveStake), `${live.length} match${live.length === 1 ? '' : 'es'} still live`, 'gold')
           + cell('If it ended now', sgn(now), now > 0 ? `${n.first} pays you` : now < 0 ? `you pay ${n.first}` : 'nobody pays', cls(now))
           + cell('Best case', sgn(bestNet), 'the best that can still happen', bestNet > 0 ? 'mw' : bestNet < 0 ? 'ml' : '')
           + cell('Worst case', sgn(worstNet), 'the worst that can still happen', worstNet < 0 ? 'ml' : worstNet > 0 ? 'mw' : '') + '</div>';
@@ -16034,26 +16034,26 @@
         const live = matchBets(m).filter((b) => !matchStatus(m, b.from).decided);
         const riding = live.reduce((s, b) => s + b.stake, 0);
         if (!mine) {
-          $('scPressTxt').innerHTML = `<div class="pr-h">⚠ ${n.first} pressed <span>a new bet against you</span></div>`
-            + `<div class="pr-why">${n.first} was 2 down, so ${n.first === 'Ana' || n.first === 'Rita' ? 'she' : 'he'} added a <b>new ${st} bet on just the last ${left} hole${left > 1 ? 's' : ''}</b> (${holes}), starting all square. `
-            + `Your other bet${live.length > 2 ? 's carry' : ' carries'} on as before. Nothing to do: win more of ${holes} than ${n.first} to take it too, lose more and it goes ${n.first === 'Ana' || n.first === 'Rita' ? 'her' : 'his'} way.</div>`
-            + `<div class="pr-foot">Riding on the match now: ${live.length} bets, up to ${money(riding)} either way.</div>`;
+          $('scPressTxt').innerHTML = `<div class="pr-h">⚠ ${n.first} doubled the prize <span>with a new match against you</span></div>`
+            + `<div class="pr-why">${n.first} was 2 down, so ${n.first === 'Ana' || n.first === 'Rita' ? 'she' : 'he'} added a <b>new ${st} match on just the last ${left} hole${left > 1 ? 's' : ''}</b> (${holes}), starting all square. `
+            + `Your other match${live.length > 2 ? 'es carry' : ' carries'} on as before. Nothing to do: win more of ${holes} than ${n.first} to take it too, lose more and it goes ${n.first === 'Ana' || n.first === 'Rita' ? 'her' : 'his'} way.</div>`
+            + `<div class="pr-foot">Riding on the match now: ${live.length} matches, up to ${money(riding)} either way.</div>`;
           return;
         }
         const b = lastLiveBet(m), s = matchStatus(m, b.from), what = b.label === 'Match' ? 'the match' : `your ${b.label.replace(/ \(his\)/, '').toLowerCase()}`;
         const used = (m.presses || []).length, short = career.cash < riding + m.stake;
         $('scPressTxt').innerHTML = `<div class="pr-h">🎲 You can press <span>optional · your call</span></div>`
-          + `<div class="pr-why">You're <b>${Math.abs(s.diff)} down</b> in ${what} with ${left} to play. A <b>press</b> is a second bet you're allowed when you're 2 down: `
-          + `a <b>new ${st} bet on just the last ${left} hole${left > 1 ? 's' : ''}</b> (${holes}), starting all square. ${what[0].toUpperCase() + what.slice(1)} carries on exactly as it is.</div>`
+          + `<div class="pr-why">You're <b>${Math.abs(s.diff)} down</b> in ${what} with ${left} to play. <b>Doubling the prize</b> is a second match you're allowed when you're 2 down: `
+          + `a <b>new ${st} match on just the last ${left} hole${left > 1 ? 's' : ''}</b> (${holes}), starting all square. ${what[0].toUpperCase() + what.slice(1)} carries on exactly as it is.</div>`
           + `<div class="pr-grid"><div class="w"><b>Win the press</b>+${st}<i>Win more of ${holes} than ${n.first}. Lose ${what} but win the press and the two cancel out</i></div>`
           + `<div><b>Halve it</b>$0<i>The same number of those holes each: nobody pays</i></div>`
           + `<div class="l"><b>Lose the press</b>−${st}<i>On top of whatever ${what} costs you</i></div></div>`
-          + `<div class="pr-foot">Riding on the match now: ${live.length} bet${live.length > 1 ? 's' : ''}, up to ${money(riding)} either way; with a press, up to ${money(riding + m.stake)}. `
-          + `Up to 3 presses a match (${3 - used} left), and the offer comes back whenever you're 2 down in your newest bet. Decide before you tee off on hole ${next + 1}.`
+          + `<div class="pr-foot">Riding on the match now: ${live.length} match${live.length > 1 ? 'es' : ''}, up to ${money(riding)} either way; with a double, up to ${money(riding + m.stake)}. `
+          + `Up to 3 doubles a match (${3 - used} left), and the offer comes back whenever you're 2 down in your newest match. Decide before you tee off on hole ${next + 1}.`
           + `${short ? ` <span class="warn">You have ${money(career.cash)}: lose it all and you can't pay, and ${n.first} takes it out of your bag (a snapped club).</span>` : ''}</div>`;
-        $('scPress').textContent = `Press: add a ${st} bet (P)`;
-        $('scMsg').textContent += `${$('scMsg').textContent ? '\n' : ''}🎲 You're 2 down: you may press (P). How it works is just below.`;
-        setText('scPressAlt', `or don't: Next hole (N) plays on with the bets as they are`);
+        $('scPress').textContent = `Double the prize: a new ${st} match (P)`;
+        $('scMsg').textContent += `${$('scMsg').textContent ? '\n' : ''}⚡ You're 2 down: you may double the prize (P). How it works is just below.`;
+        setText('scPressAlt', `or don't: Next hole (N) plays on with the matches as they are`);
       }
       function playerPress() {
         const m = round.match;
@@ -16061,14 +16061,14 @@
         m.presses.push({ from: hp.holeIdx + 1, by: 'me', stake: m.stake });
         careerSave();
         const n = npcById(m.npc);
-        showScorecard(`You press: a new ${money(m.stake)} bet on the last ${HOLES.length - hp.holeIdx - 1} holes\n${n.nick}: “${n.lines.pressed}”`);
+        showScorecard(`You double the prize: a new ${money(m.stake)} match on the last ${HOLES.length - hp.holeIdx - 1} holes\n${n.nick}: “${n.lines.pressed}”`);
       }
-      // the hustler's score on hole i: par + their skill + the hole's conditions + a seeded roll
+      // the rival's score on hole i: par + their skill + the hole's conditions + a seeded roll
       // (user request: more variety) every match has its own salt, rolled at tee off and saved, so no two matches are the
-      // same; the hustler has a form for the day (sharp or rusty, the whole match); and now and then a hole blows up.
+      // same; the rival has a form for the day (sharp or rusty, the whole match); and now and then a hole blows up.
       const gauss = (r) => Math.sqrt(-2 * Math.log(Math.max(1e-6, r()))) * Math.cos(2 * Math.PI * r());
       const matchSeed = (m, k) => (career.seed ^ Math.imul(m.no, 7919) ^ (m.salt || 0) ^ k) >>> 0;
-      // AUDIT 4.1: a hustler's `skill` is now what it says, strokes over par a hole on his own circuit, and his form for
+      // AUDIT 4.1: a rival's `skill` is now what it says, strokes over par a hole on his own circuit, and his form for
       // the day swings less.
       //  - The conditions (wind, fast greens) used to be ADDED to every hole's score: +0.17 a hole at the muni, +0.36 at
       //    the resort, +0.58 at the country club. So everyone scored worse than his skill, more so on the harder
@@ -16076,12 +16076,12 @@
       //    circuit's average (condAvg): a windy hole still plays harder than a calm one, but over nine he averages his skill.
       //  - The skills were set again to keep the muni as it played (the start of the game is tuned on it, audit 7.3),
       //    and make the resort a little and the country club a lot stronger: its best now average about par at home.
-      //  - Form for the day: 0.32 a hole was ±3 strokes over nine on its own; 0.2 makes a hustler's level readable.
+      //  - Form for the day: 0.32 a hole was ±3 strokes over nine on its own; 0.2 makes a rival's level readable.
       const holeCond = (def) => Math.max(0, (def.stimp || 11.5) - 11.5) * 0.1 + ((def.wind && def.wind.mph) || 0) / 40;
       const condAvgs = {};
       const condAvg = (tier) => (condAvgs[tier] ??= HOLES.reduce((s, h) => s + holeCond(variantDef(h, TIERS[tier])), 0) / HOLES.length);
       const NPC_FORM = 0.2;
-      // is he a presser in this match? (the share of matches is his `press`; rolled once a match, audit 4.7)
+      // is he a doubler in this match? (the share of matches is his `double`; rolled once a match, audit 4.7)
       const npcPresses = (m) => rng32(matchSeed(m, 0x5eed3301))() < npcById(m.npc).press;
       function npcForm(m) { return NPC_FORM * gauss(rng32(matchSeed(m, 48271))); }       // strokes per hole: − sharp, + rusty
       function npcHoleScore(m, i) {
@@ -16094,7 +16094,7 @@
         return npcClampScore(def.par, d, r);
       }
       // a hole score from "strokes over par": at best one under on a par 3 or 4 and two under on a par 5 (audit 4.3: a
-      // hole-in-one came up on one par 3 in 33 for some hustlers); a hole-in-one only as its own rare roll (1 in 1,500)
+      // hole-in-one came up on one par 3 in 33 for some rivals); a hole-in-one only as its own rare roll (1 in 1,500)
       function npcClampScore(par, d, r) {
         const s = par + clamp(Math.round(d), par >= 5 ? -2 : -1, 5);
         return par === 3 && r() < 1 / 1500 ? 1 : s;
@@ -16116,12 +16116,12 @@
           + `<div><b>${p.first} <span class="nick">“${p.nick}”</span> ${p.last}</b><span class="cm-pips" title="Skill ${npcRating(p)} of 5">${'●'.repeat(npcRating(p))}<s>${'●'.repeat(5 - npcRating(p))}</s></span>`
           + `<i>${p.desc}</i><em>“${p.lines.hello}”</em><u>Plays for up to ${money(p.maxStake)}</u></div></div>`).join('');
         if ($('clubhouse').classList.contains('match')) { $('chScene').innerHTML = chScene('tee'); renderTeeSpots(); }     // the scene: who's picked lights up
-        // the format (chunk 7): match play for one stake (presses can add more), or skins for a stake on every hole
+        // the format (chunk 7): match play for one entry (doubles can add more), or skins for an entry on every hole
         const skins = cmFormat === 'skins', minS = skins ? MATCH.minSkin : MATCH.minStake;
         for (const b of $('cmFmt').children) b.classList.toggle('on', b.dataset.fmt === cmFormat);
-        setText('cmFmtNote', skins ? 'A stake on every hole; a halved hole carries the skin to the next' : 'Win the most holes; whoever is 2 down may press');
-        setText('cmStakeL', skins ? 'Per hole' : 'Stake');
-        // the stake can go past your cash, on credit (chunk 4); the green fee can't. A skin is capped lower: nine of them are in play
+        setText('cmFmtNote', skins ? 'An entry on every hole; a halved hole carries the skin to the next' : 'Win the most holes; whoever is 2 down may double the prize');
+        setText('cmStakeL', skins ? 'Per hole' : 'Entry');
+        // the entry can go past your cash, on credit (chunk 4); the green fee can't. A skin is capped lower: nine of them are in play
         const room = Math.max(0, career.cash - fee) + creditLeft();
         const cap = Math.floor((skins ? Math.min(n.maxStake / 3, room / 4) : Math.min(n.maxStake, room)) / 5) * 5, inp = $('cmStake');
         inp.min = minS; inp.max = Math.max(minS, cap);
@@ -16133,22 +16133,22 @@
           : `${money(fee)}${caddieOf() ? ` + ${caddieOf().short}'s ${money(caddieOf().loop)} loop fee` : ''} (paid when you tee off, in cash) · you have ${money(career.cash)}`);
         updateStakeLabel();
         const clubs = usableOrder().length;
-        const why = cap < minS ? `You can't cover even a ${money(minS)} ${skins ? 'skin' : 'stake'}`
+        const why = cap < minS ? `You can't cover even a ${money(minS)} ${skins ? 'skin' : 'entry'}`
           : !clubs ? 'Every club but your putter is snapped: get some repaired at the pro shop first'
           : '';
         $('cmGo').disabled = !!why;
         setText('cmErr', why);
       }
-      // how much of the stake is on credit, in red
+      // how much of the entry is on credit, in red
       function updateStakeLabel() {
         const skins = cmFormat === 'skins', stake = +$('cmStake').value, fee = MATCH.fee[career.tier];
         const risk = skins ? stake * HOLES.length : stake, onCredit = Math.max(0, risk - Math.max(0, career.cash - fee));
         setText('cmStakeV', money(stake));
-        const owed = career.debt ? ` · <span class="cm-red">you owe ${money(career.debt)} on your marker</span>` : '';
+        const owed = career.debt ? ` · <span class="cm-red">you owe ${money(career.debt)} in debt</span>` : '';
         if (skins) { $('cmCredit').innerHTML = (onCredit ? `<span class="cm-red">If he takes all nine skins (${money(risk)}), ${money(onCredit)} is on credit</span>` : `If he takes all nine skins you owe ${money(risk)} · credit up to ${money(creditLeft())}`) + owed; return; }
         setText('cmStakeV', money(stake));
         $('cmCredit').innerHTML = (onCredit
-          ? `<span class="cm-red">${money(onCredit)} of it on credit</span> · lose, and he snaps a club and puts the rest on your marker`
+          ? `<span class="cm-red">${money(onCredit)} of it on credit</span> · lose, and he snaps a club and adds the rest to your debt`
           : `Up to ${money(creditLeft())} more than you have, on credit · lose what you can't cover and he snaps a club, and you still owe it`) + owed;
       }
       function teeOffMatch() {
@@ -16185,12 +16185,12 @@
         const n = npcById(m.npc), s = matchStatus(m);
         const form = npcForm(m), look = form < -0.11 ? `\n${n.first} looks sharp today` : form > 0.11 ? `\n${n.first} looks a bit rusty today` : '';     // (as often as before: 0.18 of the old 0.32 swing)
         const cdl = caddieOf(), cdTxt = cdl ? (m.noCaddie ? `\n🧢 ${cdl.short} sits this one out: you couldn't pay the ${money(cdl.loop)} loop fee` : `\n🧢 ${cdl.short} is on your bag`) : '';
-        // carrying luxury gear: the hustler notices (and so does everyone else)
+        // carrying luxury gear: the rival notices (and so does everyone else)
         const LUX_QUIP = { 1: 'Gold clubs? At the muni? Somebody\'s overcompensating.', 2: 'Ooh, the shiny set. Is that Daddy\'s money too?', 3: 'Ah, the good stuff. Lovely. Pity about the swing.' };
         const luxTxt = !m.holes.length && luxCount(career) ? `\n✦ ${n.first} eyes your bag: “${LUX_QUIP[career.tier] || LUX_QUIP[3]}”` : '';
         toast(`${n.nick}: “${m.holes.length ? 'Where were we?' : n.lines.hello}”${look}${luxTxt}${cdTxt}\n${m.format === 'skins' ? `Skins at ${money(m.stake)} a hole` : `Match play for ${money(m.stake)}`}${s.played ? ` · ${matchLine(m)} thru ${s.played}` : ''} · ${HOLE.name}, par ${HOLE.par}`, 3600);
       }
-      // after each hole: the hustler's score, who won it, the bets (or the skins), his presses, and the money once it's over
+      // after each hole: the rival's score, who won it, the matches (or the skins), his doubles, and the money once it's over
       function matchAfterHole(i) {
         const m = round.match, n = npcById(m.npc), npc = npcHoleScore(m, i);
         m.holes[i] = { me: hp.strokes, npc, putts: hp.putts, pen: hp.pen, par: HOLE.par };
@@ -16205,16 +16205,16 @@
           } else {
             for (const b of matchBets(m)) {
               const s = matchStatus(m, b.from);
-              if (i < b.from || matchStatus({ holes: m.holes.slice(0, i) }, b.from).decided) continue;     // only bets still live coming into this hole
+              if (i < b.from || matchStatus({ holes: m.holes.slice(0, i) }, b.from).decided) continue;     // only matches still live coming into this hole
               msg += `\n${b.label}: ${s.decided ? betResult(s) : `${statusText(s.diff)}${left ? ` with ${left} to play` : ''}`}`;
             }
-            // the hustler presses when he's 2 down in the latest bet, if that's his style (seeded, so a reload can't change it).
-            // `press` is the share of MATCHES he's a presser in (Sal 0.6, Jim 0.3; Dale and Gus always, Terry never): rolled
+            // the rival doubles when he's 2 down in the latest match, if that's his style (seeded, so a reload can't change it).
+            // `double` is the share of MATCHES he's a doubler in (Sal 0.6, Jim 0.3; Dale and Gus always, Terry never): rolled
             // once a match (audit 4.7: rolled again after every hole 2 down, 0.3 came out as "usually")
             const b = lastLiveBet(m);
             if (b && left > 0 && m.presses.length < 3 && matchStatus(m, b.from).diff >= 2 && npcPresses(m)) {
               m.presses.push({ from: i + 1, by: 'npc', stake: m.stake });
-              msg += `\n${n.nick} presses! A new ${money(m.stake)} bet on the last ${left} holes: “${n.lines.press}”`;
+              msg += `\n${n.nick} doubles the prize! A new ${money(m.stake)} match on the last ${left} holes: “${n.lines.press}”`;
             }
           }
           if (matchOver(m)) msg += `\n\n${settleMatch('end')}`;
@@ -16222,7 +16222,7 @@
         careerSave();
         return msg;
       }
-      // the money, once: every bet (or the skins) at the end, or everything still in play on a forfeit
+      // the money, once: every match (or the skins) at the end, or everything still in play on a forfeit
       function settleMatch(kind) {
         const m = round.match || (career && career.match);
         if (!m || m.settled) return '';
@@ -16235,9 +16235,9 @@
         else if (net > 0) { career.rep += MATCH.rep.win[m.tier]; line = n.lines.lose; }
         else if (net < 0) { career.rep = Math.max(0, career.rep - MATCH.rep.loss); line = n.lines.win; }
         else { line = n.lines.halve; if (m.format === 'match' && !m.presses.length) result = 'halved the match: nobody pays'; }
-        // THE LOAN-SHARK RULE (chunk 4): lose more than you have and he takes all your cash, gives you a beating, and
-        // snaps a club (never the putter) that's gone until it's repaired at the pro shop. The rest goes on your marker
-        // (audit 7.1: it used to be wiped, which made betting on credit nearly free)
+        // THE DEBT-COLLECTOR RULE (chunk 4): lose more than you have and he takes all your cash, and
+        // snaps a club (never the putter) that's gone until it's repaired at the pro shop. The rest is added to your debt
+        // (audit 7.1: it used to be wiped, which made playing on credit nearly free)
         let unpaid = 0, snapped = -1;
         if (net < 0 && career.cash + net < 0) {
           unpaid = -(career.cash + net); net = -Math.max(0, career.cash);
@@ -16253,7 +16253,7 @@
         career.history.push({ npc: n.id, format: m.format, stake: m.stake, result, net, unpaid, snapped: snapped >= 0 ? CLUBS[snapped].name : null, date: Date.now() });
         careerSave(); updateCareerUI();
         if (unpaid) setTimeout(() => showBeating(n, unpaid, snapped), 250);
-        return `MATCH OVER: you ${result}${net ? ` · ${net > 0 ? '+' : '−'}${money(Math.abs(net))}` : ''}${unpaid ? ` · ${money(unpaid)} you couldn't pay goes on your marker` : ''}\n${n.nick}: “${line}”${markerText(marker)}`;
+        return `MATCH OVER: you ${result}${net ? ` · ${net > 0 ? '+' : '−'}${money(Math.abs(net))}` : ''}${unpaid ? ` · ${money(unpaid)} you couldn't pay goes in debt` : ''}\n${n.nick}: “${line}”${markerText(marker)}`;
       }
       // a random club you can still use (not the putter) is snapped; -1 if there's none left
       function snapRandomClub() {
@@ -16280,7 +16280,7 @@
         setTimeout(() => {
           hit(snapped >= 0 ? 'CRACK!' : 'OOF!', 'c');
           setText('btSnap', snapped >= 0 ? `He snapped your ${CLUBS[snapped].name} over his knee` : 'He looked for a club to snap. There wasn\'t one left.');
-          setText('btSub', `You couldn't pay ${money(unpaid)}. He took every dollar you had, and a beating on account.${snapped >= 0 ? ' The club is gone from your bag until the pro shop repairs it.' : ''} The ${money(unpaid)} goes on your marker${career.debt > unpaid ? ` (${money(career.debt)} owed in all)` : ''}: it comes out of your next winnings. Reputation −${MATCH.rep.cantPay}.`);
+          setText('btSub', `You couldn't pay ${money(unpaid)}. He took every dollar you had.${snapped >= 0 ? ' The club is gone from your bag until the pro shop repairs it.' : ''} The ${money(unpaid)} goes in debt${career.debt > unpaid ? ` (${money(career.debt)} owed in all)` : ''}: it comes out of your next winnings. Reputation −${MATCH.rep.cantPay}.`);
           beatReady = true; $('btGo').disabled = false; $('btGo').focus();
         }, 1150);
       }
@@ -16297,10 +16297,10 @@
         }, 150);
       }
       // =====================================================================================================
-      //  THE PAYOFF (user request, 2026-11-19): when a hustler match or an invitational is settled, a screen between the
-      //  last hole and the clubhouse with the outcome: who won, the money counting up (or down), every bet, your cash before
-      //  and after, reputation, and the hustler's parting line. Then: see the scorecard, play on (a match decided early), or
-      //  back to the clubhouse. Shown once (outcome.shown is saved); after the loan shark's beating if there was one.
+      //  THE PAYOFF (user request, 2026-11-19): when a rival match or an invitational is settled, a screen between the
+      //  last hole and the clubhouse with the outcome: who won, the money counting up (or down), every match, your cash before
+      //  and after, reputation, and the rival's parting line. Then: see the scorecard, play on (a match decided early), or
+      //  back to the clubhouse. Shown once (outcome.shown is saved); after the debt collector's visit if there was one.
       // =====================================================================================================
       let outOpen = false, outPending = null, outCtx = null, outQueued = null, outTimer = 0;
       function maybeShowOutcome() {
@@ -16308,11 +16308,11 @@
         if (!o || o.shown) return;
         o.shown = true; careerSave();
         const ctx = { kind: round.match ? 'match' : 'tour', src };
-        if (round.match && round.match.unpaid) { outPending = ctx; return; }      // the beating first (it opens in a moment)
+        if (round.match && round.match.unpaid) { outPending = ctx; return; }      // the debt collector's visit first (it opens in a moment)
         outQueued = ctx;
         outTimer = setTimeout(() => { outQueued = null; showOutcome(ctx); }, 450);
       }
-      // Audit 5.1: the payoff screen is due in a moment. The scorecard's N / Enter / Close opens it now (or, if the beating
+      // Audit 5.1: the payoff screen is due in a moment. The scorecard's N / Enter / Close opens it now (or, if the debt collector's visit
       // is about to open, waits for it) instead of leaving the round, which used to skip the payoff screen for good.
       function outcomeDue() {
         if (outQueued) { clearTimeout(outTimer); const c = outQueued; outQueued = null; showOutcome(c); return true; }
@@ -16338,7 +16338,7 @@
             rows = matchBets(m).map((b) => { const f = betFinal(m, b), v = Math.sign(f.diff) * b.stake;
               return `<tr><td>${b.label.replace(/ \(his\)/, ` (${n.first}'s)`)} <small>${money(b.stake)}</small></td><td>${betResult(f)}</td><td class="${v > 0 ? 'mw' : v < 0 ? 'ml' : ''}">${sgn(v)}</td></tr>`; }).join('');
           }
-          if (m.unpaid) rows += `<tr class="bad"><td>You couldn't pay: on your marker</td><td>${o.snapped ? `he snapped your ${o.snapped}` : ''}</td><td class="ml">${money(m.unpaid)}</td></tr>`;
+          if (m.unpaid) rows += `<tr class="bad"><td>You couldn't pay: added to your debt</td><td>${o.snapped ? `he snapped your ${o.snapped}` : ''}</td><td class="ml">${money(m.unpaid)}</td></tr>`;
         } else {
           const t = src, T = tourById(t.id), ord = t.place === 1 ? '1st' : t.place === 2 ? '2nd' : t.place === 3 ? '3rd' : `${t.place}th`;
           net = (t.prize || 0) - T.entry;
@@ -16395,11 +16395,11 @@
         const m = round.match;
         if (!m || m.settled) return true;
         const owe = -matchNet(m, true), short = Math.max(0, owe - Math.max(0, career.cash));
-        if (!confirm(`Leaving now forfeits the ${m.format === 'skins' ? 'skins game' : 'match'}: ${owe > 0 ? `you pay ${npcById(m.npc).nick} ${money(owe)}` : 'every bet still in play goes to him'}.${short ? ` You can't cover ${money(short)} of it — he'll take that out of your hide and snap a club.` : ''} Leave?`)) return false;
+        if (!confirm(`Leaving now forfeits the ${m.format === 'skins' ? 'skins game' : 'match'}: ${owe > 0 ? `you pay ${npcById(m.npc).nick} ${money(owe)}` : 'every match still in play goes to him'}.${short ? ` You can't cover ${money(short)} of it — he'll take that out of your hide and snap a club.` : ''} Leave?`)) return false;
         toast(settleMatch('forfeit'), 3200);
         archiveRound();                                      // (its card, marked forfeited)
         // (user request, 2026-11-20) once you've walked off, back to the clubhouse, not the driving range. A forfeit you
-        // couldn't pay gets there after the beating (closeBeating); leaving for the home screen stays there.
+        // couldn't pay gets there after the debt collector's visit (closeBeating); leaving for the home screen stays there.
         if (!m.unpaid) setTimeout(() => { if (careerOn && !clubOpen && !round.on && !homeOpen && !beatOpen) openClubhouse(); }, 200);
         return true;
       }
@@ -16410,24 +16410,24 @@
       }
 
       // =====================================================================================================
-      //  INVITATIONALS (user request, 2026-11-19): 9-hole stroke play against a field of all twelve hustlers, on the event's
+      //  INVITATIONALS (user request, 2026-11-19): 9-hole stroke play against a field of all twelve rivals, on the event's
       //  circuit, for a big entry fee and a purse for the top three. The field's scores are rolled per hole like a match's
-      //  hustler (seeded by the entry, so a reload can't change them), plus the event's own "form" (a sharper field at the
+      //  rival (seeded by the entry, so a reload can't change them), plus the event's own "form" (a sharper field at the
       //  big ones); the leaderboard moves after every hole. A win puts the event's trophy in the trophy room
       //  (career.titles). One entry at a time (career.tour, resumable); leaving it part-way is a withdrawal: the fee is gone.
       // =====================================================================================================
       const TOURS = [
         { id: 'muniopen', name: 'The Rolling Pines Muni Open', short: 'Muni Open', tier: 1, rep: 20, entry: 250, purse: [1500, 700, 400], repWin: [15, 8, 4], form: 0, art: 'cup-silver',
-          desc: 'The muni\'s summer stroke-play shootout. Every hustler in town turns up, even the country-club ones.' },
+          desc: 'The muni\'s summer stroke-play shootout. Every rival in town turns up, even the country-club ones.' },
         { id: 'palmproam', name: 'The Cedar Hollow Pro-Am', short: 'Cedar Hollow Pro-Am', tier: 2, rep: 80, entry: 1500, purse: [9000, 4000, 2000], repWin: [30, 15, 8], form: -0.05, art: 'salver',
           desc: 'Members\' money, members\' greens. The pros play for pride; you play for the purse.' },
         { id: 'hawthorne', name: 'The Hawthorne Members\' Invitational', short: 'Hawthorne Invitational', tier: 3, rep: 150, entry: 7500, purse: [30000, 12000, 6000], repWin: [60, 30, 15], form: -0.1, art: 'cup-gold',
           desc: 'Jackets, juleps and lightning greens. The members don\'t like losing their own trophy.' },
-        { id: 'classic', name: 'The Hustlers\' Classic', short: 'Hustlers\' Classic', tier: 3, rep: 250, entry: 25000, purse: [150000, 60000, 30000], repWin: [100, 50, 25], form: -0.2, art: 'bigcup',
-          desc: 'Invitation only. Twelve hustlers at their sharpest, one card each, and the biggest pot nobody talks about.' },
+        { id: 'classic', name: 'The Rivals\' Classic', short: 'Rivals\' Classic', tier: 3, rep: 250, entry: 25000, purse: [150000, 60000, 30000], repWin: [100, 50, 25], form: -0.2, art: 'bigcup',
+          desc: 'Invitation only. Twelve rivals at their sharpest, one card each, and the biggest purse on the circuit.' },
       ];
       const tourById = (id) => TOURS.find((t) => t.id === id);
-      // Audit 7.2: an event is held once a "season": after you play in one, the next is TOUR_GAP hustler matches away
+      // Audit 7.2: an event is held once a "season": after you play in one, the next is TOUR_GAP rival matches away
       // (matches played to the end; a forfeit doesn't count). It was re-enterable straight away, and an invitational paid
       // many times what the best match does, so matches stopped mattering once you could enter. (Also: the Hawthorne
       // purse came down from $50,000 / $20,000 / $10,000, in line with its field, which wins at about +1.)
@@ -16441,7 +16441,7 @@
         return Math.max(0, TOUR_GAP - played);
       }
       const tourLive = () => !!(career && career.tour && career.tour.paid && !career.tour.settled);
-      // a field player's score on hole i (k = their place in the field): the hustler's own formula, plus the event's form
+      // a field player's score on hole i (k = their place in the field): the rival's own formula, plus the event's form
       function fieldHoleScore(t, n, k, i) {
         const T = tourById(t.id), fm = { npc: n.id, tier: t.tier, no: 5000 + t.no, salt: (t.salt ^ Math.imul(k + 1, 2654435761)) >>> 0 };
         const def = variantDef(HOLES[i], TIERS[t.tier]), r = rng32(matchSeed(fm, Math.imul(i + 1, 104729))), g = gauss(r);
@@ -16510,7 +16510,7 @@
         const T = tourById(b.dataset.tour);
         if (tourLive()) return enterTour(career.tour);              // resume
         const m = career.match, pc = career.pvpCard;
-        if (m && !m.settled && m.feePaid) return setText('toMsg', 'Finish (or forfeit) your hustler match first.');
+        if (m && !m.settled && m.feePaid) return setText('toMsg', 'Finish (or forfeit) your rival match first.');
         if (pc && pc.holes.length) return setText('toMsg', `Finish your round against ${pc.vsName} first (🤝 Friends).`);
         if (career.cash < T.entry || tourWait(T)) return;
         career.tour = { id: T.id, tier: T.tier, no: (career.history || []).length + 1, salt: (Math.random() * 2 ** 31) >>> 0, holes: [], paid: false, settled: false };
@@ -16537,7 +16537,7 @@
         hp.holeIdx = Math.min(t.holes.length, HOLES.length - 1); useCourse(TIERS[t.tier] || null);
         buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(t); resumeHoleProgress(t);
         $('btnRound').textContent = 'Withdraw';
-        toast(`🏆 ${T.name}\n${t.holes.length ? `Resuming on hole ${hp.holeIdx + 1}` : `Twelve hustlers in the field · ${money(T.purse[0])} to the winner`} · ${HOLE.name}, par ${HOLE.par}`, 3600);
+        toast(`🏆 ${T.name}\n${t.holes.length ? `Resuming on hole ${hp.holeIdx + 1}` : `Twelve rivals in the field · ${money(T.purse[0])} to the winner`} · ${HOLE.name}, par ${HOLE.par}`, 3600);
       }
       // after each hole: your score in, the board, and (after the 9th) the prize
       function tourAfterHole(i) {
@@ -16554,7 +16554,7 @@
         const place = st.indexOf(me) + 1, prize = T.purse[place - 1] || 0, rep = T.repWin[place - 1] || 0;
         const cashBefore = career.cash;
         career.cash += prize; career.rep = (career.rep || 0) + rep;
-        const marker = collectMarker();                     // money owed on your marker comes out of the prize (audit 7.1)
+        const marker = collectMarker();                     // money owed comes out of the prize (audit 7.1)
         t.outcome = { cashBefore, cashAfter: career.cash, rep, total: me.total, toPar: me.toPar, field: st.length, marker, owed: career.debt || 0, shown: false };
         if (place === 1) career.titles = [...(career.titles || []), { id: T.id, date: Date.now(), score: me.total }];
         const ordOf = (n) => (n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`), ord = ordOf(place);
@@ -16889,7 +16889,7 @@
         return { head, parRow, windRow, scRow, ptRow, pnRow, tpRow, totPar };
       }
       const scoreTotals = (scores) => { let strokes = 0, par = 0, putts = 0, pen = 0, played = 0; scores.forEach((s) => { if (s) { strokes += s.strokes; par += s.par; putts += s.putts; pen += s.pen || 0; played++; } }); return { strokes, par, putts, pen, played, toPar: strokes - par }; };
-      // a hustler match's rows: his scores, then the skins or a row per bet (live card and archived card alike)
+      // a rival match's rows: his scores, then the skins or a row per match (live card and archived card alike)
       function matchRowsHTML(m, cur = -1) {
         const n = HOLES.length;
         let mRows = '';
@@ -16911,8 +16911,8 @@
             }
             const dn = ss.me - ss.npc;
             mRows += `${row}<td class="tot"><span class="${dn > 0 ? 'mw' : dn < 0 ? 'ml' : ''}">${dn >= 0 ? '+' : '−'}${money(Math.abs(dn))}</span></td></tr>`;
-          } else {                                           // match play: a row for the match and one for each press
-            // (user request: a real card) each bet's row: its stake and holes, the running status after every hole as you'd
+          } else {                                           // match play: a row for the match and one for each double
+            // (user request: a real card) each match's row: its entry and holes, the running status after every hole as you'd
             // pencil it (+1, AS, −2; the hole you won/lost marked by colour), and in the total, the status and its money now
             for (const b of matchBets(m)) {
               const fin = betFinal(m, b), span = b.from ? (b.from + 1 < n ? `holes ${b.from + 1}–${n}` : `hole ${n}`) : `all ${n}`;
@@ -16939,7 +16939,7 @@
       function showScorecard(msg = '') {
         $('scPressBox').classList.remove('on'); $('scBets').innerHTML = '';               // (only a career match shows it, below)
         $('scorecard').classList.remove('pvp');            // (the shared friend card is its own mode)
-        if (msg || !$('scorecard').classList.contains('on')) $('scorecard').scrollTop = 0;   // a new card opens at the top: the news and the press offer (5.2)
+        if (msg || !$('scorecard').classList.contains('on')) $('scorecard').scrollTop = 0;   // a new card opens at the top: the news and the double offer (5.2)
         const n = HOLES.length, t = roundTotals(), final = t.played === n;
         round.over = final;
         const cur = hp.on && !hp.done ? hp.holeIdx : -1;
@@ -16947,7 +16947,7 @@
         const myName = careerOn && career ? career.name : session ? session.name : 'Score';
         const { head, parRow, windRow, scRow, ptRow, pnRow, tpRow, totPar } = cardRows(HOLES.map((h) => h.par), HOLES.map((h) => variantDef(h).wind), round.scores, myName, cur);
 
-        // a career match: the hustler's scores and the match, hole by hole
+        // a career match: the rival's scores and the match, hole by hole
         let mRows = '';
         const m = round.match;
         if (m) mRows = matchRowsHTML(m, cur);
@@ -16978,9 +16978,9 @@
         if (m) {
           const s = matchStatus(m), nn = npcById(m.npc);
           $('scTitle').textContent = `${final ? 'Final · ' : ''}${m.format === 'skins' ? `Skins at ${money(m.stake)} a hole` : 'Match'} vs ${nn.first} “${nn.nick}” ${nn.last}`;
-          $('scTag').textContent = m.settled ? settledTag(m) : `${matchLine(m)} thru ${s.played}${m.format === 'skins' ? '' : ` · ${money(m.stake)} a bet`}`;
+          $('scTag').textContent = m.settled ? settledTag(m) : `${matchLine(m)} thru ${s.played}${m.format === 'skins' ? '' : ` · ${money(m.stake)} a match`}`;
           $('scBets').innerHTML = betsStrip(m);                    // what's riding, and where you'd be now
-          pressBox(m);                                             // you're 2 down in the latest bet: the offer, explained
+          pressBox(m);                                             // you're 2 down in the latest match: the offer, explained
           if (final) $('scMsg').textContent = `${msg ? msg + '\n\n' : ''}Round complete: ${t.strokes} strokes (${fmtToPar(t.toPar)}) · you ${m.result}`;
           $('scNext').textContent = final ? 'Back to the clubhouse (N)' : hp.done ? (m.settled ? `Play on for practice: Hole ${hp.holeIdx + 2} (N)` : `Next: Hole ${hp.holeIdx + 2} (N)`) : 'Back to the hole (K)';
           $('scClose').textContent = final || m.settled ? 'Back to the clubhouse' : 'Close (K)';
@@ -17326,7 +17326,7 @@
           g.beginPath(); g.moveTo(X(h.a.x, h.a.z), Y(h.a.x, h.a.z)); g.lineTo(X(h.b.x, h.b.z), Y(h.b.x, h.b.z)); g.stroke();
         }
         g.setLineDash([]);
-        if (round.match && npc.plan) {                        // a career match: the hustler's shots and his ball, in orange
+        if (round.match && npc.plan) {                        // a career match: the rival's shots and his ball, in orange
           g.strokeStyle = 'rgba(255,165,61,.95)'; g.lineWidth = 1.5;
           for (const h of npc.trail) { g.beginPath(); g.moveTo(X(h.a.x, h.a.z), Y(h.a.x, h.a.z)); g.lineTo(X(h.b.x, h.b.z), Y(h.b.x, h.b.z)); g.stroke(); }
           if (npc.anim) { const a = npc.anim.st.from; g.setLineDash([2, 2]); g.beginPath(); g.moveTo(X(a.x, a.z), Y(a.x, a.z)); g.lineTo(X(npc.cur.x, npc.cur.z), Y(npc.cur.x, npc.cur.z)); g.stroke(); g.setLineDash([]); }
@@ -17591,7 +17591,7 @@
             : isPutt() && markRead && !puttRun ? `${fmtBandFt(markRead.cupLo, markRead.cupHi)} ft`
             : isChip() && chipRead ? `${fmtBandYd(chipRead.pinLo, chipRead.pinHi)} yds` : fmtToPin(pinDist()));
         }
-        {   // a hustler match: his shots so far on this hole (counting the one in the air) and where his ball lies
+        {   // a rival match: his shots so far on this hole (counting the one in the air) and where his ball lies
           const el = $('hbNpc'), on = !!(round.match && npc.plan);
           el.classList.toggle('on', on);
           if (on) {
@@ -18062,7 +18062,7 @@
           && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.code)) return;
         if (tut.open) return tutKey(e);                  // the how-to-play lessons, over everything (the home screen too)
         if (homeOpen) return homeKey(e);                 // the home screen (typing a password, Esc back to the game)
-        if (beatOpen) return beatKey(e);                 // the loan shark's beating (Enter to get up)
+        if (beatOpen) return beatKey(e);                 // the debt collector's visit (Enter to get up)
         if (outOpen) return outcomeKey(e);               // the payoff screen at the end of a match / invitational
         if (lbEntry.active) return entryKey(e);          // the initials screen takes every key
         if (introOpen) return introKey(e);               // so does the course preview (Enter starts, Esc cancels)
@@ -18070,7 +18070,7 @@
         if (dropOpen) return dropKey(e);                 // and the drop card (1-3, Esc)
         if (tipsOn) return tipsKey(e);                   // and the tips window: → / Enter next, ← back, Esc / I close
         if (tossOpen) return tossKey(e);                 // the tee toss (Enter once it has landed)
-        if ((npcTurn || npc.starting) && !['KeyK', 'KeyI', 'KeyL'].includes(e.code)) {          // the hustler is playing (or about to tee off): Space / Enter hurry him up
+        if ((npcTurn || npc.starting) && !['KeyK', 'KeyI', 'KeyL'].includes(e.code)) {          // the rival is playing (or about to tee off): Space / Enter hurry him up
           if (['Space', 'Enter', 'NumpadEnter', 'KeyR'].includes(e.code)) { e.preventDefault(); npcHurry(); }
           return;
         }
@@ -18088,7 +18088,7 @@
         if (c === 'Escape' && !e.repeat && !swing.active) return careerOn && demo && !hp.on && !round.on ? backToShop() : openHome();   // home (a round says to leave it first); trying a club: back to the shop
         if (c === 'KeyH' && !e.repeat) return hp.on ? leaveHole() : enterHole();
         if (c === 'KeyK' && !e.repeat && round.on) { if ($('scorecard').classList.contains('on')) hideScorecard(); else showScorecard(); return; }   // K only shows / hides
-        if (c === 'KeyP' && !e.repeat && round.match && canPress(round.match)) return playerPress();     // a career match: press when 2 down
+        if (c === 'KeyP' && !e.repeat && round.match && canPress(round.match)) return playerPress();     // a career match: double when 2 down
         if (c === 'KeyN' && !e.repeat && round.on && !swing.active) {      // a test round goes in order: N only once the hole is finished
           if (hp.done) scorecardNext(); else toast(`Finish the hole first\nThe round plays all ${HOLES.length} holes in order`, 1800);
           return;
@@ -18327,7 +18327,7 @@
         $('riCancel').addEventListener('click', (e) => { e.currentTarget.blur(); introCancel(); });
         // the match picker
         $('cmNpcs').addEventListener('click', (e) => { const c = e.target.closest('.cm-npc'); if (c) { cmSel = +c.dataset.i; renderMatchPicker(); } });
-        $('teeSpots').addEventListener('click', (e) => { const b = e.target.closest('.tee-spot'); if (b) { b.blur(); cmSel = +b.dataset.i; renderMatchPicker(); } });     // click a hustler on the tee
+        $('teeSpots').addEventListener('click', (e) => { const b = e.target.closest('.tee-spot'); if (b) { b.blur(); cmSel = +b.dataset.i; renderMatchPicker(); } });     // click a rival on the tee
         $('cmStake').addEventListener('input', () => updateStakeLabel());
         $('btGo').addEventListener('click', (e) => { e.currentTarget.blur(); closeBeating(); });
         $('cmFmt').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { b.blur(); cmFormat = b.dataset.fmt; renderMatchPicker(); } });
@@ -18526,7 +18526,7 @@
           goalPos.set(cx, H, cz); goalLook.set(cx, 0, cz);
           kp = 6; kq = 8;
         };
-        if (npcTurn) {                                          // a career match: watching the hustler play
+        if (npcTurn) {                                          // a career match: watching the rival play
           npcCameraPose(goalPos, goalLook); fovGoal = 50; kp = 2.6; kq = 6;
         } else if (isPutt()) {
           // The same three states, lower and closer: crouched behind the ball to read it, face-on over the putter to
@@ -19286,7 +19286,7 @@
         else updateShot(dt);
         poseRig(); updateShapeLine();
         pinBeam.position.set(PINS[state.pin].pos.x, 22, PINS[state.pin].pos.z);
-        updateNpc(dt);                                         // a career match: the hustler's ball
+        updateNpc(dt);                                         // a career match: the rival's ball
         updateCamera(dt, now);
         if (isPutt()) updatePuttHUD(); else updateHUD();
         hideOldTracersAtAddress();

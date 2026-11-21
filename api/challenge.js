@@ -147,12 +147,12 @@ function score(ch) {
       if (!dec && Math.abs(d) > left) dec = left ? `${Math.abs(d)} & ${left}` : `${Math.abs(d)} up`;
     });
     winner = d > 0 ? a : d < 0 ? b : null;
-    line = winner ? `${nameOf(winner)} wins ${dec}` : 'All square: stakes returned';
+    line = winner ? `${nameOf(winner)} wins ${dec}` : 'All square: entries returned';
     if (winner) { won[winner] = 2 * E; } else { won[a] = E; won[b] = E; }
   } else if (ch.format === 'stroke') {
     const ta = holes.reduce((s, h) => s + h[a], 0), tb = holes.reduce((s, h) => s + h[b], 0);
     winner = ta < tb ? a : tb < ta ? b : null;
-    line = winner ? `${nameOf(winner)} wins by ${Math.abs(ta - tb)} (net ${Math.min(ta, tb)} to ${Math.max(ta, tb)})` : `Tied on net ${ta}: stakes returned`;
+    line = winner ? `${nameOf(winner)} wins by ${Math.abs(ta - tb)} (net ${Math.min(ta, tb)} to ${Math.max(ta, tb)})` : `Tied on net ${ta}: entries returned`;
     if (winner) won[winner] = 2 * E; else { won[a] = E; won[b] = E; }
   } else {                                                    // skins: each hole a skin from each; a halved hole carries
     let carry = 0, sa = 0, sb = 0;
@@ -179,7 +179,7 @@ function scoreInv(ch) {
   const payout = Object.fromEntries(F.map((p) => [p, 0])), nm = (p) => ch.names[p];
   if (!fin.length) {                                          // nobody played: everyone's stake back
     for (const p of F) payout[p] = E;
-    return { kind: 'refund', winner: null, line: 'Nobody played it in time: stakes returned', payout, net: Object.fromEntries(F.map((p) => [p, 0])) };
+    return { kind: 'refund', winner: null, line: 'Nobody played it in time: entries returned', payout, net: Object.fromEntries(F.map((p) => [p, 0])) };
   }
   const give = Object.fromEntries(fin.map((p) => [p, holeStrokes((ch.strokes && ch.strokes[p]) || 0, ch.tier)]));
   const net = (p, i) => ch.cards[p][i].strokes - give[p][i];
@@ -191,7 +191,7 @@ function scoreInv(ch) {
     const share = Math.floor(pot / top.length);
     top.forEach((p, k) => { payout[p] += share + (k === 0 ? pot - share * top.length : 0); });     // (an odd dollar to the first)
     winner = top.length === 1 ? top[0] : null;
-    line = winner ? `${nm(winner)} wins with net ${best}${standings[1] ? `, ${standings[1].net - best} clear` : ''}` : `${top.map(nm).join(' and ')} tie on net ${best}: they split the pot`;
+    line = winner ? `${nm(winner)} wins with net ${best}${standings[1] ? `, ${standings[1].net - best} clear` : ''}` : `${top.map(nm).join(' and ')} tie on net ${best}: they split the prize`;
   } else {                                                    // skins: each hole the stake from everyone in the field
     let carry = 0;
     const won = Object.fromEntries(fin.map((p) => [p, 0])), byHole = [];
@@ -293,7 +293,7 @@ async function expire(ch) {
   if (inA && inB) return finish(ch, score(ch));
   if (inA || inB) return finish(ch, forfeitResult(ch, inA ? ch.to : ch.from, 'expired'));
   const E = escrowOf(ch);
-  return finish(ch, { kind: 'refund', winner: null, line: 'Nobody played it in time: stakes returned', payout: { [ch.from]: E, [ch.to]: E }, net: { [ch.from]: 0, [ch.to]: 0 } });
+  return finish(ch, { kind: 'refund', winner: null, line: 'Nobody played it in time: entries returned', payout: { [ch.from]: E, [ch.to]: E }, net: { [ch.from]: 0, [ch.to]: 0 } });
 }
 // what a player sees: the other player's card stays hidden until the challenge is settled
 function view(ch, me) {
@@ -454,7 +454,7 @@ module.exports = async (req, res) => {
       const to = String(b.to || '').trim().toLowerCase(), format = b.format, stake = b.stake, tier = b.tier;
       if (!to || to === me) return send(400, { error: 'Pick a friend to challenge' });
       if (!FORMATS.includes(format)) return send(400, { error: 'Unknown format' });
-      if (!Number.isInteger(stake) || stake < 5 || stake > MAX_STAKE) return send(400, { error: 'Stakes are $5 or more, in whole dollars' });
+      if (!Number.isInteger(stake) || stake < 5 || stake > MAX_STAKE) return send(400, { error: 'Entries are $5 or more, in whole dollars' });
       if (![1, 2, 3].includes(tier)) return send(400, { error: 'Unknown circuit' });
       let hcp = 'auto';
       if (b.hcp === 'off') hcp = 'off';
@@ -495,7 +495,7 @@ module.exports = async (req, res) => {
       if (!to.length) return send(400, { error: 'Invite at least one friend' });
       if (to.length > INV_MAX - 1) return send(400, { error: `An invitational is ${INV_MAX} players at most` });
       if (!INV_FORMATS.includes(format)) return send(400, { error: 'An invitational is stroke play or skins' });
-      if (!Number.isInteger(stake) || stake < 5 || stake > MAX_STAKE) return send(400, { error: 'Stakes are $5 or more, in whole dollars' });
+      if (!Number.isInteger(stake) || stake < 5 || stake > MAX_STAKE) return send(400, { error: 'Entries are $5 or more, in whole dollars' });
       if (![1, 2, 3].includes(tier)) return send(400, { error: 'Unknown circuit' });
       const cs = await Promise.all([me, ...to].map(getCareer)), cMe = cs[0];
       if (!cMe) return send(400, { error: 'Your career isn\'t on the server yet — open the clubhouse and try again' });
