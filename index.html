@@ -64,7 +64,8 @@
      ball bounces and rolls when it lands. Bunkers, greenside and fairway, are bowls with a face and a lip (search "BUNKER").
    - On the green the existing putting mode takes over, with break and uphill/downhill worked out from the
      green's fixed tilt and which side of the cup the ball is on.
-   - Out of bounds (white stakes, a set distance from each hole's centre line) is stroke and distance. Trees are hazards:
+   - Out of bounds (white stakes, a set distance from each hole's centre line) is stroke and distance. Water (ponds,
+     hole.water) is a penalty area: +1 and a drop (search "WATER"). Trees are hazards:
      a ball that flies into a canopy loses most of its pace, is knocked off line and drops (treeAt / treeDeflect). Trees
      near the ball and the camera are drawn see-through but still count. U takes a drop for an unplayable ball (+1):
      stroke and distance, lateral within two club-lengths, or back on the line.
@@ -7229,6 +7230,7 @@
           light: { e: 0.50, keep: 0.70, check: 0.45, drag: 7 },
           heavy: { e: 0.32, keep: 0.45, check: 0.25, drag: 13 },
           bunker: { e: 0.10, keep: 0.20, check: 0, drag: 40 },    // (its roll is BUNKER's sand roll in stepPutt, not this drag)
+          water: { e: 0, keep: 0, check: 0, drag: 999 },          // WATER: it goes in and stays in (stepPutt stops it there)
           hardpan: { e: 1.10, keep: 1.05, check: 0.50, drag: 2.2 },
         },
       };
@@ -7702,6 +7704,7 @@
           if (ns <= 0.15) { v.x = v.z = 0; f.phase = 'stopped'; return; }
           v.x *= ns / s; v.z *= ns / s;
           p.x += v.x * dt; p.z += v.z * dt;
+          if (f.ground) { const gw = f.ground(p.x, p.z); if (gw && gw.water) { v.x = v.z = 0; f.phase = 'stopped'; return; } }     // WATER: rolled in
           // swing audit S3.2: a ball that lands short and runs onto the hole's green rolls on by the green's own rules
           // (its Stimp and slopes, and the cup), as one that lands on it does; it used to keep the fairway's roll
           // (BUNKER: and one that runs into a greenside bunker's bowl, or onto its lip, takes its slopes and its sand)
@@ -8160,6 +8163,7 @@
         const g = q.green, p = q.p, v = q.v, k = (5 / 7) * GRAV;
         // (a chip's ground names its surface: CHIP.surf's drag, and BUNKER's sand roll below; one lookup for both)
         const key = g.surfAt && g.drag ? g.surfAt(p.x, p.z) : null, sand = key === 'bunker';
+        if (key === 'water') { v.x = v.z = 0; q.phase = 'stopped'; return; }      // WATER: rolled in, and it stays in
         const drag = key ? (CHIP.surf[key] || CHIP.surf.fairway).drag : g.drag ? g.drag(p.x, p.z) : !g.inside ? 1 : g.inside(p.x, p.z) ? 1 : g.inside(p.x, p.z, 1.3) ? PUTT.fringeDrag : PUTT.roughDrag;
         const s = Math.hypot(v.x, v.z), fast = q.landed ? 1 + q.landed * CHIP.fastDrag * clamp((s - CHIP.fastV) / CHIP.fastSpan, 0, 1) : 1;     // (a landed ball skidding: CHIP)
         // (BUNKER: sand ploughs, slowing a fast ball hard and a slow one gently, so a ball on a steep face trickles down it
@@ -8901,6 +8905,129 @@
         },
       ];
       // =====================================================================================================
+      //  THE TIER 2 COURSE (user request, 2026-11-20): its own nine holes, laid out from GPS-app screenshots of a real
+      //  parkland course the user gave as the template (par 36, 2,977 yds). Each hole was traced from its screenshot and
+      //  scaled so its centre line is the scorecard yardage; si is the scorecard's handicap order. fairwayGaps (yards
+      //  along the centre line): no fairway there (the ponds). water: the ponds, penalty areas (see WATER).
+      // =====================================================================================================
+      const HOLES_T2 = [
+        {
+          name: 'Hole 1', par: 4, si: 7, desc: 'Straight down a tree-lined chute', ob: 36, wind: { mph: 6, from: 20 }, stimp: 11,
+          path: [[0, 0], [-9, -93], [-16, -146], [-17, -185], [-19, -243], [-21, -280], [-25, -314]],
+          fairwayFrom: 94, halfWidth: 18, firstCut: 8,
+          green: { x: -25, z: -314, rx: 12, rz: 15, rot: 0 }, pin: [-23, -317],
+          greenSurface: { tilt: { x: -0.006, z: -0.010 }, bumps: [{ x: -4, z: 3, amp: 4, sigma: 4 }, { x: 4, z: -5, amp: -3, sigma: 4 }] },
+          bunkers: [
+            { x: -27, z: -335, rx: 10, rz: 6, rot: 0.1, type: 'bunker', depth: 3.5 },        // behind the green
+            { x: 4, z: -210, rx: 5, rz: 5, rot: 0, type: 'fbunker', depth: 2.5 },            // right edge of the landing zone
+          ],
+          hardpan: [], water: [],
+        },
+        {
+          name: 'Hole 2', par: 5, si: 5, desc: 'Dogleg left, then back right to the green', ob: 45, wind: { mph: 9, from: 200 }, stimp: 11,
+          path: [[0, 0], [-60, -51], [-106, -94], [-111, -143], [-104, -192], [-88, -245], [-68, -304], [-30, -344], [10, -379]],
+          fairwayFrom: 141, fairwayGaps: [[363, 517]], halfWidth: 17, firstCut: 8,         // the fairway ends at the ponds
+          green: { x: 10, z: -379, rx: 14, rz: 12, rot: -0.7 }, pin: [13, -381],
+          greenSurface: { tilt: { x: 0.007, z: -0.006 }, tiers: [{ x: 0, z: 0, ang: -0.7, rise: 4, width: 5 }], bumps: [{ x: 5, z: 3, amp: -3, sigma: 4 }] },
+          bunkers: [
+            { x: 5, z: -396, rx: 5, rz: 4, rot: 0, type: 'bunker', depth: 3 },              // behind, left
+            { x: 3, z: -362, rx: 9, rz: 6, rot: 0.3, type: 'bunker', depth: 3.5 },          // front left
+            { x: -135, z: -192, rx: 4, rz: 7, rot: 0.1, type: 'fbunker', depth: 2.5 },      // left of the fairway
+          ],
+          hardpan: [], water: [{ x: -85, z: -350, rx: 14, rz: 26 }, { x: -30, z: -296, rx: 27, rz: 18 }],
+        },
+        {
+          name: 'Hole 3', par: 4, si: 3, desc: 'Dogleg right', ob: 50, wind: { mph: 8, from: 300 }, stimp: 11.5,
+          path: [[0, 0], [-29, -60], [-71, -114], [-72, -199], [-62, -249], [-44, -276], [-20, -309], [0, -335]],
+          fairwayFrom: 103, halfWidth: 19, firstCut: 8,
+          green: { x: 0, z: -335, rx: 12, rz: 15, rot: -0.4 }, pin: [-2, -339],
+          greenSurface: { tilt: { x: -0.008, z: -0.008 }, bumps: [{ x: 3, z: 4, amp: 4, sigma: 4.5 }, { x: -4, z: -5, amp: -3, sigma: 4 }] },
+          bunkers: [
+            { x: -19, z: -337, rx: 5, rz: 5, rot: 0, type: 'bunker', depth: 3 },            // left
+            { x: 16, z: -325, rx: 9, rz: 8, rot: 0.2, type: 'bunker', depth: 4 },           // right, the big one
+            { x: -110, z: -184, rx: 7, rz: 13, rot: 0.1, type: 'fbunker', depth: 2.5 },     // left of the landing zone
+          ],
+          hardpan: [], water: [{ x: -53, z: -15, rx: 30, rz: 12 }],
+        },
+        {
+          name: 'Hole 4', par: 4, si: 6, desc: 'Straightaway, trees both sides', ob: 40, wind: { mph: 12, from: 10 }, stimp: 11,
+          path: [[0, 0], [-7, -127], [-15, -182], [-13, -246], [-7, -287], [-4, -333]],
+          fairwayFrom: 127, halfWidth: 15, firstCut: 7,
+          green: { x: -4, z: -333, rx: 12, rz: 13, rot: 0 }, pin: [-1, -335],
+          greenSurface: { tilt: { x: 0.004, z: -0.011 }, bumps: [{ x: -5, z: 2, amp: 3, sigma: 4 }] },
+          bunkers: [
+            { x: -19, z: -325, rx: 5, rz: 5, rot: 0, type: 'bunker', depth: 3 },            // left
+            { x: -5, z: -314, rx: 7, rz: 5, rot: 0.2, type: 'bunker', depth: 3.5 },         // front
+            { x: -24, z: -222, rx: 4, rz: 4, rot: 0, type: 'fbunker', depth: 2 },           // left edge of the fairway
+          ],
+          hardpan: [], water: [],
+        },
+        {
+          name: 'Hole 5', par: 3, si: 1, desc: 'Narrow par 3, sand both sides', ob: 34, wind: { mph: 7, from: 90 }, stimp: 12,
+          path: [[0, 0], [-7, -61], [-14, -104], [-17, -132], [-21, -162]],
+          fairwayFrom: 105, halfWidth: 8, firstCut: 6,
+          green: { x: -21, z: -162, rx: 10, rz: 15, rot: 0.1 }, pin: [-23, -158],
+          greenSurface: { tilt: { x: -0.005, z: -0.009 }, tiers: [{ x: 0, z: -1, ang: -Math.PI / 2, rise: 4, width: 4 }], bumps: [{ x: 3, z: 6, amp: -3, sigma: 3.5 }] },
+          bunkers: [
+            { x: -39, z: -172, rx: 4, rz: 4, rot: 0, type: 'bunker', depth: 3.5 },          // back left
+            { x: -36, z: -142, rx: 4, rz: 6, rot: 0.2, type: 'bunker', depth: 4 },          // front left
+            { x: -4, z: -153, rx: 3.5, rz: 6, rot: -0.1, type: 'bunker', depth: 3.5 },      // right
+          ],
+          hardpan: [], water: [],
+        },
+        {
+          name: 'Hole 6', par: 4, si: 8, desc: 'Dogleg right to a tight landing zone', ob: 45, wind: { mph: 10, from: 160 }, stimp: 11.5,
+          path: [[0, 0], [37, -79], [72, -156], [63, -217], [48, -280], [36, -340]],
+          fairwayFrom: 78, halfWidth: 17, firstCut: 7,                                    // (between the two ponds)
+          green: { x: 36, z: -340, rx: 11, rz: 13, rot: 0 }, pin: [38, -343],
+          greenSurface: { tilt: { x: 0.006, z: -0.008 }, bumps: [{ x: -3, z: -3, amp: 4, sigma: 4 }, { x: 4, z: 5, amp: -3, sigma: 4 }] },
+          bunkers: [
+            { x: 22, z: -349, rx: 4, rz: 4, rot: 0, type: 'bunker', depth: 3 },             // left
+            { x: 50, z: -331, rx: 4, rz: 5, rot: 0, type: 'bunker', depth: 3 },             // front right
+          ],
+          hardpan: [], water: [{ x: 29, z: -159, rx: 14, rz: 30 }, { x: 104, z: -166, rx: 14, rz: 28 }],
+        },
+        {
+          name: 'Hole 7', par: 3, si: 2, desc: 'Long par 3, sand left and right', ob: 38, wind: { mph: 9, from: 330 }, stimp: 12,
+          path: [[0, 0], [-3, -82], [-7, -115], [-12, -148], [-17, -179]],
+          fairwayFrom: 82, halfWidth: 14, firstCut: 7,
+          green: { x: -17, z: -179, rx: 12, rz: 11.5, rot: 0 }, pin: [-20, -181],
+          greenSurface: { tilt: { x: -0.007, z: -0.006 }, tiers: [{ x: 0, z: 0, ang: 0, rise: 4, width: 5 }], bumps: [{ x: -6, z: 3, amp: -3, sigma: 4 }] },
+          bunkers: [
+            { x: -3, z: -184, rx: 8, rz: 7, rot: 0.3, type: 'bunker', depth: 4 },           // back right
+            { x: -26, z: -159, rx: 8, rz: 7, rot: -0.2, type: 'bunker', depth: 4 },         // front left
+          ],
+          hardpan: [], water: [{ x: -25, z: -38, rx: 18, rz: 32 }],                          // (left of the tee shot)
+        },
+        {
+          name: 'Hole 8', par: 5, si: 9, desc: 'Long par 5, bending left', ob: 48, wind: { mph: 11, from: 190 }, stimp: 11,
+          path: [[0, 0], [1, -125], [8, -251], [-7, -317], [-21, -392], [-10, -424], [0, -448]],
+          fairwayFrom: 67, halfWidth: 16, firstCut: 8,
+          green: { x: 0, z: -448, rx: 11, rz: 13, rot: 0.3 }, pin: [-2, -451],
+          greenSurface: { tilt: { x: 0.005, z: -0.010 }, bumps: [{ x: 3, z: -4, amp: 3, sigma: 4 }, { x: -4, z: 5, amp: -3, sigma: 4 }] },
+          bunkers: [
+            { x: -10, z: -288, rx: 6, rz: 6, rot: 0, type: 'fbunker', depth: 3 },          // left side, second-shot zone
+            { x: 32, z: -217, rx: 5, rz: 10, rot: 0.1, type: 'fbunker', depth: 2.5 },       // right of the landing zone
+            { x: -20, z: -449, rx: 4, rz: 4, rot: 0, type: 'bunker', depth: 3 },            // left of the green
+          ],
+          hardpan: [], water: [],
+        },
+        {
+          name: 'Hole 9', par: 4, si: 4, desc: 'Carry the pond, then bend left', ob: 42, wind: { mph: 8, from: 240 }, stimp: 11.5,
+          path: [[0, 0], [23, -81], [37, -147], [49, -196], [34, -254], [13, -288], [-1, -308]],
+          fairwayFrom: 39, fairwayGaps: [[135, 185]], halfWidth: 15, firstCut: 7,           // the pond splits the fairway
+          green: { x: -1, z: -308, rx: 11, rz: 12, rot: 0 }, pin: [1, -306],
+          greenSurface: { tilt: { x: -0.006, z: -0.012 }, bumps: [{ x: -3, z: 3, amp: 4, sigma: 4 }] },
+          bunkers: [
+            { x: 17, z: -306, rx: 3.5, rz: 4, rot: 0, type: 'bunker', depth: 3 },           // right
+            { x: -5, z: -293, rx: 4, rz: 3.5, rot: 0, type: 'bunker', depth: 3 },           // front left
+            { x: 39, z: -281, rx: 7, rz: 5, rot: 0.2, type: 'fbunker', depth: 2.5 },        // right of the approach
+          ],
+          hardpan: [], water: [{ x: 50, z: -155, rx: 27, rz: 13 }],
+        },
+      ];
+      const HOLES_BASE = HOLES.slice();          // the holes as written (HOLES itself holds the course being played: useCourse)
+      // =====================================================================================================
       //  GREENSIDE BUNKERS have depth (user request, 2026-11-20). Each is a bowl cut below the grass round it: a flat
       //  sand floor, deepest under the FACE (the side toward the green), where the sand climbs a steep wall to a turf lip
       //  a little above the grass; the back is a gentle ramp in. `depth` (ft, in the hole) is the floor under the face.
@@ -8933,7 +9060,7 @@
       // Audit fix (user request, 2026-11-20): most greenside bunkers overlapped their green, which played as green but was
       // drawn as sand. Each is moved straight out from the green's centre until a BUNKER.gapYd collar separates them.
       (function seatGreensideBunkers() {
-        for (const h of HOLES) {
+        for (const h of [...HOLES, ...HOLES_T2]) {
           const gr = { rot: 0, ...h.green }, k = 1 + BUNKER.gapYd / Math.min(gr.rx, gr.rz);
           for (const b of h.bunkers) {
             if (b.type !== 'bunker') continue;
@@ -8963,6 +9090,7 @@
         bunker: { lie: 'bunker', name: 'Greenside bunker', e: 0.12, keep: 0.2, roll: 7 },
         green: { lie: 'fairway', name: 'On the green', e: 0.9, keep: 0.9, roll: 0.45 },
         ob: { lie: 'heavy', name: 'Out of bounds', e: 0.55, keep: 0.5, roll: 4.0 },     // plays like heavy rough until the ball stops
+        water: { lie: 'heavy', name: 'Water', e: 0, keep: 0, roll: 99, water: true },   // WATER: it goes in and stays in (a penalty drop)
       };
 
       const holeG = new THREE.Group(); holeG.visible = false; scene.add(holeG);
@@ -9040,13 +9168,16 @@
         return -1;
       }
       const isOB = (x, z) => pathNear(x, z).d > hole.ob;
+      // (HOLES_T2's fairwayGaps, in metres along the centre line as h.gaps: no fairway there)
+      const inFairwayGap = (h, s) => !!h.gaps && h.gaps.some(([a, b]) => s >= a && s <= b);
       function surfaceAt(x, z) {
         if (inEllipse(hole.green, x, z) < 1) return 'green';
         for (const b of hole.bunkers) if (inEllipse(b, x, z) < 1) return b.type;
+        if (hole.water) for (const w of hole.water) if (inEllipse(w, x, z) < 1) return 'water';      // (WATER)
         if (Math.abs(x) < 4 && Math.abs(z) < 4) return 'tee';
         const n = pathNear(x, z);
         if (n.d > hole.ob) return 'ob';                                     // beyond the white stakes
-        if ((n.s >= hole.from && n.d <= hole.halfW) || inEllipse(hole.green, x, z, 1.3) < 1) return 'fairway';      // fairway and the collar
+        if ((n.s >= hole.from && n.d <= hole.halfW && !inFairwayGap(hole, n.s)) || inEllipse(hole.green, x, z, 1.3) < 1) return 'fairway';      // fairway and the collar
         for (const h of hole.hardpan) if (inEllipse(h, x, z) < 1) return 'hardpan';
         return n.d <= hole.halfW + hole.cut ? 'light' : 'heavy';
       }
@@ -9109,7 +9240,7 @@
       // The ground doesn't write depth, so the bowl shows below it; the far wall faces the camera, and the inside of the
       // near wall (seen from behind) is coloured like the grass at the rim, so it hides what the near bank would.
       const BOWL_SUN = new THREE.Vector3(0.35, 1, 0.25).normalize();
-      const GROUND_COL = { green: 0x86d96a, collar: 0x5cae48, fairway: 0x57a844, tee: 0x5cae48, light: 0x3f8232, heavy: 0x2f6a29, ob: 0x2f6a29, hardpan: 0x8d7c57, bunker: 0xe9dcaa, fbunker: 0xe9dcaa };
+      const GROUND_COL = { green: 0x86d96a, collar: 0x5cae48, fairway: 0x57a844, tee: 0x5cae48, light: 0x3f8232, heavy: 0x2f6a29, ob: 0x2f6a29, hardpan: 0x8d7c57, bunker: 0xe9dcaa, fbunker: 0xe9dcaa, water: 0x2f6f9e };
       function groundColAt(x, z) {
         const k = surfaceAt(x, z);
         return k === 'fairway' && inEllipse(hole.green, x, z, 1.3) < 1 ? GROUND_COL.collar : (GROUND_COL[k] ?? GROUND_COL.heavy);
@@ -9167,20 +9298,41 @@
         }
       }
 
-      // ---- CAREER TIERS (CAMPAIGN_PLAN.md, chunk 8): each circuit plays the same 9 holes as its own course: its green speed and
-      // wind, the resort's holes mirrored left to right, the country club's tighter OB, more trees. courseV = the course being
-      // played (null = the holes as written: the range, free play, the test round).
+      // ---- CAREER TIERS (CAMPAIGN_PLAN.md, chunk 8): each circuit plays nine holes as its own course: its green speed and
+      // wind, the country club's tighter OB, more trees. The muni and the country club play the holes as written; the resort
+      // has its own (HOLES_T2, user request 2026-11-20; it used to play them mirrored left to right). courseV = the course
+      // being played (null = the holes as written: the range, free play, the test round).
       const TIERS = {
         // (bunkerDepth: the bunkers' depth × this, greenside and fairway: shallow muni traps, the country club's deep faces)
         // (bunkerFaceDeg, user direction 2026-11-20: on the beginner course a stock shot must always get out of a bunker,
         //  so no face is steeper than this from its foot to its top (makeDips); the later courses have the faces as
         //  built, where under the deep ones it takes a flop)
         1: { course: 'Rolling Pines Muni', stimpAdd: -1, windMult: 0.7, mirror: false, obMult: 1, treeMult: 1, bunkerDepth: 0.75, bunkerFaceDeg: 22, rep: 0, entry: 0, desc: 'Public tracks, scruffy slow greens, small-time hustlers' },
-        2: { course: 'Palm Crest Resort', stimpAdd: 1, windMult: 1.0, mirror: true, obMult: 1, treeMult: 1.5, bunkerDepth: 1, rep: 40, entry: 0, desc: 'Every hole turned the other way, faster greens, more trees, bigger money' },
+        // (holes: a course of its own, user request 2026-11-20: tier 2 plays HOLES_T2, not the muni's holes mirrored)
+        2: { course: 'Palm Crest Resort', holes: HOLES_T2, stimpAdd: 1, windMult: 1.0, mirror: false, obMult: 1, treeMult: 1.5, bunkerDepth: 1, rep: 40, entry: 0, desc: 'A course of its own: tight tree-lined holes, faster greens, bigger money' },
         3: { course: 'Hawthorne Country Club', stimpAdd: 2.5, windMult: 1.3, mirror: false, obMult: 0.8, treeMult: 1.3, bunkerDepth: 1.3, rep: 120, entry: 500, desc: 'Lightning greens, stronger wind, tight out of bounds, high rollers' },
       };
       let courseV = null;
+      // a tier's own holes (HOLES_T2), else the holes as written. HOLES holds the course being played (useCourse), so the
+      // round, the scorecard and the pars all follow it; variantDef(HOLES[i], TIERS[t]) gives hole i of tier t's course.
+      const holesFor = (v) => (v && v.holes) || HOLES_BASE;
+      function useCourse(v) {
+        courseV = v;
+        const hs = holesFor(v);
+        if (HOLES[0] !== hs[0]) {
+          HOLES.splice(0, HOLES.length, ...hs);
+          HOLES.forEach((h, i) => { const o = $('inHole').options[i]; if (o) o.text = `${h.name} · Par ${h.par} (${variantDef(h).desc})`; });
+        }
+        for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
+      }
       function variantDef(def, v = courseV) {
+        const hs = holesFor(v);
+        if (!hs.includes(def)) {                             // hole i of another course: this course's hole i
+          let i = HOLES.indexOf(def);
+          if (i < 0) i = HOLES_BASE.indexOf(def);
+          if (i < 0) i = HOLES_T2.indexOf(def);
+          if (i >= 0) def = hs[i];
+        }
         if (!v) return def;
         const mx = v.mirror ? -1 : 1, e = (o) => ({ ...o, x: o.x * mx, rot: (o.rot || 0) * mx });
         const gs = def.greenSurface;
@@ -9204,8 +9356,7 @@
       function setCourse(tier) {                             // a career match's course, or back to the plain holes
         const v = tier ? TIERS[tier] : null;
         if (v === courseV) return;
-        courseV = v;
-        for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
+        useCourse(v);
         buildHole(hp.holeIdx);
       }
       function buildHole(idx) {
@@ -9224,6 +9375,7 @@
         Object.assign(hole, {
           cl, length: cl[N].s, halfW: def.halfWidth * YD, cut: def.firstCut * YD, from: def.fairwayFrom * YD,
           green: grn, pin, bunkers: def.bunkers.map(m), hardpan: def.hardpan.map(m), surface, ob: (def.ob || 45) * YD,
+          gaps: (def.fairwayGaps || []).map(([a, b]) => [a * YD, b * YD]), water: (def.water || []).map(m),
         });
         // the bunkers' bowls are part of the hole's ground (BUNKER): added on top of the green's height field
         // (which runs on out under the surrounds), after its slopes were fitted, and nothing on the green itself changes
@@ -9246,14 +9398,14 @@
         base.rotation.x = -Math.PI / 2; base.position.set((mapFullBounds.v0 + mapFullBounds.v1) / 2, 0, -(mapFullBounds.u0 + mapFullBounds.u1) / 2);
         holeCourseG.add(base);
 
-        const ribbon = (half, fromS, colors, order) => {          // a strip along the centre line; colours alternate to mow stripes into it
+        const ribbon = (half, fromS, colors, order, skip = null) => {          // a strip along the centre line; colours alternate to mow stripes into it
           const pos = [], col = [], c = new THREE.Color();
           const edge = (i, sgn) => {
             const a = cl[Math.max(0, i - 1)], b = cl[Math.min(cl.length - 1, i + 1)], tx = b.x - a.x, tz = b.z - a.z, l = Math.hypot(tx, tz);
             return [cl[i].x + sgn * (-tz / l) * half, 0, cl[i].z + sgn * (tx / l) * half];
           };
           for (let i = 0; i < cl.length - 1; i++) {
-            if (cl[i].s < fromS) continue;
+            if (cl[i].s < fromS || (skip && skip(cl[i].s))) continue;
             const l0 = edge(i, 1), r0 = edge(i, -1), l1 = edge(i + 1, 1), r1 = edge(i + 1, -1);
             pos.push(...l0, ...r0, ...l1, ...r0, ...r1, ...l1);
             c.setHex(colors[Math.floor(i / 4) % colors.length]);
@@ -9271,7 +9423,8 @@
         };
         holeCourseG.add(ribbon(hole.halfW + hole.cut, 0, [0x3f8232], 1));                              // first cut
         hole.hardpan.forEach((h) => oval(h, 0x8d7c57, 2));
-        holeCourseG.add(ribbon(hole.halfW, hole.from, [0x57a844, 0x4d9a3c], 3));                       // fairway, striped
+        holeCourseG.add(ribbon(hole.halfW, hole.from, [0x57a844, 0x4d9a3c], 3, (s) => inFairwayGap(hole, s)));     // fairway, striped
+        hole.water.forEach((w) => { oval(w, 0x5a7a45, 4, 1.05); oval(w, GROUND_COL.water, 4); });                // WATER: a muddy bank, then the pond
         holeCourseG.add(flat(new THREE.PlaneGeometry(7, 7), overlayMat(0x5cae48, 1, 3), 0, 0, 3));     // tee box
         for (const sx of [-2.6, 2.6]) { const mk = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), new THREE.MeshLambertMaterial({ color: 0xf2f2f2 })); mk.position.set(sx, 0.1, 0.3); holeCourseG.add(mk); }
         hole.dips.forEach((d) => holeCourseG.add(...bowlMeshes(d)));          // the bunkers, greenside and fairway: 3D bowls (BUNKER)
@@ -9340,15 +9493,19 @@
       // h = the hole's layout in metres (the live `hole`, or holeGeom(i) for the round preview)
       function drawHoleCourse(g, X, Y, k, W, H, h = hole) {
         g.fillStyle = '#28591f'; g.fillRect(0, 0, W, H);
-        const strip = (half, fromS, color) => {
+        const strip = (half, fromS, color, gaps = false) => {
           g.strokeStyle = color; g.lineWidth = half * 2 * k; g.lineCap = g.lineJoin = 'round'; g.beginPath(); let first = true;
-          for (const p of h.cl) { if (p.s < fromS) continue; if (first) { g.moveTo(X(p.x, p.z), Y(p.x, p.z)); first = false; } else g.lineTo(X(p.x, p.z), Y(p.x, p.z)); }
+          for (const p of h.cl) {
+            if (p.s < fromS || (gaps && inFairwayGap(h, p.s))) { first = true; continue; }      // (a fairway gap: start again past it)
+            if (first) { g.moveTo(X(p.x, p.z), Y(p.x, p.z)); first = false; } else g.lineTo(X(p.x, p.z), Y(p.x, p.z));
+          }
           g.stroke();
         };
         const blob = (e, color, kk = 1) => { g.fillStyle = color; g.beginPath(); g.ellipse(X(e.x, e.z), Y(e.x, e.z), e.rz * k * kk, e.rx * k * kk, -e.rot, 0, 7); g.fill(); };
         strip(h.halfW + h.cut, 0, '#3f8232');
         h.hardpan.forEach((p) => blob(p, '#8d7c57'));
-        strip(h.halfW, h.from, '#5cae48');
+        strip(h.halfW, h.from, '#5cae48', true);
+        (h.water || []).forEach((w) => blob(w, '#2f6f9e'));                                      // (WATER)
         blob(h.green, '#5cae48', 1.3); blob(h.green, '#9be67f');
         h.bunkers.forEach((b) => blob(b, '#e9dcaa'));
         if (h.obStakes) {                                                                        // out of bounds: the white stakes
@@ -9398,6 +9555,7 @@
         const g = {
           cl, length: cl[N].s, halfW: def.halfWidth * YD, cut: def.firstCut * YD, from: def.fairwayFrom * YD,
           green: m(def.green), pin: { x: def.pin[0] * YD, z: def.pin[1] * YD }, bunkers: def.bunkers.map(m), hardpan: def.hardpan.map(m),
+          gaps: (def.fairwayGaps || []).map(([a, b]) => [a * YD, b * YD]), water: (def.water || []).map(m),
         };
         g.obStakes = obStakesFor(cl, (def.ob || 45) * YD);
         let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
@@ -9707,7 +9865,7 @@
       // nothing followed you to the next tee and a caddie's calm had nothing to walk off. A putt that stays on the green
       // leaves Tilt as it is (updatePutt), and so does holing it: what is left goes to the next tee.
       function tiltFromLie(key) {
-        if (key === 'light' || key === 'heavy' || key === 'bunker' || key === 'fbunker' || key === 'ob') setBadStreak(state.badStreak + 1);
+        if (key === 'light' || key === 'heavy' || key === 'bunker' || key === 'fbunker' || key === 'ob' || key === 'water') setBadStreak(state.badStreak + 1);
         else if (key === 'green' || key === 'fringe') setBadStreak(state.badStreak - 1);
         else if (key === 'fairway' || key === 'tee') setBadStreak(0);
       }
@@ -9836,8 +9994,8 @@
       //  that far on flat ground, read through Perception and the lie, plus how far a chip like that rolls on the flat.
       //  The slope does the rest, and reading it is the player's job.
       // =====================================================================================================
-      const CHIP_COL = { green: 0x6fc25a, fringe: 0x5cae48, fairway: 0x57a844, light: 0x3f8232, heavy: 0x2f6a29, bunker: 0xe9dcaa, hardpan: 0x8d7c57 };
-      const CHIP_NAME = { green: 'On the green', fringe: 'Fringe', fairway: 'Fairway', light: 'Light rough', heavy: 'Heavy rough', bunker: 'Bunker', hardpan: 'Hardpan' };
+      const CHIP_COL = { green: 0x6fc25a, fringe: 0x5cae48, fairway: 0x57a844, light: 0x3f8232, heavy: 0x2f6a29, bunker: 0xe9dcaa, hardpan: 0x8d7c57, water: 0x2f6f9e };
+      const CHIP_NAME = { green: 'On the green', fringe: 'Fringe', fairway: 'Fairway', light: 'Light rough', heavy: 'Heavy rough', bunker: 'Bunker', hardpan: 'Hardpan', water: 'IN THE WATER · +1 penalty · R to take your drop' };
       const CHIP_LIE_READ = { fairway: 1, light: 1.35, heavy: 1.8, hardpan: 1.2, bunker: 1.6, fbunker: 1.4 };   // a bad lie is harder to read
       const chipSurfKey = (k) => k === 'fbunker' ? 'bunker' : k === 'tee' ? 'fairway' : k === 'ob' ? 'heavy' : k;
       // surfFn(X, Z) takes the SURFACE's own coordinates (hole metres, or the practice green's) and names what is there
@@ -10308,6 +10466,7 @@
             const flagsTxt = [...shot.res.flags, ...(f.treeHits ? [`HIT A TREE${f.treeHits > 1 ? ' ×' + f.treeHits : ''}`] : [])].join(' · ');
             const tiltTag = state.badStreak > 0 ? ` · TILTED${state.badStreak > 1 ? ' ×' + state.badStreak : ''}` : '';
             if (surfKey === 'ob') toast(`${flagsTxt ? flagsTxt + '\n' : ''}OUT OF BOUNDS\nStroke and distance: +1 penalty · R to play again from where you hit it`, 5200);
+            else if (surfKey === 'water') toast(`${flagsTxt ? flagsTxt + '\n' : ''}IN THE WATER\n+1 penalty · R to take your drop`, 5200);
             else toast(shot.holed ? 'HOLED OUT!' : `${flagsTxt ? flagsTxt + '\n' : ''}${shapeName(shot.res)} · ${n.carry.toFixed(0)} carry · ${n.total.toFixed(0)} total\n${surf.name}${tiltTag} · ${fmtToPin(n.toPin * YD)} to the pin`, 4200);
           } else {
             tiltFromLie(Math.abs(f.p.x) > 95 ? 'light' : 'fairway');      // the range's rough starts 95 m either side of the centre line
@@ -10381,7 +10540,7 @@
       function enterHole() {
         if (swing.active) return;
         if (careerOn && demo) clearDemo();                   // demos are for the range
-        hp.on = true; document.body.classList.add('hole');
+        hp.on = true; document.body.classList.add('hole'); closeDrop(true);
         Object.assign(hp, { ball: { x: 0, z: 0 }, strokes: 0, putts: 0, pen: 0, lastFrom: null, onTee: true, done: false, history: [], frame: null, aimPin: false, mapZoom: 0, grUser: null });
         if (round.on) applyRoundConditions();
         state.badStreak = 0;
@@ -10408,7 +10567,7 @@
         const leftPvp = !!round.pvp && !round.over;
         if (round.on) endRound();          // leaving the course ends a test round
         hp.on = false; document.body.classList.remove('hole');
-        setGreenRead(false);
+        setGreenRead(false); closeDrop(true);
         state.badStreak = 0;
         for (const t of trails.splice(0)) { t.group.removeFromParent(); t.dispose(); }
         shot = null; puttRun = null; telemetry = null; puttTel = null; lastNumbers = null;
@@ -10427,6 +10586,7 @@
         if (round.match && !hp.onTee && !hp.done) setTimeout(() => npcTakeTurns(), 0);     // a match: is the hustler away?
         if (!hp.onTee && hp.mapZoom === 0) hp.mapZoom = 1;    // automatically zoom minimap in on shot 2+
         const surf = surfaceAt(hp.ball.x, hp.ball.z);
+        if (surf === 'water') return openWaterDrop();          // (WATER: it's played from a drop, one penalty stroke)
         if (surf === 'green') return enterHolePutt();
         const sand = surf === 'bunker' || surf === 'fbunker';
         state.lie = SURF[surf].lie; state.lieSeed = (state.lieSeed * 1664525 + 1013904223) >>> 0; state.slope = sand ? bunkerSlopeLie() : 'flat'; $('inLie').value = state.lie; $('inSlope').value = state.slope;
@@ -10631,23 +10791,89 @@
         }
         return opts;
       }
+      // =====================================================================================================
+      //  WATER (user request, 2026-11-20): ponds are penalty areas (hole.water, ellipses). A ball that lands in one, or
+      //  rolls in, stays in, and the next shot is from a drop, one penalty stroke, chosen from three (the drop card,
+      //  which can't be dismissed while the ball is in the water):
+      //    1. stroke and distance — play again from where the last stroke was played
+      //    2. near where it went in — within two club-lengths of the point where it last crossed into the water, no
+      //       nearer the hole, on dry ground (the best lie there is chosen for you)
+      //    3. back on the line — keep that point between the hole and the drop, as far back as it takes to find a clean lie
+      //  Where it went in is found back along the ball's line from where it was hit.
+      // =====================================================================================================
+      let dropWater = false;
+      function waterEntry() {
+        const b = hp.ball, from = hp.lastFrom || { x: 0, z: 0 }, L = Math.hypot(b.x - from.x, b.z - from.z) || 1;
+        for (let k = 0; k <= L; k += 0.25) {
+          const p = { x: b.x + (from.x - b.x) * k / L, z: b.z + (from.z - b.z) * k / L };
+          if (surfaceAt(p.x, p.z) !== 'water') return p;
+        }
+        return { x: from.x, z: from.z };
+      }
+      function waterDropOptions() {
+        const pin = hole.pin, e = waterEntry(), dE = Math.hypot(e.x - pin.x, e.z - pin.z) || 1, opts = [];
+        const dry = (p) => { const s = surfaceAt(p.x, p.z); return s !== 'water' && s !== 'ob'; };
+        const from = hp.lastFrom || { x: 0, z: 0, tee: true };
+        opts.push({ name: 'Stroke and distance', pos: { x: from.x, z: from.z }, tee: !!from.tee, why: from.tee ? 'Re-tee and play again' : 'Play again from where you last hit' });
+        let best = null;                                       // within two club-lengths of where it went in, no nearer the hole
+        for (let k = 0; k <= 2 * CLUB_LEN + 1e-6; k += 0.3) for (let a = 0; a < 16; a++) {
+          const p = { x: e.x + Math.cos(a / 16 * Math.PI * 2) * k, z: e.z + Math.sin(a / 16 * Math.PI * 2) * k };
+          if (!dry(p) || Math.hypot(p.x - pin.x, p.z - pin.z) < dE - 0.05) continue;
+          const sc = dropScore(p) - k * 0.1;
+          if (!best || sc > best.sc) best = { p, sc };
+        }
+        opts.push({ name: 'Drop where it went in', pos: best ? best.p : { ...e }, why: 'Within two club-lengths of where it crossed into the water, no nearer the hole', off: !best });
+        const ux = (e.x - pin.x) / dE, uz = (e.z - pin.z) / dE;
+        let back = null;                                       // back on the line from the hole through that point
+        for (let k = 1; k <= 160; k += 1) {
+          const p = { x: e.x + ux * k, z: e.z + uz * k }, s = surfaceAt(p.x, p.z);
+          if (s === 'ob') break;
+          if (s === 'water') continue;
+          const sc = dropScore(p) - k * 0.02;
+          if (!back || sc > back.sc) back = { p, sc, k };
+          // the first fairway, clear of trees; past 60 m back, the first clean lie (the best lie on the way is kept)
+          if (!underTree(p.x, p.z) && ((LIE_RANK[s] ?? 0) >= 6 || (k > 60 && (LIE_RANK[s] ?? 0) >= 4))) break;
+        }
+        opts.push({ name: 'Back on the line', pos: back ? back.p : { ...e }, why: `Keeping where it went in between you and the hole${back ? `, ${(back.k / YD).toFixed(0)} yds back` : ''}`, off: !back });
+        for (const o of opts) {
+          const s = surfaceAt(o.pos.x, o.pos.z);
+          o.lie = o.tee ? 'On the tee' : (SURF[s] || SURF.heavy).name;
+          o.toPin = Math.hypot(o.pos.x - pin.x, o.pos.z - pin.z);
+          o.tree = !o.tee && underTree(o.pos.x, o.pos.z);
+        }
+        return opts;
+      }
+      function openWaterDrop() {
+        if (isChip() || isPutt()) setMode('range');
+        state.view = 'scout'; layoutWorld();
+        dropList = waterDropOptions(); dropWater = true;
+        $('dropCard').querySelector('.card-h span').textContent = 'In the water · one penalty stroke';
+        $('dropTag').textContent = `choose your drop · ${fmtToPin(pinDist())} to the pin`;
+        $('dropCard').querySelector('.drop-help').innerHTML = 'Press <b>1</b>–<b>3</b> or click an option';
+        $('dropOpts').innerHTML = dropList.map((o, i) => `<div class="drop-opt${o.off ? ' off' : ''}" data-i="${i}"><kbd>${i + 1}</kbd><div><b>${o.name}</b><span>${o.why} · <em>${o.lie}${o.tree ? ', under a tree' : ''}</em> · ${fmtToPin(o.toPin)} to the pin</span></div></div>`).join('');
+        $('dropCard').classList.add('on'); dropOpen = true;
+      }
       function openDrop() {
+        if (hp.on && !hp.done && !shot && surfaceAt(hp.ball.x, hp.ball.z) === 'water') return openWaterDrop();      // (WATER)
         if (!hp.on || hp.done || isPutt() || swing.active || state.view === 'flight' || (shot && !shot.done)) {
           if (hp.on && !hp.done && isPutt()) toast('No drops on the green', 1500);
           return;
         }
         if (shot) { toast('Walk to your ball first (R)', 1500); return; }
-        dropList = dropOptions();
+        dropList = dropOptions(); dropWater = false;
+        $('dropCard').querySelector('.card-h span').textContent = 'Take a drop · one penalty stroke';
+        $('dropCard').querySelector('.drop-help').innerHTML = 'Press <b>1</b>–<b id="dropMax">3</b> or click an option · <b>Esc</b> to cancel';
         $('dropTag').textContent = `now ${(SURF[surfaceAt(hp.ball.x, hp.ball.z)] || SURF.heavy).name.toLowerCase()}${underTree(hp.ball.x, hp.ball.z) ? ', under a tree' : ''} · ${fmtToPin(pinDist())} to the pin`;
         $('dropMax').textContent = dropList.length;
         $('dropOpts').innerHTML = dropList.map((o, i) => `<div class="drop-opt${o.off ? ' off' : ''}" data-i="${i}"><kbd>${i + 1}</kbd><div><b>${o.name}</b><span>${o.why} · <em>${o.lie}${o.tree ? ', under a tree' : ''}</em> · ${fmtToPin(o.toPin)} to the pin</span></div></div>`).join('');
         $('dropCard').classList.add('on'); dropOpen = true;
       }
-      function closeDrop() { $('dropCard').classList.remove('on'); dropOpen = false; }
+      // (WATER: the card stays until a drop is taken: the ball can't be played from the water)
+      function closeDrop(force = false) { if (dropWater && !force) return; $('dropCard').classList.remove('on'); dropOpen = false; dropWater = false; }
       function takeDrop(i) {
         const o = dropList[i];
         if (!o || o.off) return;
-        closeDrop();
+        closeDrop(true);
         const pen = o.pen || 1;
         hp.strokes += pen; hp.pen += pen;
         hp.history.push({ a: hp.ball, b: o.pos, drop: true });
@@ -11024,7 +11250,7 @@
         }
         liePage();
         sec('Tilt', state.badStreak > 0 ? `you're tilted${state.badStreak > 1 ? ' ×' + state.badStreak : ''}` : 'calm', [
-          'Tilt is <b>nerves after bad shots</b>: finishing in rough, sand or out of bounds adds a level',
+          'Tilt is <b>nerves after bad shots</b>: finishing in rough, sand, water or out of bounds adds a level',
           'One bad shot only <b>rattles you a little</b>; bad shots in a row <b>stack</b>, and each level costs a lot more than the last',
           'It adds to the difficulty <b>and exaggerates your swing</b>: a crooked line curves more, an off-centre strike drifts further',
           '<span class="pro">Reach the fairway</span> and it clears completely · the <span class="pro">green or fringe</span> takes one level off · hardpan leaves it as it is',
@@ -11045,7 +11271,7 @@
             'Higher difficulty = strikes spread further from the sweet spot:',
           ], '', tipsFaces(club));
         }
-        sec('Hazards', '', ['<b>Out of bounds</b> (white stakes): +1 and replay', '<b>Trees</b> are solid — the ball drops near them', '<b>U</b> takes a drop (+1) if you can\'t play it']);
+        sec('Hazards', '', ['<b>Out of bounds</b> (white stakes): +1 and replay', '<b>Water</b>: +1 and a drop, replay, near where it went in, or back on the line', '<b>Trees</b> are solid — the ball drops near them', '<b>U</b> takes a drop (+1) if you can\'t play it']);
         return out;
       }
       function updateTips(now, force = false) {
@@ -11246,7 +11472,7 @@
         if (pv) {
           $('roundIntro').querySelector('.card-h span').textContent = `vs ${pv.vsName} · ${FR_FMT[pv.format]} · course preview`;
           $('roundIntro').querySelector('.ri-note').textContent = `${FR_FMT[pv.format]} for ${money(pv.stake)}${pv.format === 'skins' ? ' a skin' : ''} against ${pv.vsName} at ${TIERS[pv.tier].course}. `
-            + `${strokesText({ player: pv.n ? (pv.mine ? session.id : pv.vs) : null, n: pv.n }, { [pv.vs]: pv.vsName })}. ${pv.vsName} plays the same holes, wind and greens on their own PC; `
+            + `${strokesText({ player: pv.n ? (pv.mine ? session.id : pv.vs) : null, n: pv.n }, { [pv.vs]: pv.vsName }, pv.tier)}. ${pv.vsName} plays the same holes, wind and greens on their own PC; `
             + `the bet settles when both cards are in. You can leave and resume until ${frDate(pv.deadline)}.`;
         }
         if (!tv) $('riStart').textContent = mm || pv ? (pv && pv.holes.length ? `Resume on hole ${pv.holes.length + 1} (Enter)` : 'Tee off (Enter)') : 'Start round (Enter)';
@@ -12385,14 +12611,15 @@
       const fr = { list: [], players: [], loaded: 0, busy: false, form: null, sending: false, err: '' };
       const chApi = (action, body = {}) => apiPost(CH_API, action, body);
       // strokes received on each hole: one on every hole whose stroke index is ≤ n, two on the hardest past 9 (= api/challenge.js)
-      const holeStrokes = (n) => HOLES.map((h) => (h.si <= n ? 1 : 0) + (h.si <= n - HOLES.length ? 1 : 0));
+      // (tier: the course whose stroke indexes count; none = the one being played)
+      const holeStrokes = (n, tier) => (tier ? holesFor(TIERS[tier]) : HOLES).map((h) => (h.si <= n ? 1 : 0) + (h.si <= n - HOLES.length ? 1 : 0));
       const escrowOf = (format, stake) => stake * (format === 'skins' ? HOLES.length : 1);
       const frDate = (t) => new Date(t).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
       const chOther = (ch) => (ch.from === session.id ? ch.to : ch.from);
       // "Gus gets 3 strokes (holes 4, 6 and 9)", from this player's side
-      function strokesText(st, names) {
+      function strokesText(st, names, tier) {
         if (!st || !st.n || !st.player) return st && st.why === 'nohcp' ? 'No strokes: one of you has no handicap yet' : 'No strokes';
-        const holes = holeStrokes(st.n).map((k, i) => (k ? i + 1 : 0)).filter(Boolean);
+        const holes = holeStrokes(st.n, tier).map((k, i) => (k ? i + 1 : 0)).filter(Boolean);
         const list = holes.length > 1 ? `${holes.slice(0, -1).join(', ')} and ${holes[holes.length - 1]}` : `${holes[0]}`;
         const who = st.player === session.id ? 'You get' : `${names[st.player] || st.player} gets`;
         return `${who} ${st.n} stroke${st.n === 1 ? '' : 's'} (${holes.length === 1 ? 'hole' : 'holes'} ${list}${st.n > HOLES.length ? `; two on the hardest ${st.n - HOLES.length}` : ''})`;
@@ -12446,7 +12673,7 @@
         const row = (c, cls, status, btns) => {
           const o = chOther(c), sk = c.format === 'skins';
           return `<div class="fr-ch ${cls}"><div><b>vs ${c.names[o]}</b> · ${FR_FMT[c.format]} · ${money(c.stake)}${sk ? ' a skin' : ''} · ${TIERS[c.tier].course}`
-            + `<i>${strokesText(c.strokes, c.names)}</i><i>${status}</i></div><div class="fr-btns">${btns}</div></div>`;
+            + `<i>${strokesText(c.strokes, c.names, c.tier)}</i><i>${status}</i></div><div class="fr-btns">${btns}</div></div>`;
         };
         const B = (act, id, label, cls = '') => `<button data-act="${act}" data-id="${id}" class="${cls}">${label}</button>`;
         const groups = [
@@ -12538,7 +12765,7 @@
         $('ccWho').innerHTML = `<option value="${f.to}">${f.name}</option><option value="${session.id}">me (${session.name})</option>`;
         $('ccWho').value = f.who; $('ccN').value = f.n;
         const st = chalStrokes(f), hm = handicapOf(career), ht = f.p.handicap ?? null;
-        setText('ccStrokes', (f.hcp === 'auto' ? `Handicaps: you ${fmtHcp(hm)}, ${f.name} ${fmtHcp(ht)} · ` : '') + strokesText(st, { [f.to]: f.name, [session.id]: session.name }) + (f.hcp === 'auto' ? ' (fixed when accepted)' : ''));
+        setText('ccStrokes', (f.hcp === 'auto' ? `Handicaps: you ${fmtHcp(hm)}, ${f.name} ${fmtHcp(ht)} · ` : '') + strokesText(st, { [f.to]: f.name, [session.id]: session.name }, f.tier) + (f.hcp === 'auto' ? ' (fixed when accepted)' : ''));
         const why = cap < 5 ? `${career.cash < f.p.cash ? 'You don\'t' : `${f.name} doesn't`} have ${money(5 * per)} to put up` : '';
         $('ccGo').disabled = !!why; if (why) setText('ccErr', why);
       }
@@ -12594,8 +12821,7 @@
         round.on = true; round.over = false; round.match = null; round.pvp = pc; round.lbDone = true; lbEntry.active = false;
         round.scores = pc.holes.map((h) => h && { strokes: h.strokes, putts: h.putts, par: h.par, pen: h.pen });
         document.body.classList.add('round', 'match'); hideScorecard();
-        hp.holeIdx = Math.min(pc.holes.length, HOLES.length - 1); courseV = TIERS[pc.tier] || null;
-        for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
+        hp.holeIdx = Math.min(pc.holes.length, HOLES.length - 1); useCourse(TIERS[pc.tier] || null);
         buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(pc); resumeHoleProgress(pc);
         $('btnRound').textContent = 'Leave the round';
         const give = holeStrokes(pc.n)[hp.holeIdx];
@@ -12697,17 +12923,17 @@
         if (!ch || !ch.result) return;
         const me = opts.as || session.id, o = ch.from === me ? ch.to : ch.from, n = HOLES.length, rcv = ch.strokes && ch.strokes.player;
         const framed = !!opts.as;
-        const give = holeStrokes(rcv ? ch.strokes.n : 0), cards = ch.cards || {};
+        const give = holeStrokes(rcv ? ch.strokes.n : 0, ch.tier), cards = ch.cards || {}, HS = holesFor(TIERS[ch.tier]);     // (its course's pars)
         const card = (p) => (Array.isArray(cards[p]) ? cards[p] : null);
         const net = (p, i) => card(p)[i].strokes - (p === rcv ? give[i] : 0);
         const cls = (d) => (d <= -2 ? 'eagle' : d === -1 ? 'birdie' : d === 1 ? 'bogey' : d >= 2 ? 'double' : '');
         const sum = (f) => HOLES.reduce((s, _, i) => s + f(i), 0);
         let html = `<tr><th>Hole</th>${HOLES.map((_, i) => `<th>${i + 1}</th>`).join('')}<th class="tot">Total</th></tr>`
-          + `<tr><td>Par</td>${HOLES.map((h) => `<td>${h.par}</td>`).join('')}<td class="tot">${sum((i) => HOLES[i].par)}</td></tr>`;
+          + `<tr><td>Par</td>${HS.map((h) => `<td>${h.par}</td>`).join('')}<td class="tot">${sum((i) => HS[i].par)}</td></tr>`;
         for (const p of [me, o]) {                           // each player's card (• = a stroke received there), then their net
           const c = card(p), lab = p === me && !framed ? `${ch.names[p]} (you)` : ch.names[p];
           if (!c) { html += `<tr${p === o ? ' class="npc"' : ''}><td>${lab}</td><td colspan="${n}" class="nocard">no card</td><td class="tot"></td></tr>`; continue; }
-          html += `<tr${p === o ? ' class="npc"' : ''}><td>${lab}</td>${c.map((h, i) => `<td><span class="sc ${cls(h.strokes - HOLES[i].par)}">${h.strokes}</span>${p === rcv && give[i] ? `<i class="rcv">${'•'.repeat(give[i])}</i>` : ''}</td>`).join('')}`
+          html += `<tr${p === o ? ' class="npc"' : ''}><td>${lab}</td>${c.map((h, i) => `<td><span class="sc ${cls(h.strokes - HS[i].par)}">${h.strokes}</span>${p === rcv && give[i] ? `<i class="rcv">${'•'.repeat(give[i])}</i>` : ''}</td>`).join('')}`
             + `<td class="tot">${sum((i) => c[i].strokes)}</td></tr>`;
           if (p === rcv && ch.strokes.n) html += `<tr class="mrow"><td>${ch.names[p]} net</td>${HOLES.map((_, i) => `<td>${net(p, i)}</td>`).join('')}<td class="tot">${sum((i) => net(p, i))}</td></tr>`;
         }
@@ -14389,8 +14615,7 @@
         if (m.noCaddie) setStats(careerStats());              // (your own stats this match; they come back after it)
         round.scores = m.holes.map((h) => h && { strokes: h.me, putts: h.putts, par: h.par, pen: h.pen });
         document.body.classList.add('round', 'match'); hideScorecard();
-        hp.holeIdx = Math.min(m.holes.length, HOLES.length - 1); courseV = TIERS[m.tier] || null;
-        for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
+        hp.holeIdx = Math.min(m.holes.length, HOLES.length - 1); useCourse(TIERS[m.tier] || null);
         buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(m); resumeHoleProgress(m);
         $('btnRound').textContent = 'Forfeit the match';
         m.presses = m.presses || [];
@@ -14674,7 +14899,7 @@
         return out;
       }
       function tourStandingsCalc(t, upto) {
-        const par =HOLES.slice(0, upto).reduce((s, h) => s + h.par, 0);
+        const par = holesFor(TIERS[t.tier]).slice(0, upto).reduce((s, h) => s + h.par, 0);          // (its own course's pars)
         const rows = NPCS.map((n, k) => ({ name: `${n.first} ${n.last}`, nick: n.nick, card: HOLES.slice(0, upto).map((_, i) => fieldHoleScore(t, n, k, i)) }));
         rows.push({ name: career.name, me: true, card: t.holes.slice(0, upto).map((h) => h.strokes) });
         for (const r of rows) { r.total = r.card.reduce((s, x) => s + x, 0); r.toPar = r.total - par; r.last3 = r.card.slice(-3).reduce((s, x) => s + x, 0); r.last = r.card[r.card.length - 1] || 0; }
@@ -14746,8 +14971,7 @@
         round.on = true; round.over = false; round.match = null; round.pvp = null; round.tour = t; round.lbDone = true; lbEntry.active = false;
         round.scores = t.holes.map((h) => h && { strokes: h.strokes, putts: h.putts, par: h.par, pen: h.pen });
         document.body.classList.add('round', 'match'); hideScorecard();
-        hp.holeIdx = Math.min(t.holes.length, HOLES.length - 1); courseV = TIERS[t.tier] || null;
-        for (const k of Object.keys(holeGeomCache)) delete holeGeomCache[k];
+        hp.holeIdx = Math.min(t.holes.length, HOLES.length - 1); useCourse(TIERS[t.tier] || null);
         buildHole(hp.holeIdx); enterHole(); resumeRoundTilt(t); resumeHoleProgress(t);
         $('btnRound').textContent = 'Withdraw';
         toast(`🏆 ${T.name}\n${t.holes.length ? `Resuming on hole ${hp.holeIdx + 1}` : `Twelve hustlers in the field · ${money(T.purse[0])} to the winner`} · ${HOLE.name}, par ${HOLE.par}`, 3600);
@@ -14876,6 +15100,13 @@
           const nearGreen = (q) => inEllipse(hole.green, q.x, q.z) < 1.15 || surfaceAt(q.x, q.z) === 'green';     // (the green and its fringe)
           for (let t = 0; t < 20 && nearGreen(p); t++) { s = Math.max(sPrev + 2, s - 3); side = (side || 1) * 1.2; p = sideAt(s, side); }
           if (stops.length && dPin(p) >= dPin(stops[stops.length - 1]) - 1 && !nearGreen(sideAt(s, 0))) p = sideAt(s, 0);   // (and closer than the last)
+          // (WATER: his ball never stops in a pond: short of it, then nearer the line, then past it; he doesn't take
+          // water drops, only the tee shot out of bounds above)
+          const wet = (q) => surfaceAt(q.x, q.z) === 'water';
+          for (let t = 0, s0 = s; t < 40 && wet(p); t++) {
+            if (t < 20) { s = Math.max(sPrev + 2, s0 - 4 * (t + 1)); p = sideAt(s, side * (1 - t / 20)); }
+            else { s = Math.min(sG - 4 * left, s0 + 4 * (t - 19)); p = sideAt(s, side * 0.5); }
+          }
           stops.push(p);
           sPrev = s;
         }
@@ -17510,7 +17741,7 @@
         LIES, SLOPES, AERO, windVector, clubFit, solveShape, powerMult, runChip, computePutt, analyzePutt, CADDIES,
         createPutt, stepPutt, puttTarget, rollDecel, puttGate, rng32, shopStats, SHOP, withClubModel, setup, careerStats,
         fullShotGreen, holeStimp, heightCapBallPos, COACH, lieFactor, spreadSwing, recordSwing, swingHist, CAL_MAX, renderBag, setMouseLock, flatChipView, treeDeflect, treePart, TREE, previewTrack, previewSide, spreadRatio, dexSpreadAt, lowRunnerHeight, fitApproachWedge, APPROACH, bagClubNumbers, greenInReach, setGreenRead, get greenReadOpen() { return greenRead.open; },
-        BUNKER, bunkerH, bunkerGrad, inBowl, bunkerSlopeLie, stepChip, createChip, chipBounce, env, fullFaceRead, rigY, playTarget, suggestClub, setCourse, TIERS,
+        BUNKER, bunkerH, bunkerGrad, inBowl, bunkerSlopeLie, stepChip, createChip, chipBounce, env, fullFaceRead, rigY, playTarget, suggestClub, setCourse, TIERS, waterDropOptions, waterEntry, get dropOpen() { return dropOpen; },
         state, swing, TUNE, CLUBS, PUTT, PUTTERS, CHIP, CHIP_TYPES, applyChipType, applyChipGreen, newChip, startChip, clampChipMarker, resetChipMarker, readChipMarker, chipTable, enterHoleChip, setupNextShot, setHeight, setSpinCtl, applyShot, round, startRound, finishHole, showScorecard, scorecardNext, quitRound, advanceHole, showLeaderboard, lbEntry, lbLoad, openRoundIntro, openDrop, takeDrop, dropOptions, treeAt, isOB, holeTrees, landBall, updateTreeClearance, setTips, tipsHTML,
         get chipRead() { return chipRead; }, get chipBase() { return chipBase; }, HOLES, get HOLE() { return HOLE; }, SURF, hp, hole, scene, debugSwing, resetShot, setMode, newPutt, newGreen, applyGreen, startPutt, readMarker, clampMarkerToGreen, makeSurface, fitSurface, greenView, randomSurface, enterHole, leaveHole, selectHole, surfaceAt, holeAim, stockShot, lieRead, setComposure, setBadStreak, tiltFromLie, autoSelectPuttScale, putterBars, createCareer, openShop, openBagRoom, compOffset, tiltPenalty, landSpread, spreadAxes, SPREAD,
         CLUB_MODELS, BASE_CLUBS, modelMods, applyCareerClubs, canUseClub, setClub, stockFlightOf, createFlight, stepFlight, get career() { return career; }, get careerOn() { return careerOn; },

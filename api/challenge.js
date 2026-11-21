@@ -23,7 +23,10 @@ const { redis, readBody, sessionId, updateCareer, rateLimit } = require('./_redi
 
 const FORMATS = ['match', 'stroke', 'skins'];
 const HOLES = 9;
-const SI = [5, 9, 4, 2, 7, 3, 6, 8, 1];          // each hole's stroke index (1 = hardest) — the `si` in index.html's HOLES
+// each hole's stroke index (1 = hardest), by circuit — the `si` in index.html's HOLES (the muni and the country club) and
+// HOLES_T2 (the resort's own course, since 2026-11-20)
+const SI_BASE = [5, 9, 4, 2, 7, 3, 6, 8, 1];
+const SI_BY_TIER = { 1: SI_BASE, 2: [7, 5, 3, 6, 1, 8, 2, 9, 4], 3: SI_BASE };
 const DAYS = 7 * 24 * 3600 * 1000;               // to play it, once accepted (and how long an unanswered one waits)
 const KEEP = 60 * 24 * 3600 * 1000;              // finished challenges drop off the list after this
 const MAX_ACTIVE = 12;                           // pending + open challenges a player can be in
@@ -32,7 +35,7 @@ const MAX_STAKE = 100000;
 // a career's handicap: _career.js (shared with api/profile.js, and the same as handicapOf() in index.html)
 const { handicapOf, outcomeFor } = require('./_career');
 // strokes received on each hole: one on every hole whose stroke index is ≤ n, two on the hardest past 9 (same in index.html)
-const holeStrokes = (n) => SI.map((si) => (si <= n ? 1 : 0) + (si <= n - HOLES ? 1 : 0));
+const holeStrokes = (n, tier) => (SI_BY_TIER[tier] || SI_BASE).map((si) => (si <= n ? 1 : 0) + (si <= n - HOLES ? 1 : 0));
 const escrowOf = (ch) => ch.stake * (ch.format === 'skins' ? HOLES : 1);
 const other = (ch, id) => (ch.from === id ? ch.to : ch.from);
 const parse = (s) => { try { return JSON.parse(s); } catch { return null; } };
@@ -109,7 +112,7 @@ function strokesFor(ch, cFrom, cTo) {
 
 // ---- settlement: net scores per hole after the strokes, then by format
 function score(ch) {
-  const a = ch.from, b = ch.to, give = holeStrokes(ch.strokes.n);
+  const a = ch.from, b = ch.to, give = holeStrokes(ch.strokes.n, ch.tier);
   const net = (p, i) => ch.cards[p][i].strokes - (p === ch.strokes.player ? give[i] : 0);
   const holes = [];
   for (let i = 0; i < HOLES; i++) holes.push({ [a]: net(a, i), [b]: net(b, i) });
@@ -235,9 +238,12 @@ function cleanCard(card) {
 //     replayed and the card can't be rewritten at the end; the card is the holes the server has;
 //   - when the holes came in faster than a round can be played (the whole card within 3 minutes: sent all at once), the
 //     card is marked, and both players see it on the shared card.
-const PARS = [5, 3, 4, 4, 3, 5, 4, 3, 4];        // index.html HOLES (the same on every circuit; mirrored, not re-par'd)
-const PAR = PARS.reduce((a, b) => a + b, 0);
-const holePossible = (h, i) => h.strokes >= Math.max(1, PARS[i] - 3);
+// index.html HOLES (the muni and the country club) and HOLES_T2 (the resort's own course)
+const PARS_BASE = [5, 3, 4, 4, 3, 5, 4, 3, 4];
+const PARS_BY_TIER = { 1: PARS_BASE, 2: [4, 5, 4, 4, 3, 4, 3, 5, 4], 3: PARS_BASE };
+const parsOf = (tier) => PARS_BY_TIER[tier] || PARS_BASE;
+const parOf = (tier) => parsOf(tier).reduce((a, b) => a + b, 0);
+const holePossible = (h, i, tier) => h.strokes >= Math.max(1, parsOf(tier)[i] - 3);
 const MIN_ROUND_MS = 3 * 60 * 1000;
 
 module.exports = async (req, res) => {
@@ -360,7 +366,7 @@ module.exports = async (req, res) => {
         if (ch.cards[me]) throw fail(400, 'Your card is already in');
         const i = b.i, h = cleanHole(b);
         if (!Number.isInteger(i) || i < 0 || i >= HOLES || !h) throw fail(400, 'That hole doesn\'t look right');
-        if (!holePossible(h, i)) throw fail(400, `A ${h.strokes} on a par ${PARS[i]} isn't possible`);
+        if (!holePossible(h, i, ch.tier)) throw fail(400, `A ${h.strokes} on a par ${parsOf(ch.tier)[i]} isn't possible`);
         ch.holes = ch.holes || {};
         const mine = ch.holes[me] = ch.holes[me] || [];
         if (i < mine.length) {                               // already in: the same again is fine (a lost reply), a change isn't
@@ -377,7 +383,7 @@ module.exports = async (req, res) => {
         if (ch.cards[me]) throw fail(400, 'Your card is already in');
         const card = cleanCard(b.card);
         if (!card) throw fail(400, 'That card doesn\'t look right');
-        if (card.some((h, i) => !holePossible(h, i)) || card.reduce((s, h) => s + h.strokes, 0) < PAR - HOLES) throw fail(400, 'That card isn\'t possible');
+        if (card.some((h, i) => !holePossible(h, i, ch.tier)) || card.reduce((s, h) => s + h.strokes, 0) < parOf(ch.tier) - HOLES) throw fail(400, 'That card isn\'t possible');
         // the card must be the holes sent one by one (all nine of them)
         const sent = (ch.holes && ch.holes[me]) || [];
         if (sent.length < HOLES) throw fail(409, `Send every hole first (${sent.length} of ${HOLES} are in)`);
