@@ -47,7 +47,7 @@
   const after = [await board(1), await board(2), await board(3)];
   out.push('', `rounds on each course's board, before -> after: ${before.map((b, i) => `course ${i + 1}: ${b} -> ${after[i]}`).join(' · ')}`);
   out.push(`back on the range: pars ${g.HOLES.map((h) => h.par).join(',')} (the plain holes) · round on ${g.round.on}`);
-  out.push('', 'THE ARCADE BAG against the range\'s clubs (stock full swing, stats 5): loft · carry yds · sweet spot mm');
+  out.push('', 'THE ARCADE BAG at its stats (all 8) against the range\'s clubs at the standard 5 (stock full swing): loft · carry yds · sweet spot mm');
   for (const r of bagRows) { const b = g.CLUBS[r.i]; out.push(`   ${r.n.padEnd(15)} ${r.m.padEnd(38)} ${r.loft.toFixed(1).padStart(5)}° ${r.carry.toFixed(0).padStart(4)} ${r.sweet.toFixed(1).padStart(5)}   | range: ${b.model ? 'STILL A MODEL' : 'base'} ${b.loft.toFixed(1).padStart(5)}° ${g.stockShot(r.i).carry.toFixed(0).padStart(4)} ${b.sweet.toFixed(1).padStart(5)}`); }
   // a bad course is refused by the server
   const bad = await fetch('/api/leaderboard?holes=9&course=7'); out.push(`asking for course 7's board: ${bad.status}`);

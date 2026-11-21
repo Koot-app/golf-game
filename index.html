@@ -6601,7 +6601,7 @@
          stats and clubs for everyone, and a world Top 10 for each course. -->
     <div class="hm-board" id="hmArcade">
       <div class="hm-h">🕹 Arcade</div>
-      <div class="hm-arc-note">A level game: <b>everyone plays the same stats and the same clubs</b>, a full bag of forgiving ones, whatever their career. Pick a course, play nine holes, and your score goes on its world Top 10.</div>
+      <div class="hm-arc-note">A level game: <b>everyone plays the same stats (all 8) and the same clubs</b>, a full bag of forgiving ones, whatever their career. Pick a course, play nine holes, and your score goes on its world Top 10.</div>
       <div class="hm-courses" id="hmCourses"></div>
       <button id="hmArcPlay" class="go">⛳ Play 9 holes</button>
       <div class="hm-arc-err" id="hmArcErr"></div>
@@ -6702,7 +6702,7 @@
 
         <div>
           <div class="sec dev-only">Player (RPG test)</div>
-          <div class="note only-round dev-only" style="margin: 0 0 4px">Arcade round: everyone plays standard stats — Power, Dexterity, Composure and Perception all 5. Yours come back after the round.</div>
+          <div class="note only-round dev-only" style="margin: 0 0 4px">Arcade round: everyone plays the same stats — Power, Dexterity, Composure and Perception all 8. Yours come back after the round.</div>
           <div class="note only-career" id="careerStatNote" style="margin: 0 0 4px"></div>
           <label class="row dev-only"><span>Power</span><input type="range" id="inPower" min="1" max="10" step="1" value="5"><b
               id="outPower"></b></label>
@@ -6913,8 +6913,8 @@
       <div class="card-h"><span>Test round · course preview</span><span class="tag" id="riTag"></span></div>
       <div id="riGrid"></div>
       <div id="riFoot">
-        <div class="ri-note">Everyone plays the same course: each hole's wind and green speed are fixed, and everyone plays standard
-          stats (all 5). Holes are played in order; your score goes on the Top 10.</div>
+        <div class="ri-note">Everyone plays the same course: each hole's wind and green speed are fixed, and everyone plays the same
+          stats (all 8). Holes are played in order; your score goes on the Top 10.</div>
         <div id="riBtns"><button id="riStart">Start round (Enter)</button><button id="riCancel">Cancel (Esc)</button></div>
       </div>
     </div>
@@ -11731,11 +11731,11 @@
         if (swing.active) return;
         if (careerOn) leaveCareer(true);                     // the test round is standard for everyone: never the career's game
         setCourse(arcOf().tier);                             // (the arcade course picked: its holes and conditions)
-        // your own wind and stats come back after the round; in it everyone plays standard stats (all 5)
+        // your own wind and stats come back after the round; in it everyone plays the arcade's stats (ARCADE_STATS, all 8)
         if (!round.on) round.saved = { mph: state.windMph, dir: state.windDir, power: state.power, dex: state.dex, composure: state.composure, perception: state.perception };
         round.on = true; round.over = false; round.scores = []; round.lbDone = false;
         applyCareerClubs();                                  // the arcade's own bag: the same forgiving set for everyone (ARCADE_BAG)
-        setStats(ROUND_STATS);                               // (re-renders the bag)
+        setStats(ARCADE_STATS);                              // (re-renders the bag)
         refreshShotType();
         lbEntry.active = false; lbEntry.mineT = null; lbInfo.rank = 0; lbInfo.note = '';
         lbFetch();                                           // so the end of the round knows the current top 10
@@ -11850,7 +11850,7 @@
         $('roundIntro').querySelector('.card-h span').textContent = mm ? `Match vs ${npcName(nn)} · course preview` : `🕹 Arcade · ${arcOf().name} · course preview`;
         $('roundIntro').querySelector('.ri-note').textContent = mm
           ? `${mm.format === 'skins' ? `Skins at ${money(mm.stake)} a hole against ${nn.first} “${nn.nick}”: win a hole outright to take its skin; a halved hole carries it to the next.` : `Match play for ${money(mm.stake)} against ${nn.first} “${nn.nick}”: win the most holes. Whoever is 2 down may press.`} Your own stats and bag; each hole's wind and greens are fixed. Teeing off pays the ${money(MATCH.fee[mm.tier])} green fee. Leaving before it's decided forfeits the stake.`
-          : `Arcade: everyone plays the same game. The same stats (all 5) and the same clubs whatever your career: a forgiving full bag (${modelName(ARCADE_BAG[0])} driver and woods, ${modelName(ARCADE_BAG[7])} irons, ${modelName(ARCADE_BAG[12])} wedges). Each hole's wind and green speed are fixed. Holes are played in order; your score goes on this course's world Top 10.`;
+          : `Arcade: everyone plays the same game. The same stats (all 8) and the same clubs whatever your career: a forgiving full bag (${modelName(ARCADE_BAG[0])} driver and woods, ${modelName(ARCADE_BAG[7])} irons, ${modelName(ARCADE_BAG[12])} wedges). Each hole's wind and green speed are fixed. Holes are played in order; your score goes on this course's world Top 10.`;
         const tv = mode === 'tour' && career && career.tour, TV = tv && tourById(tv.id);      // an invitational
         if (tv) {
           $('roundIntro').querySelector('.card-h span').textContent = `🏆 ${TV.name} · course preview`;
@@ -11900,7 +11900,10 @@
         else if (e.code === 'Escape') introCancel();
       }
       // TEST ROUND stats: the same for every player
-      const ROUND_STATS = { power: 5, dex: 5, composure: 5, perception: 5 };
+      const ROUND_STATS = { power: 5, dex: 5, composure: 5, perception: 5 };      // (the standard game: the range outside a career)
+      // ARCADE stats (user request, 2026-11-20): everyone plays 8 across the board in an arcade round (it was 5, the
+      // standard). 8 is tour-average Dexterity and a strong Power (design direction 14: Power 5 is the tour average)
+      const ARCADE_STATS = { power: 8, dex: 8, composure: 8, perception: 8 };
       function setStats(s) {
         state.power = s.power; state.dex = s.dex; state.composure = s.composure; state.perception = s.perception;
         $('inPower').value = s.power; $('inDex').value = s.dex; $('inComp').value = s.composure; $('inPer').value = s.perception;
