@@ -6601,7 +6601,7 @@
          stats and clubs for everyone, and a world Top 10 for each course. -->
     <div class="hm-board" id="hmArcade">
       <div class="hm-h">🕹 Arcade</div>
-      <div class="hm-arc-note">A level game: <b>everyone plays the same stats and the same clubs</b>, whatever their career. Pick a course, play nine holes, and your score goes on its world Top 10.</div>
+      <div class="hm-arc-note">A level game: <b>everyone plays the same stats and the same clubs</b>, a full bag of forgiving ones, whatever their career. Pick a course, play nine holes, and your score goes on its world Top 10.</div>
       <div class="hm-courses" id="hmCourses"></div>
       <button id="hmArcPlay" class="go">⛳ Play 9 holes</button>
       <div class="hm-arc-err" id="hmArcErr"></div>
@@ -11733,8 +11733,10 @@
         setCourse(arcOf().tier);                             // (the arcade course picked: its holes and conditions)
         // your own wind and stats come back after the round; in it everyone plays standard stats (all 5)
         if (!round.on) round.saved = { mph: state.windMph, dir: state.windDir, power: state.power, dex: state.dex, composure: state.composure, perception: state.perception };
-        setStats(ROUND_STATS);
         round.on = true; round.over = false; round.scores = []; round.lbDone = false;
+        applyCareerClubs();                                  // the arcade's own bag: the same forgiving set for everyone (ARCADE_BAG)
+        setStats(ROUND_STATS);                               // (re-renders the bag)
+        refreshShotType();
         lbEntry.active = false; lbEntry.mineT = null; lbInfo.rank = 0; lbInfo.note = '';
         lbFetch();                                           // so the end of the round knows the current top 10
         document.body.classList.add('round'); hideScorecard();
@@ -11764,6 +11766,7 @@
         }
         if (courseV) setCourse(null);                         // (an arcade round on the club's or the country club's course)
         round.on = false; round.over = false; lbEntry.active = false;
+        if (!careerOn) { applyCareerClubs(); refreshShotType(); renderBag(); }      // (the arcade's bag is put away: the range's clubs are back)
         if (round.saved) { setStats(round.saved); state.windMph = round.saved.mph; state.windDir = round.saved.dir; round.saved = null; $('inWind').value = state.windMph; $('inWindDir').value = state.windDir; orientFlags(); syncPanel(); }
         document.body.classList.remove('round'); hideScorecard();
         $('btnRound').textContent = `Arcade round · ${HOLES.length} holes`;
@@ -11847,7 +11850,7 @@
         $('roundIntro').querySelector('.card-h span').textContent = mm ? `Match vs ${npcName(nn)} · course preview` : `🕹 Arcade · ${arcOf().name} · course preview`;
         $('roundIntro').querySelector('.ri-note').textContent = mm
           ? `${mm.format === 'skins' ? `Skins at ${money(mm.stake)} a hole against ${nn.first} “${nn.nick}”: win a hole outright to take its skin; a halved hole carries it to the next.` : `Match play for ${money(mm.stake)} against ${nn.first} “${nn.nick}”: win the most holes. Whoever is 2 down may press.`} Your own stats and bag; each hole's wind and greens are fixed. Teeing off pays the ${money(MATCH.fee[mm.tier])} green fee. Leaving before it's decided forfeits the stake.`
-          : 'Arcade: everyone plays the same game. The same stats (all 5) and the same clubs whatever your career, and each hole\'s wind and green speed are fixed. Holes are played in order; your score goes on this course\'s world Top 10.';
+          : `Arcade: everyone plays the same game. The same stats (all 5) and the same clubs whatever your career: a forgiving full bag (${modelName(ARCADE_BAG[0])} driver and woods, ${modelName(ARCADE_BAG[7])} irons, ${modelName(ARCADE_BAG[12])} wedges). Each hole's wind and green speed are fixed. Holes are played in order; your score goes on this course's world Top 10.`;
         const tv = mode === 'tour' && career && career.tour, TV = tv && tourById(tv.id);      // an invitational
         if (tv) {
           $('roundIntro').querySelector('.card-h span').textContent = `🏆 ${TV.name} · course preview`;
@@ -13602,7 +13605,15 @@
       //  the game; they are not measurements. Lofts marked ≈ in the plan still need checking against the maker's specs.
       //  kind: iron = 4i–PW (sold as a set), driver, wood (fairway / hybrid), wedge = GW / SW / LW.
       // =====================================================================================================
-      const BASE_CLUBS = CLUBS.map((c) => ({ ...c }));           // the clubs as the range and the test round play them
+      const BASE_CLUBS = CLUBS.map((c) => ({ ...c }));           // the clubs as the range plays them
+      // THE ARCADE'S BAG (user request, 2026-11-20): an arcade round is played by everyone with the same forgiving set,
+      // a full bag out of the catalogue below (CLUBS index -> model): the most forgiving driver and its fairway wood and
+      // hybrids, the most forgiving irons (their strong-lofted PW makes the gap wedge the set's approach wedge, as in a
+      // career), and cavity-back wedges that are easy to hit but can still be opened up for a flop (the easiest wedge,
+      // the CB 12, can't, and the country club's bunkers need one). It used to be the base clubs. The putter is still
+      // the player's pick of the two standard ones.
+      const ARCADE_BAG = { 0: 'd-g440k', 1: 'f-g440k', 2: 'f-g440k', 3: 'f-g440k', 4: 'i-qimax', 5: 'i-qimax', 6: 'i-qimax', 7: 'i-qimax', 8: 'i-qimax', 9: 'i-qimax', 10: 'i-qimax', 11: 'w-cbx2', 12: 'w-cbx2', 13: 'w-cbx2' };
+      const arcadeBagOn = () => round.on && !careerOn;      // (round.on in a career is a match, an invitational or a friend round)
       const CLUB_MODELS = {
         // ---- irons (7-iron loft change shown; 4i–5i get 80% of it)
         //      Swing audit S5.2 (2026-11-20): dynLoft and spin re-tuned so the strong-lofted sets land a little FLATTER than
@@ -13702,15 +13713,17 @@
         Object.assign(gw, base, id && CLUB_MODELS[id] ? modelMods(CLUB_MODELS[id], CI_GW, base) : {}, { name: 'Approach Wedge', approach: true }, id ? { model: id } : {});
         return true;
       }
-      // rewrite CLUBS in place: the career's models on the clubs it owns, the base clubs everywhere else (and outside a career)
+      // rewrite CLUBS in place: the career's models on the clubs it owns, the arcade's set in an arcade round (ARCADE_BAG),
+      // the base clubs everywhere else
       function applyCareerClubs() {
+        const arc = arcadeBagOn();
         CLUBS.forEach((c, i) => {
           for (const f of Object.keys(c)) if (!(f in BASE_CLUBS[i])) delete c[f];
           Object.assign(c, BASE_CLUBS[i]);
-          const id = careerOn && (demo && demo.idx === i && demo.on ? demo.model : career.bag[i]);
+          const id = careerOn ? (demo && demo.idx === i && demo.on ? demo.model : career.bag[i]) : arc ? ARCADE_BAG[i] : null;
           if (id && CLUB_MODELS[id]) Object.assign(c, modelMods(CLUB_MODELS[id], i), { model: id });
         });
-        if (careerOn) fitApproachWedge();
+        if (careerOn || arc) fitApproachWedge();
         stockCache.clear(); shapeCache.clear(); spreadCache.clear();
         telemetry = null;
       }
@@ -16786,16 +16799,18 @@
         // in a career: only the clubs it owns (snapped ones struck through), keys in the bag's order, the set's name above
         const irons = careerOn && Object.entries(career.bag).find(([i, id]) => +i >= 4 && +i <= 10 && id);
         setText('bagTitle', careerOn && demo && demo.model ? `Bag · demo: ${CLUB_MODELS[demo.model].name}`
-          : careerOn ? `Bag${irons && CLUB_MODELS[irons[1]] ? ` · ${CLUB_MODELS[irons[1]].name.replace(/ \(\d{4}\)/, '')} irons` : ''}` : 'Bag');
+          : careerOn ? `Bag${irons && CLUB_MODELS[irons[1]] ? ` · ${CLUB_MODELS[irons[1]].name.replace(/ \(\d{4}\)/, '')} irons` : ''}`
+          : arcadeBagOn() ? `Arcade bag · ${CLUB_MODELS[ARCADE_BAG[7]].name} irons` : 'Bag');
         const pair = careerOn && demoCanSwap();               // trying a club you have one of: both rows, and the difference
         bagOrder().forEach((i, pos) => {
           if (pair && i === demo.idx) { h += demoPairRows(i, pos); return; }
           const c = CLUBS[i], r = lieRead(i), snapped = careerOn && career.snapped.includes(i);
           const fit = clubFit(c, state.lie, isTeed(c)), risk = fit.s >= 0.5 ? ' risk2' : fit.s > 0.02 ? ' risk1' : '';      // how this club suits the current lie
-          const model = careerOn && career.bag[i] ? modelName(career.bag[i]) : '';
+          const mid = careerOn ? career.bag[i] : arcadeBagOn() ? ARCADE_BAG[i] : null;      // (the arcade's set shows its models too)
+          const model = mid && CLUB_MODELS[mid] ? modelName(mid) : '';
           const tip = snapped ? ' title="Snapped: repair it in the pro shop"'
             : fit.s > 0.02 ? ` title="${model ? `${model} · ` : ''}From this lie: ${Math.round(fit.mishit * 100)}% chance of a topped or fat shot, about ${Math.round((1 - fit.power) * 100)}% less ball speed, much wider dispersion"`
-            : model ? ` title="${model}: ${CLUB_MODELS[career.bag[i]].note}"` : '';
+            : model ? ` title="${model}: ${CLUB_MODELS[mid].note}"` : '';
           const lux = careerOn && isLux(career.bag[i]) && !(demo && demo.idx === i && demo.on);
           // (user request, 2026-11-20: the make and model beside each club, on a hole and on the range; the year is left off)
           const shown = careerOn && demo && demo.idx === i && demo.on ? demo.model : careerOn ? career.bag[i] : null;
