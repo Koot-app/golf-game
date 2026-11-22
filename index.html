@@ -14527,13 +14527,14 @@
       // Hollow's timber lodge, Hawthorne's grand club room. Same floor plan, so the signs stay on their doors.
       const CH_LOBBY = { 1: 'Rolling Pines Clubhouse', 2: 'The Cedar Hollow Lodge', 3: 'The Hawthorne Clubhouse' };
       const lobbyTier = () => (career && CH_LOBBY[career.tier] ? career.tier : 1);
+      const CH_SHOP = { 1: 'Rolling Pines Pro Shop', 2: 'Cedar Hollow Pro Shop', 3: 'Hawthorne Pro Shop' };     // (and a pro shop of its own)
       let chRoomNow = '';
       function chSetRoom() {
-        const room = chRoomOf($('clubhouse').classList), key = room === 'lobby' ? `lobby${lobbyTier()}` : room;
+        const room = chRoomOf($('clubhouse').classList), key = room === 'lobby' || room === 'shop' ? `${room}${lobbyTier()}` : room;
         if (key === chRoomNow) return;
         chRoomNow = key;
         $('chScene').innerHTML = chScene(room);
-        setText('chRoomName', room === 'trophy' && trophyView ? `${trophyView.name}'s Trophy Room` : room === 'locker' && bagView ? `${bagView.name}'s Locker` : room === 'lobby' ? CH_LOBBY[lobbyTier()] : CH_ROOMS[room].name);     // (visiting a friend's)
+        setText('chRoomName', room === 'trophy' && trophyView ? `${trophyView.name}'s Trophy Room` : room === 'locker' && bagView ? `${bagView.name}'s Locker` : room === 'lobby' ? CH_LOBBY[lobbyTier()] : room === 'shop' ? CH_SHOP[lobbyTier()] : CH_ROOMS[room].name);     // (visiting a friend's)
         setText('chPanelName', CH_ROOMS[room].panel);
       }
       new MutationObserver(chSetRoom).observe($('clubhouse'), { attributes: true, attributeFilter: ['class'] });
@@ -14731,22 +14732,73 @@
           const box = (x, y, c) => `<rect x="${x}" y="${y}" width="58" height="40" fill="${c}" stroke="rgba(0,0,0,.4)" stroke-width="2"/><circle cx="${x + 18}" cy="${y + 20}" r="9" fill="#fff"/><circle cx="${x + 40}" cy="${y + 20}" r="9" fill="#fff"/>`;
           const bag = (x, c) => `<rect x="${x}" y="660" width="70" height="170" rx="16" fill="${c}" stroke="#111" stroke-width="3"/><rect x="${x}" y="700" width="70" height="14" fill="rgba(255,255,255,.3)"/>`
             + `<path d="M${x + 14} 660 l-8 -60 M${x + 30} 660 l0 -76 M${x + 48} 660 l8 -64 M${x + 60} 660 l14 -46" stroke="#cfd6dd" stroke-width="4"/><circle cx="${x + 6}" cy="598" r="11" fill="#222"/><circle cx="${x + 30}" cy="582" r="11" fill="#333"/><circle cx="${x + 57}" cy="594" r="11" fill="#1d3a6b"/>`;
-          return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}
-            <rect width="${W}" height="${H}" fill="#cfae7c"/>
-            ${Array.from({ length: 34 }, (_, i) => `<rect y="${i * 26}" width="${W}" height="4" fill="#9c7a4c" opacity=".55"/>`).join('')}
-            <rect width="${W}" height="30" fill="#2a1a0e"/>
-            <rect x="60" y="48" width="660" height="78" rx="6" fill="#1f4a2c" stroke="#c9a253" stroke-width="4"/>
-            <text x="390" y="104" text-anchor="middle" font-family="Georgia, serif" font-size="46" font-weight="700" letter-spacing="10" fill="#f3dca0">PRO SHOP</text>
-            ${['#1b1b1b', '#21407a', '#8a1c22', '#1b1b1b', '#5a5f66', '#21407a', '#0f5c3a', '#1b1b1b', '#8a1c22'].map((c, i) => club(92 + i * 70, 150, c)).join('')}
-            <rect x="70" y="146" width="660" height="8" fill="#6b4c22"/>
-            <rect x="60" y="420" width="360" height="6" fill="#8a8f94"/>${['#f2f2f2', '#2f6db0', '#d94f4f', '#f5d36b', '#3a8f5a', '#1c2a44'].map((c, i) => polo(64 + i * 58, 446 + (i % 2) * 6, c)).join('')}
-            ${[0, 1, 2].map((r) => `<rect x="450" y="${470 + r * 72}" width="290" height="8" fill="#6b4c22"/>` + Array.from({ length: 4 }, (_, i) => box(458 + i * 70, 430 + r * 72, ['#f0f0f0', '#1d2f5c', '#c23b3b', '#f4c542'][(i + r) % 4])).join('')).join('')}
-            <rect y="780" width="${W}" height="120" fill="#b08657"/>${floorLines(780)}
-            ${bag(470, '#1d3a6b')}${bag(560, '#8a1c22')}${bag(650, '#222')}
+          // each course's pro shop (user request, 2026-11-21): the same racks, rail, shelves, bags and counter, where the panel
+          // leaves the picture plain, dressed as that course's clubhouse is (the muni's, Cedar Hollow's lodge, Hawthorne's club)
+          const t = lobbyTier();
+          const S = t === 2 ? {          // CEDAR HOLLOW: log walls, a carved slab sign, iron and cedar, earthy stock, a lantern on the counter
+            defs: `<defs><linearGradient id="cedarw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#93582f"/><stop offset=".5" stop-color="#a8683a"/><stop offset="1" stop-color="#7c4724"/></linearGradient>
+                <linearGradient id="planks" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b4426"/><stop offset="1" stop-color="#2e1c0f"/></linearGradient></defs>`,
+            walls: `<rect width="${W}" height="${H}" fill="#6e4a2c"/>`
+              + Array.from({ length: 26 }, (_, i) => { const y = 30 + i * 30; return `<rect x="-20" y="${y}" width="${W + 40}" height="30" rx="15" fill="${i % 2 ? '#7a5232' : '#86593a'}"/><rect x="0" y="${y + 5}" width="${W}" height="4" rx="2" fill="#b0845a" opacity=".4"/><rect x="0" y="${y + 25}" width="${W}" height="4" fill="#3b2414" opacity=".55"/>`; }).join('')
+              + `<rect width="${W}" height="30" fill="#24160c"/><rect y="26" width="${W}" height="8" fill="#4a2e18"/>`,
+            sign: `<rect x="60" y="44" width="660" height="88" rx="18" fill="#7a4e26" stroke="#3a2314" stroke-width="6"/><rect x="74" y="56" width="632" height="64" rx="10" fill="none" stroke="#c9a253" stroke-width="2" opacity=".7"/>`
+              + `<text x="390" y="98" text-anchor="middle" font-family="Georgia, serif" font-size="42" font-weight="700" letter-spacing="10" fill="#f3dca0">PRO SHOP</text>`
+              + `<text x="390" y="116" text-anchor="middle" font-family="Georgia, serif" font-size="12" letter-spacing="7" fill="#e3c06a">CEDAR HOLLOW GOLF CLUB</text>`,
+            clubs: ['#1b1b1b', '#2f5a36', '#6b4426', '#1b1b1b', '#5a5f66', '#2f5a36', '#8a1c22', '#1b1b1b', '#6b4426'],
+            rack: '#4a2e18', rail: '#2a2a2a', shelf: '#4a2e18',
+            polos: ['#2f5a36', '#8a1c22', '#c8b48a', '#1d3a6b', '#6b4426', '#f2efe6'], boxes: ['#f0f0f0', '#2f5a36', '#8a1c22', '#c8b48a'],
+            floor: `<rect y="780" width="${W}" height="120" fill="url(#planks)"/>${floorLines(780)}`,
+            bags: ['#2f5a36', '#6b4426', '#8a1c22'], counter: 'url(#cedarw)', top: '#5a3820',
+            extra: `<path d="M60 680 v220 M200 680 v220 M340 680 v220" stroke="#5a3820" stroke-width="10"/>`
+              + `<rect x="180" y="602" width="26" height="42" rx="3" fill="#ffd98a" stroke="#1a110a" stroke-width="4"/><path d="M176 602 L193 590 L210 602 Z" fill="#1a110a"/><circle cx="193" cy="622" r="90" fill="url(#glow)"/>`
+              + `<rect x="870" y="390" width="300" height="230" fill="#3a2314"/>${vista(884, 404, 272, 202)}<path d="M1020 404 V606 M884 505 H1156" stroke="#3a2314" stroke-width="9"/>`,
+          } : t === 3 ? {               // HAWTHORNE: green silk and ivory panelling, a black-and-gilt sign, brass and mahogany, a glass
+            // case for the balls, a marble-topped counter with flowers, a marble floor; blades, cashmere and staff bags
+            defs: `<defs><pattern id="silk" width="48" height="44" patternUnits="userSpaceOnUse"><rect width="48" height="44" fill="#1d3a2b"/><rect x="23" width="2" height="44" fill="#b08a45" opacity=".4"/><path d="M8 22 l5 -8 l5 8 l-5 8 Z" fill="#2a4d3a"/></pattern>
+                <linearGradient id="gilt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3d98c"/><stop offset=".5" stop-color="#c9a253"/><stop offset="1" stop-color="#8f6a26"/></linearGradient>
+                <linearGradient id="ivory" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e9e0cc"/><stop offset=".5" stop-color="#f6f0e2"/><stop offset="1" stop-color="#ddd3bd"/></linearGradient></defs>`,
+            walls: `<rect width="${W}" height="${H}" fill="url(#silk)"/><rect y="640" width="${W}" height="140" fill="url(#ivory)"/><rect y="634" width="${W}" height="10" fill="url(#gilt)"/>`
+              + Array.from({ length: 16 }, (_, i) => `<rect x="${i * 100 + 12}" y="658" width="76" height="106" rx="3" fill="none" stroke="#c9a253" stroke-width="2.5"/>`).join('')
+              + `<rect width="${W}" height="24" fill="#efe7d6"/><rect y="24" width="${W}" height="12" fill="url(#gilt)"/>`,
+            sign: `<rect x="60" y="46" width="660" height="86" rx="4" fill="#14161c" stroke="url(#gilt)" stroke-width="6"/><rect x="72" y="58" width="636" height="62" fill="none" stroke="#c9a253" stroke-width="1.5" opacity=".6"/>`
+              + `<text x="390" y="98" text-anchor="middle" font-family="Georgia, serif" font-size="42" font-weight="700" letter-spacing="12" fill="url(#gilt)">PRO SHOP</text>`
+              + `<text x="390" y="116" text-anchor="middle" font-family="Georgia, serif" font-size="12" letter-spacing="7" fill="#c9a253">HAWTHORNE COUNTRY CLUB</text>`,
+            clubs: ['#c9ced3', '#14161c', '#c9ced3', '#b8862b', '#14161c', '#c9ced3', '#1c2a44', '#14161c', '#c9ced3'],
+            rack: 'url(#gilt)', rail: '#c9a253', shelf: '#4a1e14',
+            polos: ['#f4f1e8', '#1c2a44', '#b5c7e0', '#e8c8cf', '#2f5a36', '#d9c9a8'], boxes: ['#f0f0f0', '#14161c', '#1c2a44', '#c9a253'],
+            floor: (() => {
+              const fl = [780, 793, 811, 835, 865, 900], xAt = (k, y) => { const xb = k * 110 - 60, xt = 800 + (k * 110 - 860) * 0.55; return xb + (xt - xb) * (H - y) / (H - 780); };
+              return fl.slice(0, -1).map((y0, r) => Array.from({ length: 15 }, (_, k) => { const y1 = fl[r + 1]; return `<path d="M${xAt(k, y1)} ${y1} L${xAt(k, y0)} ${y0} L${xAt(k + 1, y0)} ${y0} L${xAt(k + 1, y1)} ${y1} Z" fill="${(r + k) % 2 ? '#1b1d20' : '#ece6da'}"/>`; }).join('')).join('');
+            })(),
+            bags: ['#f4f1e8', '#14161c', '#8a1c24'], counter: '#4a1e14', top: '#f4f0e8',
+            extra: `<rect x="446" y="404" width="300" height="232" rx="4" fill="#cfe9f7" opacity=".1" stroke="#c9a253" stroke-width="4"/><path d="M470 412 L520 628" stroke="#fff" stroke-width="8" opacity=".12"/>`
+              + `<rect x="-10" y="666" width="430" height="4" fill="#c9a253"/>${[20, 150, 280].map((x) => `<rect x="${x}" y="694" width="110" height="170" rx="3" fill="none" stroke="#c9a253" stroke-width="2.5" opacity=".8"/>`).join('')}`
+              + `<path d="M182 646 q-10 -26 4 -44 h20 q14 18 4 44 Z" fill="#1c2a44" stroke="#c9a253" stroke-width="2"/><path d="M196 604 l-14 -30 M196 604 v-38 M196 604 l16 -28" stroke="#3a7a45" stroke-width="3"/>`
+              + [[182, 572, '#f4f1e8'], [196, 562, '#e8a0b0'], [212, 574, '#f4f1e8'], [188, 586, '#e8a0b0'], [206, 588, '#fff6d0']].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="9" fill="${c}"/>`).join('')
+              + `<rect x="870" y="380" width="250" height="220" fill="url(#gilt)" stroke="#5b4012" stroke-width="3"/><rect x="884" y="394" width="222" height="192" fill="#2a1d14"/>${vista(890, 400, 210, 180)}`,
+          } : {                          // ROLLING PINES: the muni's tan slat walls, the green sign
+            walls: `<rect width="${W}" height="${H}" fill="#cfae7c"/>${Array.from({ length: 34 }, (_, i) => `<rect y="${i * 26}" width="${W}" height="4" fill="#9c7a4c" opacity=".55"/>`).join('')}<rect width="${W}" height="30" fill="#2a1a0e"/>`,
+            sign: `<rect x="60" y="48" width="660" height="78" rx="6" fill="#1f4a2c" stroke="#c9a253" stroke-width="4"/><text x="390" y="104" text-anchor="middle" font-family="Georgia, serif" font-size="46" font-weight="700" letter-spacing="10" fill="#f3dca0">PRO SHOP</text>`,
+            clubs: ['#1b1b1b', '#21407a', '#8a1c22', '#1b1b1b', '#5a5f66', '#21407a', '#0f5c3a', '#1b1b1b', '#8a1c22'],
+            rack: '#6b4c22', rail: '#8a8f94', shelf: '#6b4c22',
+            polos: ['#f2f2f2', '#2f6db0', '#d94f4f', '#f5d36b', '#3a8f5a', '#1c2a44'], boxes: ['#f0f0f0', '#1d2f5c', '#c23b3b', '#f4c542'],
+            floor: `<rect y="780" width="${W}" height="120" fill="#b08657"/>${floorLines(780)}`,
+            bags: ['#1d3a6b', '#8a1c22', '#222'], counter: 'url(#wood)', top: '#7a5a2c', extra: '',
+          };
+          return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}${S.defs || ''}
+            ${S.walls}
+            ${S.sign}
+            ${S.clubs.map((c, i) => club(92 + i * 70, 150, c)).join('')}
+            <rect x="70" y="146" width="660" height="8" fill="${S.rack}"/>
+            <rect x="60" y="420" width="360" height="6" fill="${S.rail}"/>${S.polos.map((c, i) => polo(64 + i * 58, 446 + (i % 2) * 6, c)).join('')}
+            ${[0, 1, 2].map((r) => `<rect x="450" y="${470 + r * 72}" width="290" height="8" fill="${S.shelf}"/>` + Array.from({ length: 4 }, (_, i) => box(458 + i * 70, 430 + r * 72, S.boxes[(i + r) % 4])).join('')).join('')}
+            ${S.floor}
+            ${S.bags.map((c, i) => bag(470 + i * 90, c)).join('')}
             <!-- the counter and the till -->
-            <rect x="-10" y="660" width="420" height="240" fill="url(#wood)" stroke="#1d1209" stroke-width="4"/><rect x="-10" y="648" width="430" height="20" fill="#7a5a2c"/>
+            <rect x="-10" y="660" width="420" height="240" fill="${S.counter}" stroke="#1d1209" stroke-width="4"/><rect x="-10" y="648" width="430" height="20" fill="${S.top}"/>
             <rect x="250" y="590" width="110" height="60" rx="6" fill="#2b2f33"/><rect x="262" y="600" width="86" height="22" fill="#5ee08a" opacity=".7"/><rect x="235" y="640" width="140" height="12" fill="#1c1f22"/>
             <ellipse cx="120" cy="644" rx="60" ry="8" fill="#000" opacity=".3"/><path d="M80 644 q40 -40 80 0" fill="#f2f2f2" stroke="#ccc"/>
+            ${S.extra}
             ${Array.from({ length: 6 }, (_, i) => `<rect x="${860 + i * 120}" y="160" width="6" height="150" fill="#c9ced3"/><path d="M${856 + i * 120} 310 h30 l-4 14 h-26 Z" fill="#9aa1a8"/>`).join('')}
             <circle cx="300" cy="300" r="260" fill="url(#glow)"/><circle cx="650" cy="420" r="220" fill="url(#glow)"/>
             <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
