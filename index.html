@@ -14238,14 +14238,14 @@
           const t = +b.dataset.tier;
           if (career.tierMax < t || (career.match && !career.match.settled && career.match.feePaid)) return;
           career.tier = t; cmSel = 0;
-          setText('chMsg', `You'll compete at ${TIERS[t].course} now.`);
+          setText('chMsg', `You'll compete at ${TIERS[t].course} now. Welcome to its clubhouse.`);
         } else if (b.dataset.join) {
           if (liveMatch()) return setText('chMsg', liveMatchMsg());
           if (!tierReqs(3).every((r) => r.ok)) return;
           career.cash -= TIERS[3].entry; career.tierMax = 3; career.tier = 3; cmSel = 0;
           setText('chMsg', `Welcome to ${TIERS[3].course}. The members play for the biggest prizes in the game.`);
         } else return;
-        careerSave(); updateCareerUI();
+        careerSave(); updateCareerUI(); chSetRoom();         // (the new course's clubhouse)
       }
       // the clubhouse: the new-career form when there's no save, the hub when there is (opening it enters the career)
       function openClubhouse() {
@@ -14273,7 +14273,7 @@
           if (career.match && (career.match.settled || !career.match.feePaid)) { career.match = null; careerSave(); }   // nothing left to resume
           enterCareer();
           if (career.snapped.length) setText('chMsg', `Snapped: ${career.snapped.map((i) => CLUBS[i].name).join(', ')}. The pro shop will repair ${career.snapped.length > 1 ? 'them' : 'it'}.`);
-          updateCareerUI();
+          updateCareerUI(); queueMicrotask(chSetRoom);        // (another career may play another course: its clubhouse)
           setSync(session ? (sync.dirty ? 'saving' : sync.state || 'ok') : '');
           if (session) { syncLoad(); loadFriends(true); }    // another PC may have played since; any challenges waiting?
         }
@@ -14523,13 +14523,17 @@
         trophy: { name: 'The Trophy Room', panel: '🏆 Trophy room' }, tourney: { name: 'The First Tee', panel: '🏆 Invitationals' }, locker: { name: 'The Locker Room', panel: '🎒 Your bag' },
       };
       const chRoomOf = (cl) => (cl.contains('bagroom') ? 'locker' : cl.contains('tour') ? 'tourney' : cl.contains('trophy') ? 'trophy' : cl.contains('caddie') ? 'shack' :cl.contains('coach') ? 'coach' : cl.contains('shop') ? 'shop' : cl.contains('friends') || cl.contains('chal') ? 'bar' : cl.contains('match') ? 'tee' : 'lobby');
+      // each circuit's course has a clubhouse of its own (user request, 2026-11-21): the muni's wood-panelled lobby, Cedar
+      // Hollow's timber lodge, Hawthorne's grand club room. Same floor plan, so the signs stay on their doors.
+      const CH_LOBBY = { 1: 'Rolling Pines Clubhouse', 2: 'The Cedar Hollow Lodge', 3: 'The Hawthorne Clubhouse' };
+      const lobbyTier = () => (career && CH_LOBBY[career.tier] ? career.tier : 1);
       let chRoomNow = '';
       function chSetRoom() {
-        const room = chRoomOf($('clubhouse').classList);
-        if (room === chRoomNow) return;
-        chRoomNow = room;
+        const room = chRoomOf($('clubhouse').classList), key = room === 'lobby' ? `lobby${lobbyTier()}` : room;
+        if (key === chRoomNow) return;
+        chRoomNow = key;
         $('chScene').innerHTML = chScene(room);
-        setText('chRoomName', room === 'trophy' && trophyView ? `${trophyView.name}'s Trophy Room` : room === 'locker' && bagView ? `${bagView.name}'s Locker` : CH_ROOMS[room].name);     // (visiting a friend's)
+        setText('chRoomName', room === 'trophy' && trophyView ? `${trophyView.name}'s Trophy Room` : room === 'locker' && bagView ? `${bagView.name}'s Locker` : room === 'lobby' ? CH_LOBBY[lobbyTier()] : CH_ROOMS[room].name);     // (visiting a friend's)
         setText('chPanelName', CH_ROOMS[room].panel);
       }
       new MutationObserver(chSetRoom).observe($('clubhouse'), { attributes: true, attributeFilter: ['class'] });
@@ -14562,11 +14566,136 @@
             + Array.from({ length: 9 }, (_, i) => { const tx = x + (i < 4 ? w * (0.04 + i * 0.09) : w * (0.66 + (i - 4) * 0.075)), ty = hy - h * (0.02 + (i % 3) * 0.015); return `<path d="M${tx} ${ty - h * 0.13} L${tx - w * 0.03} ${ty} H${tx + w * 0.03} Z" fill="#24502c"/>`; }).join('')
             + (flag ? `<line x1="${x + w * 0.55}" y1="${hy - h * 0.1}" x2="${x + w * 0.55}" y2="${hy + h * 0.02}" stroke="#eee" stroke-width="2"/><path d="M${x + w * 0.55} ${hy - h * 0.1} l${w * 0.04} ${h * 0.015} l-${w * 0.04} ${h * 0.015} Z" fill="#e33"/>` : '');
         };
-        const door = (x, w, glass) => `<rect x="${x - 10}" y="290" width="${w + 20}" height="480" fill="#2a190d"/><rect x="${x}" y="300" width="${w}" height="470" fill="url(#wood)" stroke="#1d1209" stroke-width="3"/>`
+        const door = (x, w, glass, fill = 'url(#wood)', frame = '#2a190d', panel = '#2a190d') => `<rect x="${x - 10}" y="290" width="${w + 20}" height="480" fill="${frame}"/><rect x="${x}" y="300" width="${w}" height="470" fill="${fill}" stroke="#1d1209" stroke-width="3"/>`
           + `<rect x="${x + 16}" y="320" width="${w - 32}" height="170" rx="4" fill="${glass}" stroke="#c9a253" stroke-width="3"/>`
-          + `<rect x="${x + 16}" y="520" width="${w - 32}" height="220" rx="4" fill="none" stroke="#2a190d" stroke-width="4"/><circle cx="${x + w - 20}" cy="560" r="7" fill="#e3c06a"/>`;
+          + `<rect x="${x + 16}" y="520" width="${w - 32}" height="220" rx="4" fill="none" stroke="${panel}" stroke-width="4"/><circle cx="${x + w - 20}" cy="560" r="7" fill="#e3c06a"/>`;
         const floorLines = (y0) => Array.from({ length: 16 }, (_, i) => `<line x1="${i * 110 - 60}" y1="${H}" x2="${800 + (i * 110 - 860) * 0.55}" y2="${y0}" stroke="#000" stroke-opacity=".25"/>`).join('');
+        // what's behind the lobby's doors (in their glass: the shop's clubs, the coach's swing), the bar's bottles, the fire,
+        // a bag by the range door and the easel signs' legs: the same in every clubhouse, where the signs hang
+        const shopGlass = `<path d="M660 340 v120 M690 330 v130 M720 345 v115 M750 335 v125" stroke="#2b2b2b" stroke-width="3"/><path d="M652 460 h16 M682 460 h16 M712 460 h16 M742 460 h16" stroke="#222" stroke-width="7" stroke-linecap="round"/>`;
+        const coachGlass = `<path d="M870 450 L900 340 L930 450" fill="none" stroke="#fff" stroke-width="3" opacity=".7"/><circle cx="900" cy="335" r="8" fill="none" stroke="#fff" stroke-width="3" opacity=".7"/>`;
+        const barShelves = Array.from({ length: 3 }, (_, r) => Array.from({ length: 7 }, (_, i) => `<rect x="${1368 + i * 26}" y="${380 + r * 70}" width="12" height="${36 + (i % 3) * 6}" rx="3" fill="${['#7a2c1f', '#2f6b3f', '#b8862b', '#4b5f8a', '#8c3a5c'][(i + r) % 5]}" opacity=".9"/>`).join('') + `<rect x="1360" y="${420 + r * 70}" width="180" height="5" fill="#5a3820"/>`).join('');
+        const fire = `<path d="M215 760 L365 742 M225 742 L370 762" stroke="#4a2c16" stroke-width="16" stroke-linecap="round"/>`
+          + `<path d="M230 745 Q240 690 262 660 Q262 700 280 710 Q285 650 310 615 Q318 680 335 690 Q345 665 352 650 Q365 700 350 745 Z" fill="#ff8a2a"/>`
+          + `<path d="M255 745 Q265 710 280 690 Q288 715 300 720 Q306 690 318 670 Q330 715 322 745 Z" fill="#ffd25a"/><circle cx="290" cy="720" r="160" fill="url(#glow)"/>`;
+        const lobbyProps = `<rect x="1250" y="660" width="54" height="125" rx="14" fill="#7a1f24" stroke="#2a190d" stroke-width="3"/><path d="M1262 660 v-40 M1277 660 v-55 M1292 660 v-35" stroke="#bbb" stroke-width="4"/>
+            <circle cx="1262" cy="618" r="8" fill="#222"/><circle cx="1277" cy="603" r="8" fill="#333"/><circle cx="1292" cy="623" r="8" fill="#1d3a6b"/>
+            <path d="M1135 640 L1110 790 M1185 640 L1210 790 M1160 640 L1160 785" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
+            <path d="M780 790 L755 895 M840 790 L865 895 M810 790 V890" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
+            <path d="M1442 790 L1417 895 M1502 790 L1527 895 M1472 790 V890" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
+            <path d="M1186 810 L1166 895 M1246 810 L1266 895 M1216 810 V890" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>`;
 
+        if (room === 'lobby' && lobbyTier() === 2) {     // CEDAR HOLLOW: a timber lodge in the trees. Log walls, a river-stone
+          // chimney with the club's carved sign, a course map, cedars outside the window, iron lanterns
+          const stones = (x0, y0, w, h, sd) => { let s = ''; for (let r = 0; r * 34 < h + 34; r++) for (let c = -1; c * 58 < w + 58; c++) { const k = (c * 7 + r * 13 + sd + 50) % 5; s += `<ellipse cx="${x0 + c * 58 + (r % 2) * 29}" cy="${y0 + r * 34 + 17}" rx="${25 + (k % 3) * 3}" ry="${14 + (k % 2) * 2}" fill="${['#8a8379', '#7a746b', '#9a9388', '#6f6a62', '#848a86'][k]}" stroke="#4a4640" stroke-width="2"/>`; } return s; };
+          const lantern = (x, len = 60) => `<line x1="${x}" y1="70" x2="${x}" y2="${len + 70}" stroke="#1a110a" stroke-width="3"/><path d="M${x - 22} ${len + 82} L${x} ${len + 66} L${x + 22} ${len + 82} Z" fill="#1a110a"/>`
+            + `<rect x="${x - 17}" y="${len + 82}" width="34" height="46" rx="3" fill="#ffd98a" stroke="#1a110a" stroke-width="4"/><path d="M${x} ${len + 82} v46 M${x - 17} ${len + 105} h34" stroke="#1a110a" stroke-width="2.5"/>`
+            + `<rect x="${x - 21}" y="${len + 126}" width="42" height="6" fill="#1a110a"/><circle cx="${x}" cy="${len + 140}" r="190" fill="url(#glow)"/>`;
+          const cedar = (x, b, h, c) => [0, 1, 2].map((k) => `<path d="M${x} ${b - h + k * h * 0.22} L${x - h * (0.16 + k * 0.05)} ${b - h * (0.45 - k * 0.22)} H${x + h * (0.16 + k * 0.05)} Z" fill="${c}"/>`).join('') + `<rect x="${x - 4}" y="${b - h * 0.03}" width="8" height="${h * 0.06}" fill="#3a2314"/>`;
+          return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}<defs>
+              <linearGradient id="cedarw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#93582f"/><stop offset=".5" stop-color="#a8683a"/><stop offset="1" stop-color="#7c4724"/></linearGradient>
+              <linearGradient id="planks" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b4426"/><stop offset="1" stop-color="#2e1c0f"/></linearGradient>
+              <clipPath id="cpWain"><rect y="560" width="${W}" height="210"/></clipPath><clipPath id="cpChim"><rect x="110" y="72" width="360" height="698"/></clipPath>
+              <clipPath id="cpWin"><rect x="1030" y="150" width="260" height="370"/></clipPath></defs>
+            <rect width="${W}" height="${H}" fill="#6e4a2c"/>
+            ${Array.from({ length: 17 }, (_, i) => { const y = 56 + i * 30; return `<rect x="-20" y="${y}" width="${W + 40}" height="30" rx="15" fill="${i % 2 ? '#7a5232' : '#86593a'}"/><rect x="0" y="${y + 5}" width="${W}" height="4" rx="2" fill="#b0845a" opacity=".4"/><rect x="0" y="${y + 25}" width="${W}" height="4" fill="#3b2414" opacity=".55"/>`; }).join('')}
+            ${Array.from({ length: 9 }, (_, i) => `<ellipse cx="${520 + ((i * 397) % 1060)}" cy="${86 + ((i * 131) % 15) * 30}" rx="9" ry="5" fill="#5a3a22" opacity=".7"/>`).join('')}
+            <rect width="${W}" height="48" fill="#24160c"/><rect y="46" width="${W}" height="26" fill="#4a2e18"/><rect y="70" width="${W}" height="5" fill="#2a190d"/>
+            ${Array.from({ length: 9 }, (_, i) => `<circle cx="${100 + i * 180}" cy="59" r="4" fill="#1a110a"/>`).join('')}
+            <!-- the river-stone wainscot, the plank floor and a plaid rug -->
+            <rect y="560" width="${W}" height="210" fill="#5f5a52"/><g clip-path="url(#cpWain)">${stones(0, 560, W, 210, 3)}</g><rect y="552" width="${W}" height="14" fill="#5a3820"/>
+            <rect y="770" width="${W}" height="130" fill="url(#planks)"/>${floorLines(770)}
+            <path d="M420 900 L560 790 H1180 L1330 900 Z" fill="#2f5a3a" opacity=".92"/><path d="M455 890 L575 800 H1165 L1290 890 Z" fill="none" stroke="#b8862b" stroke-width="4" opacity=".75"/>
+            <path d="M500 856 H1240 M535 826 H1205 M700 800 L650 900 M1040 800 L1090 900" stroke="#8a1c22" stroke-width="5" opacity=".6"/>
+            <!-- the chimney: river stone to the beams, a timber mantel, the club's carved sign and two old hickory clubs -->
+            <rect x="110" y="72" width="360" height="698" fill="#6f6a62"/><g clip-path="url(#cpChim)">${stones(110, 72, 360, 698, 1)}</g>
+            <path d="M190 770 V586 H390 V770 Z" fill="#140c07"/><rect x="176" y="566" width="228" height="24" fill="#8f897f" stroke="#4a4640" stroke-width="2"/>${fire}
+            <rect x="80" y="398" width="420" height="30" rx="4" fill="#5a3820" stroke="#2a190d" stroke-width="3"/><rect x="80" y="398" width="420" height="6" fill="#8a5a32"/>
+            <path d="M175 140 L405 300 M405 140 L175 300" stroke="#8a6a3a" stroke-width="7" stroke-linecap="round"/><path d="M167 132 l-14 10 l16 6 Z M413 132 l14 10 l-16 6 Z" fill="#5a5f66"/>
+            <rect x="160" y="170" width="260" height="104" rx="12" fill="#7a4e26" stroke="#3a2314" stroke-width="6"/><rect x="172" y="182" width="236" height="80" rx="8" fill="none" stroke="#c9a253" stroke-width="2" opacity=".7"/>
+            <text x="290" y="222" text-anchor="middle" font-family="Georgia, serif" font-size="29" font-weight="700" letter-spacing="3" fill="#f3dca0">CEDAR HOLLOW</text>
+            <text x="290" y="250" text-anchor="middle" font-family="Georgia, serif" font-size="15" letter-spacing="6" fill="#e3c06a">GOLF CLUB · 1931</text>
+            <path d="M150 398 v-22 h16 v22 Z M144 376 h28 l-5 -26 h-18 Z" fill="#e3c06a"/><rect x="410" y="356" width="26" height="42" rx="3" fill="#ffd98a" stroke="#1a110a" stroke-width="4"/><circle cx="423" cy="377" r="50" fill="url(#glow)"/>
+            <!-- the course map -->
+            <rect x="492" y="140" width="122" height="250" rx="4" fill="#3a2314"/><rect x="502" y="150" width="102" height="230" fill="#e8dcb8"/>
+            <path d="M530 360 Q515 320 545 300 T570 250 Q590 220 560 195 T575 165" fill="none" stroke="#5fa35a" stroke-width="12" stroke-linecap="round"/>
+            <path d="M530 360 Q515 320 545 300 T570 250 Q590 220 560 195 T575 165" fill="none" stroke="#8fd07f" stroke-width="5" stroke-linecap="round"/>
+            ${[[530, 360], [545, 300], [570, 250], [560, 195], [575, 165]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="7" fill="#fff" stroke="#3a2314" stroke-width="1.5"/><text x="${x + 14}" y="${y + 4}" font-family="Georgia, serif" font-size="11" fill="#3a2314">${i * 2 + 1}</text>`).join('')}
+            ${[[518, 230], [590, 320], [522, 175], [592, 205]].map(([x, y]) => cedar(x, y, 30, '#2f5a36')).join('')}
+            <!-- the doors: cedar, with brass -->
+            ${door(640, 140, '#a9c9b0', 'url(#cedarw)', '#3a2314')}${shopGlass}
+            ${door(840, 130, '#6f8a7c', 'url(#cedarw)', '#3a2314')}${coachGlass}
+            <!-- the big window: a timber frame onto the cedars -->
+            <rect x="1006" y="128" width="308" height="414" fill="#3a2314"/>${vista(1030, 150, 260, 370)}
+            <g clip-path="url(#cpWin)">${[[1048, 520, 300, '#1f4226'], [1092, 520, 230, '#2a5530'], [1262, 520, 320, '#1f4226'], [1226, 520, 210, '#2f5a36']].map(([x, b, h, c]) => cedar(x, b, h, c)).join('')}</g>
+            <path d="M1030 273 H1290 M1030 396 H1290 M1160 150 V520" stroke="#3a2314" stroke-width="11"/><rect x="998" y="518" width="324" height="26" rx="8" fill="#86593a" stroke="#3a2314" stroke-width="3"/>
+            <!-- through the posts and beam to the bar -->
+            <rect x="1340" y="330" width="220" height="440" fill="#170d07"/>${barShelves}
+            <rect x="1350" y="610" width="200" height="160" fill="#3a2314"/><rect x="1345" y="600" width="210" height="14" fill="#6b4422"/><circle cx="1450" cy="500" r="170" fill="url(#glow)"/>
+            <rect x="1326" y="330" width="22" height="440" fill="#5a3820" stroke="#2a190d" stroke-width="3"/><rect x="1552" y="330" width="22" height="440" fill="#5a3820" stroke="#2a190d" stroke-width="3"/>
+            <rect x="1314" y="306" width="272" height="30" fill="#6b4422" stroke="#2a190d" stroke-width="3"/><path d="M1348 410 L1400 336 M1552 410 L1500 336" stroke="#5a3820" stroke-width="16"/>
+            ${lobbyProps}
+            ${lantern(300)}${lantern(800)}${lantern(1300)}
+            <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
+        }
+        if (room === 'lobby' && lobbyTier() === 3) {     // HAWTHORNE: the grand old country club. Green silk walls, white
+          // panelling and gilt, a marble floor, the founder over a marble fireplace, the champions' board, chandeliers
+          const chandelier = (x, y = 120) => `<line x1="${x}" y1="74" x2="${x}" y2="${y}" stroke="#b08a45" stroke-width="3"/>`
+            + `<path d="M${x - 64} ${y + 22} Q${x} ${y + 64} ${x + 64} ${y + 22}" fill="none" stroke="#e3c06a" stroke-width="4"/><path d="M${x - 40} ${y + 12} Q${x} ${y + 40} ${x + 40} ${y + 12}" fill="none" stroke="#e3c06a" stroke-width="3"/>`
+            + `<path d="M${x} ${y} v48" stroke="#e3c06a" stroke-width="5"/><circle cx="${x}" cy="${y + 54}" r="8" fill="#e3c06a"/>`
+            + [-64, -40, 0, 40, 64].map((d) => { const cy = y + (Math.abs(d) > 50 ? 22 : 12) - (d === 0 ? -4 : 0); return `<rect x="${x + d - 3}" y="${cy - 16}" width="6" height="16" fill="#f8f1dc"/><ellipse cx="${x + d}" cy="${cy - 21}" rx="4" ry="7" fill="#ffd25a"/>`; }).join('')
+            + [-52, -26, 0, 26, 52].map((d) => `<path d="M${x + d} ${y + 40 - Math.abs(d) / 3} l4 9 l-4 9 l-4 -9 Z" fill="#dff1ff" opacity=".85"/>`).join('')
+            + `<circle cx="${x}" cy="${y + 20}" r="200" fill="url(#glow)"/>`;
+          const flr = [770, 784, 803, 829, 862, 900], xAt = (k, y) => { const xb = k * 110 - 60, xt = 800 + (k * 110 - 860) * 0.55; return xb + (xt - xb) * (H - y) / (H - 770); };
+          const marble = flr.slice(0, -1).map((y0, r) => Array.from({ length: 15 }, (_, k) => { const y1 = flr[r + 1]; return `<path d="M${xAt(k, y1)} ${y1} L${xAt(k, y0)} ${y0} L${xAt(k + 1, y0)} ${y0} L${xAt(k + 1, y1)} ${y1} Z" fill="${(r + k) % 2 ? '#1b1d20' : '#ece6da'}"/>`; }).join('')).join('');
+          return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}<defs>
+              <pattern id="silk" width="48" height="44" patternUnits="userSpaceOnUse"><rect width="48" height="44" fill="#1d3a2b"/><rect x="23" width="2" height="44" fill="#b08a45" opacity=".4"/><path d="M8 22 l5 -8 l5 8 l-5 8 Z" fill="#2a4d3a"/></pattern>
+              <linearGradient id="gilt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3d98c"/><stop offset=".5" stop-color="#c9a253"/><stop offset="1" stop-color="#8f6a26"/></linearGradient>
+              <linearGradient id="ivory" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e9e0cc"/><stop offset=".5" stop-color="#f6f0e2"/><stop offset="1" stop-color="#ddd3bd"/></linearGradient>
+              <clipPath id="cpArch"><path d="M1030 520 V232 Q1160 128 1290 232 V520 Z"/></clipPath></defs>
+            <rect width="${W}" height="${H}" fill="url(#silk)"/>
+            <rect width="${W}" height="52" fill="#efe7d6"/>${Array.from({ length: 16 }, (_, i) => `<rect x="${i * 100 + 10}" y="8" width="80" height="34" fill="none" stroke="#c9a253" stroke-width="2" opacity=".7"/>`).join('')}
+            <rect y="52" width="${W}" height="18" fill="url(#gilt)"/><rect y="70" width="${W}" height="5" fill="#5b4012"/>
+            <!-- white panelling, gilt rail, the marble floor and a crimson runner -->
+            <rect y="560" width="${W}" height="210" fill="url(#ivory)"/><rect y="552" width="${W}" height="12" fill="url(#gilt)"/>
+            ${Array.from({ length: 16 }, (_, i) => `<rect x="${i * 100 + 12}" y="586" width="76" height="160" rx="3" fill="none" stroke="#c9a253" stroke-width="2.5"/><rect x="${i * 100 + 20}" y="594" width="60" height="144" rx="2" fill="none" stroke="#cfc4ab" stroke-width="2"/>`).join('')}
+            <rect y="764" width="${W}" height="8" fill="#8f6a26"/>${marble}
+            <path d="M420 900 L560 790 H1180 L1330 900 Z" fill="#8a1c24"/><path d="M448 892 L572 798 H1168 L1300 892 Z" fill="none" stroke="#e3c06a" stroke-width="4"/>
+            <!-- the marble fireplace, and the founder in his gilt frame -->
+            <rect x="110" y="410" width="360" height="360" fill="url(#ivory)"/><path d="M140 440 Q220 520 180 640 M380 450 Q330 560 420 700 M250 430 Q290 480 270 560" fill="none" stroke="#b9ae98" stroke-width="2" opacity=".7"/>
+            <rect x="118" y="420" width="34" height="350" fill="#efe7d6" stroke="#c9b997" stroke-width="2"/><rect x="428" y="420" width="34" height="350" fill="#efe7d6" stroke="#c9b997" stroke-width="2"/>
+            ${[127, 135, 143, 437, 445, 453].map((x) => `<line x1="${x}" y1="430" x2="${x}" y2="760" stroke="#c9b997" stroke-width="2"/>`).join('')}
+            <path d="M190 770 V590 Q290 510 390 590 V770 Z" fill="#140c07" stroke="url(#gilt)" stroke-width="5"/>${fire}
+            <rect x="90" y="396" width="400" height="22" fill="#f6f0e2" stroke="#c9a253" stroke-width="3"/>
+            <rect x="148" y="98" width="284" height="262" fill="url(#gilt)" stroke="#5b4012" stroke-width="3"/><rect x="166" y="116" width="248" height="226" fill="#2a1d14"/>
+            <path d="M166 342 V300 Q240 250 290 262 Q340 250 414 300 V342 Z" fill="#14161c"/><path d="M270 262 L290 312 L310 262 Z" fill="#f4f1e8"/><path d="M283 268 L290 300 L297 268 Z" fill="#7a1f24"/>
+            <ellipse cx="290" cy="215" rx="34" ry="42" fill="#d9b48f"/><path d="M256 205 Q260 168 290 168 Q322 168 324 205 Q314 186 290 186 Q266 186 256 205 Z" fill="#9aa1a8"/><path d="M272 234 Q290 246 308 234" stroke="#8a5a3a" stroke-width="3" fill="none"/>
+            <rect x="240" y="368" width="100" height="20" rx="2" fill="url(#gilt)"/><text x="290" y="383" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-weight="700" fill="#3a2508">FOUNDER · 1898</text>
+            <path d="M150 396 v-22 h16 v22 Z M144 374 h28 l-5 -26 h-18 Z" fill="#e3c06a"/><path d="M414 396 v-18 h14 v18 Z M408 378 h26 l-4 -22 h-18 Z" fill="#cfd6dd"/>
+            <!-- the club champions' board -->
+            <rect x="490" y="128" width="126" height="296" rx="4" fill="#4a1e14" stroke="url(#gilt)" stroke-width="6"/>
+            <text x="553" y="160" text-anchor="middle" font-family="Georgia, serif" font-size="12.5" font-weight="700" letter-spacing="1" fill="#f3dca0">CLUB</text><text x="553" y="176" text-anchor="middle" font-family="Georgia, serif" font-size="12.5" font-weight="700" letter-spacing="1" fill="#f3dca0">CHAMPIONS</text>
+            <line x1="506" y1="186" x2="600" y2="186" stroke="#c9a253" stroke-width="2"/>
+            ${Array.from({ length: 10 }, (_, i) => `<text x="504" y="${208 + i * 21}" font-family="Georgia, serif" font-size="11" fill="#e3c06a">${2016 + i}</text><rect x="538" y="${200 + i * 21}" width="${34 + ((i * 17) % 28)}" height="6" rx="2" fill="#c9a253" opacity=".75"/>`).join('')}
+            <!-- the doors: painted white, gilt, with pediments -->
+            <path d="M622 292 L710 248 L798 292 Z" fill="#f6f0e2" stroke="#c9a253" stroke-width="3"/>${door(640, 140, '#9cc3d6', 'url(#ivory)', '#c9a253', '#c9b997')}${shopGlass}
+            <path d="M822 292 L905 250 L988 292 Z" fill="#f6f0e2" stroke="#c9a253" stroke-width="3"/>${door(840, 130, '#6d8796', 'url(#ivory)', '#c9a253', '#c9b997')}${coachGlass}
+            <!-- the arched window onto the first tee, in crimson drapes -->
+            <path d="M1016 534 V226 Q1160 110 1304 226 V534 Z" fill="#f6f0e2" stroke="#c9a253" stroke-width="4"/>
+            <g clip-path="url(#cpArch)">${vista(1030, 150, 260, 370)}</g>
+            <path d="M1030 300 H1290 M1030 410 H1290 M1160 160 V520" stroke="#f6f0e2" stroke-width="8"/><rect x="1006" y="520" width="308" height="20" fill="#f6f0e2" stroke="#c9a253" stroke-width="2"/>
+            <path d="M990 150 Q1030 330 1004 540 H1046 Q1060 360 1040 160 Z" fill="#8a1c24"/><path d="M1330 150 Q1290 330 1316 540 H1274 Q1260 360 1280 160 Z" fill="#8a1c24"/>
+            <path d="M986 140 H1334 V166 Q1250 200 1160 170 Q1070 200 986 166 Z" fill="#a3252e" stroke="#e3c06a" stroke-width="3"/><path d="M1010 470 h42 M1268 470 h42" stroke="#e3c06a" stroke-width="6" stroke-linecap="round"/>
+            <!-- the archway to the bar: pilasters and a keystone -->
+            <path d="M1340 770 V360 Q1450 240 1560 360 V770 Z" fill="#170d07"/>${barShelves}
+            <rect x="1350" y="610" width="200" height="160" fill="#4a1e14"/><rect x="1345" y="600" width="210" height="14" fill="#6b2a1c"/><rect x="1350" y="740" width="200" height="6" fill="#e3c06a"/><circle cx="1450" cy="500" r="170" fill="url(#glow)"/>
+            <path d="M1340 770 V360 Q1450 240 1560 360 V770" fill="none" stroke="#f6f0e2" stroke-width="14"/><path d="M1340 770 V360 Q1450 240 1560 360 V770" fill="none" stroke="#c9a253" stroke-width="3"/>
+            <rect x="1318" y="360" width="20" height="410" fill="#efe7d6" stroke="#c9b997" stroke-width="2"/><rect x="1562" y="360" width="20" height="410" fill="#efe7d6" stroke="#c9b997" stroke-width="2"/>
+            <rect x="1312" y="346" width="32" height="16" fill="url(#gilt)"/><rect x="1556" y="346" width="32" height="16" fill="url(#gilt)"/><path d="M1434 280 H1466 L1459 318 H1441 Z" fill="url(#gilt)" stroke="#5b4012" stroke-width="2"/>
+            ${lobbyProps}
+            ${chandelier(300)}${chandelier(800)}${chandelier(1450, 84)}
+            <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
+        }
         if (room === 'lobby') {
           return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${defs}
             <rect width="${W}" height="${H}" fill="url(#stripes)"/>
@@ -14577,32 +14706,21 @@
             <path d="M420 900 L560 790 H1180 L1330 900 Z" fill="#6b1f24" opacity=".85"/><path d="M455 890 L575 800 H1165 L1290 890 Z" fill="none" stroke="#c9a253" stroke-width="3" opacity=".7"/>
             <!-- the fireplace and the painting over it -->
             <rect x="110" y="410" width="360" height="360" fill="#5b5148"/><rect x="95" y="400" width="390" height="22" fill="#3a2314"/>
-            <path d="M180 770 V560 Q290 470 400 560 V770 Z" fill="#140c07"/>
-            <path d="M215 760 L365 742 M225 742 L370 762" stroke="#4a2c16" stroke-width="16" stroke-linecap="round"/>
-            <path d="M230 745 Q240 690 262 660 Q262 700 280 710 Q285 650 310 615 Q318 680 335 690 Q345 665 352 650 Q365 700 350 745 Z" fill="#ff8a2a"/>
-            <path d="M255 745 Q265 710 280 690 Q288 715 300 720 Q306 690 318 670 Q330 715 322 745 Z" fill="#ffd25a"/>
-            <circle cx="290" cy="720" r="160" fill="url(#glow)"/>
+            <path d="M180 770 V560 Q290 470 400 560 V770 Z" fill="#140c07"/>${fire}
             <rect x="150" y="120" width="280" height="200" fill="#c9a253"/><rect x="164" y="134" width="252" height="172" fill="#1d130a"/>${vista(170, 140, 240, 160)}
             <!-- trophies on the mantel -->
             <path d="M150 400 v-22 h16 v22 Z M144 378 h28 l-5 -26 h-18 Z" fill="#e3c06a"/><path d="M420 400 v-18 h14 v18 Z M414 382 h26 l-4 -22 h-18 Z" fill="#cfd6dd"/>
-            ${door(640, 140, '#8bb7c9')}
-            <path d="M660 340 v120 M690 330 v130 M720 345 v115 M750 335 v125" stroke="#2b2b2b" stroke-width="3"/><path d="M652 460 h16 M682 460 h16 M712 460 h16 M742 460 h16" stroke="#222" stroke-width="7" stroke-linecap="round"/>
-            ${door(840, 130, '#5d7380')}
-            <path d="M870 450 L900 340 L930 450" fill="none" stroke="#fff" stroke-width="3" opacity=".7"/><circle cx="900" cy="335" r="8" fill="none" stroke="#fff" stroke-width="3" opacity=".7"/>
+            ${door(640, 140, '#8bb7c9')}${shopGlass}
+            ${door(840, 130, '#5d7380')}${coachGlass}
             <!-- the big window onto the first tee -->
             <rect x="1018" y="138" width="284" height="394" fill="#2a190d"/>${vista(1030, 150, 260, 370)}
             <path d="M1030 273 H1290 M1030 396 H1290 M1160 150 V520" stroke="#2a190d" stroke-width="9"/><rect x="1008" y="520" width="304" height="20" fill="#7a5a2c"/>
             <!-- the arch to the bar -->
             <path d="M1340 770 V360 Q1450 240 1560 360 V770 Z" fill="#170d07"/><path d="M1340 770 V360 Q1450 240 1560 360 V770" fill="none" stroke="#7a5a2c" stroke-width="10"/>
-            ${Array.from({ length: 3 }, (_, r) => Array.from({ length: 7 }, (_, i) => `<rect x="${1368 + i * 26}" y="${380 + r * 70}" width="12" height="${36 + (i % 3) * 6}" rx="3" fill="${['#7a2c1f', '#2f6b3f', '#b8862b', '#4b5f8a', '#8c3a5c'][(i + r) % 5]}" opacity=".9"/>`).join('') + `<rect x="1360" y="${420 + r * 70}" width="180" height="5" fill="#5a3820"/>`).join('')}
+            ${barShelves}
             <rect x="1350" y="610" width="200" height="160" fill="#3a2314"/><rect x="1345" y="600" width="210" height="14" fill="#6b4422"/><circle cx="1450" cy="500" r="170" fill="url(#glow)"/>
             <!-- a bag of clubs by the range door, and the easel sign's legs -->
-            <rect x="1250" y="660" width="54" height="125" rx="14" fill="#7a1f24" stroke="#2a190d" stroke-width="3"/><path d="M1262 660 v-40 M1277 660 v-55 M1292 660 v-35" stroke="#bbb" stroke-width="4"/>
-            <circle cx="1262" cy="618" r="8" fill="#222"/><circle cx="1277" cy="603" r="8" fill="#333"/><circle cx="1292" cy="623" r="8" fill="#1d3a6b"/>
-            <path d="M1135 640 L1110 790 M1185 640 L1210 790 M1160 640 L1160 785" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
-            <path d="M780 790 L755 895 M840 790 L865 895 M810 790 V890" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
-            <path d="M1442 790 L1417 895 M1502 790 L1527 895 M1472 790 V890" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
-            <path d="M1186 810 L1166 895 M1246 810 L1266 895 M1216 810 V890" stroke="#2a190d" stroke-width="7" stroke-linecap="round"/>
+            ${lobbyProps}
             ${lamp(300)}${lamp(800)}${lamp(1300)}
             <rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
         }
